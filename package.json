@@ -1,0 +1,38 @@
+{
+  "name": "uk-rail-import",
+  "version": "1.0.0",
+  "description": "ETL (extract, transform, load) template for UK rail fares",
+  "bin": {
+    "uk-rail-import": "dist/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "./node_modules/.bin/tsc -p src/ --outDir dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linusnorton/uk-rail-import.git"
+  },
+  "keywords": [
+    "uk",
+    "rail",
+    "etl",
+    "fares"
+  ],
+  "author": "Linus Norton",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/linusnorton/uk-rail-import/issues"
+  },
+  "homepage": "https://github.com/linusnorton/uk-rail-import#readme",
+  "dependencies": {
+    "bluebird": "^3.4.1",
+    "immutable": "^3.8.1",
+    "promise-mysql": "^1.3.2",
+    "typescript": "^2.0.0"
+  },
+  "engines": {
+    "node": "^6.0.0"
+  },
+  "devDependencies": {}
+}
