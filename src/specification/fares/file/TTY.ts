@@ -12,7 +12,7 @@ const ticketTypeRecord = new Record(
     ["ticket_code", "end_date"],
     Map({
         "ticket_code": new Text(1, 3),
-        "end_date": new DateField(3),
+        "end_date": new DateField(4     ),
         "start_date": new DateField(12),
         "quote_date": new DateField(20),
         "description": new Text(28, 15),

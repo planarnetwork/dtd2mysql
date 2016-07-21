@@ -26,7 +26,6 @@ export default class CLI {
         const [node, script, opt, ...argv] = args;
 
         await this.getCommand(opt).run(argv);
-
-        //await this.container.get("database").end();
+        await this.container.get("database").end();
     }
 }

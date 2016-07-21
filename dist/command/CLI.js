@@ -22,7 +22,7 @@ class CLI {
         return __awaiter(this, void 0, void 0, function* () {
             const [node, script, opt, ...argv] = args;
             yield this.getCommand(opt).run(argv);
-            //await this.container.get("database").end();
+            yield this.container.get("database").end();
         });
     }
 }

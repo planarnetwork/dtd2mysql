@@ -11,8 +11,6 @@ import Schema from "../storage/schema/Schema";
 
 const AdmZip = require("adm-zip");
 const fs: any = Bluebird.promisifyAll(require("fs"));
-const TMP_PATH = "/tmp/fares-feed/";
-
 export default class ImportFaresFeed implements Command {
     private storage: RecordStorage;
     private schema: Schema;
@@ -71,32 +69,42 @@ export default class ImportFaresFeed implements Command {
         }
 
         await Promise.all(promises);
+        await Promise.all(this.storage.flushAll());
     }
 
     private processFile(file: FeedFile, filename: string) {
+        console.log(`Processing ${filename}`);
+
         const promises = [];
         const readEvents = readline.createInterface({
             input: fs.createReadStream(TMP_PATH + filename)
         });
 
         readEvents.on("line", line => {
-            if (line.substr(0, 3) !== '/!!') {
-                try {
-                    const record = file.getRecord(line);
-                    const data = record.extractRecord(line);
+            if (line.substr(0, 3) === '/!!') { return; }
 
-                    promises.push(this.storage.save(record.name, data));
+            try {
+                const record = file.getRecord(line);
+                const data = record.extractRecord(line);
+                const maybePromise = this.storage.save(record.name, data);
+
+                if (maybePromise) {
+                    promises.push(maybePromise);
                 }
-                catch (err) {
-                    console.log(`Error processing ${filename} with data ${line}`);
-                    console.log(err);
-                }
+            }
+            catch (err) {
+                console.log(`Error processing ${filename} with data ${line}`);
+                console.log(err);
             }
         });
 
+        // return a promise that is fulfilled once the file has been read
+        // the promise will contain a list of promises for each insert
         return new Promise((resolve, reject) => {
-            readEvents.on('close', () => resolve(promises));
-            readEvents.on('SIGINT', () => reject())
+            readEvents.on('close', () => resolve(promises) );
+            readEvents.on('SIGINT', () => reject());
         });
     }
 }
+
+const TMP_PATH = "/tmp/fares-feed/";

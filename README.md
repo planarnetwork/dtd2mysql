@@ -39,6 +39,10 @@ export DATABASE_NAME=fares
 
 uk-rail-import --fares /path/to/RJFAFxxx.ZIP
 ```
+## Notes
+
+Although every record format has a composite key defined in the specification an `id` field is added as the fields in the composite key are sometimes null. This is no longer supported in modern versions of MariaDB or MySQL.
+
 ## Contributing
 
 Issues and PRs are very welcome. In particular, more data stores, more flexible configuration options (config file) and the timetable feeds would be useful. 

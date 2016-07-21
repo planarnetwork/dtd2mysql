@@ -5,10 +5,12 @@ class MySQLSchema {
     }
     createSchema(record) {
         const fields = record.fields.map(this.getField.bind(this)).join(',');
-        const key = `PRIMARY KEY(${record.key.join(',')})`;
+        const id = "id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY";
+        const unique = `UNIQUE ${record.name}_key (${record.key.join(',')})`;
         const indexes = record.indexes.map(index => `KEY ${index} (${index})`);
-        const table = [fields, key, ...indexes].join(',');
-        return this.db.query(`CREATE TABLE IF NOT EXISTS ${record.name} (${table}) Engine=InnoDB`);
+        const table = [id, fields, unique, ...indexes].join(',');
+        const sql = `CREATE TABLE IF NOT EXISTS ${record.name} (${table}) Engine=InnoDB`;
+        return this.db.query(sql);
     }
     getField(field, name) {
         return `${name} ${field.getType()} ${this.getNullStatement(field)}`;

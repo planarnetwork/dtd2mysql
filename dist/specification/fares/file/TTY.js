@@ -7,7 +7,7 @@ const Text_1 = require("../../../feed/field/Text");
 const SingleRecordFile_1 = require("../../../feed/file/SingleRecordFile");
 const ticketTypeRecord = new Record_1.default("ticket_type", ["ticket_code", "end_date"], immutable_1.Map({
     "ticket_code": new Text_1.default(1, 3),
-    "end_date": new DateField_1.default(3),
+    "end_date": new DateField_1.default(4),
     "start_date": new DateField_1.default(12),
     "quote_date": new DateField_1.default(20),
     "description": new Text_1.default(28, 15),

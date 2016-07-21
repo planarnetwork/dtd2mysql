@@ -8,6 +8,7 @@ class Record {
         this.fields = fields;
     }
     extractRecord(line) {
+        return [null].concat(this.fields.toArray().map(f => f.getValue(line)));
         let obj = {};
         for (const fieldName in this.fields.toObject()) {
             obj[fieldName] = this.fields.get(fieldName).getValue(line);

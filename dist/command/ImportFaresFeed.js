@@ -13,7 +13,6 @@ const path = require("path");
 const readline = require("readline");
 const AdmZip = require("adm-zip");
 const fs = Bluebird.promisifyAll(require("fs"));
-const TMP_PATH = "/tmp/fares-feed/";
 class ImportFaresFeed {
     constructor(container) {
         this.storage = container.get("record.storage");
@@ -63,26 +62,34 @@ class ImportFaresFeed {
                 promises.concat(yield this.processFile(file, filename));
             }
             yield Promise.all(promises);
+            yield Promise.all(this.storage.flushAll());
         });
     }
     processFile(file, filename) {
+        console.log(`Processing ${filename}`);
         const promises = [];
         const readEvents = readline.createInterface({
             input: fs.createReadStream(TMP_PATH + filename)
         });
         readEvents.on("line", line => {
-            if (line.substr(0, 3) !== '/!!') {
-                try {
-                    const record = file.getRecord(line);
-                    const data = record.extractRecord(line);
-                    promises.push(this.storage.save(record.name, data));
-                }
-                catch (err) {
-                    console.log(`Error processing ${filename} with data ${line}`);
-                    console.log(err);
+            if (line.substr(0, 3) === '/!!') {
+                return;
+            }
+            try {
+                const record = file.getRecord(line);
+                const data = record.extractRecord(line);
+                const maybePromise = this.storage.save(record.name, data);
+                if (maybePromise) {
+                    promises.push(maybePromise);
                 }
             }
+            catch (err) {
+                console.log(`Error processing ${filename} with data ${line}`);
+                console.log(err);
+            }
         });
+        // return a promise that is fulfilled once the file has been read
+        // the promise will contain a list of promises for each insert
         return new Promise((resolve, reject) => {
             readEvents.on('close', () => resolve(promises));
             readEvents.on('SIGINT', () => reject());
@@ -91,3 +98,4 @@ class ImportFaresFeed {
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = ImportFaresFeed;
+const TMP_PATH = "/tmp/fares-feed/";
