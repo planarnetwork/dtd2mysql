@@ -15,6 +15,7 @@ import TSP from "./file/TSP";
 import RST from "./file/RST";
 import TAP from "./file/TAP";
 import TOC from "./file/TOC";
+import TVL from "./file/TVL";
 
 export default {
     DIS: DIS,
@@ -32,5 +33,6 @@ export default {
     TAP: TAP,
     TOC: TOC,
     TSP: TSP,
-    TTY: TTY
+    TTY: TTY,
+    TVL: TVL
 };
