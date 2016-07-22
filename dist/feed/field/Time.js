@@ -1,20 +1,19 @@
 "use strict";
 const Text_1 = require('./Text');
-class DateField extends Text_1.default {
+class Time extends Text_1.default {
     constructor(start, nullable = false) {
-        super(start, 8, nullable);
-        this.nullChars = [" ", "*", "0"];
+        super(start, 4, nullable);
     }
     getType() {
-        return "DATE";
+        return "TIME";
     }
     getValue(row) {
         const value = super.getValue(row);
         if (value === null) {
             return null;
         }
-        return `${value.substr(4, 4)}-${value.substr(2, 2)}-${value.substr(0, 2)}`;
+        return `${value.substr(0, 2)}:${value.substr(2, 2)}`;
     }
 }
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = DateField;
+exports.default = Time;

@@ -5,12 +5,32 @@ import NDF from "./file/NDF";
 import NFO from "./file/NFO";
 import FNS from "./file/FNS";
 import TTY from "./file/TTY";
+import LOC from "./file/LOC";
+import RCM from "./file/RCM";
+import RTE from "./file/RTE";
+import SUP from "./file/SUP";
+import DIS from "./file/DIS";
+import RLC from "./file/RLC";
+import TSP from "./file/TSP";
+import RST from "./file/RST";
+import TAP from "./file/TAP";
+import TOC from "./file/TOC";
 
 export default {
+    DIS: DIS,
     FFL: FFL,
+    FNS: FNS,
     FSC: FSC,
+    LOC: LOC,
     NDF: NDF,
     NFO: NFO,
-    FNS: FNS,
+    RCM: RCM,
+    RLC: RLC,
+    RST: RST,
+    RTE: RTE,
+    SUP: SUP,
+    TAP: TAP,
+    TOC: TOC,
+    TSP: TSP,
     TTY: TTY
 };

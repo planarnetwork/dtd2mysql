@@ -1,15 +1,14 @@
 
 import Text from './Text';
 
-export default class DateField extends Text {
-    protected nullChars = [" ", "*", "0"];
+export default class Time extends Text {
 
     constructor(start: number, nullable: boolean = false) {
-        super(start, 8, nullable);
+        super(start, 4, nullable);
     }
 
     getType() {
-        return "DATE";
+        return "TIME";
     }
 
     getValue(row: string) {
@@ -19,6 +18,6 @@ export default class DateField extends Text {
             return null;
         }
 
-        return `${value.substr(4, 4)}-${value.substr(2, 2)}-${value.substr(0, 2)}`;
+        return `${value.substr(0, 2)}:${value.substr(2, 2)}`;
     }
 }

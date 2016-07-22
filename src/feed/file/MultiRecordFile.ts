@@ -5,8 +5,13 @@ import FeedFile from "./FeedFile";
 
 export default class MultiRecordFile implements FeedFile {
     recordTypes: Map<string, Record>;
-    constructor(recordTypes: Map<string, Record>) {
+    typeStart: number;
+    typeLength: number;
+
+    constructor(recordTypes: Map<string, Record>, typeStart: number = 1, typeLength = 1) {
         this.recordTypes = recordTypes;
+        this.typeStart = typeStart;
+        this.typeLength = typeLength;
     }
 
     getRecordTypes() {
@@ -14,6 +19,6 @@ export default class MultiRecordFile implements FeedFile {
     }
 
     getRecord(line: string): Record {
-        return this.recordTypes.get(line.charAt(1));
+        return this.recordTypes.get(line.substr(this.typeStart, this.typeLength));
     }
 }

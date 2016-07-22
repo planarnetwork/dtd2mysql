@@ -40,8 +40,15 @@ export DATABASE_NAME=fares
 uk-rail-import --fares /path/to/RJFAFxxx.ZIP
 ```
 ## Notes
+### null values
 
+Values marked as all asterisks, emtpy spaces, or in the case of dates - zeros, are set to null. This is to preverse the integrity of the column type. For instance a route code is numerical although the data feed often uses ***** to signify any so this value is converted to null. 
+
+### keys
 Although every record format has a composite key defined in the specification an `id` field is added as the fields in the composite key are sometimes null. This is no longer supported in modern versions of MariaDB or MySQL.
+
+### missing data
+At present journey segments, class legends, rounding rules, print formats  and the fares data feed meta data are not imported. They are either deprecated or irrelevant. Raise an issue or PR if you would like them added.
 
 ## Contributing
 
