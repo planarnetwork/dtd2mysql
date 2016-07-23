@@ -27,7 +27,7 @@ const supplementRecord = new Record(
         "capri_code": new Text(78, 3),
         "sep_tkt_ind": new Text(81, 1),
         "resvn_type": new Text(82, 2),
-        "sundry_code": new ZeroFillInt(84, 5)
+        "sundry_code": new ZeroFillInt(84, 5, true)
     })
 );
 

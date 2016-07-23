@@ -9,7 +9,7 @@ import MultiRecordFile from "../../../feed/file/MultiRecordFile";
 
 const location = new Record(
     "location",
-    ["uic", "end_date"],
+    ["uic", "end_date", "start_date"],
     Map({
         "uic": new Text(2, 7),
         "end_date": new DateField(9),
@@ -66,7 +66,7 @@ const association = new Record(
 
 const railcard = new Record(
     "location_railcard",
-    ["uic_code", "railcard_card", "end_date"],
+    ["uic_code", "railcard_code", "end_date"],
     Map({
         "uic_code": new Text(2, 7),
         "railcard_code": new Text(9, 3),

@@ -36,7 +36,7 @@ const header = new Record(
 
 const headerDate = new Record(
     "restriction_header_date",
-    ["cf_mkr", "restriction_code"],
+    ["cf_mkr", "restriction_code", "date_from", "date_to"],
     Map({
         "cf_mkr": new Text(3, 1),
         "restriction_code": new Text(4, 2),
@@ -230,7 +230,7 @@ const railcard = new Record(
         "railcard_code": new Text(4, 3),
         "sequence_no": new Text(7, 4),
         "ticket_code": new Text(11, 3),
-        "route_code": new ZeroFillInt(14, 5),
+        "route_code": new ZeroFillInt(14, 5, true),
         "location": new Text(19, 3),
         "restriction_code": new Text(22, 2, true),
         "total_ban": new Text(24, 1, true)
@@ -254,7 +254,7 @@ const ticketCalendar = new Record(
         "cf_mkr": new Text(3, 1),
         "ticket_code": new Text(4, 3),
         "cal_type": new Text(7, 1),
-        "route_code": new ZeroFillInt(8, 5),
+        "route_code": new ZeroFillInt(8, 5, true),
         "country_code": new Text(13, 1),
         "date_from": new Text(14, 4),
         "date_to": new Text(18, 4),

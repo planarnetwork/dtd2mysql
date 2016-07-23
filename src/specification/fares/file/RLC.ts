@@ -9,7 +9,7 @@ import ZeroFillInt from "../../../feed/field/ZeroFillInt";
 
 const record = new Record(
     "railcard",
-    ["railcard_code"],
+    ["railcard_code", "end_date"],
     Map({
         "railcard_code": new Text(0, 3),
         "end_date": new DateField(3),

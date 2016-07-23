@@ -6,6 +6,7 @@ import Int from "../../../feed/field/Int";
 import Text from "../../../feed/field/Text";
 import SingleRecordFile from "../../../feed/file/SingleRecordFile";
 import ZeroFillInt from "../../../feed/field/ZeroFillInt";
+import MultiRecordFile from "../../../feed/file/MultiRecordFile";
 
 const record = new Record(
     "route",
@@ -36,6 +37,22 @@ const record = new Record(
     })
 );
 
-const RTE = new SingleRecordFile(record);
+const location = new Record(
+    "route_location",
+    ["route_code", "end_date", "admin_area_code", "nlc_code"],
+    Map({
+        "route_code": new Text(2, 5),
+        "end_date": new DateField(7),
+        "admin_area_code": new Text(15, 3),
+        "nlc_code": new Text(18, 4),
+        "crs_code": new Text(22, 3),
+        "incl_excl": new Text(25, 1)
+    })
+);
+
+const RTE = new MultiRecordFile(Map({
+    "R": record,
+    "L": location
+}));
 
 export default RTE;

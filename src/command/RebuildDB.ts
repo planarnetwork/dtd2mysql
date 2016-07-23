@@ -26,7 +26,12 @@ export default class RebuildDB implements Command {
             }
         }
 
-        await Promise.all(results);
+        try {
+            await Promise.all(results);
+        }
+        catch (err) {
+            console.log(err);
+        }
 
         console.log("Database schema created");
     }
