@@ -6,9 +6,11 @@ import Schema from "../storage/schema/Schema";
 
 export default class InitDB implements Command {
     private schema: Schema;
+    private logger;
 
     constructor(container: Container) {
         this.schema = container.get("schema");
+        this.logger = container.get("logger");
     }
 
     async run(argv: string[]) {
@@ -27,7 +29,7 @@ export default class InitDB implements Command {
 
         await Promise.all(results);
 
-        console.log("Database schema created");
+        this.logger("Database schema created");
     }
 
 }

@@ -1,6 +1,10 @@
 "use strict";
 const Text_1 = require("./Text");
 class Int extends Text_1.default {
+    constructor(...args) {
+        super(...args);
+        this.nullChars = [" ", "*", "9"];
+    }
     getValue(row) {
         const value = super.getValue(row);
         if (value === null) {

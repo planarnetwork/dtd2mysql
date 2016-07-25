@@ -14,9 +14,19 @@ You don't have to install it globally but it makes it easier if you are not goin
 npm install -g uk-rail-import
 ```
 
+You can run the application by pipping the output to mysql, or you can use the environment/profile variables. The environment variable method connects directly to mysql to import the data whereas the unix pipes just pass SQL queries around.
+
 ## Setup
 
-To prepare the database you will need to export some configuration settings for your environment.
+### Unix pipes
+
+SQL commands are piped from the stdout to a mysql (or other input) of your choice.
+
+```
+uk-rail-import --init-db | mysql -uusername etc
+```
+
+### Environment profile
 
 ```
 export DATABASE_USERNAME=root
@@ -28,9 +38,13 @@ uk-rail-import --init-db
 ```
 
 ## Run
+### Unix pipes
 
-Those environment variables will also be needed when running the import
+```
+uk-rail-import --fares /path/to/RJFAFxxx.ZIP | mysql -uusername etc
+```
 
+### Environment profile
 ```
 export DATABASE_USERNAME=root
 export DATABASE_PASSWORD=

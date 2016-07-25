@@ -1,6 +1,8 @@
 "use strict";
 const MySQLRecord_1 = require("../storage/record/MySQLRecord");
 const MySQLSchema_1 = require("../storage/schema/MySQLSchema");
+const ConsoleRecord_1 = require("../storage/record/ConsoleRecord");
+const ConsoleSchema_1 = require("../storage/schema/ConsoleSchema");
 class Container {
     constructor() {
         this.constructors = {
@@ -13,8 +15,24 @@ class Container {
                     connectionLimit: 10,
                 });
             },
-            "record.storage": () => new MySQLRecord_1.default(this.get("database")),
-            "schema": () => new MySQLSchema_1.default(this.get("database"))
+            "record.storage": () => {
+                if (!process.env.DATEBASE_NAME) {
+                    return new ConsoleRecord_1.default(console.log);
+                }
+                new MySQLRecord_1.default(this.get("database"));
+            },
+            "schema": () => {
+                if (!process.env.DATEBASE_NAME) {
+                    return new ConsoleSchema_1.default(console.log);
+                }
+                new MySQLSchema_1.default(this.get("database"));
+            },
+            "logger": () => {
+                if (!process.env.DATEBASE_NAME) {
+                    return () => { };
+                }
+                return console.log;
+            }
         };
         this.cache = {};
     }

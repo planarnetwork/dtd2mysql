@@ -17,6 +17,7 @@ class ImportFaresFeed {
     constructor(container) {
         this.storage = container.get("record.storage");
         this.schema = container.get("schema");
+        this.logger = container.get("logger");
     }
     run(argv) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -24,17 +25,17 @@ class ImportFaresFeed {
                 throw new Error("Please supply the path of the fares feed zip file.");
             }
             try {
-                console.log("Truncating tables...");
+                this.logger("Truncating tables...");
                 const truncatePromise = this.truncateTables();
-                console.log("Extracting files...");
+                this.logger("Extracting files...");
                 new AdmZip(argv[0]).extractAllTo(TMP_PATH);
                 yield truncatePromise;
-                console.log("Importing data...");
+                this.logger("Importing data...");
                 yield this.doImport();
-                console.log("Data imported.");
+                this.logger("Data imported.");
             }
             catch (err) {
-                console.log(err);
+                this.logger(err);
             }
         });
     }
@@ -66,7 +67,7 @@ class ImportFaresFeed {
         });
     }
     processFile(file, filename) {
-        console.log(`Processing ${filename}`);
+        this.logger(`Processing ${filename}`);
         const promises = [];
         const readEvents = readline.createInterface({
             input: fs.createReadStream(TMP_PATH + filename)
@@ -84,8 +85,8 @@ class ImportFaresFeed {
                 }
             }
             catch (err) {
-                console.log(`Error processing ${filename} with data ${line}`);
-                console.log(err);
+                this.logger(`Error processing ${filename} with data ${line}`);
+                this.logger(err);
             }
         });
         // return a promise that is fulfilled once the file has been read

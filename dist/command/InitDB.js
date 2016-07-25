@@ -11,6 +11,7 @@ const fares_1 = require('../specification/fares');
 class InitDB {
     constructor(container) {
         this.schema = container.get("schema");
+        this.logger = container.get("logger");
     }
     run(argv) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -26,7 +27,7 @@ class InitDB {
                 }
             }
             yield Promise.all(results);
-            console.log("Database schema created");
+            this.logger("Database schema created");
         });
     }
 }

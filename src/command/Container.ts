@@ -1,6 +1,9 @@
 
 import MySQLRecord from "../storage/record/MySQLRecord";
 import MySQLSchema from "../storage/schema/MySQLSchema";
+import ConsoleRecord from "../storage/record/ConsoleRecord";
+import ConsoleSchema from "../storage/schema/ConsoleSchema";
+
 export default class Container {
 
     private constructors = {
@@ -14,8 +17,24 @@ export default class Container {
 //                debug: ['ComQueryPacket', 'RowDataPacket']
             });
         },
-        "record.storage": () => new MySQLRecord(this.get("database")),
-        "schema": () => new MySQLSchema(this.get("database"))
+        "record.storage": () => {
+            if (!process.env.DATEBASE_NAME) {
+                return new ConsoleRecord(console.log);
+            }
+            new MySQLRecord(this.get("database"));
+        },
+        "schema": () => {
+            if (!process.env.DATEBASE_NAME) {
+                return new ConsoleSchema(console.log);
+            }
+            new MySQLSchema(this.get("database"));
+        },
+        "logger": () => {
+            if (!process.env.DATEBASE_NAME) {
+                return () => {};
+            }
+            return console.log;
+        }
 
     };
 

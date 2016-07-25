@@ -2,6 +2,7 @@
 import Text from "./Text";
 
 export default class Int extends Text {
+    protected nullChars = [" ", "*", "9"];
 
     getValue(row: string) {
         const value = super.getValue(row);

@@ -11,21 +11,24 @@ export default class MySQLSchema implements Schema {
     }
 
     createSchema(record: Record) {
+        return this.db.query(this.getSchema(record));
+    }
+
+    protected getSchema(record: Record) {
         const fields = record.fields.map(this.getField.bind(this)).join(',');
         const id = "id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY";
         const unique = `UNIQUE ${record.name}_key (${record.key.join(',')})`;
         const indexes = record.indexes.map(index => `KEY ${index} (${index})`);
         const table = [id, fields, unique, ...indexes].join(',');
-        const sql = `CREATE TABLE IF NOT EXISTS ${record.name} (${table}) Engine=InnoDB`;
 
-        return this.db.query(sql);
+        return `CREATE TABLE IF NOT EXISTS ${record.name} (${table}) Engine=InnoDB`;
     }
 
-    private getField(field: Field, name: string) {
+    protected getField(field: Field, name: string) {
         return `${name} ${field.getType()} ${this.getNullStatement(field)}`;
     }
 
-    private getNullStatement(field: Field) {
+    protected getNullStatement(field: Field) {
         return field.isNullable() ? 'DEFAULT NULL' : 'NOT NULL';
     }
 

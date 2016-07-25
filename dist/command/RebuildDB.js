@@ -11,6 +11,7 @@ const fares_1 = require('../specification/fares');
 class RebuildDB {
     constructor(container) {
         this.schema = container.get("schema");
+        this.logger = container.get("logger");
     }
     run(argv) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -32,7 +33,7 @@ class RebuildDB {
             catch (err) {
                 console.log(err);
             }
-            console.log("Database schema created");
+            this.logger("Database schema created");
         });
     }
 }

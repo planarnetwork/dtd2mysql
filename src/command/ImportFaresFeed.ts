@@ -14,10 +14,12 @@ const fs: any = Bluebird.promisifyAll(require("fs"));
 export default class ImportFaresFeed implements Command {
     private storage: RecordStorage;
     private schema: Schema;
+    private logger;
 
     constructor(container: Container) {
         this.storage = container.get("record.storage");
         this.schema = container.get("schema");
+        this.logger = container.get("logger");
     }
 
     async run(argv: string[]) {
@@ -26,18 +28,18 @@ export default class ImportFaresFeed implements Command {
         }
 
         try {
-            console.log("Truncating tables...");
+            this.logger("Truncating tables...");
             const truncatePromise = this.truncateTables();
-            console.log("Extracting files...");
+            this.logger("Extracting files...");
             new AdmZip(argv[0]).extractAllTo(TMP_PATH);
 
             await truncatePromise;
-            console.log("Importing data...");
+            this.logger("Importing data...");
             await this.doImport();
-            console.log("Data imported.");
+            this.logger("Data imported.");
         }
         catch (err) {
-            console.log(err);
+            this.logger(err);
         }
     }
 
@@ -73,7 +75,7 @@ export default class ImportFaresFeed implements Command {
     }
 
     private processFile(file: FeedFile, filename: string) {
-        console.log(`Processing ${filename}`);
+        this.logger(`Processing ${filename}`);
 
         const promises = [];
         const readEvents = readline.createInterface({
@@ -93,8 +95,8 @@ export default class ImportFaresFeed implements Command {
                 }
             }
             catch (err) {
-                console.log(`Error processing ${filename} with data ${line}`);
-                console.log(err);
+                this.logger(`Error processing ${filename} with data ${line}`);
+                this.logger(err);
             }
         });
 
