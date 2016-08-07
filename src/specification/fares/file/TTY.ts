@@ -40,7 +40,7 @@ const ticketTypeRecord = new Record(
         "free_pass_lul": new Text(106, 1),
         "package_mkr": new Text(107, 1),
         "fare_multiplier": new Int(108, 3),
-        "discount_category": new Text(111, 2)
+        "discount_category": new Int(111, 2)
     })
 );
 

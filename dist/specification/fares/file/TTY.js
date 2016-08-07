@@ -35,7 +35,7 @@ const ticketTypeRecord = new Record_1.default("ticket_type", ["ticket_code", "en
     "free_pass_lul": new Text_1.default(106, 1),
     "package_mkr": new Text_1.default(107, 1),
     "fare_multiplier": new Int_1.default(108, 3),
-    "discount_category": new Text_1.default(111, 2)
+    "discount_category": new Int_1.default(111, 2)
 }));
 const TTY = new SingleRecordFile_1.default(ticketTypeRecord);
 Object.defineProperty(exports, "__esModule", { value: true });
