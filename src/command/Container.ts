@@ -8,14 +8,32 @@ export default class Container {
 
     private constructors = {
         "database": () => {
+            if (!process.env.DATEBASE_NAME) {
+                return this.get("database.console");
+            }
+
             return require('promise-mysql').createPool({
                 host: process.env.DATABASE_HOSTNAME,
                 user: process.env.DATABASE_USERNAME,
                 password: process.env.DATABASE_PASSWORD,
                 database: process.env.DATABASE_NAME,
                 connectionLimit: 10,
-//                debug: ['ComQueryPacket', 'RowDataPacket']
+                //debug: ['ComQueryPacket', 'RowDataPacket']
             });
+        },
+        "database.console": () => {
+            return {
+                /**
+                 * Return a promise as for interop with promise-mysql
+                 */
+                query: (query: string) => {
+                    return new Promise((resolve) => {
+                        console.log(query);
+                        resolve();
+                    });
+                },
+                end: () => {}
+            }
         },
         "record.storage": () => {
             if (!process.env.DATEBASE_NAME) {

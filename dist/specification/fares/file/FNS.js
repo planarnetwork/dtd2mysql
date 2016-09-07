@@ -10,7 +10,7 @@ const discountRecord = new Record_1.default("non_standard_discount", ["origin_co
     "origin_code": new Text_1.default(1, 4, true),
     "destination_code": new Text_1.default(5, 4, true),
     "route_code": new ZeroFillInt_1.default(9, 5, true),
-    "railcard_code": new Text_1.default(14, 3),
+    "railcard_code": new Text_1.default(14, 3, true),
     "ticket_code": new Text_1.default(17, 3),
     "end_date": new DateField_1.default(20),
     "start_date": new DateField_1.default(28),

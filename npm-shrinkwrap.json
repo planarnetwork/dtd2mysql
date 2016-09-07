@@ -1,0 +1,73 @@
+{
+  "name": "uk-rail-import",
+  "version": "1.3.0",
+  "dependencies": {
+    "adm-zip": {
+      "version": "0.4.7",
+      "from": "adm-zip@>=0.4.7 <0.5.0",
+      "resolved": "https://registry.npmjs.org/adm-zip/-/adm-zip-0.4.7.tgz"
+    },
+    "bignumber.js": {
+      "version": "2.3.0",
+      "from": "bignumber.js@2.3.0",
+      "resolved": "https://registry.npmjs.org/bignumber.js/-/bignumber.js-2.3.0.tgz"
+    },
+    "bluebird": {
+      "version": "3.4.6",
+      "from": "bluebird@>=3.4.1 <4.0.0",
+      "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.4.6.tgz"
+    },
+    "core-util-is": {
+      "version": "1.0.2",
+      "from": "core-util-is@>=1.0.0 <1.1.0",
+      "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.2.tgz"
+    },
+    "immutable": {
+      "version": "3.8.1",
+      "from": "immutable@>=3.8.1 <4.0.0",
+      "resolved": "https://registry.npmjs.org/immutable/-/immutable-3.8.1.tgz"
+    },
+    "inherits": {
+      "version": "2.0.1",
+      "from": "inherits@>=2.0.1 <2.1.0",
+      "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
+    },
+    "isarray": {
+      "version": "0.0.1",
+      "from": "isarray@0.0.1",
+      "resolved": "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
+    },
+    "mysql": {
+      "version": "2.11.1",
+      "from": "mysql@>=2.9.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/mysql/-/mysql-2.11.1.tgz"
+    },
+    "promise-mysql": {
+      "version": "1.3.2",
+      "from": "promise-mysql@>=1.3.2 <2.0.0",
+      "resolved": "https://registry.npmjs.org/promise-mysql/-/promise-mysql-1.3.2.tgz",
+      "dependencies": {
+        "bluebird": {
+          "version": "2.11.0",
+          "from": "bluebird@>=2.10.2 <3.0.0",
+          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-2.11.0.tgz"
+        }
+      }
+    },
+    "readable-stream": {
+      "version": "1.1.14",
+      "from": "readable-stream@1.1.14",
+      "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.1.14.tgz"
+    },
+    "sqlstring": {
+      "version": "2.0.1",
+      "from": "sqlstring@2.0.1",
+      "resolved": "https://registry.npmjs.org/sqlstring/-/sqlstring-2.0.1.tgz"
+    },
+    "string_decoder": {
+      "version": "0.10.31",
+      "from": "string_decoder@>=0.10.0 <0.11.0",
+      "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz"
+    }
+  }
+}

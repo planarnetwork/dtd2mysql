@@ -11,6 +11,8 @@ import Schema from "../storage/schema/Schema";
 
 const AdmZip = require("adm-zip");
 const fs: any = Bluebird.promisifyAll(require("fs"));
+const TMP_PATH = "/tmp/fares-feed/";
+
 export default class ImportFaresFeed implements Command {
     private storage: RecordStorage;
     private schema: Schema;
@@ -108,5 +110,3 @@ export default class ImportFaresFeed implements Command {
         });
     }
 }
-
-const TMP_PATH = "/tmp/fares-feed/";

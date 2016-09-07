@@ -11,6 +11,7 @@ const InitDB_1 = require("./InitDB");
 const Container_1 = require("./Container");
 const ImportFaresFeed_1 = require("./ImportFaresFeed");
 const RebuildDB_1 = require("./RebuildDB");
+const CleanFaresData_1 = require("./CleanFaresData");
 class CLI {
     static getCommand(opt) {
         if (typeof this.commands[opt] !== 'function') {
@@ -29,7 +30,8 @@ class CLI {
 CLI.commands = {
     "--init-db": InitDB_1.default,
     "--rebuild-db": RebuildDB_1.default,
-    "--fares": ImportFaresFeed_1.default
+    "--fares": ImportFaresFeed_1.default,
+    "--fares-clean": CleanFaresData_1.default,
 };
 CLI.container = new Container_1.default();
 Object.defineProperty(exports, "__esModule", { value: true });

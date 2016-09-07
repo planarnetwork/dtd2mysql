@@ -53,6 +53,25 @@ export DATABASE_NAME=fares
 
 uk-rail-import --fares /path/to/RJFAFxxx.ZIP
 ```
+## Clean
+Remove historical records that no longer apply.
+### Unix pipes
+
+```
+uk-rail-import --fares-clean | mysql -uusername etc
+```
+
+### Environment profile
+```
+export DATABASE_USERNAME=root
+export DATABASE_PASSWORD=
+export DATABASE_HOSTNAME=localhost
+export DATABASE_NAME=fares
+
+uk-rail-import --fares-clean
+```
+
+
 ## Notes
 ### null values
 

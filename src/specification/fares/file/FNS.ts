@@ -14,7 +14,7 @@ const discountRecord = new Record(
         "origin_code": new Text(1, 4, true),
         "destination_code": new Text(5, 4, true),
         "route_code": new ZeroFillInt(9, 5, true),
-        "railcard_code": new Text(14, 3),
+        "railcard_code": new Text(14, 3, true),
         "ticket_code": new Text(17, 3),
         "end_date": new DateField(20),
         "start_date": new DateField(28),

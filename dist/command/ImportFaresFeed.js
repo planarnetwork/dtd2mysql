@@ -13,6 +13,7 @@ const path = require("path");
 const readline = require("readline");
 const AdmZip = require("adm-zip");
 const fs = Bluebird.promisifyAll(require("fs"));
+const TMP_PATH = "/tmp/fares-feed/";
 class ImportFaresFeed {
     constructor(container) {
         this.storage = container.get("record.storage");
@@ -99,4 +100,3 @@ class ImportFaresFeed {
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = ImportFaresFeed;
-const TMP_PATH = "/tmp/fares-feed/";

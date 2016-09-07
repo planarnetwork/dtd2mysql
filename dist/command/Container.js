@@ -7,6 +7,9 @@ class Container {
     constructor() {
         this.constructors = {
             "database": () => {
+                if (!process.env.DATEBASE_NAME) {
+                    return this.get("database.console");
+                }
                 return require('promise-mysql').createPool({
                     host: process.env.DATABASE_HOSTNAME,
                     user: process.env.DATABASE_USERNAME,
@@ -14,6 +17,20 @@ class Container {
                     database: process.env.DATABASE_NAME,
                     connectionLimit: 10,
                 });
+            },
+            "database.console": () => {
+                return {
+                    /**
+                     * Return a promise as for interop with promise-mysql
+                     */
+                    query: (query) => {
+                        return new Promise((resolve) => {
+                            console.log(query);
+                            resolve();
+                        });
+                    },
+                    end: () => { }
+                };
             },
             "record.storage": () => {
                 if (!process.env.DATEBASE_NAME) {

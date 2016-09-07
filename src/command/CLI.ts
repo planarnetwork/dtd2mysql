@@ -3,13 +3,15 @@ import InitDB from "./InitDB";
 import Container from "./Container";
 import ImportFaresFeed from "./ImportFaresFeed";
 import RebuildDB from "./RebuildDB";
+import CleanFaresData from "./CleanFaresData";
 
 export default class CLI {
 
     private static commands = {
         "--init-db": InitDB,
         "--rebuild-db": RebuildDB,
-        "--fares": ImportFaresFeed
+        "--fares": ImportFaresFeed,
+        "--fares-clean": CleanFaresData,
     };
 
     private static container = new Container();
