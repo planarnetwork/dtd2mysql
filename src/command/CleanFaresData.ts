@@ -9,6 +9,8 @@ export default class CleanFaresData implements Command {
         "DELETE FROM location WHERE end_date < CURDATE();",
         "DELETE FROM non_derivable_fare WHERE end_date < CURDATE() OR composite_indicator != 'Y';",
         "DELETE FROM non_derivable_fare_override WHERE end_date < CURDATE() OR composite_indicator != 'Y';",
+        "UPDATE non_derivable_fare_override SET adult_fare = null WHERE adult_fare = 99999 OR adult_fare > 999999;",
+        "UPDATE non_derivable_fare_override SET child_fare = null WHERE child_fare = 99999 OR child_fare > 999999;",
         "DELETE FROM non_standard_discount WHERE end_date < CURDATE();",
         "DELETE FROM railcard WHERE end_date < CURDATE();",
         "DELETE FROM railcard_minimum_fare WHERE end_date < CURDATE();",
