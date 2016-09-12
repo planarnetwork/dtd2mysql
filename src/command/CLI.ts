@@ -2,16 +2,18 @@
 import InitDB from "./InitDB";
 import Container from "./Container";
 import ImportFaresFeed from "./ImportFaresFeed";
-import RebuildDB from "./RebuildDB";
 import CleanFaresData from "./CleanFaresData";
+import ImportTimetable from "./ImportTimetable";
+import ConvertTimetable from "./ConvertTimetable";
 
 export default class CLI {
 
     private static commands = {
         "--init-db": InitDB,
-        "--rebuild-db": RebuildDB,
         "--fares": ImportFaresFeed,
         "--fares-clean": CleanFaresData,
+        "--timetable": ImportTimetable,
+        "--convert-timetable": ConvertTimetable
     };
 
     private static container = new Container();
@@ -27,7 +29,13 @@ export default class CLI {
     static async runCommand(args: string[]) {
         const [node, script, opt, ...argv] = args;
 
-        await this.getCommand(opt).run(argv);
+        try {
+            await this.getCommand(opt).run(argv);
+        }
+        catch (err) {
+            console.error(err);
+        }
+
         await this.container.get("database").end();
     }
 }

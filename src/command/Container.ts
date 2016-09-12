@@ -3,12 +3,13 @@ import MySQLRecord from "../storage/record/MySQLRecord";
 import MySQLSchema from "../storage/schema/MySQLSchema";
 import ConsoleRecord from "../storage/record/ConsoleRecord";
 import ConsoleSchema from "../storage/schema/ConsoleSchema";
+import * as Bluebird from "bluebird";
 
 export default class Container {
 
     private constructors = {
         "database": () => {
-            if (!process.env.DATEBASE_NAME) {
+            if (!process.env.DATABASE_NAME) {
                 return this.get("database.console");
             }
 
@@ -18,6 +19,7 @@ export default class Container {
                 password: process.env.DATABASE_PASSWORD,
                 database: process.env.DATABASE_NAME,
                 connectionLimit: 10,
+                multipleStatements: true,
                 //debug: ['ComQueryPacket', 'RowDataPacket']
             });
         },
@@ -26,9 +28,9 @@ export default class Container {
                 /**
                  * Return a promise as for interop with promise-mysql
                  */
-                query: (query: string) => {
-                    return new Promise((resolve) => {
-                        console.log(query);
+                query: (query: string): Bluebird<any> => {
+                    return new Bluebird((resolve) => {
+                        console.log(query+";");
                         resolve();
                     });
                 },
@@ -36,20 +38,20 @@ export default class Container {
             }
         },
         "record.storage": () => {
-            if (!process.env.DATEBASE_NAME) {
+            if (!process.env.DATABASE_NAME) {
                 return new ConsoleRecord(console.log);
             }
             new MySQLRecord(this.get("database"));
         },
         "schema": () => {
-            if (!process.env.DATEBASE_NAME) {
+            if (!process.env.DATABASE_NAME) {
                 return new ConsoleSchema(console.log);
             }
             new MySQLSchema(this.get("database"));
         },
         "logger": () => {
-            if (!process.env.DATEBASE_NAME) {
-                return () => {};
+            if (!process.env.DATABASE_NAME) {
+                return console.error;
             }
             return console.log;
         }
@@ -65,7 +67,6 @@ export default class Container {
         if (!this.cache[name]) {
             this.cache[name] = this.constructors[name]();
         }
-
         return this.cache[name];
     }
 

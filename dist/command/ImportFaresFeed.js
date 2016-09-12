@@ -7,7 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-const fares_1 = require("../specification/fares");
+const fares_1 = require('../specification/fares');
+const fares_2 = require("../specification/fares");
 const Bluebird = require("bluebird");
 const path = require("path");
 const readline = require("readline");
@@ -26,6 +27,8 @@ class ImportFaresFeed {
                 throw new Error("Please supply the path of the fares feed zip file.");
             }
             try {
+                this.logger("Creating schema...");
+                yield this.createSchema();
                 this.logger("Truncating tables...");
                 const truncatePromise = this.truncateTables();
                 this.logger("Extracting files...");
@@ -40,11 +43,34 @@ class ImportFaresFeed {
             }
         });
     }
+    createSchema() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let results = [];
+            for (const fileType in fares_1.default) {
+                for (const record of fares_1.default[fileType].getRecordTypes()) {
+                    try {
+                        yield this.schema.dropSchema(record);
+                        results.push(this.schema.createSchema(record));
+                    }
+                    catch (err) {
+                        console.log(err);
+                    }
+                }
+            }
+            try {
+                yield Promise.all(results);
+            }
+            catch (err) {
+                console.log(err);
+            }
+            this.logger("Database schema created");
+        });
+    }
     truncateTables() {
         return __awaiter(this, void 0, void 0, function* () {
             const promises = [];
-            for (const fileType in fares_1.default) {
-                for (const record of fares_1.default[fileType].getRecordTypes()) {
+            for (const fileType in fares_2.default) {
+                for (const record of fares_2.default[fileType].getRecordTypes()) {
                     promises.push(this.storage.truncate(record.name));
                 }
             }
@@ -56,7 +82,7 @@ class ImportFaresFeed {
             const files = yield fs.readdirAsync(TMP_PATH);
             const promises = [];
             for (const filename of files) {
-                const file = fares_1.default[path.extname(filename).slice(1)];
+                const file = fares_2.default[path.extname(filename).slice(1)];
                 if (!file) {
                     continue;
                 }

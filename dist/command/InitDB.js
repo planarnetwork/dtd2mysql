@@ -19,6 +19,7 @@ class InitDB {
             for (const fileType in fares_1.default) {
                 for (const record of fares_1.default[fileType].getRecordTypes()) {
                     try {
+                        yield this.schema.dropSchema(record);
                         results.push(this.schema.createSchema(record));
                     }
                     catch (err) {
@@ -26,7 +27,12 @@ class InitDB {
                     }
                 }
             }
-            yield Promise.all(results);
+            try {
+                yield Promise.all(results);
+            }
+            catch (err) {
+                console.log(err);
+            }
             this.logger("Database schema created");
         });
     }

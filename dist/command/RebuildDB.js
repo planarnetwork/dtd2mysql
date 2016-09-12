@@ -8,10 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 const fares_1 = require('../specification/fares');
+const fs = require("fs");
+const GTFS_SCHEMA = __dirname + "/../../asset/gtfs-schema.sql";
+const NATIVE_SCHEMA = __dirname + "/../../asset/native-schema.sql";
 class RebuildDB {
     constructor(container) {
         this.schema = container.get("schema");
         this.logger = container.get("logger");
+        this.db = container.get("database");
     }
     run(argv) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -27,6 +31,10 @@ class RebuildDB {
                     }
                 }
             }
+            const gtfsSchema = fs.readFileSync(GTFS_SCHEMA, "utf-8");
+            results.concat(gtfsSchema.split(";").map(this.db.query));
+            const nativeSchema = fs.readFileSync(NATIVE_SCHEMA, "utf-8");
+            results.concat(nativeSchema.split(";").map(this.db.query));
             try {
                 yield Promise.all(results);
             }

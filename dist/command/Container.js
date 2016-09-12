@@ -3,11 +3,12 @@ const MySQLRecord_1 = require("../storage/record/MySQLRecord");
 const MySQLSchema_1 = require("../storage/schema/MySQLSchema");
 const ConsoleRecord_1 = require("../storage/record/ConsoleRecord");
 const ConsoleSchema_1 = require("../storage/schema/ConsoleSchema");
+const Bluebird = require("bluebird");
 class Container {
     constructor() {
         this.constructors = {
             "database": () => {
-                if (!process.env.DATEBASE_NAME) {
+                if (!process.env.DATABASE_NAME) {
                     return this.get("database.console");
                 }
                 return require('promise-mysql').createPool({
@@ -16,6 +17,7 @@ class Container {
                     password: process.env.DATABASE_PASSWORD,
                     database: process.env.DATABASE_NAME,
                     connectionLimit: 10,
+                    multipleStatements: true,
                 });
             },
             "database.console": () => {
@@ -24,8 +26,8 @@ class Container {
                      * Return a promise as for interop with promise-mysql
                      */
                     query: (query) => {
-                        return new Promise((resolve) => {
-                            console.log(query);
+                        return new Bluebird((resolve) => {
+                            console.log(query + ";");
                             resolve();
                         });
                     },
@@ -33,20 +35,20 @@ class Container {
                 };
             },
             "record.storage": () => {
-                if (!process.env.DATEBASE_NAME) {
+                if (!process.env.DATABASE_NAME) {
                     return new ConsoleRecord_1.default(console.log);
                 }
                 new MySQLRecord_1.default(this.get("database"));
             },
             "schema": () => {
-                if (!process.env.DATEBASE_NAME) {
+                if (!process.env.DATABASE_NAME) {
                     return new ConsoleSchema_1.default(console.log);
                 }
                 new MySQLSchema_1.default(this.get("database"));
             },
             "logger": () => {
-                if (!process.env.DATEBASE_NAME) {
-                    return () => { };
+                if (!process.env.DATABASE_NAME) {
+                    return console.error;
                 }
                 return console.log;
             }

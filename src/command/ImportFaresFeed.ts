@@ -1,4 +1,5 @@
 
+import files from '../specification/fares';
 import Command from "./Command";
 import Container from "./Container";
 import faresFeed from "../specification/fares";
@@ -30,6 +31,8 @@ export default class ImportFaresFeed implements Command {
         }
 
         try {
+            this.logger("Creating schema...");
+            await this.createSchema();
             this.logger("Truncating tables...");
             const truncatePromise = this.truncateTables();
             this.logger("Extracting files...");
@@ -43,6 +46,31 @@ export default class ImportFaresFeed implements Command {
         catch (err) {
             this.logger(err);
         }
+    }
+
+    async createSchema() {
+        let results = [];
+
+        for (const fileType in files) {
+            for (const record of files[fileType].getRecordTypes()) {
+                try {
+                    await this.schema.dropSchema(record);
+                    results.push(this.schema.createSchema(record));
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            }
+        }
+
+        try {
+            await Promise.all(results);
+        }
+        catch (err) {
+            console.log(err);
+        }
+
+        this.logger("Database schema created");
     }
 
     async truncateTables() {

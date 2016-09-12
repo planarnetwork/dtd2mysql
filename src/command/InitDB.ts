@@ -19,6 +19,7 @@ export default class InitDB implements Command {
         for (const fileType in files) {
             for (const record of files[fileType].getRecordTypes()) {
                 try {
+                    await this.schema.dropSchema(record);
                     results.push(this.schema.createSchema(record));
                 }
                 catch (err) {
@@ -27,7 +28,12 @@ export default class InitDB implements Command {
             }
         }
 
-        await Promise.all(results);
+        try {
+            await Promise.all(results);
+        }
+        catch (err) {
+            console.log(err);
+        }
 
         this.logger("Database schema created");
     }

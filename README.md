@@ -1,8 +1,8 @@
 #UK Rail Import
 
-A tool to extract, transform and load (ETL) UK rail data feeds. This script will extract fares, flows, locations, group stations and restrictions from the ATOC fares feed and store them in a database.
+A tool to extract, transform and load (ETL) UK rail data feeds. This script will extract fares, flows, locations, group stations and restrictions from the ATOC fares feed and unofficial GTFS timetable feed and store them in a database.
 
-Although it is open data you will need to have obtain access via the [ATOC website](http://data.atoc.org/fares-data). The formal specification for the data inside the feed also available on the [ATOC website](http://data.atoc.org/sites/all/themes/atoc/files/SP0035.pdf).
+Although both the timetable and fares feed are open data you will need to obtain the fares feed via the [ATOC website](http://data.atoc.org/fares-data). The formal specification for the data inside the feed also available on the [ATOC website](http://data.atoc.org/sites/all/themes/atoc/files/SP0035.pdf).
 
 At the moment only mysql is supported as the data store but it could be extended to support other data stores. PRs are very welcome.
 
@@ -16,61 +16,24 @@ npm install -g uk-rail-import
 
 You can run the application by pipping the output to mysql, or you can use the environment/profile variables. The environment variable method connects directly to mysql to import the data whereas the unix pipes just pass SQL queries around.
 
-## Setup
-
-### Unix pipes
-
-SQL commands are piped from the stdout to a mysql (or other input) of your choice.
-
-```
-uk-rail-import --init-db | mysql -uusername etc
-```
-
-### Environment profile
-
-```
-export DATABASE_USERNAME=root
-export DATABASE_PASSWORD=
-export DATABASE_HOSTNAME=localhost
-export DATABASE_NAME=fares
-
-uk-rail-import --init-db 
-```
-
-## Run
-### Unix pipes
-
+## Fares 
+### Import
 ```
 uk-rail-import --fares /path/to/RJFAFxxx.ZIP | mysql -uusername etc
 ```
-
-### Environment profile
-```
-export DATABASE_USERNAME=root
-export DATABASE_PASSWORD=
-export DATABASE_HOSTNAME=localhost
-export DATABASE_NAME=fares
-
-uk-rail-import --fares /path/to/RJFAFxxx.ZIP
-```
-## Clean
-Remove historical records that no longer apply.
-### Unix pipes
-
+### Clean (remove old an inaccurate data)
 ```
 uk-rail-import --fares-clean | mysql -uusername etc
 ```
-
-### Environment profile
+## Timetables
+### Import
 ```
-export DATABASE_USERNAME=root
-export DATABASE_PASSWORD=
-export DATABASE_HOSTNAME=localhost
-export DATABASE_NAME=fares
-
-uk-rail-import --fares-clean
+uk-rail-import --timetable | mysql -uusername etc
 ```
-
+### Convert (schedule to connections)
+```
+uk-rail-import --convert-timetable | mysql -uusername etc
+```
 
 ## Notes
 ### null values
@@ -85,7 +48,7 @@ At present journey segments, class legends, rounding rules, print formats  and t
 
 ## Contributing
 
-Issues and PRs are very welcome. In particular, more data stores, more flexible configuration options (config file) and the timetable feeds would be useful. 
+Issues and PRs are very welcome.  
 
 If there is a way of automatically downloading the feed from the ATOC website that would be useful too.
 

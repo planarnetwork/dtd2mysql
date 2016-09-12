@@ -2,4 +2,9 @@
 
 import CLI from "./command/CLI";
 
-CLI.runCommand(process.argv);
+try {
+    CLI.runCommand(process.argv);
+}
+catch (err) {
+    console.error(err);
+}
