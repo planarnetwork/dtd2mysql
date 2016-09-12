@@ -229,9 +229,9 @@ const railcard = new Record(
         "cf_mkr": new Text(3, 1),
         "railcard_code": new Text(4, 3),
         "sequence_no": new Text(7, 4),
-        "ticket_code": new Text(11, 3),
+        "ticket_code": new Text(11, 3, true),
         "route_code": new ZeroFillInt(14, 5, true),
-        "location": new Text(19, 3),
+        "location": new Text(19, 3, true),
         "restriction_code": new Text(22, 2, true),
         "total_ban": new Text(24, 1, true)
     })

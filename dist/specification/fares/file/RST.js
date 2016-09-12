@@ -143,9 +143,9 @@ const railcard = new Record_1.default("restriction_railcard", ["cf_mkr", "railca
     "cf_mkr": new Text_1.default(3, 1),
     "railcard_code": new Text_1.default(4, 3),
     "sequence_no": new Text_1.default(7, 4),
-    "ticket_code": new Text_1.default(11, 3),
+    "ticket_code": new Text_1.default(11, 3, true),
     "route_code": new ZeroFillInt_1.default(14, 5, true),
-    "location": new Text_1.default(19, 3),
+    "location": new Text_1.default(19, 3, true),
     "restriction_code": new Text_1.default(22, 2, true),
     "total_ban": new Text_1.default(24, 1, true)
 }));
