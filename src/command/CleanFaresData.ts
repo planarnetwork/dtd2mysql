@@ -31,7 +31,7 @@ export default class CleanFaresData implements Command {
         "UPDATE railcard SET min_adults=2, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='2TR'",
         "UPDATE railcard SET min_adults=3, max_adults=9, min_children=0, max_children=0, max_passengers=9 WHERE railcard_code='GS3'",
         "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='JCP'",
-        "UPDATE railcard SET min_adults=0, max_adults=9, min_children=9, max_children=0, max_passengers=9 WHERE railcard_code=' '",
+        "UPDATE railcard SET min_adults=0, max_adults=9, min_children=9, max_children=0, max_passengers=9 WHERE railcard_code=''",
     ];
 
     private db;
