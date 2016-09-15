@@ -117,7 +117,7 @@ const trainQuota = new Record_1.default("restriction_train_quota", ["cf_mkr", "r
     "train_no": new Text_1.default(6, 6),
     "out_ret": new Text_1.default(12, 1),
     "location": new Text_1.default(13, 3),
-    "quota_ind": new Text_1.default(16, 1),
+    "quota_ind": new Text_1.default(16, 1, null),
     "arr_dep": new Text_1.default(17, 1)
 }));
 const trainPriviledge = new Record_1.default("restriction_train_priviledge", ["cf_mkr", "restriction_code", "train_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"], immutable_1.Map({

@@ -188,7 +188,7 @@ const trainQuota = new Record(
         "train_no": new Text(6, 6),
         "out_ret": new Text(12, 1),
         "location": new Text(13, 3),
-        "quota_ind": new Text(16, 1),
+        "quota_ind": new Text(16, 1, null),
         "arr_dep": new Text(17, 1)
     })
 );
