@@ -14,7 +14,7 @@ const nonDerivableFareRecord = new Record(
         "origin_code": new Text(1, 4),
         "destination_code": new Text(5, 4),
         "route_code": new ZeroFillInt(9, 5),
-        "railcard_code": new Text(14, 3),
+        "railcard_code": new Text(14, 3, true),
         "ticket_code": new Text(17, 3),
         "nd_record_type": new Text(20, 1),
         "end_date": new DateField(21),

@@ -10,7 +10,7 @@ const nonDerivableFareRecord = new Record_1.default("non_derivable_fare", ["orig
     "origin_code": new Text_1.default(1, 4),
     "destination_code": new Text_1.default(5, 4),
     "route_code": new ZeroFillInt_1.default(9, 5),
-    "railcard_code": new Text_1.default(14, 3),
+    "railcard_code": new Text_1.default(14, 3, true),
     "ticket_code": new Text_1.default(17, 3),
     "nd_record_type": new Text_1.default(20, 1),
     "end_date": new DateField_1.default(21),

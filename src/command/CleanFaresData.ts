@@ -39,6 +39,8 @@ export default class CleanFaresData implements Command {
         "DELETE FROM flow WHERE usage_code = 'G'",
         "DELETE FROM flow WHERE flow_id NOT IN (SELECT flow_id FROM fare)",
         "DELETE FROM location WHERE end_date < CURDATE()",
+        "DELETE FROM status_discount WHERE end_date < CURDATE()",
+        "DELETE FROM status WHERE end_date < CURDATE()",
         `DELETE FROM non_derivable_fare WHERE end_date < CURDATE() OR composite_indicator != 'Y' OR adult_fare < 50 OR child_fare < 50 OR (ticket_code IS NOT NULL AND ticket_code NOT IN (${TICKET_CODE_WHITELIST}))`,
         "UPDATE non_derivable_fare SET adult_fare = null WHERE adult_fare = 99999 OR adult_fare > 999999",
         "UPDATE non_derivable_fare SET child_fare = null WHERE child_fare = 99999 OR child_fare > 999999",
@@ -59,7 +61,9 @@ export default class CleanFaresData implements Command {
         "UPDATE railcard SET min_adults=2, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='2TR'",
         "UPDATE railcard SET min_adults=3, max_adults=9, min_children=0, max_children=0, max_passengers=9 WHERE railcard_code='GS3'",
         "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='JCP'",
-        "UPDATE railcard SET min_adults=0, max_adults=9, min_children=0, max_children=9, max_passengers=9 WHERE railcard_code=''"
+        "UPDATE railcard SET min_adults=0, max_adults=9, min_children=0, max_children=9, max_passengers=9 WHERE railcard_code=''",
+        "UPDATE railcard SET child_status = '001' WHERE child_status='XXX'",
+        "UPDATE status_discount SET discount_indicator = 'X' WHERE status_code != '000' and status_code != '001' AND discount_percentage = 0",
     ];
 
     private db;
