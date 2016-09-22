@@ -55,7 +55,8 @@ class ImportTimetable {
             "stop_times": "(trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,wtt_arrival_time,wtt_departure_time,platform,line,path,activity,engineering_allowance,pathing_allowance,performance_allowance)",
             "trips": "(route_id,service_id,trip_id,wheelchair_accessible,bikes_allowed,train_uid,train_status,train_category,train_identity,headcode,train_service_code,portion_id,power_type,timing_load,speed,oper_chars,train_class,sleepers,reservations,catering,service_branding,stp_indicator,uic_code,atoc_code,applicable_timetable)",
             "links": "(mode,from_stop_id,to_stop_id,link_secs,start_time,end_time,priority,start_date,end_date,monday,tuesday,wednesday,thursday,friday,saturday,sunday)",
-            "feed_info": "(feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date)"
+            "feed_info": "(feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date)",
+            "transfers": "(from_stop_id,to_stop_id,transfer_type,min_transfer_time)"
         };
         return Object.keys(fileHeadings).map((file) => {
             return this.db.query(`LOAD DATA LOCAL INFILE '${ATOC_GTFS_PATH}/${file}.txt' INTO TABLE ${file} FIELDS TERMINATED BY ',' IGNORE 1 LINES ${fileHeadings[file]}`);
