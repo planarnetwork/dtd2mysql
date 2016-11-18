@@ -1,6 +1,6 @@
 "use strict";
-const Text_1 = require('./Text');
-class Time extends Text_1.default {
+const Field_1 = require("./Field");
+class Time extends Field_1.default {
     constructor(start, nullable = false) {
         super(start, 4, nullable);
     }
@@ -8,7 +8,7 @@ class Time extends Text_1.default {
         return "TIME";
     }
     getValue(row) {
-        const value = super.getValue(row);
+        const value = super.extractValue(row);
         if (value === null) {
             return null;
         }

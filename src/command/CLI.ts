@@ -26,16 +26,14 @@ export default class CLI {
         return new this.commands[opt](this.container);
     }
 
-    static async runCommand(args: string[]) {
+    static runCommand(args: string[]) {
         const [node, script, opt, ...argv] = args;
 
-        try {
-            await this.getCommand(opt).run(argv);
-        }
-        catch (err) {
-            console.error(err);
-        }
-
-        await this.container.get("database").end();
+        this.getCommand(opt).run(argv)
+            .then(_ => this.container.get("database").end())
+            .catch(err => {
+                console.error(err);
+                this.container.get("database").end()
+        });
     }
 }

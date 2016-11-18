@@ -1,7 +1,7 @@
 
-import Text from './Text';
+import Field from "./Field";
 
-export default class Time extends Text {
+export default class Time extends Field {
 
     constructor(start: number, nullable: boolean = false) {
         super(start, 4, nullable);
@@ -12,7 +12,7 @@ export default class Time extends Text {
     }
 
     getValue(row: string) {
-        const value = super.getValue(row);
+        const value = super.extractValue(row);
 
         if (value === null) {
             return null;

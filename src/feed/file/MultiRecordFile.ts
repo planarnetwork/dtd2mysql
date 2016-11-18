@@ -8,7 +8,7 @@ export default class MultiRecordFile implements FeedFile {
     typeStart: number;
     typeLength: number;
 
-    constructor(recordTypes: Map<string, Record>, typeStart: number = 1, typeLength = 1) {
+    constructor(recordTypes: Map<string, Record>, typeStart: number = 1, typeLength: number = 1) {
         this.recordTypes = recordTypes;
         this.typeStart = typeStart;
         this.typeLength = typeLength;

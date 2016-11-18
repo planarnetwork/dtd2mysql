@@ -7,6 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
+const moment = require("moment");
 const ACCEPTED_RAILCARDS = "'','YNG','DIS','DIC','FAM','HMF','NGC','NEW','SRN','2TR','GS3','JCP'";
 const TICKET_CODE_WHITELIST = "'10A','10B','10F','10S','1AB','1AE','1AF','1AG','1AS','1BB','1BE','1BF'," +
     "'1BS','1CB','1CF','1CS','1DF','1DR','1DS','1DT','1EF','1ES','1FF','1FS','1GF','1GS','1HF','1HS','1SO'," +
@@ -35,14 +36,57 @@ const TICKET_CODE_WHITELIST = "'10A','10B','10F','10S','1AB','1AE','1AF','1AG','
     "'PSF','7TS','7TF','TRV','TRF','PB7','BMS','BQS','BAS','FTC','1DT','1JS','2KC','2LC','2MC','C1X','C2X'," +
     "'C3X','C4X','C5X','C3Y','C4Y','C5Y','C6Z','C7Z','C8Z','FAV','FBV','MIA','MIB','MIF','MIS','MJF','MJS'," +
     "'MMS','SDV','UFH','UFI','USH','USI','AM1','AM2','BFS','EGS','OLD','SOT','WTC'";
+const RESTRICTION_DATE_TABLES = ["restriction_time_date", "restriction_ticket_calendar", "restriction_train_date", "restriction_header_date"];
 class CleanFaresData {
     constructor(container) {
         this.db = container.get("database");
     }
     run(argv) {
         return __awaiter(this, void 0, void 0, function* () {
-            const promises = CleanFaresData.QUERIES.map(this.db.query);
+            const promises = CleanFaresData.QUERIES.map(q => this.queryWithRetry(q));
+            promises.push(this.updateRestrictionDates());
             yield Promise.all(promises);
+        });
+    }
+    queryWithRetry(query) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.db.query(query).catch(err => {
+                this.db.query(query); // retry
+            });
+        });
+    }
+    updateRestrictionDates() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const [current, future] = yield this.db.query("SELECT * FROM restriction_date ORDER BY cf_mkr");
+            const promises = RESTRICTION_DATE_TABLES.map(tableName => this.updateRestrictionDatesOnTable(tableName, current, future));
+            return Promise.all([].concat.apply([], promises)); // flatten
+        });
+    }
+    getStartDate(earliestDate, restrictionMonth) {
+        const earliestMonth = moment(earliestDate).format("MMDD");
+        const yearOffset = (parseInt(earliestMonth) > parseInt(restrictionMonth)) ? 1 : 0;
+        return moment((earliestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
+    }
+    getEndDate(latestDate, restrictionMonth) {
+        const latestMonth = moment(latestDate).format("MMDD");
+        const yearOffset = (parseInt(latestMonth) >= parseInt(restrictionMonth)) ? 0 : -1;
+        return moment((latestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
+    }
+    updateRestrictionDatesOnTable(tableName, current, future) {
+        return this.db.query(`SELECT * FROM ${tableName}`).map(record => {
+            const date = record.cf_mkr === 'C' ? current : future;
+            const startDate = this.getStartDate(date.start_date, record.date_from);
+            const endDate = this.getEndDate(date.end_date, record.date_to);
+            if (startDate.isAfter(endDate)) {
+                return this.db.query(`DELETE FROM ${tableName} WHERE id = ?`, [record.id]);
+            }
+            else {
+                return this.db.query(`UPDATE ${tableName} SET start_date = ?, end_date = ? WHERE id = ?`, [
+                    startDate.format("YYYY-MM-DD"),
+                    endDate.format('YYYY-MM-DD'),
+                    record.id
+                ]);
+            }
         });
     }
 }

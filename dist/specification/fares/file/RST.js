@@ -3,9 +3,11 @@ const immutable_1 = require('immutable');
 const Record_1 = require("../../../feed/record/Record");
 const ZeroFillInt_1 = require("../../../feed/field/ZeroFillInt");
 const DateField_1 = require("../../../feed/field/DateField");
+const NullDate_1 = require("../../../feed/field/NullDate");
 const Text_1 = require("../../../feed/field/Text");
 const MultiRecordFile_1 = require("../../../feed/file/MultiRecordFile");
 const Time_1 = require("../../../feed/field/Time");
+const BooleanField_1 = require("../../../feed/field/BooleanField");
 const dates = new Record_1.default("restriction_date", ["cf_mkr"], immutable_1.Map({
     "cf_mkr": new Text_1.default(3, 1),
     "start_date": new DateField_1.default(4),
@@ -27,7 +29,15 @@ const headerDate = new Record_1.default("restriction_header_date", ["cf_mkr", "r
     "restriction_code": new Text_1.default(4, 2),
     "date_from": new Text_1.default(6, 4),
     "date_to": new Text_1.default(10, 4),
-    "days": new Text_1.default(14, 7)
+    "start_date": new NullDate_1.default(),
+    "end_date": new NullDate_1.default(),
+    "monday": new BooleanField_1.default(14),
+    "tuesday": new BooleanField_1.default(15),
+    "wednesday": new BooleanField_1.default(16),
+    "thursday": new BooleanField_1.default(17),
+    "friday": new BooleanField_1.default(18),
+    "saturday": new BooleanField_1.default(19),
+    "sunday": new BooleanField_1.default(20)
 }));
 const headerLocation = new Record_1.default("restriction_header_route_location", ["cf_mkr", "restriction_code", "location_crs_code"], immutable_1.Map({
     "cf_mkr": new Text_1.default(3, 1),
@@ -54,7 +64,7 @@ const time = new Record_1.default("restriction_time", ["cf_mkr", "restriction_co
     "time_from": new Time_1.default(11),
     "time_to": new Time_1.default(15),
     "arr_dep_via": new Text_1.default(19, 1),
-    "location": new Text_1.default(20, 3),
+    "location": new Text_1.default(20, 3, true),
     "rstr_type": new Text_1.default(23, 1),
     "train_type": new Text_1.default(24, 1),
     "min_fare_flag": new Text_1.default(25, 1)
@@ -66,7 +76,15 @@ const timeDateBand = new Record_1.default("restriction_time_date", ["cf_mkr", "r
     "out_ret": new Text_1.default(10, 1),
     "date_from": new Text_1.default(11, 4),
     "date_to": new Text_1.default(15, 4),
-    "days": new Text_1.default(19, 7)
+    "start_date": new NullDate_1.default(),
+    "end_date": new NullDate_1.default(),
+    "monday": new BooleanField_1.default(19),
+    "tuesday": new BooleanField_1.default(20),
+    "wednesday": new BooleanField_1.default(21),
+    "thursday": new BooleanField_1.default(22),
+    "friday": new BooleanField_1.default(23),
+    "saturday": new BooleanField_1.default(24),
+    "sunday": new BooleanField_1.default(25),
 }));
 const timeToc = new Record_1.default("restriction_time_toc", ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "toc_code"], immutable_1.Map({
     "cf_mkr": new Text_1.default(3, 1),
@@ -109,7 +127,15 @@ const trainDate = new Record_1.default("restriction_train_date", ["cf_mkr", "res
     "out_ret": new Text_1.default(12, 1),
     "date_from": new Text_1.default(13, 4),
     "date_to": new Text_1.default(17, 4),
-    "days": new Text_1.default(21, 7)
+    "start_date": new NullDate_1.default(),
+    "end_date": new NullDate_1.default(),
+    "monday": new BooleanField_1.default(21),
+    "tuesday": new BooleanField_1.default(22),
+    "wednesday": new BooleanField_1.default(23),
+    "thursday": new BooleanField_1.default(24),
+    "friday": new BooleanField_1.default(25),
+    "saturday": new BooleanField_1.default(26),
+    "sunday": new BooleanField_1.default(27)
 }));
 const trainQuota = new Record_1.default("restriction_train_quota", ["cf_mkr", "restriction_code", "train_no", "out_ret", "location", "quota_ind", "arr_dep"], immutable_1.Map({
     "cf_mkr": new Text_1.default(3, 1),
@@ -162,7 +188,15 @@ const ticketCalendar = new Record_1.default("restriction_ticket_calendar", ["cf_
     "country_code": new Text_1.default(13, 1),
     "date_from": new Text_1.default(14, 4),
     "date_to": new Text_1.default(18, 4),
-    "days": new Text_1.default(22, 7)
+    "start_date": new NullDate_1.default(),
+    "end_date": new NullDate_1.default(),
+    "monday": new BooleanField_1.default(22),
+    "tuesday": new BooleanField_1.default(23),
+    "wednesday": new BooleanField_1.default(24),
+    "thursday": new BooleanField_1.default(25),
+    "friday": new BooleanField_1.default(26),
+    "saturday": new BooleanField_1.default(27),
+    "sunday": new BooleanField_1.default(28),
 }));
 const RST = new MultiRecordFile_1.default(immutable_1.Map({
     "RD": dates,

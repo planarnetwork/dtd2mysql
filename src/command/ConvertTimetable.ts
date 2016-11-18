@@ -22,7 +22,7 @@ export default class ConvertTimetable implements Command {
             SET @prevDepart := '00:00:00';
             SET @prevStation := '   ';
             INSERT INTO timetable_connection
-            SELECT @prevDepart, arrival_time, IF (stop_sequence = 1, '   ', @prevStation), parent_station, trip_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date, atoc_code, IF (train_category='BS' OR train_category='BR', 'bus', 'train'), @prevStation := parent_station, @prevDepart := departure_time
+            SELECT @prevDepart, arrival_time, IF (stop_sequence = 1, '   ', @prevStation), parent_station, train_uid, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date, atoc_code, IF (train_category='BS' OR train_category='BR', 'bus', 'train'), @prevStation := parent_station, @prevDepart := departure_time
             FROM stop_times
             LEFT JOIN stops USING (stop_id)
             LEFT JOIN trips USING (trip_id)

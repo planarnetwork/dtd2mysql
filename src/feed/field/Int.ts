@@ -1,11 +1,11 @@
 
-import Text from "./Text";
+import Field from "./Field";
 
-export default class Int extends Text {
+export default class Int extends Field {
     protected nullChars = [" ", "*", "9"];
 
-    getValue(row: string) {
-        const value = super.getValue(row);
+    getValue(row: string): number {
+        const value = super.extractValue(row);
 
         if (value === null) {
             return null;
@@ -17,7 +17,7 @@ export default class Int extends Text {
             throw new Error(`Error parsing int: "${value}" at position ${this.position}`);
         }
 
-        return value;
+        return intValue;
     }
 
     getType() {

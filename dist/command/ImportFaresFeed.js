@@ -26,21 +26,16 @@ class ImportFaresFeed {
             if (typeof argv[0] !== "string") {
                 throw new Error("Please supply the path of the fares feed zip file.");
             }
-            try {
-                this.logger("Creating schema...");
-                yield this.createSchema();
-                this.logger("Truncating tables...");
-                const truncatePromise = this.truncateTables();
-                this.logger("Extracting files...");
-                new AdmZip(argv[0]).extractAllTo(TMP_PATH);
-                yield truncatePromise;
-                this.logger("Importing data...");
-                yield this.doImport();
-                this.logger("Data imported.");
-            }
-            catch (err) {
-                this.logger(err);
-            }
+            this.logger("Creating schema...");
+            yield this.createSchema();
+            this.logger("Truncating tables...");
+            const truncatePromise = this.truncateTables();
+            this.logger("Extracting files...");
+            new AdmZip(argv[0]).extractAllTo(TMP_PATH);
+            yield truncatePromise;
+            this.logger("Importing data...");
+            yield this.doImport();
+            this.logger("Data imported.");
         });
     }
     createSchema() {

@@ -3,10 +3,11 @@ import {Map} from 'immutable';
 import Record from "../../../feed/record/Record";
 import ZeroFillInt from "../../../feed/field/ZeroFillInt";
 import DateField from "../../../feed/field/DateField";
-import Int from "../../../feed/field/Int";
+import NullDate from "../../../feed/field/NullDate";
 import Text from "../../../feed/field/Text";
 import MultiRecordFile from "../../../feed/file/MultiRecordFile";
 import Time from "../../../feed/field/Time";
+import BooleanField from "../../../feed/field/BooleanField";
 
 const dates = new Record(
     "restriction_date",
@@ -42,7 +43,15 @@ const headerDate = new Record(
         "restriction_code": new Text(4, 2),
         "date_from": new Text(6, 4),
         "date_to": new Text(10, 4),
-        "days": new Text(14, 7)
+        "start_date": new NullDate(),
+        "end_date": new NullDate(),
+        "monday": new BooleanField(14),
+        "tuesday": new BooleanField(15),
+        "wednesday": new BooleanField(16),
+        "thursday": new BooleanField(17),
+        "friday": new BooleanField(18),
+        "saturday": new BooleanField(19),
+        "sunday": new BooleanField(20)
     })
 );
 
@@ -89,7 +98,7 @@ const time = new Record(
         "time_from": new Time(11),
         "time_to": new Time(15),
         "arr_dep_via": new Text(19, 1),
-        "location": new Text(20, 3),
+        "location": new Text(20, 3, true),
         "rstr_type": new Text(23, 1),
         "train_type": new Text(24, 1),
         "min_fare_flag": new Text(25, 1)
@@ -106,7 +115,15 @@ const timeDateBand = new Record(
         "out_ret": new Text(10, 1),
         "date_from": new Text(11, 4),
         "date_to": new Text(15, 4),
-        "days": new Text(19, 7)
+        "start_date": new NullDate(),
+        "end_date": new NullDate(),
+        "monday": new BooleanField(19),
+        "tuesday": new BooleanField(20),
+        "wednesday": new BooleanField(21),
+        "thursday": new BooleanField(22),
+        "friday": new BooleanField(23),
+        "saturday": new BooleanField(24),
+        "sunday": new BooleanField(25),
     })
 );
 
@@ -175,7 +192,15 @@ const trainDate = new Record(
         "out_ret": new Text(12, 1),
         "date_from": new Text(13, 4),
         "date_to": new Text(17, 4),
-        "days": new Text(21, 7)
+        "start_date": new NullDate(),
+        "end_date": new NullDate(),
+        "monday": new BooleanField(21),
+        "tuesday": new BooleanField(22),
+        "wednesday": new BooleanField(23),
+        "thursday": new BooleanField(24),
+        "friday": new BooleanField(25),
+        "saturday": new BooleanField(26),
+        "sunday": new BooleanField(27)
     })
 );
 
@@ -258,7 +283,15 @@ const ticketCalendar = new Record(
         "country_code": new Text(13, 1),
         "date_from": new Text(14, 4),
         "date_to": new Text(18, 4),
-        "days": new Text(22, 7)
+        "start_date": new NullDate(),
+        "end_date": new NullDate(),
+        "monday": new BooleanField(22),
+        "tuesday": new BooleanField(23),
+        "wednesday": new BooleanField(24),
+        "thursday": new BooleanField(25),
+        "friday": new BooleanField(26),
+        "saturday": new BooleanField(27),
+        "sunday": new BooleanField(28),
     })
 );
 

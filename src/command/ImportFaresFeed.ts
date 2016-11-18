@@ -30,22 +30,17 @@ export default class ImportFaresFeed implements Command {
             throw new Error("Please supply the path of the fares feed zip file.");
         }
 
-        try {
-            this.logger("Creating schema...");
-            await this.createSchema();
-            this.logger("Truncating tables...");
-            const truncatePromise = this.truncateTables();
-            this.logger("Extracting files...");
-            new AdmZip(argv[0]).extractAllTo(TMP_PATH);
+        this.logger("Creating schema...");
+        await this.createSchema();
+        this.logger("Truncating tables...");
+        const truncatePromise = this.truncateTables();
+        this.logger("Extracting files...");
+        new AdmZip(argv[0]).extractAllTo(TMP_PATH);
 
-            await truncatePromise;
-            this.logger("Importing data...");
-            await this.doImport();
-            this.logger("Data imported.");
-        }
-        catch (err) {
-            this.logger(err);
-        }
+        await truncatePromise;
+        this.logger("Importing data...");
+        await this.doImport();
+        this.logger("Data imported.");
     }
 
     async createSchema() {

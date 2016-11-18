@@ -1,6 +1,6 @@
 {
   "name": "uk-rail-import",
-  "version": "2.0.0",
+  "version": "2.1.2",
   "dependencies": {
     "@types/form-data": {
       "version": "0.0.31",
@@ -309,6 +309,11 @@
       "version": "2.1.11",
       "from": "mime-types@>=2.1.7 <2.2.0",
       "resolved": "https://registry.npmjs.org/mime-types/-/mime-types-2.1.11.tgz"
+    },
+    "moment": {
+      "version": "2.15.1",
+      "from": "moment@latest",
+      "resolved": "https://registry.npmjs.org/moment/-/moment-2.15.1.tgz"
     },
     "mysql": {
       "version": "2.11.1",

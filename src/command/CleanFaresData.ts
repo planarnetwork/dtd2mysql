@@ -1,6 +1,8 @@
 
 import Command from "./Command";
 import Container from "./Container";
+import * as moment from "moment"
+import {start} from "repl";
 
 const ACCEPTED_RAILCARDS = "'','YNG','DIS','DIC','FAM','HMF','NGC','NEW','SRN','2TR','GS3','JCP'";
 const TICKET_CODE_WHITELIST = "'10A','10B','10F','10S','1AB','1AE','1AF','1AG','1AS','1BB','1BE','1BF'," +
@@ -30,6 +32,8 @@ const TICKET_CODE_WHITELIST = "'10A','10B','10F','10S','1AB','1AE','1AF','1AG','
     "'PSF','7TS','7TF','TRV','TRF','PB7','BMS','BQS','BAS','FTC','1DT','1JS','2KC','2LC','2MC','C1X','C2X'," +
     "'C3X','C4X','C5X','C3Y','C4Y','C5Y','C6Z','C7Z','C8Z','FAV','FBV','MIA','MIB','MIF','MIS','MJF','MJS'," +
     "'MMS','SDV','UFH','UFI','USH','USI','AM1','AM2','BFS','EGS','OLD','SOT','WTC'";
+
+const RESTRICTION_DATE_TABLES = ["restriction_time_date", "restriction_ticket_calendar", "restriction_train_date", "restriction_header_date"];
 
 export default class CleanFaresData implements Command {
 
@@ -73,9 +77,54 @@ export default class CleanFaresData implements Command {
     }
 
     async run(argv: string[]) {
-        const promises = CleanFaresData.QUERIES.map(this.db.query);
-
+        const promises = CleanFaresData.QUERIES.map(q => this.queryWithRetry(q));
+        promises.push(this.updateRestrictionDates());
         await Promise.all(promises);
     }
 
+    private async queryWithRetry(query: string) {
+        return this.db.query(query).catch(err => {
+            this.db.query(query); // retry
+        });
+    }
+
+    private async updateRestrictionDates() {
+        const [current, future] = await this.db.query("SELECT * FROM restriction_date ORDER BY cf_mkr");
+        const promises = RESTRICTION_DATE_TABLES.map(tableName => this.updateRestrictionDatesOnTable(tableName, current, future));
+
+        return Promise.all([].concat.apply([], promises)); // flatten
+    }
+
+    private getStartDate(earliestDate: Date, restrictionMonth: string) {
+        const earliestMonth = moment(earliestDate).format("MMDD");
+        const yearOffset = (parseInt(earliestMonth) > parseInt(restrictionMonth)) ? 1 : 0;
+
+        return moment((earliestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
+    }
+
+    private getEndDate(latestDate: Date, restrictionMonth: string) {
+        const latestMonth = moment(latestDate).format("MMDD");
+        const yearOffset = (parseInt(latestMonth) >= parseInt(restrictionMonth)) ? 0 : -1;
+
+        return moment((latestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
+    }
+
+    private updateRestrictionDatesOnTable(tableName: string, current, future): Promise<any>[] {
+        return this.db.query(`SELECT * FROM ${tableName}`).map(record => {
+            const date = record.cf_mkr === 'C' ? current : future;
+            const startDate = this.getStartDate(date.start_date, record.date_from);
+            const endDate = this.getEndDate(date.end_date, record.date_to);
+
+            if (startDate.isAfter(endDate)) {
+                return this.db.query(`DELETE FROM ${tableName} WHERE id = ?`, [record.id]);
+            }
+            else {
+                return this.db.query(`UPDATE ${tableName} SET start_date = ?, end_date = ? WHERE id = ?`, [
+                    startDate.format("YYYY-MM-DD"),
+                    endDate.format('YYYY-MM-DD'),
+                    record.id
+                ]);
+            }
+        });
+    }
 }
