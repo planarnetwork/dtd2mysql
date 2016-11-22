@@ -1,6 +1,6 @@
 {
   "name": "uk-rail-import",
-  "version": "2.1.2",
+  "version": "2.2.1",
   "description": "ETL (extract, transform, load) template for UK rail fares",
   "bin": {
     "uk-rail-import": "dist/index.js"
