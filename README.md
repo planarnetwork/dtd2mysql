@@ -17,28 +17,31 @@ npm install -g uk-rail-import
 You can run the application by pipping the output to mysql, or you can use the environment/profile variables. The environment variable method connects directly to mysql to import the data whereas the unix pipes just pass SQL queries around.
 
 ## Fares 
+
+Each of these commands relies on the database settings being set in the environment variables. For example `DATABASE_USERNAME=root DATABASE_NAME=fares uk-rail-import --fares-clean`.
+
 ### Import
 ```
-uk-rail-import --fares /path/to/RJFAFxxx.ZIP | mysql -uusername etc
+uk-rail-import --fares /path/to/RJFAFxxx.ZIP
 ```
 ### Clean (remove old an inaccurate data)
 ```
-uk-rail-import --fares-clean | mysql -uusername etc
+uk-rail-import --fares-clean
 ```
 ## Timetables
 ### Import
 ```
-uk-rail-import --timetable | mysql -uusername etc
+uk-rail-import --timetable
 ```
-### Convert (schedule to connections)
+### Clean (remove journeys in the past)
 ```
-uk-rail-import --convert-timetable | mysql -uusername etc
+uk-rail-import --timetable-clean
 ```
 
 ## Notes
 ### null values
 
-Values marked as all asterisks, emtpy spaces, or in the case of dates - zeros, are set to null. This is to preverse the integrity of the column type. For instance a route code is numerical although the data feed often uses ***** to signify any so this value is converted to null. 
+Values marked as all asterisks, empty spaces, or in the case of dates - zeros, are set to null. This is to preverse the integrity of the column type. For instance a route code is numerical although the data feed often uses ***** to signify any so this value is converted to null. 
 
 ### keys
 Although every record format has a composite key defined in the specification an `id` field is added as the fields in the composite key are sometimes null. This is no longer supported in modern versions of MariaDB or MySQL.

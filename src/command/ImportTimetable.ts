@@ -22,7 +22,7 @@ export default class ImportTimetable implements Command {
     }
 
     async run(argv: string[]) {
-        const schemaPromises = this.createSchema();
+        const schemaPromise = this.createSchema();
 
         this.logger("Prepping directory");
         this.createDownloadFolder();
@@ -34,16 +34,14 @@ export default class ImportTimetable implements Command {
         this.logger("Extracting feed");
         new AdmZip(ATOC_GTFS_FILENAME).extractAllTo(ATOC_GTFS_PATH);
 
-        await Promise.all(schemaPromises);
+        await schemaPromise;
 
         this.logger("Importing flat files");
         await Promise.all(this.importFiles());
     }
 
-    private createSchema(): Promise<any>[] {
-        const gtfsSchema = fs.readFileSync(GTFS_SCHEMA, "utf-8");
-
-        return gtfsSchema.split(";").map(q => this.db.query(q));
+    private createSchema(): Promise<any> {
+        return this.db.query(fs.readFileSync(GTFS_SCHEMA, "utf-8"));
     }
 
     private createDownloadFolder(): void {
