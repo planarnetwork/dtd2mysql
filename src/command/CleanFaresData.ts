@@ -73,7 +73,7 @@ export default class CleanFaresData implements Command {
     }
 
     async run(argv: string[]) {
-        const promises = CleanFaresData.QUERIES.map(this.db.query);
+        const promises = CleanFaresData.QUERIES.map(q => this.db.query(q));
 
         await Promise.all(promises);
     }

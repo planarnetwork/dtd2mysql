@@ -4,7 +4,7 @@ import Container from "./Container";
 import ImportFaresFeed from "./ImportFaresFeed";
 import CleanFaresData from "./CleanFaresData";
 import ImportTimetable from "./ImportTimetable";
-import ConvertTimetable from "./ConvertTimetable";
+import CleanTimetableData from "./CleanTimetableData";
 
 export default class CLI {
 
@@ -13,7 +13,7 @@ export default class CLI {
         "--fares": ImportFaresFeed,
         "--fares-clean": CleanFaresData,
         "--timetable": ImportTimetable,
-        "--convert-timetable": ConvertTimetable
+        "--timetable-clean": CleanTimetableData
     };
 
     private static container = new Container();
