@@ -1,8 +1,8 @@
 
-import Text from './Text';
+import Field from "./Field";
 
-export default class DateField extends Text {
-    protected nullChars = [" ", "*", "0"];
+export default class DateField extends Field {
+    protected nullChars: string[] = [" ", "*", "0"];
 
     constructor(start: number, nullable: boolean = false) {
         super(start, 8, nullable);
@@ -13,7 +13,7 @@ export default class DateField extends Text {
     }
 
     getValue(row: string) {
-        const value = super.getValue(row);
+        const value = super.extractValue(row);
 
         if (value === null) {
             return null;

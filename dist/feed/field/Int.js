@@ -1,12 +1,12 @@
 "use strict";
-const Text_1 = require("./Text");
-class Int extends Text_1.default {
+const Field_1 = require("./Field");
+class Int extends Field_1.default {
     constructor() {
         super(...arguments);
         this.nullChars = [" ", "*", "9"];
     }
     getValue(row) {
-        const value = super.getValue(row);
+        const value = super.extractValue(row);
         if (value === null) {
             return null;
         }
@@ -14,7 +14,7 @@ class Int extends Text_1.default {
         if (isNaN(intValue)) {
             throw new Error(`Error parsing int: "${value}" at position ${this.position}`);
         }
-        return value;
+        return intValue;
     }
     getType() {
         return this.getIntType() + "(" + this.length + ") unsigned";

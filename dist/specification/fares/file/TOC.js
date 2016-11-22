@@ -1,5 +1,5 @@
 "use strict";
-const immutable_1 = require('immutable');
+const immutable_1 = require("immutable");
 const Record_1 = require("../../../feed/record/Record");
 const Text_1 = require("../../../feed/field/Text");
 const MultiRecordFile_1 = require("../../../feed/file/MultiRecordFile");

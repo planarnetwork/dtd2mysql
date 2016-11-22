@@ -4,6 +4,7 @@ import MySQLSchema from "../storage/schema/MySQLSchema";
 import ConsoleRecord from "../storage/record/ConsoleRecord";
 import ConsoleSchema from "../storage/schema/ConsoleSchema";
 import * as Bluebird from "bluebird";
+import RecordStorage from "../storage/record/RecordStorage";
 
 export default class Container {
 
@@ -37,17 +38,17 @@ export default class Container {
                 end: () => {}
             }
         },
-        "record.storage": () => {
+        "record.storage": (): RecordStorage => {
             if (!process.env.DATABASE_NAME) {
                 return new ConsoleRecord(console.log);
             }
-            new MySQLRecord(this.get("database"));
+            return new MySQLRecord(this.get("database"));
         },
         "schema": () => {
             if (!process.env.DATABASE_NAME) {
                 return new ConsoleSchema(console.log);
             }
-            new MySQLSchema(this.get("database"));
+            return new MySQLSchema(this.get("database"));
         },
         "logger": () => {
             if (!process.env.DATABASE_NAME) {

@@ -2,12 +2,12 @@
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-const fares_1 = require('../specification/fares');
+const fares_1 = require("../specification/fares");
 const fares_2 = require("../specification/fares");
 const Bluebird = require("bluebird");
 const path = require("path");
@@ -26,21 +26,16 @@ class ImportFaresFeed {
             if (typeof argv[0] !== "string") {
                 throw new Error("Please supply the path of the fares feed zip file.");
             }
-            try {
-                this.logger("Creating schema...");
-                yield this.createSchema();
-                this.logger("Truncating tables...");
-                const truncatePromise = this.truncateTables();
-                this.logger("Extracting files...");
-                new AdmZip(argv[0]).extractAllTo(TMP_PATH);
-                yield truncatePromise;
-                this.logger("Importing data...");
-                yield this.doImport();
-                this.logger("Data imported.");
-            }
-            catch (err) {
-                this.logger(err);
-            }
+            this.logger("Creating schema...");
+            yield this.createSchema();
+            this.logger("Truncating tables...");
+            const truncatePromise = this.truncateTables();
+            this.logger("Extracting files...");
+            new AdmZip(argv[0]).extractAllTo(TMP_PATH);
+            yield truncatePromise;
+            this.logger("Importing data...");
+            yield this.doImport();
+            this.logger("Data imported.");
         });
     }
     createSchema() {

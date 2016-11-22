@@ -38,13 +38,13 @@ class Container {
                 if (!process.env.DATABASE_NAME) {
                     return new ConsoleRecord_1.default(console.log);
                 }
-                new MySQLRecord_1.default(this.get("database"));
+                return new MySQLRecord_1.default(this.get("database"));
             },
             "schema": () => {
                 if (!process.env.DATABASE_NAME) {
                     return new ConsoleSchema_1.default(console.log);
                 }
-                new MySQLSchema_1.default(this.get("database"));
+                return new MySQLSchema_1.default(this.get("database"));
             },
             "logger": () => {
                 if (!process.env.DATABASE_NAME) {

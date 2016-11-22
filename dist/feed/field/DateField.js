@@ -1,6 +1,6 @@
 "use strict";
-const Text_1 = require('./Text');
-class DateField extends Text_1.default {
+const Field_1 = require("./Field");
+class DateField extends Field_1.default {
     constructor(start, nullable = false) {
         super(start, 8, nullable);
         this.nullChars = [" ", "*", "0"];
@@ -9,7 +9,7 @@ class DateField extends Text_1.default {
         return "DATE";
     }
     getValue(row) {
-        const value = super.getValue(row);
+        const value = super.extractValue(row);
         if (value === null) {
             return null;
         }
