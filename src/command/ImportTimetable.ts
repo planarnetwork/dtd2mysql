@@ -43,7 +43,7 @@ export default class ImportTimetable implements Command {
     private createSchema(): Promise<any>[] {
         const gtfsSchema = fs.readFileSync(GTFS_SCHEMA, "utf-8");
 
-        return gtfsSchema.split(";").map(this.db.query);
+        return gtfsSchema.split(";").map(q => this.db.query(q));
     }
 
     private createDownloadFolder(): void {

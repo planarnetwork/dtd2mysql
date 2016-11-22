@@ -38,7 +38,7 @@ class ImportTimetable {
     }
     createSchema() {
         const gtfsSchema = fs.readFileSync(GTFS_SCHEMA, "utf-8");
-        return gtfsSchema.split(";").map(this.db.query);
+        return gtfsSchema.split(";").map(q => this.db.query(q));
     }
     createDownloadFolder() {
         if (fs.existsSync(ATOC_GTFS_PATH)) {
