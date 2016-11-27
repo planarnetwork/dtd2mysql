@@ -244,7 +244,7 @@ CREATE TABLE `trips` (
     # accommodated.
     bikes_allowed TINYINT(1), #0 for no information, 1 for at least
     # one bicycle accommodated, 2 for no bicycles accommodated
-    train_uid VARCHAR(10),
+    train_uid VARCHAR(30),
     train_status VARCHAR(10),
     train_category VARCHAR(10),
     train_identity VARCHAR(10),
