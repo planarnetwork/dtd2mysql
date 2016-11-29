@@ -2,7 +2,7 @@
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
@@ -23,7 +23,7 @@ class ImportTimetable {
     }
     run(argv) {
         return __awaiter(this, void 0, void 0, function* () {
-            const schemaPromises = this.createSchema();
+            const schemaPromise = this.createSchema();
             this.logger("Prepping directory");
             this.createDownloadFolder();
             this.logger("Downloading GTFS feed");
@@ -31,14 +31,13 @@ class ImportTimetable {
             yield streamToPromise(stream);
             this.logger("Extracting feed");
             new AdmZip(ATOC_GTFS_FILENAME).extractAllTo(ATOC_GTFS_PATH);
-            yield Promise.all(schemaPromises);
+            yield schemaPromise;
             this.logger("Importing flat files");
             yield Promise.all(this.importFiles());
         });
     }
     createSchema() {
-        const gtfsSchema = fs.readFileSync(GTFS_SCHEMA, "utf-8");
-        return gtfsSchema.split(";").map(this.db.query);
+        return this.db.query(fs.readFileSync(GTFS_SCHEMA, "utf-8"));
     }
     createDownloadFolder() {
         if (fs.existsSync(ATOC_GTFS_PATH)) {
