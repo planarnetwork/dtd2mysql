@@ -98,6 +98,8 @@ CleanFaresData.QUERIES = [
     "DELETE FROM location WHERE end_date < CURDATE()",
     "DELETE FROM status_discount WHERE end_date < CURDATE()",
     "DELETE FROM status WHERE end_date < CURDATE()",
+    "DELETE FROM route_location WHERE end_date < CURDATE()",
+    "DELETE FROM route WHERE end_date < CURDATE()",
     `DELETE FROM non_derivable_fare WHERE end_date < CURDATE() OR composite_indicator != 'Y' OR adult_fare < 50 OR child_fare < 50 OR (ticket_code IS NOT NULL AND ticket_code NOT IN (${TICKET_CODE_WHITELIST}))`,
     "UPDATE non_derivable_fare SET adult_fare = null WHERE adult_fare = 99999 OR adult_fare > 999999",
     "UPDATE non_derivable_fare SET child_fare = null WHERE child_fare = 99999 OR child_fare > 999999",
