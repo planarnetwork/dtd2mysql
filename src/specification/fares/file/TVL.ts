@@ -21,7 +21,7 @@ const ticketValidity = new Record(
         "ret_months": new Int(44, 2),
         "ret_after_days": new Int(46, 2),
         "ret_after_months": new Int(48, 2),
-        "ret_after_day": new Text(50, 2),
+        "ret_after_day": new Text(50, 2, true),
         "break_out": new Text(52, 1),
         "break_in": new Text(53, 1),
         "out_description": new Text(54, 14),
