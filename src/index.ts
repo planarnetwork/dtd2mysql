@@ -1,4 +1,4 @@
-#! /usr/bin/env node
+#!./src/../node_modules/.bin/ts-node
 
 import CLI from "./command/CLI";
 

@@ -97,28 +97,24 @@ export default class CleanFaresData implements Command {
         return Promise.all([].concat.apply([], promises)); // flatten
     }
 
-    private getStartDate(earliestDate: Date, restrictionMonth: string) {
+    private getFirstDateAfter(earliestDate: Date, restrictionMonth: string) {
         const earliestMonth = moment(earliestDate).format("MMDD");
         const yearOffset = (parseInt(earliestMonth) > parseInt(restrictionMonth)) ? 1 : 0;
 
         return moment((earliestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
     }
 
-    private getEndDate(latestDate: Date, restrictionMonth: string) {
-        const latestMonth = moment(latestDate).format("MMDD");
-        const yearOffset = (parseInt(latestMonth) >= parseInt(restrictionMonth)) ? 0 : -1;
-
-        return moment((latestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
-    }
-
     private updateRestrictionDatesOnTable(tableName: string, current, future): Promise<any>[] {
         return this.db.query(`SELECT * FROM ${tableName}`).map(record => {
             const date = record.cf_mkr === 'C' ? current : future;
-            const startDate = this.getStartDate(date.start_date, record.date_from);
-            const endDate = this.getEndDate(date.end_date, record.date_to);
+            const startDate = this.getFirstDateAfter(date.start_date, record.date_from);
+            const endDate = this.getFirstDateAfter(startDate.toDate(), record.date_to);
 
             if (startDate.isAfter(endDate)) {
-                return this.db.query(`DELETE FROM ${tableName} WHERE id = ?`, [record.id]);
+                throw new Error(`Error processing ${record} start date after end date: 
+                    ${startDate.format("YYYY-MM-DD")}
+                    ${endDate.format("YYYY-MM-DD")}
+                `);
             }
             else {
                 return this.db.query(`UPDATE ${tableName} SET start_date = ?, end_date = ? WHERE id = ?`, [

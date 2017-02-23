@@ -14,7 +14,7 @@ export default class Int extends Field {
         const intValue = parseInt(value);
 
         if (isNaN(intValue)) {
-            throw new Error(`Error parsing int: "${value}" at position ${this.position}`);
+            throw new Error(`Error parsing int: "${value}" in ${row} at position ${this.position}`);
         }
 
         return intValue;
