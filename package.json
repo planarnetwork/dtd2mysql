@@ -1,13 +1,14 @@
 {
   "name": "uk-rail-import",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "ETL (extract, transform, load) template for UK rail fares",
   "bin": {
-    "uk-rail-import": "bin/uk-rail-import.sh"
+    "uk-rail-import": "dist/index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "run": "ts-node ./src/index.ts"
+    "run": "ts-node ./src/index.ts",
+    "build": "tsc -p ./ --outDir dist/"
   },
   "repository": {
     "type": "git",
@@ -31,9 +32,7 @@
     "immutable": "^3.8.1",
     "moment": "^2.15.1",
     "promise-mysql": "^1.3.2",
-    "request": "^2.74.0",
-    "ts-node": "^2.1.0",
-    "typescript": "^2.2.0"
+    "request": "^2.74.0"
   },
   "engines": {
     "node": "^6.9.0"
@@ -41,6 +40,8 @@
   "devDependencies": {
     "@types/request": "0.0.30",
     "@types/bluebird": "^3.0.32",
-    "@types/node": "^7.0.5"
+    "@types/node": "^7.0.5",
+    "typescript": "^2.2.0",
+    "ts-node": "^2.1.0"
   }
 }

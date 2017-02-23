@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 
 import CLI from "./command/CLI";
 
