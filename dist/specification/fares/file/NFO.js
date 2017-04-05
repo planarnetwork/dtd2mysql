@@ -19,7 +19,7 @@ const nonDerivableFareRecord = new Record_1.default("non_derivable_fare_override
     "quote_date": new DateField_1.default(37),
     "suppress_mkr": new Text_1.default(45, 1),
     "adult_fare": new Int_1.default(46, 8, true),
-    "child_fare": new Int_1.default(55, 8, true),
+    "child_fare": new Int_1.default(54, 8, true),
     "restriction_code": new Text_1.default(62, 2),
     "composite_indicator": new Text_1.default(64, 1),
     "cross_london_ind": new Text_1.default(65, 1),

@@ -108,7 +108,7 @@ export default class ImportFaresFeed implements Command {
         });
 
         readEvents.on("line", line => {
-            if (line.substr(0, 3) === '/!!') { return; }
+            if (line === '' || line.substr(0, 3) === '/!!') { return; }
 
             try {
                 const record = file.getRecord(line);

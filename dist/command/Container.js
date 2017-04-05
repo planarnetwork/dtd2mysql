@@ -17,7 +17,7 @@ class Container {
                     user: process.env.DATABASE_USERNAME,
                     password: process.env.DATABASE_PASSWORD,
                     database: process.env.DATABASE_NAME,
-                    connectionLimit: 10,
+                    connectionLimit: 2,
                     multipleStatements: true,
                 });
             },

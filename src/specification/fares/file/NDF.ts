@@ -22,7 +22,7 @@ const nonDerivableFareRecord = new Record(
         "quote_date": new DateField(37),
         "suppress_mkr": new Text(45, 1),
         "adult_fare": new Int(46, 8, true),
-        "child_fare": new Int(55, 8, true),
+        "child_fare": new Int(54, 8, true),
         "restriction_code": new Text(62, 2),
         "composite_indicator": new Text(64, 1),
         "cross_london_ind": new Text(65, 1),

@@ -96,7 +96,7 @@ class ImportFaresFeed {
             input: fs.createReadStream(TMP_PATH + filename)
         });
         readEvents.on("line", line => {
-            if (line.substr(0, 3) === '/!!') {
+            if (line === '' || line.substr(0, 3) === '/!!') {
                 return;
             }
             try {
