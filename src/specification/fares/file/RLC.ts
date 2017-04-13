@@ -11,7 +11,7 @@ const record = new Record(
     "railcard",
     ["railcard_code", "end_date"],
     Map({
-        "railcard_code": new Text(0, 3),
+        "railcard_code": new Text(0, 3, true),
         "end_date": new DateField(3),
         "start_date": new DateField(11),
         "quote_date": new DateField(19),

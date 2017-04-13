@@ -7,7 +7,7 @@ const Int_1 = require("../../../feed/field/Int");
 const Text_1 = require("../../../feed/field/Text");
 const SingleRecordFile_1 = require("../../../feed/file/SingleRecordFile");
 const record = new Record_1.default("railcard", ["railcard_code", "end_date"], immutable_1.Map({
-    "railcard_code": new Text_1.default(0, 3),
+    "railcard_code": new Text_1.default(0, 3, true),
     "end_date": new DateField_1.default(3),
     "start_date": new DateField_1.default(11),
     "quote_date": new DateField_1.default(19),
