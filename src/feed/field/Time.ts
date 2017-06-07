@@ -11,9 +11,7 @@ export default class Time extends Field {
         return "TIME";
     }
 
-    getValue(row: string) {
-        const value = super.extractValue(row);
-
+    getValue(value: string | null) {
         if (value === null) {
             return null;
         }

@@ -1,9 +1,9 @@
 
 abstract class Field {
-    protected position: number;
-    protected length: number;
-    protected nullable: boolean;
-    protected nullChars: string[] = [" ", "*"];
+    public readonly position: number;
+    public readonly length: number;
+    public readonly nullable: boolean;
+    public readonly nullChars: string[] = [" ", "*"];
 
     constructor(position: number, length: number, isNullable: boolean = false) {
         this.position = position;
@@ -11,23 +11,12 @@ abstract class Field {
         this.nullable = isNullable;
     }
 
-    isNullable(): boolean {
+    public isNullable(): boolean {
         return this.nullable;
     }
 
-    protected getNullValues() {
+    public getNullValues() {
         return this.nullChars.map( c => Array(this.length + 1).join(c));
-    }
-
-    extractValue(row: string): string {
-        const value = row.substr(this.position, this.length);
-
-        if (this.isNullable() && this.getNullValues().indexOf(value) !== -1) {
-            return null;
-        }
-        else {
-            return value;
-        }
     }
 
     abstract getValue(row: string): string | number | Date;
@@ -35,3 +24,5 @@ abstract class Field {
 }
 
 export default Field;
+
+export type FieldValue = string | number | Date;

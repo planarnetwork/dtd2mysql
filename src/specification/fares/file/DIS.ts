@@ -1,7 +1,6 @@
 
 import {Map} from 'immutable';
 import Record from "../../../feed/record/Record";
-import ZeroFillInt from "../../../feed/field/ZeroFillInt";
 import DateField from "../../../feed/field/DateField";
 import Int from "../../../feed/field/Int";
 import Text from "../../../feed/field/Text";

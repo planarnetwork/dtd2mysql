@@ -2,19 +2,17 @@
 import Field from "./Field";
 
 export default class Int extends Field {
-    protected nullChars = [" ", "*", "9"];
+    public nullChars = [" ", "*", "9"];
 
-    getValue(row: string): number {
-        const value = super.extractValue(row);
-
-        if (value === null) {
+    getValue(value: string | null): number {
+        if (value === null || value === "") {
             return null;
         }
 
         const intValue = parseInt(value);
 
         if (isNaN(intValue)) {
-            throw new Error(`Error parsing int: "${value}" in ${row} at position ${this.position}`);
+            throw new Error(`Error parsing int: "${value}" at position ${this.position}`);
         }
 
         return intValue;

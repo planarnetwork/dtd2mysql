@@ -13,9 +13,7 @@ export default class BooleanField extends Field {
         return "TINYINT(1)";
     }
 
-    getValue(row: string) {
-        const value = super.extractValue(row);
-
+    getValue(value: string | null) {
         if (value === null) {
             return null;
         }

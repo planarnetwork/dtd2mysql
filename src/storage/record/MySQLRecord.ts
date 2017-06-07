@@ -27,12 +27,18 @@ export default class MySQLRecord implements RecordStorage {
         return this.db.query(`TRUNCATE ${tableName}`);
     }
 
-    flush(tableName: string) {
-        const promise = this.db.query(`INSERT INTO ${tableName} VALUES ?`, [this.inserts[tableName]]);
-
+    async flush(tableName: string) {
+        const values = this.inserts[tableName];
         this.inserts[tableName] = [];
 
-        return promise;
+        try {
+            await this.db.query(`INSERT INTO ${tableName} VALUES ?`, [values]);
+        }
+        catch (err) {
+            console.log(`Error flushing ${tableName} with values ${values[0].join("\n")}`);
+            console.log(err.stack);
+            process.abort();
+        }
     }
 
     flushAll() {

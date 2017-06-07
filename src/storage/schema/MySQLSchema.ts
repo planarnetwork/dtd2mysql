@@ -15,11 +15,11 @@ export default class MySQLSchema implements Schema {
     }
 
     protected getSchema(record: Record) {
-        const fields = record.fields.map(this.getField.bind(this)).join(',');
         const id = "id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY";
-        const unique = `UNIQUE ${record.name}_key (${record.key.join(',')})`;
-        const indexes = record.indexes.map(index => `KEY ${index} (${index})`);
-        const table = [id, fields, unique, ...indexes].join(',');
+        const fields = "," + record.fields.map(this.getField.bind(this)).join(',');
+        const unique = record.key.length === 0 ? "" : `, UNIQUE ${record.name}_key (${record.key.join(',')})`;
+        const indexes = record.indexes.map(index => `, KEY ${index} (${index})`);
+        const table = [id, fields, unique, ...indexes].join('');
 
         return `CREATE TABLE IF NOT EXISTS ${record.name} (${table}) Engine=InnoDB`;
     }

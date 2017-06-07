@@ -7,7 +7,7 @@ export default class NullDate extends Field {
         super(0, 0, true);
     }
 
-    getValue(row:string) {
+    getValue(value: string | null) {
         return null;
     }
 

@@ -2,7 +2,7 @@
 import Field from "./Field";
 
 export default class DateField extends Field {
-    protected nullChars: string[] = [" ", "*", "0"];
+    public nullChars: string[] = [" ", "*", "0"];
 
     constructor(start: number, nullable: boolean = false) {
         super(start, 8, nullable);
@@ -12,9 +12,7 @@ export default class DateField extends Field {
         return "DATE";
     }
 
-    getValue(row: string) {
-        const value = super.extractValue(row);
-
+    getValue(value: string | null) {
         if (value === null) {
             return null;
         }

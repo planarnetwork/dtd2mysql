@@ -3,20 +3,27 @@
 import Field from "../field/Field";
 
 export default class Record {
-    name: string;
-    key: string[];
-    indexes: string[];
-    fields: Immutable.Map<string, Field>;
 
-    constructor(name: string, key: string[], fields: Immutable.Map<string, Field>, indexes: string[] = []) {
-        this.name = name;
-        this.key = key;
-        this.indexes = indexes;
-        this.fields = fields;
+    constructor(public readonly name: string,
+                public readonly key: string[],
+                public readonly fields: Immutable.Map<string, Field>,
+                public readonly indexes: string[] = []) {
     }
 
-    extractRecord(line: string) {
-        return [null].concat(this.fields.toArray().map(f => f.getValue(line)));
+    public extractRecord(line: string) {
+        return [null].concat(this.fields.toArray().map(f => f.getValue(this.extractValue(f, line))));
     }
+
+    private extractValue(field: Field, row: string): string | null {
+        const value = row.substr(field.position, field.length);
+
+        if (field.isNullable() && field.getNullValues().indexOf(value) !== -1) {
+            return null;
+        }
+        else {
+            return value;
+        }
+    }
+
 
 }

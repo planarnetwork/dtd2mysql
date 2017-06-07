@@ -5,6 +5,7 @@ import ImportFaresFeed from "./ImportFaresFeed";
 import CleanFaresData from "./CleanFaresData";
 import ImportTimetable from "./ImportTimetable";
 import CleanTimetableData from "./CleanTimetableData";
+import ImportRouteingGuide from "./ImportRouteingGuide";
 
 export default class CLI {
 
@@ -12,6 +13,7 @@ export default class CLI {
         "--init-db": InitDB,
         "--fares": ImportFaresFeed,
         "--fares-clean": CleanFaresData,
+        "--routeing": ImportRouteingGuide,
         "--timetable": ImportTimetable,
         "--timetable-clean": CleanTimetableData
     };
