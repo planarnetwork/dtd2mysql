@@ -1,6 +1,6 @@
 {
   "name": "uk-rail-import",
-  "version": "2.3.8",
+  "version": "2.4.0",
   "description": "ETL (extract, transform, load) template for UK rail fares",
   "bin": {
     "uk-rail-import": "dist/index.js"
@@ -8,7 +8,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "run": "ts-node ./src/index.ts",
-    "build": "tsc -p ./ --outDir dist/"
+    "build": "tsc -p ./ --outDir dist/",
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",
