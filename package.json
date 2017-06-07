@@ -1,25 +1,29 @@
 {
-  "name": "uk-rail-import",
-  "version": "2.4.0",
-  "description": "ETL (extract, transform, load) template for UK rail fares",
+  "name": "dtd2mysql",
+  "version": "3.0.0",
+  "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
-    "uk-rail-import": "dist/index.js"
+    "dtd2mysql": "dist/index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "run": "ts-node ./src/index.ts",
-    "build": "tsc -p ./ --outDir dist/",
-    "prepublish": "npm run build"
+    "prepublish": "tsc -p ./ --outDir dist/"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-track/uk-rail-import.git"
   },
   "keywords": [
-    "uk",
+    "gb",
     "rail",
     "etl",
-    "fares"
+    "fares",
+    "routeing",
+    "timetable",
+    "dtd"
   ],
   "author": "Linus Norton",
   "license": "GPL-3.0",
@@ -30,10 +34,8 @@
   "dependencies": {
     "adm-zip": "^0.4.7",
     "bluebird": "^3.4.1",
-    "immutable": "^3.8.1",
     "moment": "^2.15.1",
     "promise-mysql": "^1.3.2",
-    "request": "^2.74.0"
   },
   "engines": {
     "node": "^6.9.0"
