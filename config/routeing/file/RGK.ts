@@ -1,10 +1,8 @@
-
-import Text from "../../../feed/field/Text";
-import CSVRecord from "../../../feed/record/CSVRecord";
-import Int from "../../../feed/field/Int";
-import MultiRecordFile from "../../../feed/file/MultiRecordFile";
-import ZeroFillInt from "../../../feed/field/ZeroFillInt";
-import BooleanField from "../../../feed/field/BooleanField";
+import {CSVRecord} from "../../../src/feed/record/CSVRecord";
+import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
+import {TextField} from "../../../src/feed/field/TextField";
+import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 
 const londonRoute = new CSVRecord(
   "london_route",

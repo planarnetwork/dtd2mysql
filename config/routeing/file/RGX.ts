@@ -1,8 +1,7 @@
-
-import Text from "../../../feed/field/Text";
-import CSVRecord from "../../../feed/record/CSVRecord";
-import SingleRecordFile from "../../../feed/file/SingleRecordFile";
-import DateField from "../../../feed/field/DateField";
+import {CSVRecord} from "../../../src/feed/record/CSVRecord";
+import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
+import {TextField} from "../../../src/feed/field/TextField";
+import {DateField} from "../../../src/feed/field/DateField";
 
 const record = new CSVRecord(
   "new_station",

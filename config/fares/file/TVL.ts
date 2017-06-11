@@ -1,10 +1,10 @@
-import Record from "../../../feed/record/Record";
-import DateField from "../../../feed/field/DateField";
-import SingleRecordFile from "../../../feed/file/SingleRecordFile";
+import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
+import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {IntField} from "../../../src/feed/field/IntField";
+import {DateField} from "../../../src/feed/field/DateField";
 
-const ticketValidity = new Record(
+const ticketValidity = new FixedWidthRecord(
   "ticket_validity",
   ["validity_code", "end_date"],
   {

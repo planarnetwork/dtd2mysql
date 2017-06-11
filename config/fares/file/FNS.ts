@@ -1,10 +1,10 @@
-import Record from "../../../feed/record/Record";
-import DateField from "../../../feed/field/DateField";
-import SingleRecordFile from "../../../feed/file/SingleRecordFile";
+import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {TextField} from "../../../src/feed/field/TextField";
+import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
+import {DateField} from "../../../src/feed/field/DateField";
 
-const discountRecord = new Record(
+const discountFixedWidthRecord = new FixedWidthRecord(
   "non_standard_discount",
   ["origin_code", "destination_code", "route_code", "railcard_code", "ticket_code", "end_date"],
   {
@@ -26,6 +26,6 @@ const discountRecord = new Record(
   }
 );
 
-const FNS = new SingleRecordFile(discountRecord);
+const FNS = new SingleRecordFile(discountFixedWidthRecord);
 
 export default FNS;

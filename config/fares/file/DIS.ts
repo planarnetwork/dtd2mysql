@@ -1,8 +1,10 @@
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {IntField} from "../../../src/feed/field/IntField";
+import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
+import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 
-const statusDiscount = new Record(
+const statusDiscount = new FixedWidthRecord(
   "status_discount",
   ["status_code", "end_date", "discount_category"],
   {
@@ -14,7 +16,7 @@ const statusDiscount = new Record(
   }
 );
 
-const status = new Record(
+const status = new FixedWidthRecord(
   "status",
   ["status_code", "end_date"],
   {

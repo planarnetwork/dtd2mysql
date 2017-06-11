@@ -1,8 +1,8 @@
 
-import CSVRecord from "../../../feed/record/CSVRecord";
-import SingleRecordFile from "../../../feed/file/SingleRecordFile";
+import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {CSVRecord} from "../../../src/feed/record/CSVRecord";
 
 const record = new CSVRecord(
   "london_station",
