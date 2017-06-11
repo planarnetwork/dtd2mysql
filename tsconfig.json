@@ -2,23 +2,24 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "module": "commonjs",
-    "target": "es6",
+    "target": "es2015",
     "sourceMap": false,
     "experimentalDecorators": true,
     "noImplicitAny": false,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "declaration": true
+    "declaration": true,
+    "lib": [
+      "es2017.object",
+      "es2015",
+      "es2017",
+      "dom"
+    ]
   },
   "exclude": [
     "node_modules",
     "dist/",
     "test/"
-  ],
-  "lib": [
-    "es2017.object",
-    "es2015",
-    "dom"
   ],
   "paths": {
     "*": [
