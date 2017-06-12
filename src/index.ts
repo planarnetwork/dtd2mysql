@@ -1,7 +1,9 @@
 
 import {Container} from "./cli/Container";
 
-Container
-  .getCommand(process.argv[0])
-  .run(process.argv)
+const container = new Container();
+
+container
+  .getCommand(process.argv[2])
+  .then(c => c.run(process.argv))
   .catch(console.error);

@@ -1,4 +1,4 @@
-
+import {FeedConfig} from "../index";
 import FFL from "./file/FFL";
 import FSC from "./file/FSC";
 import NDF from "./file/NDF";
@@ -17,22 +17,24 @@ import TAP from "./file/TAP";
 import TOC from "./file/TOC";
 import TVL from "./file/TVL";
 
-export default {
-    DIS: DIS,
-    FFL: FFL,
-    FNS: FNS,
-    FSC: FSC,
-    LOC: LOC,
-    NDF: NDF,
-    NFO: NFO,
-    RCM: RCM,
-    RLC: RLC,
-    RST: RST,
-    RTE: RTE,
-    SUP: SUP,
-    TAP: TAP,
-    TOC: TOC,
-    TSP: TSP,
-    TTY: TTY,
-    TVL: TVL
+const specification: FeedConfig = {
+  DIS: DIS,
+  FFL: FFL,
+  FNS: FNS,
+  FSC: FSC,
+  LOC: LOC,
+  NDF: NDF,
+  NFO: NFO,
+  RCM: RCM,
+  RLC: RLC,
+  RST: RST,
+  RTE: RTE,
+  SUP: SUP,
+  TAP: TAP,
+  TOC: TOC,
+  TSP: TSP,
+  TTY: TTY,
+  TVL: TVL
 };
+
+export default specification;

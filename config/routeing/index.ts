@@ -1,4 +1,4 @@
-
+import {FeedConfig} from "../index";
 import RGS from "./file/RGS";
 import RGG from "./file/RGG";
 import RGP from "./file/RGP";
@@ -15,7 +15,7 @@ import RGE from "./file/RGE";
 import RGY from "./file/RGY";
 import RGN from "./file/RGN";
 
-export default {
+const specification: FeedConfig = {
   RGS: RGS,
   RGG: RGG,
   RGP: RGP,
@@ -32,3 +32,5 @@ export default {
   RGY: RGY,
   RGN: RGN
 };
+
+export default specification;

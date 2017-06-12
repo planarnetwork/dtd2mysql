@@ -1,41 +1,39 @@
-#UK Rail Import
+#dtd2mysql [![Build Status](https://travis-ci.org/open-track/dtd2mysql.svg?branch=master)](https://travis-ci.org/open-track/dtd2mysql)
 
-A tool to extract, transform and load (ETL) UK rail data feeds. This script will extract fares, flows, locations, group stations and restrictions from the ATOC fares feed and unofficial GTFS timetable feed and store them in a database.
+A import the British rail fares, routeing and timetable feeds into a database.
 
 Although both the timetable and fares feed are open data you will need to obtain the fares feed via the [ATOC website](http://data.atoc.org/fares-data). The formal specification for the data inside the feed also available on the [ATOC website](http://data.atoc.org/sites/all/themes/atoc/files/SP0035.pdf).
 
-At the moment only mysql is supported as the data store but it could be extended to support other data stores. PRs are very welcome.
+At the moment only MySQL compatible databases are supported but it could be extended to support other data stores. PRs are very welcome.
 
 ##Install
 
 You don't have to install it globally but it makes it easier if you are not going to use it as part of another project. The `-g` option usually requires `sudo`.
 
 ```
-npm install -g uk-rail-import
+npm install -g dtd2mysql
 ```
-
-You can run the application by pipping the output to mysql, or you can use the environment/profile variables. The environment variable method connects directly to mysql to import the data whereas the unix pipes just pass SQL queries around.
 
 ## Fares 
 
-Each of these commands relies on the database settings being set in the environment variables. For example `DATABASE_USERNAME=root DATABASE_NAME=fares uk-rail-import --fares-clean`.
+Each of these commands relies on the database settings being set in the environment variables. For example `DATABASE_USERNAME=root DATABASE_NAME=fares dtd2mysql --fares-clean`.
 
 ### Import
 ```
-uk-rail-import --fares /path/to/RJFAFxxx.ZIP
+dtd2mysql --fares /path/to/RJFAFxxx.ZIP
 ```
 ### Clean (remove old an inaccurate data)
 ```
-uk-rail-import --fares-clean
+dtd2mysql --fares-clean
 ```
 ## Timetables
 ### Import
 ```
-uk-rail-import --timetable
+dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
 ```
 ### Clean (remove journeys in the past)
 ```
-uk-rail-import --timetable-clean
+dtd2mysql --timetable-clean
 ```
 
 ## Notes
@@ -61,4 +59,4 @@ The project is written in TypeScript.
 
 This software is licensed under [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
-Copyright 2016 Linus Norton.
+Copyright 2017 Linus Norton.

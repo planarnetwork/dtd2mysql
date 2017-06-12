@@ -1,29 +1,33 @@
-
+import memoize from "memoized-class-decorator";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConnection} from "../database/DatabaseConnection";
-import {CreateSchemaCommand} from "../database/command/CreateSchemaCommand";
 import Bluebird = require("bluebird");
+import config from "../../config";
 
 export class Container {
 
-  public static getCommand(type: string): CLICommand {
+  @memoize
+  public getCommand(type: string): Promise<CLICommand> {
     switch (type) {
-      case "--fares": return Container.getFaresImportCommand();
-      case "--routeing": return this.getFaresImportCommand();
-      default: return this.getShowHelpCommand();
+      case "--fares": return this.getFaresImportCommand();
+      case "--routeing": return this.getRouteingImportCommand();
+      default: throw new Error(`Unknown command: ${type}`) //return this.getShowHelpCommand();
     }
   }
 
-  public static getFaresImportCommand(): ImportFeedCommand {
-    return new ImportFeedCommand(faresFeed, Container.getCreateSchemaCommand(), Container.getImportRecordCommand())
+  @memoize
+  public async getFaresImportCommand(): Promise<ImportFeedCommand> {
+    return new ImportFeedCommand(await this.getDatabaseConnection(), config.fares, "/tmp/dtd/fares/");
   }
 
-  public static getCreateSchemaCommand(): CreateSchemaCommand {
-    return new CreateSchemaCommand(Container.getDatabaseConnection());
+  @memoize
+  public async getRouteingImportCommand(): Promise<ImportFeedCommand> {
+    return new ImportFeedCommand(await this.getDatabaseConnection(), config.routeing, "/tmp/dtd/routeing/");
   }
 
-  public static async getDatabaseConnection(): DatabaseConnection {
+  @memoize
+  public async getDatabaseConnection(): Promise<DatabaseConnection> {
     if (!process.env.DATABASE_NAME || !process.env.DATABASE_USERNAME) {
       throw new Error("Please set the database environment variables.");
     }

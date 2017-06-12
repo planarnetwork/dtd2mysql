@@ -56,4 +56,8 @@ class MockDatabaseConnection implements DatabaseConnection {
     return Promise.resolve();
   }
 
+  end(): Promise<void> {
+    return Promise.resolve();
+  }
+
 }
