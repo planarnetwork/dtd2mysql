@@ -3,6 +3,7 @@ import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
+import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 const route = new FixedWidthRecord(
   "route",
@@ -13,19 +14,19 @@ const route = new FixedWidthRecord(
     "start_date": new DateField(15),
     "quote_date": new DateField(23),
     "description": new TextField(31, 16),
-    "atb_desc_1": new TextField(47, 35),
-    "atb_desc_2": new TextField(82, 35),
-    "atb_desc_3": new TextField(117, 35),
-    "atb_desc_4": new TextField(152, 35),
+    "atb_desc_1": new TextField(47, 35, true),
+    "atb_desc_2": new TextField(82, 35, true),
+    "atb_desc_3": new TextField(117, 35, true),
+    "atb_desc_4": new TextField(152, 35, true),
     "cc_desc": new TextField(187, 16),
-    "aaa_desc": new TextField(203, 41),
-    "uts_mode": new TextField(244, 1),
-    "uts_zone_1": new TextField(245, 1),
-    "uts_zone_2": new TextField(246, 1),
-    "uts_zone_3": new TextField(247, 1),
-    "uts_zone_4": new TextField(248, 1),
-    "uts_zone_5": new TextField(249, 1),
-    "uts_zone_6": new TextField(250, 1),
+    "aaa_desc": new TextField(203, 41, true),
+    "uts_mode": new TextField(244, 1, false, []),
+    "uts_zone_1": new BooleanField(245),
+    "uts_zone_2": new BooleanField(246),
+    "uts_zone_3": new BooleanField(247),
+    "uts_zone_4": new BooleanField(248),
+    "uts_zone_5": new BooleanField(249),
+    "uts_zone_6": new BooleanField(250),
     "uts_north": new TextField(251, 3),
     "uts_east": new TextField(254, 3),
     "uts_south": new TextField(257, 3),

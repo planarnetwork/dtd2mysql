@@ -3,6 +3,7 @@ import {DateField} from "../../../src/feed/field/DateField";
 import {IntField} from "../../../src/feed/field/IntField";
 import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
+import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 const statusDiscount = new FixedWidthRecord(
   "status_discount",
@@ -23,21 +24,21 @@ const status = new FixedWidthRecord(
     "status_code": new TextField(1, 3),
     "end_date": new DateField(4),
     "start_date": new DateField(12),
-    "atb_desc": new TextField(20, 5),
-    "cc_desc": new TextField(25, 5),
+    "atb_desc": new TextField(20, 5, true),
+    "cc_desc": new TextField(25, 5, true),
     "uts_code": new TextField(30, 1),
-    "first_single_max_flat": new IntField(31, 8),
-    "first_return_max_flat": new IntField(39, 8),
-    "std_single_max_flat": new IntField(47, 8),
-    "std_return_max_flat": new IntField(55, 8),
-    "first_lower_min": new IntField(63, 8),
-    "first_higher_min": new IntField(71, 8),
-    "std_lower_min": new IntField(79, 8),
-    "std_higher_min": new IntField(87, 8),
-    "fs_mkr": new TextField(95, 1),
-    "fr_mkr": new TextField(96, 1),
-    "ss_mkr": new TextField(97, 1),
-    "sr_mkr": new TextField(98, 1)
+    "first_single_max_flat": new IntField(31, 8, true),
+    "first_return_max_flat": new IntField(39, 8, true),
+    "std_single_max_flat": new IntField(47, 8, true),
+    "std_return_max_flat": new IntField(55, 8, true),
+    "first_lower_min": new IntField(63, 8, true),
+    "first_higher_min": new IntField(71, 8, true),
+    "std_lower_min": new IntField(79, 8, true),
+    "std_higher_min": new IntField(87, 8, true),
+    "fs_mkr": new BooleanField(95),
+    "fr_mkr": new BooleanField(96),
+    "ss_mkr": new BooleanField(97),
+    "sr_mkr": new BooleanField(98)
   }
 );
 

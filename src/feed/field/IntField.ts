@@ -2,7 +2,13 @@
 import {Field, ParseError} from "./Field";
 
 export class IntField extends Field {
-  public readonly nullChars = [" ", "*", "9"];
+
+  constructor(position: number,
+              length: number,
+              nullable: boolean = false,
+              nullChars: string[] = [" ", "*", "9"]) {
+    super(position, length, nullable, nullChars)
+  }
 
   /**
    * Try to process this string as an integer

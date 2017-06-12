@@ -31,7 +31,7 @@ export abstract class Field {
 
     if (isNull) {
       if (this.nullable) return null;
-      else throw new ParseError(`Non-nullable field received null value: "${value}"`);
+      else throw new ParseError(`Non-nullable field received null value: "${value}" at position ${this.position}`);
     }
 
     return this.parse(value);

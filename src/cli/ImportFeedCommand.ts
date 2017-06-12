@@ -30,30 +30,38 @@ export class ImportFeedCommand implements CLICommand {
   }
 
   /**
-   * Setup the schemas, extract the zip, import the files
+   * Do the import and then shut down the connection pool
    */
   public async run(argv: string[]): Promise<void> {
-    const schemaSetup = Promise.all(this.fileArray.map(file => this.setupSchema(file)));
+    try {
+      await this.doImport(argv[3]);
+    }
+    catch (err) {
+      console.error(err);
+    }
 
-    console.log(`Extracting ${argv[3]} to ${this.tmpFolder}`);
-    new AdmZip(argv[3]).extractAllTo(this.tmpFolder);
+    try {
+      await this.db.end();
+    }
+    catch (err) {}
+    console.log("Done");
+  }
 
-    const [files] = await Promise.all([fs.readdirAsync(this.tmpFolder), schemaSetup]);
+  /**
+   * Extract the zip, set up the schema and do the inserts
+   */
+  private async doImport(filename: string): Promise<any> {
+    console.log(`Extracting ${filename} to ${this.tmpFolder}`);
+    new AdmZip(filename).extractAllTo(this.tmpFolder);
+
+    const schemaSetup = this.fileArray.map(file => this.setupSchema(file));
+    const [files] = await Promise.all([fs.readdirAsync(this.tmpFolder), ...schemaSetup]);
     const inserts =
       files
         .filter(filename => this.getFeedFile(filename))
         .map(filename => this.processFile(filename));
 
-
-    try {
-      console.log("Waiting for inserts to complete...");
-      await Promise.all(inserts);
-      await this.db.end();
-      console.log("Done");
-    }
-    catch (err) {
-      console.error(err.stack);
-    }
+    return Promise.all(inserts);
   }
 
   /**
@@ -68,29 +76,26 @@ export class ImportFeedCommand implements CLICommand {
    * Process the records inside the given file
    */
   private processFile(filename: string): Promise<any> {
-    console.log(`Processing ${filename}`);
-
-    const file = this.getFeedFile(filename);
-    const tables = this.tables(file);
-    const readStream = readFile(this.tmpFolder + filename);
-
-    readStream.on("line", line => {
-      if (line === '' || line.charAt(0) === '/') return;
-
-      try {
-        const record = file.getRecord(line);
-        const values = record.extractValues(line);
-
-        tables[record.name].insert(values);
-      }
-      catch (err) {
-        console.error(`Error processing ${filename} with data ${line}`);
-      }
-    });
-
-    // return a promise that is fulfilled the tables have finished their inserts
     return new Promise((resolve, reject) => {
-      readStream.on('close', () => resolve(Promise.all(Object.values(tables).map(t => t.close()))));
+      const file = this.getFeedFile(filename);
+      const tables = this.tables(file);
+      const readStream = readFile(this.tmpFolder + filename);
+
+      readStream.on("line", line => {
+        if (line === '' || line.charAt(0) === '/') return;
+
+        try {
+          const record = file.getRecord(line);
+          const values = record.extractValues(line);
+
+          tables[record.name].insert(values);
+        }
+        catch (err) {
+          reject(`Error processing ${filename} with data ${line}` + err.stack);
+        }
+      });
+
+      readStream.on('close', () => console.log(`Finished ${filename}`) || resolve(Promise.all(Object.values(tables).map(t => t.close()))));
       readStream.on('SIGINT', () => reject());
     });
   }

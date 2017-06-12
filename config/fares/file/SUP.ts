@@ -5,7 +5,7 @@ import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
 
-const supplementFixedWidthRecord = new FixedWidthRecord(
+const supplement = new FixedWidthRecord(
   "supplement",
   ["supplement_code", "end_date"],
   {
@@ -17,19 +17,19 @@ const supplementFixedWidthRecord = new FixedWidthRecord(
     "short_desc": new TextField(49, 12),
     "suppl_type": new TextField(61, 3),
     "price": new IntField(64, 5),
-    "cpf_ticket_type": new TextField(69, 5),
+    "cpf_ticket_type": new TextField(69, 5, true),
     "min_group_size": new IntField(74, 1),
     "max_group_size": new IntField(75, 1),
     "per_leg_or_dir": new TextField(76, 1),
     "class_type": new TextField(77, 1),
-    "capri_code": new TextField(78, 3),
+    "capri_code": new TextField(78, 3, true),
     "sep_tkt_ind": new TextField(81, 1),
     "resvn_type": new TextField(82, 2),
     "sundry_code": new ZeroFillIntField(84, 5, true)
   }
 );
 
-const supplementRuleFixedWidthRecord = new FixedWidthRecord(
+const supplementRule = new FixedWidthRecord(
   "supplement_rule",
   ["rule_number", "end_date"],
   {
@@ -37,23 +37,23 @@ const supplementRuleFixedWidthRecord = new FixedWidthRecord(
     "end_date": new DateField(5),
     "start_date": new DateField(13),
     "quote_date": new DateField(21),
-    "train_uid": new TextField(29, 7),
-    "train_uid_desc": new TextField(36, 39),
-    "fare_class": new TextField(75, 1),
-    "quota": new TextField(76, 1),
-    "weekend_first": new TextField(77, 1),
-    "silver_standard": new TextField(78, 1),
-    "railcard": new TextField(79, 1),
-    "catering_code": new TextField(80, 1),
-    "sleeper": new TextField(81, 1),
-    "accom_class": new TextField(82, 1),
+    "train_uid": new TextField(29, 7, true),
+    "train_uid_desc": new TextField(36, 39, true),
+    "fare_class": new TextField(75, 1, false, []),
+    "quota": new TextField(76, 1, false, []),
+    "weekend_first": new TextField(77, 1, false, []),
+    "silver_standard": new TextField(78, 1, false, []),
+    "railcard": new TextField(79, 1, false, []),
+    "catering_code": new TextField(80, 1, false, []),
+    "sleeper": new TextField(81, 1, false, []),
+    "accom_class": new TextField(82, 1, false, []),
     "status": new TextField(83, 1),
-    "reservation_status": new TextField(84, 3),
-    "sectors": new TextField(87, 3)
+    "reservation_status": new TextField(84, 3, true),
+    "sectors": new TextField(87, 3, true)
   }
 );
 
-const supplementRuleAppliesFixedWidthRecord = new FixedWidthRecord(
+const supplementRuleApplies = new FixedWidthRecord(
   "supplement_rule_applies",
   ["rule_number", "end_date", "ie_marker", "condition_type", "ie_code"],
   {
@@ -65,7 +65,7 @@ const supplementRuleAppliesFixedWidthRecord = new FixedWidthRecord(
   }
 );
 
-const supplementRuleSupplementFixedWidthRecord = new FixedWidthRecord(
+const supplementRuleSupplement = new FixedWidthRecord(
   "supplement_rule_supplement",
   ["rule_number", "end_date", "supplement_code"],
   {
@@ -76,7 +76,7 @@ const supplementRuleSupplementFixedWidthRecord = new FixedWidthRecord(
   }
 );
 
-const supplementOverrideFixedWidthRecord = new FixedWidthRecord(
+const supplementOverride = new FixedWidthRecord(
   "supplement_override",
   ["supplement_code", "end_date", "overridden_supplement"],
   {
@@ -87,11 +87,11 @@ const supplementOverrideFixedWidthRecord = new FixedWidthRecord(
 );
 
 const SUP = new MultiRecordFile({
-  "S": supplementFixedWidthRecord,
-  "R": supplementRuleFixedWidthRecord,
-  "A": supplementRuleAppliesFixedWidthRecord,
-  "M": supplementRuleSupplementFixedWidthRecord,
-  "O": supplementOverrideFixedWidthRecord
+  "S": supplement,
+  "R": supplementRule,
+  "A": supplementRuleApplies,
+  "M": supplementRuleSupplement,
+  "O": supplementOverride
 });
 
 export default SUP;

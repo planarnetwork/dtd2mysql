@@ -4,15 +4,6 @@ import {MySQLTable} from "../../src/database/MySQLTable";
 
 describe("MySQLTable", () => {
 
-  it("truncates a table", () => {
-    const db = new MockDatabaseConnection();
-    const table = new MySQLTable(db, "my_table");
-
-    table.truncate();
-
-    chai.expect(db.inserts[0]).is.equal("TRUNCATE \`my_table\`");
-  });
-
   it("inserts to a table", () => {
     const db = new MockDatabaseConnection();
     const table = new MySQLTable(db, "my_table", 1);

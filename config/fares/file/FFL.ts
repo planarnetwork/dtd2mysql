@@ -32,7 +32,7 @@ const fareFixedWidthRecord = new FixedWidthRecord(
     "flow_id": new IntField(2, 7),
     "ticket_code": new TextField(9, 3),
     "fare": new IntField(12, 8),
-    "restriction_code": new TextField(20, 2)
+    "restriction_code": new TextField(20, 2, true)
   }
 );
 

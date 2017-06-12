@@ -2,7 +2,7 @@
 import {DatabaseConnection} from "./DatabaseConnection";
 
 /**
- * Stateful class provides access to a MySQL table that acts as buffer for inserts.
+ * Stateful class that provides access to a MySQL table and acts as buffer for inserts.
  */
 export class MySQLTable {
   private readonly promiseBuffer: Promise<void>[] = [];
@@ -11,7 +11,7 @@ export class MySQLTable {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly tableName: string,
-    private readonly flushLimit: number = 10000
+    private readonly flushLimit: number = 5000
   ) {}
 
   /**
@@ -35,13 +35,6 @@ export class MySQLTable {
 
     this.promiseBuffer.push(promise);
     this.inserts = [];
-  }
-
-  /**
-   * Truncate the table
-   */
-  public truncate(): Promise<void> {
-    return this.db.query(`TRUNCATE \`${this.tableName}\``);
   }
 
   /**

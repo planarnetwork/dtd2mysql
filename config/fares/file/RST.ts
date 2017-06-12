@@ -14,7 +14,7 @@ const dates = new FixedWidthRecord(
     "cf_mkr": new TextField(3, 1),
     "start_date": new DateField(4),
     "end_date": new DateField(12),
-    "atb_desc": new TextField(20, 5),
+    "atb_desc": new TextField(20, 5, true),
   }
 );
 
@@ -24,9 +24,9 @@ const header = new FixedWidthRecord(
   {
     "cf_mkr": new TextField(3, 1),
     "restriction_code": new TextField(4, 2),
-    "description": new TextField(6, 30),
-    "desc_out": new TextField(36, 50),
-    "desc_ret": new TextField(86, 50),
+    "description": new TextField(6, 30, true),
+    "desc_out": new TextField(36, 50, true),
+    "desc_ret": new TextField(86, 50, true),
     "type_out": new TextField(136, 1),
     "type_ret": new TextField(137, 1),
     "change_ind": new TextField(138, 1),
@@ -272,7 +272,7 @@ const ticketCalendar = new FixedWidthRecord(
     "ticket_code": new TextField(4, 3),
     "cal_type": new TextField(7, 1),
     "route_code": new ZeroFillIntField(8, 5, true),
-    "country_code": new TextField(13, 1),
+    "country_code": new TextField(13, 1, false, []),
     "date_from": new TextField(14, 4),
     "date_to": new TextField(18, 4),
     "monday": new BooleanField(22),
