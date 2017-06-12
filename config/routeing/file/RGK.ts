@@ -19,13 +19,13 @@ const routeDate = new CSVRecord(
   {
     "route_code": new TextField(0, 5),
     "entry_type": new TextField(2, 1),
-    "crs_code": new TextField(3, 3),
+    "crs_code": new TextField(3, 3, true),
     "group_mkr": new BooleanField(4),
     "mode_code": new ZeroFillIntField(5, 3, true),
     "toc_id": new TextField(6, 2, true),
   }
 );
-
+//07778,D,T,,N,,SW
 const RGK = new MultiRecordFile({
   "L": londonRoute,
   "D": routeDate,

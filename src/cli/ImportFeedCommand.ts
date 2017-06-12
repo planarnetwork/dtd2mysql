@@ -44,10 +44,16 @@ export class ImportFeedCommand implements CLICommand {
         .filter(filename => this.getFeedFile(filename))
         .map(filename => this.processFile(filename));
 
-    console.log("Waiting for inserts to complete...");
-    await Promise.all(inserts);
-    await this.db.end();
-    console.log("Done");
+
+    try {
+      console.log("Waiting for inserts to complete...");
+      await Promise.all(inserts);
+      await this.db.end();
+      console.log("Done");
+    }
+    catch (err) {
+      console.error(err.stack);
+    }
   }
 
   /**
@@ -84,9 +90,7 @@ export class ImportFeedCommand implements CLICommand {
 
     // return a promise that is fulfilled the tables have finished their inserts
     return new Promise((resolve, reject) => {
-      const promises = Object.values(tables).map(t => t.close());
-
-      readStream.on('close', () => resolve(Promise.all(promises)));
+      readStream.on('close', () => resolve(Promise.all(Object.values(tables).map(t => t.close()))));
       readStream.on('SIGINT', () => reject());
     });
   }

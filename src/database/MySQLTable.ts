@@ -29,6 +29,8 @@ export class MySQLTable {
    * Flush the table
    */
   private flush(): void {
+    if (this.inserts.length === 0) return;
+
     const promise = this.db.query(`INSERT INTO \`${this.tableName}\` VALUES ?`, [this.inserts]);
 
     this.promiseBuffer.push(promise);

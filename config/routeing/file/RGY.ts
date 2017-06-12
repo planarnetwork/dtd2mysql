@@ -11,7 +11,7 @@ const record = new CSVRecord(
     "uic_code": new TextField(0, 3),
     "nlc_code": new TextField(1, 4),
     "group_code": new TextField(2, 4),
-    "crs_code": new TextField(3, 3),
+    "crs_code": new TextField(3, 3, true),
     "county_code": new TextField(4, 2),
     "zone_code": new TextField(5, 4, true),
     "start_date": new DateField(6),

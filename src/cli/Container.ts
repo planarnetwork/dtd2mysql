@@ -39,8 +39,8 @@ export class Container {
       database: process.env.DATABASE_NAME,
       connectionLimit: 3,
       multipleStatements: true,
-      promise: Bluebird
-      //debug: ['ComQueryPacket', 'RowDataPacket']
+      promise: Bluebird,
+//      debug: ['ComQueryPacket', 'RowDataPacket']
     });
 
   }
