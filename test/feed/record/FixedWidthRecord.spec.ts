@@ -3,7 +3,7 @@ import * as chai from "chai";
 import {IntField} from "../../../src/feed/field/IntField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
+import {FixedWidthRecord, RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
 
 describe("FixedWidthRecord", () => {
 
@@ -37,5 +37,40 @@ describe("FixedWidthRecord", () => {
     chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([null, 1012, "Hi "]);
   });
 
+});
+
+describe("RecordWithManualIdentifier", () => {
+
+  it("populates the id field", () => {
+    const field = new IntField(0, 4);
+    const field2 = new TextField(4, 3);
+    const field3 = new DateField(7);
+
+    const record = new RecordWithManualIdentifier(
+      "test",
+      [], {
+        "field": field,
+        "field2": field2,
+        "field3": field3
+      });
+
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([1, 1012, "Hi ", "2999-12-31"]);
+  });
+
+  it("increments the id field", () => {
+    const field = new IntField(0, 4);
+    const field2 = new TextField(4, 3);
+
+    const record = new RecordWithManualIdentifier(
+      "test",
+      [], {
+        "field": field,
+        "field2": field2,
+      });
+
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([1, 1012, "Hi "]);
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([2, 1012, "Hi "]);
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([3, 1012, "Hi "]);
+  });
 
 });
