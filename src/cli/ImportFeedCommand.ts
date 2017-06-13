@@ -84,14 +84,15 @@ export class ImportFeedCommand implements CLICommand {
       readStream.on("line", line => {
         if (line === '' || line.charAt(0) === '/') return;
 
-        try {
-          const record = file.getRecord(line);
-          const values = record.extractValues(line);
+        const record = file.getRecord(line);
 
-          tables[record.name].insert(values);
-        }
-        catch (err) {
-          reject(`Error processing ${filename} with data ${line}` + err.stack);
+        if (record) {
+          try {
+            tables[record.name].insert(record.extractValues(line));
+          }
+          catch (err) {
+            reject(`Error processing ${filename} with data ${line}` + err.stack);
+          }
         }
       });
 

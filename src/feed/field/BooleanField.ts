@@ -7,9 +7,10 @@ export class BooleanField extends Field {
     public readonly start: number,
     public readonly nullable: boolean = false,
     public readonly truthyChars: string[] = ["Y", "1"],
-    public readonly falseChars: string[] = ["N", "0"]
+    public readonly falseChars: string[] = ["N", "0"],
+    public readonly nullChars: string[] = []
   ) {
-    super(start, 1, nullable);
+    super(start, 1, nullable, nullChars);
   }
 
   /**

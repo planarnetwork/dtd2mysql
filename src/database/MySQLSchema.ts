@@ -6,9 +6,10 @@ import {Record} from "../feed/record/Record";
 import {TextField, VariableLengthText} from "../feed/field/TextField";
 import {IntField, ZeroFillIntField} from "../feed/field/IntField";
 import {BooleanField} from "../feed/field/BooleanField";
-import {DateField} from "../feed/field/DateField";
+import {DateField, ShortDateField} from "../feed/field/DateField";
 import {TimeField} from "../feed/field/TimeField";
 import {DoubleField} from "../feed/field/DoubleField";
+import {ForeignKeyField} from "../feed/field/ForeignKeyField";
 
 export class MySQLSchema {
 
@@ -31,7 +32,7 @@ export class MySQLSchema {
     return this.db.query(`DROP TABLE IF EXISTS \`${this.record.name}\``);
   }
 
-  private getSchema() {
+  private getSchema(): string {
     const id = "id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY";
     const fields = "," + Object.entries(this.record.fields).map(MySQLSchema.getField).join(',');
     const unique = this.record.key.length === 0 ? "" : `, UNIQUE ${this.record.name}_key (${this.record.key.join(',')})`;
@@ -49,20 +50,22 @@ export class MySQLSchema {
     return `\`${name}\` ${type} ${nullable}`;
   }
 
-  private static getFieldType(field: Field) {
+  private static getFieldType(field: Field): string {
     if (field instanceof VariableLengthText) return `VARCHAR(${field.length})`;
     if (field instanceof TextField)          return `CHAR(${field.length})`;
     if (field instanceof BooleanField)       return `TINYINT(1) unsigned`;
+    if (field instanceof ShortDateField)     return `DATE`;
     if (field instanceof DateField)          return `DATE`;
     if (field instanceof TimeField)          return `TIME`;
     if (field instanceof DoubleField)        return `DOUBLE(${field.length}, ${field.decimalDigits}) unsigned`;
     if (field instanceof ZeroFillIntField)   return `${MySQLSchema.getIntType(field.length)} unsigned zerofill`;
     if (field instanceof IntField)           return `${MySQLSchema.getIntType(field.length)} unsigned`;
+    if (field instanceof ForeignKeyField)    return `INT(11) unsigned`;
 
-    throw new Error("Unknown field type for field.");
+    throw new Error("Unknown field type");
   }
 
-  private static getIntType(length: number) {
+  private static getIntType(length: number): string {
     if (length > 9) return `BIGINT(${length})`;
     if (length > 7) return `INT(${length})`;
     if (length > 4) return `MEDIUMINT(${length})`;

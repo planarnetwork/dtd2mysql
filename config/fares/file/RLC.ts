@@ -38,8 +38,8 @@ const record = new FixedWidthRecord(
     "last_valid_date": new DateField(106, true),
     "physical_card": new BooleanField(114),
     "capri_ticket_type": new TextField(115, 3, true),
-    "adult_status": new TextField(118, 3, false, []),
-    "child_status": new TextField(121, 3, false, []),
+    "adult_status": new TextField(118, 3, true, [" ", "X"]),
+    "child_status": new TextField(121, 3, true, [" ", "X"]),
     "aaa_status": new TextField(124, 3, true)
   }
 );

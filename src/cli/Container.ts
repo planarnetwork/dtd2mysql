@@ -12,6 +12,7 @@ export class Container {
     switch (type) {
       case "--fares": return this.getFaresImportCommand();
       case "--routeing": return this.getRouteingImportCommand();
+      case "--timetable": return this.getTimetableImportCommand();
       default: throw new Error(`Unknown command: ${type}`) //return this.getShowHelpCommand();
     }
   }
@@ -24,6 +25,11 @@ export class Container {
   @memoize
   public async getRouteingImportCommand(): Promise<ImportFeedCommand> {
     return new ImportFeedCommand(await this.getDatabaseConnection(), config.routeing, "/tmp/dtd/routeing/");
+  }
+
+  @memoize
+  public async getTimetableImportCommand(): Promise<ImportFeedCommand> {
+    return new ImportFeedCommand(await this.getDatabaseConnection(), config.timetable, "/tmp/dtd/timetable/");
   }
 
   @memoize
@@ -40,7 +46,7 @@ export class Container {
       connectionLimit: 3,
       multipleStatements: true,
       promise: Bluebird,
-//      debug: ['ComQueryPacket', 'RowDataPacket']
+      //debug: ['ComQueryPacket', 'RowDataPacket']
     });
 
   }

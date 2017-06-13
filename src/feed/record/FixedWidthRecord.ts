@@ -13,7 +13,7 @@ export class FixedWidthRecord implements Record {
   ) {}
 
   @memoize
-  private get fieldValues(): Field[] {
+  protected get fieldValues(): Field[] {
     return Object.values(this.fields);
   }
 
@@ -29,3 +29,16 @@ export class FixedWidthRecord implements Record {
 
 }
 
+export class RecordWithManualIdentifier extends FixedWidthRecord {
+  public lastId: number = 0;
+
+  public extractValues(line: string): FieldValue[] {
+    this.lastId++;
+
+    const values = this.fieldValues.map(f => f.extract(line.substr(f.position, f.length)));
+    const result: FieldValue[] = [this.lastId];
+
+    return result.concat(values);
+  }
+
+}

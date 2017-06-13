@@ -22,11 +22,11 @@ export class CSVRecord implements Record {
    * Split the CSV string and look up the relevant field to do the parsing
    */
   extractValues(line: string): FieldValue[] {
-    const fieldValues = line.split(this.fieldDelimiter);
+    const fieldValues = line.trim().split(this.fieldDelimiter);
     const result: FieldValue[] = [null];
 
     for (let i = 0; i < fieldValues.length; i++) {
-      const field = this.fieldValues.find(f => f.position === i);
+      const field = this.fieldValues.find(f => (f.position + fieldValues.length) % fieldValues.length === i);
 
       if (field) {
         const value = field.extract(fieldValues[i]);
