@@ -29,6 +29,10 @@ export class FixedWidthRecord implements Record {
 
 }
 
+/**
+ * This record type uses a generated integer rather than the standard auto_increment. The only reason to do this use
+ * this record type is to reference a row in another table that has not been inserted yet see {@link ForeignKeyField}
+ */
 export class RecordWithManualIdentifier extends FixedWidthRecord {
   public lastId: number = 0;
 

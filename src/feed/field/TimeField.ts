@@ -3,8 +3,8 @@ import {Field} from "./Field";
 
 export class TimeField extends Field {
 
-  constructor(start: number, nullable: boolean = false) {
-    super(start, 4, nullable);
+  constructor(start: number, nullable: boolean = false, nullChars: string[] = [" ", "*"]) {
+    super(start, 4, nullable, nullChars);
   }
 
   /**

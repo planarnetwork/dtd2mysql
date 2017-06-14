@@ -6,6 +6,8 @@ import {BooleanField} from "../../../src/feed/field/BooleanField";
 import {ShortDateField} from "../../../src/feed/field/DateField";
 import {IntField} from "../../../src/feed/field/IntField";
 import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
+import {TimeField} from "../../../src/feed/field/TimeField";
+import {MultiFormatRecord} from "../../../src/feed/record/MultiFormatRecord";
 
 const tiplocInsert = new FixedWidthRecord(
   "tiploc",
@@ -48,7 +50,7 @@ const association = new FixedWidthRecord(
 );
 
 const schedule = new RecordWithManualIdentifier(
-  "basic_schedule",
+  "schedule",
   ["train_uid", "runs_to", "stp_indicator"], {
     "train_uid": new TextField(3, 6),
     "runs_from": new ShortDateField(9),
@@ -86,16 +88,85 @@ const schedule = new RecordWithManualIdentifier(
 const extraDetails = new FixedWidthRecord(
   "schedule_extra",
   [], {
-    "basic_schedule": new ForeignKeyField(schedule),
+    "schedule": new ForeignKeyField(schedule),
     "traction_class": new TextField(2, 4, true),
+    "uic_code": new TextField(6, 5, true),
+    "atoc_code": new TextField(11, 2),
+    "applicable_timetable_code": new TextField(13, 1),
+    "retail_train_id": new TextField(14, 8),
+    "source": new TextField(22, 1, true)
   }
 );
+
+const stopRecordTypes = {
+  "LO": {
+    "schedule": new ForeignKeyField(schedule),
+    "location": new TextField(2, 8),
+    "scheduled_arrival_time": new TimeField(43, true, [" ", "0"]),
+    "scheduled_departure_time": new TimeField(10),
+    "scheduled_pass_time": new TimeField(43, true, [" ", "0"]),
+    "public_arrival_time": new TimeField(43, true, [" ", "0"]),
+    "public_departure_time": new TimeField(15),
+    "platform": new TextField(19, 3, true),
+    "line": new TextField(22, 3, true),
+    "path": new TextField(43, 3, true),
+    "activity": new TextField(29, 12, true),
+    "engineering_allowance": new TextField(25, 2, true),
+    "pathing_allowance": new TextField(27, 2, true),
+    "performance_allowance": new TextField(41, 2, true)
+  },
+  "LI": {
+    "schedule": new ForeignKeyField(schedule),
+    "location": new TextField(2, 8),
+    "scheduled_arrival_time": new TimeField(10, true, [" ", "0"]),
+    "scheduled_departure_time": new TimeField(15, true, [" ", "0"]),
+    "scheduled_pass_time": new TimeField(20, true, [" ", "0"]),
+    "public_arrival_time": new TimeField(25, true, [" ", "0"]),
+    "public_departure_time": new TimeField(29, true, [" ", "0"]),
+    "platform": new TextField(33, 3, true),
+    "line": new TextField(36, 3, true),
+    "path": new TextField(39, 3, true),
+    "activity": new TextField(42, 12, true),
+    "engineering_allowance": new TextField(54, 2, true),
+    "pathing_allowance": new TextField(56, 2, true),
+    "performance_allowance": new TextField(58, 2, true)
+  },
+  "LT": {
+    "schedule": new ForeignKeyField(schedule),
+    "location": new TextField(2, 8),
+    "scheduled_arrival_time": new TimeField(10),
+    "scheduled_departure_time": new TimeField(43, true, [" ", "0"]),
+    "scheduled_pass_time": new TimeField(43, true, [" ", "0"]),
+    "public_arrival_time": new TimeField(15),
+    "public_departure_time": new TimeField(43, true, [" ", "0"]),
+    "platform": new TextField(19, 3, true),
+    "line": new TextField(43, 3, true),
+    "path": new TextField(22, 3, true),
+    "activity": new TextField(25, 12, true),
+    "engineering_allowance": new TextField(54, 2, true),
+    "pathing_allowance": new TextField(56, 2, true),
+    "performance_allowance": new TextField(58, 2, true)
+  }
+};
+
+// todo update readme to say I went a bit offscript here
+const stop = new MultiFormatRecord(
+  "stop",
+  ["schedule", "location", "public_departure_time"],
+  stopRecordTypes.LI,
+  stopRecordTypes,
+  0, 2
+);
+
 
 const MCA = new MultiRecordFile({
   "AA": association,
   "TI": tiplocInsert,
   "BS": schedule,
-  "BX": extraDetails
+  "BX": extraDetails,
+  "LO": stop,
+  "LI": stop,
+  "LT": stop
 }, 0, 2);
 
 export default MCA;
