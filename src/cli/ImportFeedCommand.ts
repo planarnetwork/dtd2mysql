@@ -51,8 +51,8 @@ export class ImportFeedCommand implements CLICommand {
    * Extract the zip, set up the schema and do the inserts
    */
   private async doImport(filename: string): Promise<any> {
-    // console.log(`Extracting ${filename} to ${this.tmpFolder}`);
-    // new AdmZip(filename).extractAllTo(this.tmpFolder);
+    console.log(`Extracting ${filename} to ${this.tmpFolder}`);
+    new AdmZip(filename).extractAllTo(this.tmpFolder);
 
     const schemaSetup = this.fileArray.map(file => this.setupSchema(file));
     const [files] = await Promise.all([fs.readdirAsync(this.tmpFolder), ...schemaSetup]);
