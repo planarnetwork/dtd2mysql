@@ -1,59 +1,19 @@
 
-import {FixedWidthRecord, RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
+import {RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
 import {TextField} from "../../../src/feed/field/TextField";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 import {ShortDateField} from "../../../src/feed/field/DateField";
-import {IntField} from "../../../src/feed/field/IntField";
 import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
 import {TimeField} from "../../../src/feed/field/TimeField";
 import {MultiFormatRecord} from "../../../src/feed/record/MultiFormatRecord";
 
-const tiplocInsert = new FixedWidthRecord(
-  "tiploc",
-  ["tiploc_code"], {
-    "tiploc_code": new TextField(2, 7),
-    "capitals": new TextField(9, 2),
-    "nalco": new TextField(11, 6),
-    "nlc_check_character": new TextField(17, 1),
-    "tps_description": new TextField(18, 26),
-    "stanox": new TextField(44, 5),
-    "po_mcp_code": new IntField(49, 4),
-    "crs_code": new TextField(53, 3, true),
-    "description": new TextField(56, 16, true)
-  }
-);
-
-const association = new FixedWidthRecord(
-  "association",
-  [], {
-    "base_uid": new TextField(3, 6),
-    "assoc_uid": new TextField(9, 6),
-    "start_date": new ShortDateField(15),
-    "end_date": new ShortDateField(21),
-    "monday": new BooleanField(27),
-    "tuesday": new BooleanField(28),
-    "wednesday": new BooleanField(29),
-    "thursday": new BooleanField(30),
-    "friday": new BooleanField(31),
-    "saturday": new BooleanField(32),
-    "sunday": new BooleanField(33),
-    "assoc_cat": new TextField(34, 2, true),
-    "assoc_date_ind": new TextField(36, 1, true),
-    "assoc_location": new TextField(37, 7),
-    "base_location_suffix": new TextField(44, 1, false, []),
-    "assoc_location_suffix": new TextField(45, 1, false, []),
-    "association_type": new TextField(47, 1, true),
-    "stp_indicator": new TextField(79, 1)
-  },
-  ["base_uid", "assoc_uid", "assoc_location", "start_date", "end_date"]
-);
 
 const schedule = new RecordWithManualIdentifier(
-  "schedule",
+  "z_schedule",
   ["train_uid", "runs_from", "stp_indicator"], {
     "train_uid": new TextField(3, 6),
-    "runs_from": new ShortDateField(9),
+    "runs_from": new ShortDateField(9), // todo z train date format is different?
     "runs_to": new ShortDateField(15),
     "monday": new BooleanField(21),
     "tuesday": new BooleanField(22),
@@ -67,7 +27,7 @@ const schedule = new RecordWithManualIdentifier(
     "train_category": new TextField(30, 2, true),
     "train_identity": new TextField(32, 4, true),
     "headcode": new TextField(36, 4, true),
-    "course_indicator": new TextField(40, 1),
+    "course_indicator": new TextField(40, 1, true),
     "profit_center": new TextField(41, 8, true),
     "business_sector": new TextField(49, 1, true),
     "power_type": new TextField(50, 3, true),
@@ -85,23 +45,10 @@ const schedule = new RecordWithManualIdentifier(
   ["runs_from"]
 );
 
-const extraDetails = new FixedWidthRecord(
-  "schedule_extra",
-  [], {
-    "schedule": new ForeignKeyField(schedule),
-    "traction_class": new TextField(2, 4, true),
-    "uic_code": new TextField(6, 5, true),
-    "atoc_code": new TextField(11, 2),
-    "applicable_timetable_code": new TextField(13, 1),
-    "retail_train_id": new TextField(14, 8),
-    "source": new TextField(22, 1, true)
-  }
-);
-
 const stopRecordTypes = {
   "LO": {
-    "schedule": new ForeignKeyField(schedule),
-    "location": new TextField(2, 8),
+    "z_schedule": new ForeignKeyField(schedule),
+    "location": new TextField(2, 3),
     "scheduled_arrival_time": new TimeField(43, true, [" ", "0"]),
     "scheduled_departure_time": new TimeField(10),
     "scheduled_pass_time": new TimeField(43, true, [" ", "0"]),
@@ -116,8 +63,8 @@ const stopRecordTypes = {
     "performance_allowance": new TextField(41, 2, true)
   },
   "LI": {
-    "schedule": new ForeignKeyField(schedule),
-    "location": new TextField(2, 8),
+    "z_schedule": new ForeignKeyField(schedule),
+    "location": new TextField(2, 3),
     "scheduled_arrival_time": new TimeField(10, true, [" ", "0"]),
     "scheduled_departure_time": new TimeField(15, true, [" ", "0"]),
     "scheduled_pass_time": new TimeField(20, true, [" ", "0"]),
@@ -132,8 +79,8 @@ const stopRecordTypes = {
     "performance_allowance": new TextField(58, 2, true)
   },
   "LT": {
-    "schedule": new ForeignKeyField(schedule),
-    "location": new TextField(2, 8),
+    "z_schedule": new ForeignKeyField(schedule),
+    "location": new TextField(2, 3),
     "scheduled_arrival_time": new TimeField(10),
     "scheduled_departure_time": new TimeField(43, true, [" ", "0"]),
     "scheduled_pass_time": new TimeField(43, true, [" ", "0"]),
@@ -149,24 +96,20 @@ const stopRecordTypes = {
   }
 };
 
-// todo update readme to say I went a bit offscript here
 const stop = new MultiFormatRecord(
-  "stop",
-  ["schedule", "location", "public_departure_time"],
+  "z_stop",
+  ["z_schedule", "location", "public_departure_time"],
   stopRecordTypes.LI,
   stopRecordTypes,
   0, 2
 );
 
 
-const MCA = new MultiRecordFile({
-  "AA": association,
-  "TI": tiplocInsert,
+const ZTR = new MultiRecordFile({
   "BS": schedule,
-  "BX": extraDetails,
   "LO": stop,
   "LI": stop,
   "LT": stop
 }, 0, 2);
 
-export default MCA;
+export default ZTR;
