@@ -95,7 +95,8 @@ const extraDetails = new FixedWidthRecord(
     "applicable_timetable_code": new TextField(13, 1),
     "retail_train_id": new TextField(14, 8),
     "source": new TextField(22, 1, true)
-  }
+  },
+  ["schedule"]
 );
 
 const stopRecordTypes = {
@@ -151,7 +152,7 @@ const stopRecordTypes = {
 
 // todo update readme to say I went a bit offscript here
 const stop = new MultiFormatRecord(
-  "stop",
+  "stop_time",
   ["schedule", "location", "public_departure_time"],
   stopRecordTypes.LI,
   stopRecordTypes,

@@ -97,7 +97,7 @@ const stopRecordTypes = {
 };
 
 const stop = new MultiFormatRecord(
-  "z_stop",
+  "z_stop_time",
   ["z_schedule", "location", "public_departure_time"],
   stopRecordTypes.LI,
   stopRecordTypes,
