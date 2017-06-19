@@ -5,7 +5,7 @@ import {DatabaseConnection} from "./DatabaseConnection";
  * Stateful class that provides access to a MySQL table and acts as buffer for inserts.
  */
 export class MySQLTable {
-  private readonly promiseBuffer: Promise<void>[] = [];
+  private readonly promiseBuffer: Promise<any>[] = [];
   private inserts: MySQLRow[] = [];
 
   constructor(
@@ -40,7 +40,7 @@ export class MySQLTable {
   /**
    * Flush and return all promises
    */
-  public close(): Promise<void[]> {
+  public close(): Promise<any> {
     this.flush();
 
     return Promise.all(this.promiseBuffer);

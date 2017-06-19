@@ -39,7 +39,7 @@ describe("MySQLTable", () => {
 class MockDatabaseConnection implements DatabaseConnection {
   public readonly inserts: string[] = [];
 
-  query(sql: string, parameters?: any[]): Promise<void> {
+  query(sql: string, parameters?: any[]): Promise<any> {
     this.inserts.push(sql);
 
     return Promise.resolve();

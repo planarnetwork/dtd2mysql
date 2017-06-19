@@ -21,14 +21,14 @@ export class MySQLSchema {
   /**
    * Create the schema for the given record
    */
-  public createSchema(): Promise<void> {
+  public createSchema(): Promise<any> {
     return this.db.query(this.getSchema());
   }
 
   /**
    * Drop the table
    */
-  public dropSchema(): Promise<void> {
+  public dropSchema(): Promise<any> {
     return this.db.query(`DROP TABLE IF EXISTS \`${this.record.name}\``);
   }
 

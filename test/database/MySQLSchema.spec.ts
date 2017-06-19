@@ -50,7 +50,7 @@ describe("MySQLSchema", () => {
 class MockDatabaseConnection implements DatabaseConnection {
   public readonly queries: string[] = [];
 
-  query(sql: string, parameters?: any[]): Promise<void> {
+  query(sql: string, parameters?: any[]): Promise<any> {
     this.queries.push(sql);
 
     return Promise.resolve();
