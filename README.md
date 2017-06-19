@@ -32,6 +32,12 @@ dtd2mysql --fares-clean
 dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
 ```
 
+## Routeing Guide
+### Import
+```
+dtd2mysql --routeing /path/to/RJRGxxxx.ZIP
+```
+
 ## Notes
 ### null values
 
