@@ -4,6 +4,7 @@ import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import Bluebird = require("bluebird");
 import config from "../../config";
+import {CleanFaresCommand} from "./CleanFaresCommand";
 
 export class Container {
 
@@ -11,6 +12,7 @@ export class Container {
   public getCommand(type: string): Promise<CLICommand> {
     switch (type) {
       case "--fares": return this.getFaresImportCommand();
+      case "--fares-clean": return this.getCleanFaresCommand();
       case "--routeing": return this.getRouteingImportCommand();
       case "--timetable": return this.getTimetableImportCommand();
       default: throw new Error(`Unknown command: ${type}`) //return this.getShowHelpCommand();
@@ -30,6 +32,11 @@ export class Container {
   @memoize
   public async getTimetableImportCommand(): Promise<ImportFeedCommand> {
     return new ImportFeedCommand(await this.getDatabaseConnection(), config.timetable, "/tmp/dtd/timetable/");
+  }
+
+  @memoize
+  public async getCleanFaresCommand(): Promise<CLICommand> {
+    return new CleanFaresCommand(await this.getDatabaseConnection());
   }
 
   @memoize

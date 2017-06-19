@@ -54,6 +54,6 @@ export class MySQLTable {
 export type MySQLValue = null | number | string;
 
 /**
- * Row of MySQL values
+ * RestrictionRow of MySQL values
  */
 export type MySQLRow = MySQLValue[];
