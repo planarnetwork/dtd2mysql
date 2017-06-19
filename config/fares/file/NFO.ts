@@ -4,6 +4,7 @@ import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
+import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
   "non_derivable_fare_override",
@@ -18,12 +19,12 @@ const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
     "end_date": new DateField(21),
     "start_date": new DateField(29),
     "quote_date": new DateField(37),
-    "suppress_mkr": new TextField(45, 1),
+    "suppress_mkr": new BooleanField(45),
     "adult_fare": new IntField(46, 8, true),
     "child_fare": new IntField(54, 8, true),
     "restriction_code": new TextField(62, 2, true),
     "composite_indicator": new TextField(64, 1, true),
-    "cross_london_ind": new TextField(65, 1, true),
+    "cross_london_ind": new BooleanField(65, true),
     "ps_ind": new TextField(66, 1, true)
   }
 );

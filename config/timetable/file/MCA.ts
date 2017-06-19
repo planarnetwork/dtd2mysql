@@ -150,7 +150,6 @@ const stopRecordTypes = {
   }
 };
 
-// todo update readme to say I went a bit offscript here
 const stop = new MultiFormatRecord(
   "stop_time",
   ["schedule", "location", "public_departure_time"],

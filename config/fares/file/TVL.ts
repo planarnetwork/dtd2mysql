@@ -3,6 +3,7 @@ import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {IntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
+import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 const ticketValidity = new FixedWidthRecord(
   "ticket_validity",
@@ -19,8 +20,8 @@ const ticketValidity = new FixedWidthRecord(
     "ret_after_days": new IntField(46, 2),
     "ret_after_months": new IntField(48, 2),
     "ret_after_day": new TextField(50, 2, true),
-    "break_out": new TextField(52, 1),
-    "break_in": new TextField(53, 1),
+    "break_out": new BooleanField(52),
+    "break_in": new BooleanField(53),
     "out_description": new TextField(54, 14),
     "rtn_description": new TextField(68, 14)
   }
