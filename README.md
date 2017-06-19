@@ -1,4 +1,4 @@
-#dtd2mysql [![Build Status](https://travis-ci.org/open-track/dtd2mysql.svg?branch=master)](https://travis-ci.org/open-track/dtd2mysql)
+# dtd2mysql [![Build Status](https://travis-ci.org/open-track/dtd2mysql.svg?branch=master)](https://travis-ci.org/open-track/dtd2mysql)
 
 A import the British rail fares, routeing and timetable feeds into a database.
 
@@ -6,7 +6,7 @@ Although both the timetable and fares feed are open data you will need to obtain
 
 At the moment only MySQL compatible databases are supported but it could be extended to support other data stores. PRs are very welcome.
 
-##Install
+## Install
 
 You don't have to install it globally but it makes it easier if you are not going to use it as part of another project. The `-g` option usually requires `sudo`.
 
@@ -31,10 +31,6 @@ dtd2mysql --fares-clean
 ```
 dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
 ```
-### Clean (remove journeys in the past)
-```
-dtd2mysql --timetable-clean
-```
 
 ## Notes
 ### null values
@@ -46,6 +42,10 @@ Although every record format has a composite key defined in the specification an
 
 ### missing data
 At present journey segments, class legends, rounding rules, print formats  and the fares data feed meta data are not imported. They are either deprecated or irrelevant. Raise an issue or PR if you would like them added.
+
+### timetable format
+
+The timetable data does not map to a relational database in a very logical fashion so all LO, LI and LT records map to a single `stop_time` table.
 
 ## Contributing
 
