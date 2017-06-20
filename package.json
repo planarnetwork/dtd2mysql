@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,11 +11,11 @@
     "test": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
     "watch-test": "mocha -w --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
     "run": "ts-node ./src/index.ts",
-    "prepublish": "tsc -p ./ --outDir dist/"
+    "prepublishOnly": "tsc -p ./ --outDir dist/"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-track/uk-rail-import.git"
+    "url": "git+https://github.com/open-track/dtd2mysql.git"
   },
   "keywords": [
     "gb",
@@ -29,9 +29,9 @@
   "author": "Linus Norton",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/open-track/uk-rail-import/issues"
+    "url": "https://github.com/open-track/dtd2mysql/issues"
   },
-  "homepage": "https://github.com/open-track/uk-rail-import#readme",
+  "homepage": "https://github.com/open-track/dtd2mysql#readme",
   "dependencies": {
     "adm-zip": "^0.4.7",
     "bluebird": "^3.5.0",
