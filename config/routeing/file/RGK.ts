@@ -21,11 +21,11 @@ const routeDate = new CSVRecord(
     "entry_type": new TextField(2, 1),
     "crs_code": new TextField(3, 3, true),
     "group_mkr": new BooleanField(4),
-    "mode_code": new ZeroFillIntField(5, 3, true),
+    "mode_code": new ZeroFillIntField(5, 3, false, [" "]),
     "toc_id": new TextField(6, 2, true),
   }
 );
-//07778,D,T,,N,,SW
+
 const RGK = new MultiRecordFile({
   "L": londonRoute,
   "D": routeDate,
