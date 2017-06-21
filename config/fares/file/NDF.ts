@@ -8,14 +8,14 @@ import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
   "non_derivable_fare",
-  ["origin_code", "destination_code", "route_code", "railcard_code", "ticket_code", "nd_FixedWidthRecord_type", "end_date"],
+  ["origin_code", "destination_code", "route_code", "railcard_code", "ticket_code", "nd_record_type", "end_date"],
   {
     "origin_code": new TextField(1, 4),
     "destination_code": new TextField(5, 4),
     "route_code": new ZeroFillIntField(9, 5, true),
-    "railcard_code": new TextField(14, 3, true),
+    "railcard_code": new TextField(14, 3, false, []),
     "ticket_code": new TextField(17, 3),
-    "nd_FixedWidthRecord_type": new TextField(20, 1),
+    "nd_record_type": new TextField(20, 1),
     "end_date": new DateField(21),
     "start_date": new DateField(29),
     "quote_date": new DateField(37),
