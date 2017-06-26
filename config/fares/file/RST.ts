@@ -29,7 +29,7 @@ const header = new FixedWidthRecord(
     "desc_ret": new TextField(86, 50, true),
     "type_out": new TextField(136, 1),
     "type_ret": new TextField(137, 1),
-    "change_ind": new TextField(138, 1),
+    "change_ind": new BooleanField(138),
   }
 );
 
@@ -51,37 +51,40 @@ const headerDate = new FixedWidthRecord(
   }
 );
 
-const headerLocation = new FixedWidthRecord(
-  "restriction_header_route_location",
-  ["cf_mkr", "restriction_code", "location_crs_code"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "location_crs_code": new TextField(6, 3),
-  }
-);
+// Defunct
+// const headerLocation = new FixedWidthRecord(
+//   "restriction_header_route_location",
+//   ["cf_mkr", "restriction_code", "location_crs_code"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "location_crs_code": new TextField(6, 3),
+//   }
+// );
 
-const headerChanges = new FixedWidthRecord(
-  "restriction_header_allowed_change",
-  ["cf_mkr", "restriction_code", "allowed_change"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "allowed_change": new TextField(6, 3),
-  }
-);
+// Defunct
+// const headerChanges = new FixedWidthRecord(
+//   "restriction_header_allowed_change",
+//   ["cf_mkr", "restriction_code", "allowed_change"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "allowed_change": new TextField(6, 3),
+//   }
+// );
 
-const headerAdditional = new FixedWidthRecord(
-  "restriction_header_additional_restriction",
-  ["cf_mkr", "restriction_code", "additional_restriction", "origin", "destination"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "additional_restriction": new TextField(6, 2),
-    "origin": new TextField(9, 3),
-    "destination": new TextField(12, 3)
-  }
-);
+// Defunct
+// const headerAdditional = new FixedWidthRecord(
+//   "restriction_header_additional_restriction",
+//   ["cf_mkr", "restriction_code", "additional_restriction", "origin", "destination"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "additional_restriction": new TextField(6, 2),
+//     "origin": new TextField(9, 3),
+//     "destination": new TextField(12, 3)
+//   }
+// );
 
 const time = new FixedWidthRecord(
   "restriction_time",
@@ -97,7 +100,7 @@ const time = new FixedWidthRecord(
     "location": new TextField(20, 3, true),
     "rstr_type": new TextField(23, 1),
     "train_type": new TextField(24, 1),
-    "min_fare_flag": new TextField(25, 1)
+    "min_fare_flag": new BooleanField(25)
   }
 );
 
@@ -133,34 +136,36 @@ const timeToc = new FixedWidthRecord(
   }
 );
 
-const timePriviledge = new FixedWidthRecord(
-  "restriction_time_priviledge",
-  ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "sequence_no": new TextField(6, 4),
-    "out_ret": new TextField(10, 1),
-    "barred_class": new TextField(11, 1),
-    "barred_tickets": new TextField(12, 1),
-    "barred_seasons": new TextField(13, 1),
-    "barred_first": new TextField(14, 1),
-    "from_location": new TextField(15, 3, true),
-    "to_location": new TextField(18, 3, true)
-  }
-);
+// Defunct
+// const timePriviledge = new FixedWidthRecord(
+//   "restriction_time_priviledge",
+//   ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "sequence_no": new TextField(6, 4),
+//     "out_ret": new TextField(10, 1),
+//     "barred_class": new TextField(11, 1),
+//     "barred_tickets": new TextField(12, 1),
+//     "barred_seasons": new TextField(13, 1),
+//     "barred_first": new TextField(14, 1),
+//     "from_location": new TextField(15, 3, true),
+//     "to_location": new TextField(18, 3, true)
+//   }
+// );
 
-const timePriviledgeException = new FixedWidthRecord(
-  "restriction_time_priviledge_exception",
-  ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "pass_exception"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "sequence_no": new TextField(6, 4),
-    "out_ret": new TextField(10, 1),
-    "pass_exception": new TextField(11, 1)
-  }
-);
+// Defunct
+// const timePriviledgeException = new FixedWidthRecord(
+//   "restriction_time_priviledge_exception",
+//   ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "pass_exception"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "sequence_no": new TextField(6, 4),
+//     "out_ret": new TextField(10, 1),
+//     "pass_exception": new TextField(11, 1)
+//   }
+// );
 
 const train = new FixedWidthRecord(
   "restriction_train",
@@ -210,34 +215,36 @@ const trainQuota = new FixedWidthRecord(
   }
 );
 
-const trainPriviledge = new FixedWidthRecord(
-  "restriction_train_priviledge",
-  ["cf_mkr", "restriction_code", "train_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "train_no": new TextField(6, 6),
-    "out_ret": new TextField(12, 1),
-    "barred_class": new TextField(13, 1),
-    "barred_tickets": new TextField(14, 1),
-    "barred_seasons": new TextField(15, 1),
-    "barred_first": new TextField(16, 1),
-    "from_location": new TextField(17, 3, true),
-    "to_location": new TextField(20, 3, true)
-  }
-);
+// Defunct
+// const trainPriviledge = new FixedWidthRecord(
+//   "restriction_train_priviledge",
+//   ["cf_mkr", "restriction_code", "train_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "train_no": new TextField(6, 6),
+//     "out_ret": new TextField(12, 1),
+//     "barred_class": new TextField(13, 1),
+//     "barred_tickets": new TextField(14, 1),
+//     "barred_seasons": new TextField(15, 1),
+//     "barred_first": new TextField(16, 1),
+//     "from_location": new TextField(17, 3, true),
+//     "to_location": new TextField(20, 3, true)
+//   }
+// );
 
-const trainPriviledgeException = new FixedWidthRecord(
-  "restriction_train_priviledge_exception",
-  ["cf_mkr", "restriction_code", "train_no", "out_ret", "pass_exception"],
-  {
-    "cf_mkr": new TextField(3, 1),
-    "restriction_code": new TextField(4, 2),
-    "train_no": new TextField(6, 6),
-    "out_ret": new TextField(12, 1),
-    "pass_exception": new TextField(13, 1)
-  }
-);
+// Defunct
+// const trainPriviledgeException = new FixedWidthRecord(
+//   "restriction_train_priviledge_exception",
+//   ["cf_mkr", "restriction_code", "train_no", "out_ret", "pass_exception"],
+//   {
+//     "cf_mkr": new TextField(3, 1),
+//     "restriction_code": new TextField(4, 2),
+//     "train_no": new TextField(6, 6),
+//     "out_ret": new TextField(12, 1),
+//     "pass_exception": new TextField(13, 1)
+//   }
+// );
 
 const railcard = new FixedWidthRecord(
   "restriction_railcard",
@@ -290,19 +297,19 @@ const RST = new MultiRecordFile({
   "RD": dates,
   "RH": header,
   "HD": headerDate,
-  "HL": headerLocation,
-  "HC": headerChanges,
-  "HA": headerAdditional,
+  // "HL": headerLocation,
+  // "HC": headerChanges,
+  // "HA": headerAdditional,
   "TR": time,
   "TD": timeDateBand,
   "TT": timeToc,
-  "TP": timePriviledge,
-  "TE": timePriviledgeException,
+  // "TP": timePriviledge,
+  // "TE": timePriviledgeException,
   "SR": train,
   "SD": trainDate,
   "SQ": trainQuota,
-  "SP": trainPriviledge,
-  "SE": trainPriviledgeException,
+  // "SP": trainPriviledge,
+  // "SE": trainPriviledgeException,
   "RR": railcard,
   "EC": exceptionCode,
   "CA": ticketCalendar
