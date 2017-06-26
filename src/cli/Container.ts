@@ -6,6 +6,8 @@ import Bluebird = require("bluebird");
 import config from "../../config";
 import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
+import {OutputGTFSCommand} from "./OutputGTFSCommand";
+import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
 
 export class Container {
 
@@ -16,6 +18,7 @@ export class Container {
       case "--fares-clean": return this.getCleanFaresCommand();
       case "--routeing": return this.getRouteingImportCommand();
       case "--timetable": return this.getTimetableImportCommand();
+      case "--gtfs": return this.getOutputGTFSCommand();
       default: return this.getShowHelpCommand();
     }
   }
@@ -43,6 +46,13 @@ export class Container {
   @memoize
   public async getShowHelpCommand(): Promise<CLICommand> {
     return new ShowHelpCommand();
+  }
+
+  @memoize
+  private async getOutputGTFSCommand(): Promise<OutputGTFSCommand> {
+    return new OutputGTFSCommand(
+      new GTFSRepository(await this.getDatabaseConnection())
+    );
   }
 
   @memoize
