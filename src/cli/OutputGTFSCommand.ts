@@ -21,6 +21,11 @@ export class OutputGTFSCommand implements CLICommand {
   public async run(argv: string[]): Promise<void> {
     this.output = new FileOutput(argv[3] || "./");
 
+    const schedules = await this.repository.getSchedules();
+    console.log("Got schedules");
+    const calendars = CalendarFactory.createCalendar(schedules);
+    console.log("Got calendars" + calendars.length);
+    
     await Promise.all([
       this.directCopy(this.repository.getTransfers(), "transfers.txt"),
       this.directCopy(this.repository.getStops(), "stops.txt"),

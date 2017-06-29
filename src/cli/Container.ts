@@ -50,8 +50,13 @@ export class Container {
 
   @memoize
   private async getOutputGTFSCommand(): Promise<OutputGTFSCommand> {
+    const [promiseDb, streamDb] = await Promise.all([
+      this.getDatabaseConnection(),
+      this.getDatabaseStream()
+    ]);
+
     return new OutputGTFSCommand(
-      new GTFSRepository(await this.getDatabaseConnection())
+      new GTFSRepository(promiseDb, streamDb)
     );
   }
 
@@ -71,7 +76,25 @@ export class Container {
       promise: Bluebird,
       //debug: ['ComQueryPacket', 'RowDataPacket']
     });
+  }
+
+  @memoize
+  public async getDatabaseStream(): Promise<any> {
+    if (!process.env.DATABASE_NAME || !process.env.DATABASE_USERNAME) {
+      throw new Error("Please set the database environment variables.");
+    }
+
+    return await require('mysql2').createPool({
+      host: process.env.DATABASE_HOSTNAME,
+      user: process.env.DATABASE_USERNAME,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_NAME,
+      connectionLimit: 3,
+      multipleStatements: true,
+      //debug: ['ComQueryPacket', 'RowDataPacket']
+    });
 
   }
+
 
 }
