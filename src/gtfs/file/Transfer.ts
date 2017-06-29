@@ -1,5 +1,5 @@
 
-import {Duration} from "./Duration";
+import {Duration} from "../Duration";
 
 /**
  * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same) or a fixed

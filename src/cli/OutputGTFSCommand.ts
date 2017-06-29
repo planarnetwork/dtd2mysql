@@ -1,8 +1,11 @@
 
 import {CLICommand} from "./CLICommand";
-import {Transfer} from "../gtfs/Transfer";
+import {Transfer} from "../gtfs/file/Transfer";
 import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
 import {FileOutput} from "../gtfs/FileOutput";
+import {ScheduleCalendar} from "../gtfs/native/ScheduleCalendar";
+import {Schedule} from "../gtfs/native/Schedule";
+import {CalendarFactory} from "../gtfs/CalendarFactory";
 
 export class OutputGTFSCommand implements CLICommand {
 
@@ -12,52 +15,30 @@ export class OutputGTFSCommand implements CLICommand {
     private readonly repository: GTFSRepository
   ) {}
 
+  /**
+   * Turn the timetable feed into GTFS files
+   */
   public async run(argv: string[]): Promise<void> {
     this.output = new FileOutput(argv[3] || "./");
 
-    const transfers = this.insertTransfers();
+    await Promise.all([
+      this.directCopy(this.repository.getTransfers(), "transfers.txt"),
+      this.directCopy(this.repository.getStops(), "stops.txt"),
+      //CalendarFactory.createCalendar(await this.repository.getSchedules())
+    ]);
 
-    await transfers;
     await this.repository.end();
   }
 
-  private async insertTransfers(): Promise<any> {
-    const output = this.output.open("transfers.txt");
-    const interchange = await this.repository.getInterchange();
+  /**
+   * Map SQL records to a file
+   */
+  private async directCopy(records: Promise<object[]>, filename: string): Promise<void> {
+    const output = this.output.open(filename);
+    const rows = await records;
 
-    interchange.forEach(line => output.write(line));
+    rows.forEach(row => output.write(row));
     output.end();
   }
 
-  // private insertStops(): Promise<any> {
-  //   const output = this.fileOutput.getPipe("transfers.txt");
-  //   const stops = this.repository.getStops();
-  //
-  //   stops.pipe(output);
-  //
-  //   return promisify(output);
-  // }
-  //
-  // private async insertCalendar() {
-  //   const schedules = await this.repository.getSchedules();
-  //   const calendar = {};
-  //   const trips = {};
-  //
-  //   for (const schedule in schedules) {
-  //     if (!schedule.isCancellation) {
-  //       calendar[schedule.tuid].push(schedule.asCalendar);
-  //       trips[schedule.tuid].push(schedule.asTrip);
-  //     }
-  //
-  //     for (const calendarItem in calendar[schedule.tuid]) {
-  //       if (schedule.isShort) {
-  //         calendarItem.addExcludeDays(schedule);
-  //       }
-  //       else {
-  //         const additionalCalendarItem = calendarItem.divideAround(schedule);
-  //         calendar.push(additionalCalendarItem);
-  //       }
-  //     }
-  //   }
-  // }
 }
