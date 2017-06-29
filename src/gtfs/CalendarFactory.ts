@@ -50,7 +50,7 @@ export class CalendarFactory {
 
             // remove the current calendar and add the replacements
             calendarBySchedule[scheduleJ.id] = calendarBySchedule[scheduleJ.id]
-              .filter(c => c != schedule.calendar)
+              .filter(c => c !== calendarJ)
               .concat(replacementCalendars);
           }
         }

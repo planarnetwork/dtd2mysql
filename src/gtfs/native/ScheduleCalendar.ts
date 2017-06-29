@@ -34,9 +34,12 @@ export class ScheduleCalendar {
 
   /**
    * Is the timeband short
+   *
+   * todo the length of the overlap between two bands should be considered rather than the length of the band
    */
+  @memoize
   public get isShort(): boolean {
-    return this.runsFrom.diff(this.runsTo, "days") < 20;
+    return this.runsTo.diff(this.runsFrom, "days") < 20;
   }
 
   /**

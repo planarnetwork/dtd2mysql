@@ -25,6 +25,41 @@ describe("CalendarFactory", () => {
     chai.expect(excludeDays[2].toISOString()).to.deep.equal(moment("2017-01-07").toISOString());
   });
 
+  it("adds divides schedules where overlapped", () => {
+    const schedules = [
+      schedule(1, "A", "2017-01-01", "2017-01-31"),
+      schedule(2, "A", "2017-02-01", "2017-02-28"),
+      schedule(3, "B", "2017-01-02", "2017-03-15"),
+      schedule(4, "A", "2017-01-15", "2017-02-15"),
+    ];
+
+    const calendars = CalendarFactory.createCalendar(schedules);
+
+    chai.expect(calendars[0].runsFrom.isSame("2017-01-01")).to.be.true;
+    chai.expect(calendars[0].runsTo.isSame("2017-01-14")).to.be.true;
+    chai.expect(calendars[1].runsFrom.isSame("2017-02-16")).to.be.true;
+    chai.expect(calendars[1].runsTo.isSame("2017-02-28")).to.be.true;
+    chai.expect(calendars[2].runsFrom.isSame("2017-01-02")).to.be.true;
+    chai.expect(calendars[2].runsTo.isSame("2017-03-15")).to.be.true;
+    chai.expect(calendars[3].runsFrom.isSame("2017-01-15")).to.be.true;
+    chai.expect(calendars[3].runsTo.isSame("2017-02-15")).to.be.true;
+  });
+
+  it("removes redundant calendars", () => {
+    const schedules = [
+      schedule(1, "A", "2017-01-01", "2017-01-31"),
+      schedule(3, "B", "2017-01-01", "2017-01-31"),
+      schedule(5, "C", "2017-01-01", "2017-01-31")
+    ];
+
+    const calendars = CalendarFactory.createCalendar(schedules);
+
+    chai.expect(calendars.length).to.equal(1);
+    chai.expect(calendars[0].runsFrom).to.deep.equal(moment("2017-01-01"));
+    chai.expect(calendars[0].runsTo).to.deep.equal(moment("2017-01-31"));
+  });
+
+
 });
 
 function schedule(id: number, tuid: TUID, from: string, to: string): Schedule {
