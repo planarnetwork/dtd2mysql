@@ -77,11 +77,13 @@ export class GTFSRepository {
         SELECT
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to, 
           monday, tuesday, wednesday, thursday, friday, saturday, sunday, 
-          bank_holiday_running, stp_indicator, location, 
+          bank_holiday_running, stp_indicator, crs_code, 
           public_arrival_time, public_departure_time, platform
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
-        LEFT JOIN stop_time ON schedule.id = stop_time.schedule
+        JOIN stop_time ON schedule.id = stop_time.schedule
+        JOIN tiploc ON location = tiploc_code
+        WHERE public_arrival_time IS NOT NULL OR public_departure_time IS NOT NULL
         ORDER BY stop_time.id
       `);
 
@@ -94,7 +96,7 @@ export class GTFSRepository {
           trip_id: row.id,
           arrival_time: row.public_arrival_time,
           departure_time: row.public_departure_time,
-          stop_id: row.location,
+          stop_id: row.crs_code,
           stop_sequence: stops.length + 1,
           stop_headsign: row.platform,
           pickup_type: row.public_departure_time ? 0 : 1,

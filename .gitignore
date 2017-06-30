@@ -3,3 +3,10 @@ node_modules/
 typings/
 npm-debug.log
 dist/
+calendar.txt 
+calendar_dates.txt 
+stop_times.txt 
+transfers.txt 
+trips.txt 
+stops.txt
+

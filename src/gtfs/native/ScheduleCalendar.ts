@@ -2,6 +2,8 @@
 import {Moment} from "moment";
 import memoize = require("memoized-class-decorator");
 import moment = require("moment");
+import {Calendar} from "../file/Calendar";
+import {CalendarDate} from "../file/CalendarDate";
 
 export class ScheduleCalendar {
 
@@ -15,7 +17,7 @@ export class ScheduleCalendar {
 
   @memoize
   public get id() {
-    return this.runsFrom.toISOString() + this.runsTo.toISOString() + this.bankHoliday + Object.values(this.days).join("") + Object.keys(this.excludeDays).join("");
+    return this.runsFrom.format("YYYYMMDD") + this.runsTo.format("YYYYMMDD") + this.bankHoliday + Object.values(this.days).join("") + Object.keys(this.excludeDays).join("");
   }
 
   @memoize
@@ -39,7 +41,7 @@ export class ScheduleCalendar {
    */
   @memoize
   public get isShort(): boolean {
-    return this.runsTo.diff(this.runsFrom, "days") < 20;
+    return this.runsTo.diff(this.runsFrom, "days") < 5;
   }
 
   /**
@@ -51,7 +53,7 @@ export class ScheduleCalendar {
 
     while (startDate.isSameOrBefore(endDate)) {
       if (this.days[startDate.day()]) {
-        this.excludeDays[startDate.toISOString()] = startDate.clone();
+        this.excludeDays[startDate.format("YYYYMMDD")] = startDate.clone();
       }
 
       startDate.add(1, "days");
@@ -89,8 +91,40 @@ export class ScheduleCalendar {
     return Object
       .values(this.excludeDays)
       .filter(d => d.isBetween(from, until, "days", "[]"))
-      .reduce((days: ExcludeDays, day: Moment) => { days[day.toISOString()] = day; return days; }, {});
+      .reduce((days: ExcludeDays, day: Moment) => { days[day.format("YYYYMMDD")] = day; return days; }, {});
   }
+
+  /**
+   * Convert to a GTFS Calendar object
+   */
+  public toCalendar(serviceId: string): Calendar {
+    return {
+      start_date: this.runsFrom.format("YYYYMMDD"),
+      end_date: this.runsTo.format("YYYYMMDD"),
+      monday: this.days[1],
+      tuesday: this.days[2],
+      wednesday: this.days[3],
+      thursday: this.days[4],
+      friday: this.days[5],
+      saturday: this.days[6],
+      sunday: this.days[7],
+      service_id: serviceId
+    };
+  }
+
+  /**
+   * Convert exclude days to GTFS Calendar Dates
+   */
+  public toCalendarDates(serviceId: string): CalendarDate[] {
+    return Object.values(this.excludeDays).map(d => {
+      return {
+        service_id: serviceId,
+        date: d.format("YYYYMMDD"),
+        exception_type: 2
+      };
+    });
+  }
+
 }
 
 type ExcludeDays = {

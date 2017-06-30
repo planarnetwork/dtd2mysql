@@ -1,6 +1,7 @@
 
 import {StopTime} from "../file/StopTime";
 import {ScheduleCalendar} from "./ScheduleCalendar";
+import {Trip} from "../file/Trip";
 
 export class Schedule {
 
@@ -15,6 +16,21 @@ export class Schedule {
 
   public get isCancellation(): boolean {
     return this.stp === STP.Cancellation;
+  }
+
+  public toTrip(serviceId: string): Trip {
+    return {
+      route_id: "0",
+      service_id: serviceId,
+      trip_id: this.id,
+      trip_headsign: this.tuid,
+      trip_short_name: this.rsid,
+      direction_id: 0,
+      block_id: "0",
+      shape_id: "0",
+      wheelchair_accessible: 0,
+      bikes_allowed: 0
+    };
   }
 
 }

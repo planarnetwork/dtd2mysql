@@ -1,39 +1,32 @@
 
 import {Schedule} from "./native/Schedule";
 import {ScheduleCalendar} from "./native/ScheduleCalendar";
+import {Calendar} from "./file/Calendar";
+import {CalendarDate} from "./file/CalendarDate";
 
 export class CalendarFactory {
 
   /**
    * Load the schedules and create the calendar and calendar exceptions from the schedule records
    */
-  public static createCalendar(schedules: Schedule[]): ScheduleCalendar[] {
+  public static createCalendar(schedules: Schedule[]): [Calendar[], CalendarDate[], ServiceIdIndex] {
     const calendarsByScheduleId = this.getCalendarsBySchedule(schedules);
-    const scheduleIdByCalendarId = {};
+    const uniqueCalendars = this.getUniqueCalendars(calendarsByScheduleId);
+    const serviceIdByScheduleId = this.getServiceIdBySchedule(calendarsByScheduleId, uniqueCalendars);
+    const calendars: Calendar[] = [];
+    const calendarDates: CalendarDate[] = [];
 
-    for (const scheduleId in calendarsByScheduleId) {
-      // the calendar ID must consist of all of the service's calendars in order to for it to share with another service
-      const calendarId = calendarsByScheduleId[scheduleId].map(c => c.id).join("|");
-
-      scheduleIdByCalendarId[calendarId] = scheduleId;
+    for (const serviceId of Object.values(uniqueCalendars)) {
+      for (const scheduleCalendar of calendarsByScheduleId[serviceId]) {
+        calendars.push(scheduleCalendar.toCalendar(serviceId));
+        calendarDates.push(...scheduleCalendar.toCalendarDates(serviceId));
+      }
     }
 
-    // take the calendar of each schedule that resulted in a unique calendar
-    return Object
-      .values(scheduleIdByCalendarId)
-      .map((scheduleId: number) => calendarsByScheduleId[scheduleId])
-      .reduce((allCalendars, scheduleCalendars) => allCalendars.concat(scheduleCalendars), []);
-
-    // for (const schedule of schedules) {
-    //   const calendarId = calendarsByScheduleId[schedule.id].map(c => c.id).join("|");
-    //   const serviceId = scheduleIdByCalendarId[calendarId];
-    //
-    //   //output trip
-    // }
-
+    return [calendars, calendarDates, serviceIdByScheduleId];
   }
 
-  private static getCalendarsBySchedule(schedules: Schedule[]) {
+  private static getCalendarsBySchedule(schedules: Schedule[]): CalendarIndex {
     const scheduleByTuid: ScheduleIndex = {};
     const calendarBySchedule: CalendarIndex = {};
 
@@ -65,6 +58,30 @@ export class CalendarFactory {
     return calendarBySchedule;
   }
 
+  private static getUniqueCalendars(calendarsByScheduleId: CalendarIndex): ServiceIdIndex {
+    const uniqueCalendars: ServiceIdIndex = {};
+
+    for (const scheduleId in calendarsByScheduleId) {
+      // the calendar ID must consist of all of the service's calendars in order to for it to share with another service
+      const calendarId = calendarsByScheduleId[scheduleId].map(c => c.id).join("|");
+
+      uniqueCalendars[calendarId] = scheduleId;
+    }
+
+    return uniqueCalendars;
+  }
+
+  private static getServiceIdBySchedule(calendarsByScheduleId: CalendarIndex, uniqueCalendars: ServiceIdIndex): ServiceIdIndex {
+    const serviceIdByScheduleId = {};
+
+    for (const scheduleId in calendarsByScheduleId) {
+      const calendarId = calendarsByScheduleId[scheduleId].map(c => c.id).join("|");
+
+      serviceIdByScheduleId[scheduleId] = uniqueCalendars[calendarId];
+    }
+
+    return serviceIdByScheduleId;
+  }
 }
 
 
@@ -75,3 +92,7 @@ type CalendarIndex = {
 type ScheduleIndex = {
   [id: string]: Schedule[]
 }
+
+export type ServiceIdIndex = {
+  [calendarId: string]: string
+};

@@ -12,17 +12,15 @@ describe("CalendarFactory", () => {
       schedule(2, "A", "2017-01-05", "2017-01-07")
     ];
 
-    const calendars = CalendarFactory.createCalendar(schedules);
+    const [calendars, calendarDates] = CalendarFactory.createCalendar(schedules);
 
-    chai.expect(calendars[0].runsFrom).to.deep.equal(moment("2017-01-01"));
-    chai.expect(calendars[0].runsTo).to.deep.equal(moment("2017-01-31"));
+    chai.expect(calendars[0].start_date).to.equal("20170101");
+    chai.expect(calendars[0].end_date).to.equal("20170131");
 
-    const excludeDays = Object.values(calendars[0].excludeDays);
-
-    chai.expect(excludeDays.length).to.equal(3);
-    chai.expect(excludeDays[0].toISOString()).to.deep.equal(moment("2017-01-05").toISOString());
-    chai.expect(excludeDays[1].toISOString()).to.deep.equal(moment("2017-01-06").toISOString());
-    chai.expect(excludeDays[2].toISOString()).to.deep.equal(moment("2017-01-07").toISOString());
+    chai.expect(calendarDates.length).to.equal(3);
+    chai.expect(calendarDates[0].date).to.equal("20170105");
+    chai.expect(calendarDates[1].date).to.equal("20170106");
+    chai.expect(calendarDates[2].date).to.equal("20170107");
   });
 
   it("adds divides schedules where overlapped", () => {
@@ -33,16 +31,16 @@ describe("CalendarFactory", () => {
       schedule(4, "A", "2017-01-15", "2017-02-15"),
     ];
 
-    const calendars = CalendarFactory.createCalendar(schedules);
+    const [calendars] = CalendarFactory.createCalendar(schedules);
 
-    chai.expect(calendars[0].runsFrom.isSame("2017-01-01")).to.be.true;
-    chai.expect(calendars[0].runsTo.isSame("2017-01-14")).to.be.true;
-    chai.expect(calendars[1].runsFrom.isSame("2017-02-16")).to.be.true;
-    chai.expect(calendars[1].runsTo.isSame("2017-02-28")).to.be.true;
-    chai.expect(calendars[2].runsFrom.isSame("2017-01-02")).to.be.true;
-    chai.expect(calendars[2].runsTo.isSame("2017-03-15")).to.be.true;
-    chai.expect(calendars[3].runsFrom.isSame("2017-01-15")).to.be.true;
-    chai.expect(calendars[3].runsTo.isSame("2017-02-15")).to.be.true;
+    chai.expect(calendars[0].start_date).to.equal("20170101");
+    chai.expect(calendars[0].end_date).to.equal("20170114");
+    chai.expect(calendars[1].start_date).to.equal("20170216");
+    chai.expect(calendars[1].end_date).to.equal("20170228");
+    chai.expect(calendars[2].start_date).to.equal("20170102");
+    chai.expect(calendars[2].end_date).to.equal("20170315");
+    chai.expect(calendars[3].start_date).to.equal("20170115");
+    chai.expect(calendars[3].end_date).to.equal("20170215");
   });
 
   it("removes redundant calendars", () => {
@@ -52,13 +50,12 @@ describe("CalendarFactory", () => {
       schedule(5, "C", "2017-01-01", "2017-01-31")
     ];
 
-    const calendars = CalendarFactory.createCalendar(schedules);
+    const [calendars] = CalendarFactory.createCalendar(schedules);
 
     chai.expect(calendars.length).to.equal(1);
-    chai.expect(calendars[0].runsFrom).to.deep.equal(moment("2017-01-01"));
-    chai.expect(calendars[0].runsTo).to.deep.equal(moment("2017-01-31"));
+    chai.expect(calendars[0].start_date).to.equal("20170101");
+    chai.expect(calendars[0].end_date).to.equal("20170131");
   });
-
 
 });
 
