@@ -93,7 +93,7 @@ const extraDetails = new FixedWidthRecord(
     "uic_code": new TextField(6, 5, true),
     "atoc_code": new TextField(11, 2),
     "applicable_timetable_code": new TextField(13, 1),
-    "retail_train_id": new TextField(14, 8),
+    "retail_train_id": new TextField(14, 8, true),
     "source": new TextField(22, 1, true)
   },
   ["schedule"]
