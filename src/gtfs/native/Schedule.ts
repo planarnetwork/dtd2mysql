@@ -2,6 +2,8 @@
 import {StopTime} from "../file/StopTime";
 import {ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../file/Trip";
+import {RouteType} from "../file/Route";
+import {AgencyID} from "../file/Agency";
 
 export class Schedule {
 
@@ -11,6 +13,8 @@ export class Schedule {
     public readonly tuid: TUID,
     public readonly rsid: RSID,
     public readonly calendar: ScheduleCalendar,
+    public readonly mode: RouteType,
+    public readonly operator: AgencyID | null,
     public readonly stp: STP
   ) {}
 

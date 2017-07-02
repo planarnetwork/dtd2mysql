@@ -6,6 +6,7 @@ import {RSID, Schedule, STP, TUID} from "../native/Schedule";
 import {StopTime} from "../file/StopTime";
 import moment = require("moment");
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
+import {RouteType} from "../file/Route";
 
 /**
  * Provide access to the CIF data in a vaguely GTFS-ish shape.
@@ -72,73 +73,37 @@ export class GTFSRepository {
   }
 
   public async getSchedules(): Promise<Schedule[]> {
-    return new Promise<Schedule[]>((resolve, reject) => {
-      const results = this.stream.query(`
+    const scheduleBuilder = new ScheduleBuilder();
+
+    await Promise.all([
+      scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
-          schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to, 
-          monday, tuesday, wednesday, thursday, friday, saturday, sunday, 
-          bank_holiday_running, stp_indicator, crs_code, 
-          public_arrival_time, public_departure_time, platform
+          schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
+          monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+          bank_holiday_running, stp_indicator, crs_code, train_category,
+          public_arrival_time, public_departure_time, platform, atoc_code,
+          stop_time.id AS stop_id
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         JOIN stop_time ON schedule.id = stop_time.schedule
         JOIN tiploc ON location = tiploc_code
         WHERE public_arrival_time IS NOT NULL OR public_departure_time IS NOT NULL
-        ORDER BY stop_time.id
-      `);
+        ORDER BY stop_id
+      `)),
+      scheduleBuilder.loadSchedules(this.stream.query(`
+        SELECT
+          z_schedule.id AS id, train_uid, null, runs_from, runs_to,
+          monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+          bank_holiday_running, stp_indicator, location, train_category,
+          public_arrival_time, public_departure_time, platform, null,
+          z_stop_time.id AS stop_id
+        FROM z_schedule
+        JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
+        ORDER BY stop_id
+      `))
+    ]);
 
-      const schedules: Schedule[] = [];
-      let stops: StopTime[] = [];
-      let prevSchedule = 1;
-
-      results.on("result", row => {
-        stops.push({
-          trip_id: row.id,
-          arrival_time: row.public_arrival_time,
-          departure_time: row.public_departure_time,
-          stop_id: row.crs_code,
-          stop_sequence: stops.length + 1,
-          stop_headsign: row.platform,
-          pickup_type: row.public_departure_time ? 0 : 1,
-          drop_off_type: row.public_arrival_time ? 0 : 1,
-          shape_dist_traveled: null,
-          timepoint: 1
-        });
-
-        if (prevSchedule !== row.id) {
-          schedules.push(new Schedule(
-            row.id,
-            stops,
-            row.train_uid,
-            row.retail_train_id,
-            new ScheduleCalendar(
-              moment(row.runs_from),
-              moment(row.runs_to),
-              {
-                0: row.sunday,
-                1: row.monday,
-                2: row.tuesday,
-                3: row.wednesday,
-                4: row.thursday,
-                5: row.friday,
-                6: row.saturday
-              },
-              row.bank_holiday_running
-            ),
-            row.stp_indicator
-          ));
-
-          stops = [];
-          prevSchedule = row.id;
-        }
-      });
-
-      results.on("end", () => {
-        // todo push last Schedule
-        resolve(schedules);
-      });
-      results.on("error", reject);
-    });
+    return scheduleBuilder.schedules;
   }
 
   /**
@@ -166,7 +131,91 @@ interface ScheduleStopTimeRow {
   bank_holiday_running: 0 | 1,
   stp_indicator: STP,
   location: CRS,
+  train_category: string,
+  atoc_code: string | null,
   public_arrival_time: number,
   public_departure_time: number,
   platform: string
+}
+
+const RouteTypeIndex = {
+  "OO": RouteType.Rail,
+  "XX": RouteType.Rail,
+  "XZ": RouteType.Rail,
+  "BR": RouteType.Gondola,
+  "BS": RouteType.Bus,
+  "OL": RouteType.Rail,
+  "XC": RouteType.Rail,
+  "SS": RouteType.Rail
+};
+
+class ScheduleBuilder {
+  public readonly schedules: Schedule[] = [];
+
+  /**
+   * Take a stream of ScheduleStopTimeRow, turn them into Schedule objects and add the result to the schedules
+   */
+  public loadSchedules(results: any): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      let stops: StopTime[] = [];
+      let prevRow: ScheduleStopTimeRow;
+      let prevId = 1;
+
+      results.on("result", row => {
+        stops.push({
+          trip_id: row.id,
+          arrival_time: row.public_arrival_time,
+          departure_time: row.public_departure_time,
+          stop_id: row.crs_code,
+          stop_sequence: stops.length + 1,
+          stop_headsign: row.platform,
+          pickup_type: row.public_departure_time ? 0 : 1,
+          drop_off_type: row.public_arrival_time ? 0 : 1,
+          shape_dist_traveled: null,
+          timepoint: 1
+        });
+
+        if (prevId !== row.id) {
+          this.schedules.push(this.createSchedule(row, stops));
+
+          stops = [];
+          prevId = row.id;
+          prevRow = row;
+        }
+      });
+
+      results.on("end", () => {
+        this.schedules.push(this.createSchedule(prevRow, stops));
+
+        resolve();
+      });
+      results.on("error", reject);
+    });
+  }
+
+  private createSchedule(row: ScheduleStopTimeRow, stops: StopTime[]): Schedule {
+    return new Schedule(
+      row.id,
+      stops,
+      row.train_uid,
+      row.retail_train_id,
+      new ScheduleCalendar(
+        moment(row.runs_from),
+        moment(row.runs_to),
+        {
+          0: row.sunday,
+          1: row.monday,
+          2: row.tuesday,
+          3: row.wednesday,
+          4: row.thursday,
+          5: row.friday,
+          6: row.saturday
+        },
+        row.bank_holiday_running
+      ),
+      RouteTypeIndex[row.train_category] || RouteType.Rail,
+      row.atoc_code,
+      row.stp_indicator
+    );
+  }
 }

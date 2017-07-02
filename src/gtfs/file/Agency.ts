@@ -1,0 +1,2 @@
+
+export type AgencyID = string;

@@ -3,6 +3,7 @@ import {Schedule, STP, TUID} from "../../src/gtfs/native/Schedule";
 import {ScheduleCalendar} from "../../src/gtfs/native/ScheduleCalendar";
 import moment = require("moment");
 import {CalendarFactory} from "../../src/gtfs/CalendarFactory";
+import {RouteType} from "../../src/gtfs/file/Route";
 
 describe("CalendarFactory", () => {
 
@@ -75,6 +76,8 @@ function schedule(id: number, tuid: TUID, from: string, to: string): Schedule {
       1,
       {}
     ),
+    RouteType.Rail,
+    "LN",
     STP.Permenant
   );
 }
