@@ -71,17 +71,21 @@ export class ScheduleCalendar {
     if (this.runsFrom.isBefore(calendar.runsFrom)) {
       const start = this.runsFrom;
       const end = calendar.runsFrom.clone().subtract(1, "days");
-      const excludes = this.extractExcludeDays(start, end);
 
-      calendars.push(new ScheduleCalendar(start, end, this.days, this.bankHoliday, excludes));
+      // go back to the earliest valid date
+      while (this.days[end.day()] === 0) end.subtract(1, "days");
+
+      calendars.push(new ScheduleCalendar(start, end, this.days, this.bankHoliday, this.extractExcludeDays(start, end)));
     }
 
     if (this.runsTo.isAfter(calendar.runsTo)) {
       const start = calendar.runsTo.clone().add(1, "days");
       const end = this.runsTo;
-      const excludes = this.extractExcludeDays(start, end);
 
-      calendars.push(new ScheduleCalendar(start, end, this.days, this.bankHoliday, excludes));
+      // go forward to the earliest valid date
+      while (this.days[start.day()] === 0) start.add(1, "days");
+
+      calendars.push(new ScheduleCalendar(start, end, this.days, this.bankHoliday, this.extractExcludeDays(start, end)));
     }
 
     return calendars;
@@ -99,16 +103,16 @@ export class ScheduleCalendar {
    */
   public toCalendar(serviceId: string): Calendar {
     return {
-      start_date: this.runsFrom.format("YYYYMMDD"),
-      end_date: this.runsTo.format("YYYYMMDD"),
+      service_id: serviceId,
       monday: this.days[1],
       tuesday: this.days[2],
       wednesday: this.days[3],
       thursday: this.days[4],
       friday: this.days[5],
       saturday: this.days[6],
-      sunday: this.days[7],
-      service_id: serviceId
+      sunday: this.days[0],
+      start_date: this.runsFrom.format("YYYYMMDD"),
+      end_date: this.runsTo.format("YYYYMMDD"),
     };
   }
 
@@ -132,12 +136,12 @@ type ExcludeDays = {
 }
 
 export interface Days {
+  0: 0 | 1;
   1: 0 | 1;
   2: 0 | 1;
   3: 0 | 1;
   4: 0 | 1;
   5: 0 | 1;
   6: 0 | 1;
-  7: 0 | 1;
 }
 

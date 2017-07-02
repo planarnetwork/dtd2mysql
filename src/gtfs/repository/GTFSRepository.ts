@@ -115,13 +115,13 @@ export class GTFSRepository {
               moment(row.runs_from),
               moment(row.runs_to),
               {
+                0: row.sunday,
                 1: row.monday,
                 2: row.tuesday,
                 3: row.wednesday,
                 4: row.thursday,
                 5: row.friday,
-                6: row.saturday,
-                7: row.sunday,
+                6: row.saturday
               },
               row.bank_holiday_running
             ),
