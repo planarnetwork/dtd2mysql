@@ -12,7 +12,8 @@ describe("CalendarFactory", () => {
       schedule(2, "A", "2017-01-05", "2017-01-07")
     ];
 
-    const [calendars, calendarDates] = CalendarFactory.createCalendar(schedules);
+    const factory = new CalendarFactory([]);
+    const [calendars, calendarDates] = factory.createCalendar(schedules);
 
     chai.expect(calendars[0].start_date).to.equal("20170101");
     chai.expect(calendars[0].end_date).to.equal("20170131");
@@ -31,7 +32,8 @@ describe("CalendarFactory", () => {
       schedule(4, "A", "2017-01-15", "2017-02-15"),
     ];
 
-    const [calendars] = CalendarFactory.createCalendar(schedules);
+    const factory = new CalendarFactory([]);
+    const [calendars] = factory.createCalendar(schedules);
 
     chai.expect(calendars[0].start_date).to.equal("20170101");
     chai.expect(calendars[0].end_date).to.equal("20170114");
@@ -50,7 +52,8 @@ describe("CalendarFactory", () => {
       schedule(5, "C", "2017-01-01", "2017-01-31")
     ];
 
-    const [calendars] = CalendarFactory.createCalendar(schedules);
+    const factory = new CalendarFactory([]);
+    const [calendars] = factory.createCalendar(schedules);
 
     chai.expect(calendars.length).to.equal(1);
     chai.expect(calendars[0].start_date).to.equal("20170101");

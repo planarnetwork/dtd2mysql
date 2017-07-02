@@ -3,13 +3,18 @@ import {Schedule} from "./native/Schedule";
 import {ScheduleCalendar} from "./native/ScheduleCalendar";
 import {Calendar} from "./file/Calendar";
 import {CalendarDate} from "./file/CalendarDate";
+import {Moment} from "moment";
 
 export class CalendarFactory {
+
+  constructor(
+    private readonly bankHolidays: Moment[]
+  ) {}
 
   /**
    * Load the schedules and create the calendar and calendar exceptions from the schedule records
    */
-  public static createCalendar(schedules: Schedule[]): [Calendar[], CalendarDate[], ServiceIdIndex] {
+  public createCalendar(schedules: Schedule[]): [Calendar[], CalendarDate[], ServiceIdIndex] {
     const calendarsByScheduleId = this.getCalendarsBySchedule(schedules);
     const uniqueCalendars = this.getUniqueCalendars(calendarsByScheduleId);
     const serviceIdByScheduleId = this.getServiceIdBySchedule(calendarsByScheduleId, uniqueCalendars);
@@ -18,6 +23,8 @@ export class CalendarFactory {
 
     for (const serviceId of Object.values(uniqueCalendars)) {
       for (const scheduleCalendar of calendarsByScheduleId[serviceId]) {
+        scheduleCalendar.addBankHolidays(this.bankHolidays);
+
         calendars.push(scheduleCalendar.toCalendar(serviceId));
         calendarDates.push(...scheduleCalendar.toCalendarDates(serviceId));
       }
@@ -26,7 +33,10 @@ export class CalendarFactory {
     return [calendars, calendarDates, serviceIdByScheduleId];
   }
 
-  private static getCalendarsBySchedule(schedules: Schedule[]): CalendarIndex {
+  /**
+   * Index the calendars by schedule ID detecting overlapping TUIDs and dividing calendar entries
+   */
+  private getCalendarsBySchedule(schedules: Schedule[]): CalendarIndex {
     const scheduleByTuid: ScheduleIndex = {};
     const calendarBySchedule: CalendarIndex = {};
 
@@ -58,7 +68,10 @@ export class CalendarFactory {
     return calendarBySchedule;
   }
 
-  private static getUniqueCalendars(calendarsByScheduleId: CalendarIndex): ServiceIdIndex {
+  /**
+   * Index all the schedules based on the unqiue key of all their calendars to get an index of unqiue calendars
+   */
+  private getUniqueCalendars(calendarsByScheduleId: CalendarIndex): ServiceIdIndex {
     const uniqueCalendars: ServiceIdIndex = {};
 
     for (const scheduleId in calendarsByScheduleId) {
@@ -71,7 +84,10 @@ export class CalendarFactory {
     return uniqueCalendars;
   }
 
-  private static getServiceIdBySchedule(calendarsByScheduleId: CalendarIndex, uniqueCalendars: ServiceIdIndex): ServiceIdIndex {
+  /**
+   * Iterate the schedules re-calculating their unique calendar ID to obtain a mapping of scheduleId to "serviceId"
+   */
+  private getServiceIdBySchedule(calendarsByScheduleId: CalendarIndex, uniqueCalendars: ServiceIdIndex): ServiceIdIndex {
     const serviceIdByScheduleId = {};
 
     for (const scheduleId in calendarsByScheduleId) {

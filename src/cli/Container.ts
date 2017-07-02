@@ -8,6 +8,8 @@ import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
+import {bankHolidays} from "../../config/gtfs/bank-holidays";
+import {CalendarFactory} from "../gtfs/CalendarFactory";
 
 export class Container {
 
@@ -56,7 +58,8 @@ export class Container {
     ]);
 
     return new OutputGTFSCommand(
-      new GTFSRepository(promiseDb, streamDb)
+      new GTFSRepository(promiseDb, streamDb),
+      new CalendarFactory(bankHolidays)
     );
   }
 

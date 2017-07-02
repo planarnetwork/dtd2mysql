@@ -63,6 +63,15 @@ export class ScheduleCalendar {
   }
 
   /**
+   * Add exception days for the list of dates
+   */
+  public addBankHolidays(holidays: Moment[]): void {
+    holidays
+      .filter(m => !this.bankHoliday && m.isBetween(this.runsFrom, this.runsTo, "days", "[]") && this.days[m.day()])
+      .forEach(m => this.excludeDays[m.format("YYYYMMDD")] = m)
+  }
+
+  /**
    * Remove the given date range from this calendar and return one or two calendars
    */
   public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
@@ -131,7 +140,7 @@ export class ScheduleCalendar {
 
 }
 
-type ExcludeDays = {
+export type ExcludeDays = {
   [date: string]: Moment
 }
 
@@ -145,3 +154,4 @@ export interface Days {
   6: 0 | 1;
 }
 
+export type BankHoliday = string;

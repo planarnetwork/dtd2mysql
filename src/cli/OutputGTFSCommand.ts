@@ -16,7 +16,8 @@ export class OutputGTFSCommand implements CLICommand {
   private output: FileOutput;
 
   public constructor(
-    private readonly repository: GTFSRepository
+    private readonly repository: GTFSRepository,
+    private readonly calendarFactory: CalendarFactory
   ) {}
 
   /**
@@ -28,7 +29,7 @@ export class OutputGTFSCommand implements CLICommand {
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const schedules = await this.repository.getSchedules();
-    const [calendars, calendarDates, serviceIds] = CalendarFactory.createCalendar(schedules);
+    const [calendars, calendarDates, serviceIds] = this.calendarFactory.createCalendar(schedules);
     const calendarP = this.copy(calendars, "calendar.txt");
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt");
     const tripsP = this.copyTrips(schedules, serviceIds);

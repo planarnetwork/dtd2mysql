@@ -4,7 +4,26 @@ import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar"
 
 describe("ScheduleCalendar", () => {
 
-  xit("adds exclude days for bank holidays", () => {});
+  it("adds exclude days for bank holidays", () => {
+    const perm = calendar("2017-01-01", "2017-01-31", { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }, 0);
+    const bankHolidays = [moment("2017-01-01"), moment("2017-08-31")];
+
+    perm.addBankHolidays(bankHolidays);
+
+    const excludeDays = Object.keys(perm.excludeDays);
+
+    chai.expect(excludeDays.length).to.equal(1);
+    chai.expect(excludeDays[0]).to.equal("20170101");
+  });
+
+  it("ignore bank holiday exceptions if running on bank holidays", () => {
+    const perm = calendar("2017-01-01", "2017-01-31");
+    const bankHolidays = [moment("2017-01-01"), moment("2017-08-31")];
+
+    perm.addBankHolidays(bankHolidays);
+
+    chai.expect(Object.keys(perm.excludeDays).length).to.equal(0);
+  });
 
   it("detects overlaps", () => {
     const perm = calendar("2017-01-01", "2017-01-31");
@@ -98,12 +117,12 @@ describe("ScheduleCalendar", () => {
 
 });
 
-function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }): ScheduleCalendar {
+function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }, bankHoliday: 0 | 1 = 1): ScheduleCalendar {
   return new ScheduleCalendar(
     moment(from),
     moment(to),
     days,
-    1,
+    bankHoliday,
     {}
   );
 }
