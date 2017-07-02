@@ -11,7 +11,7 @@ import {MySQLTable} from "../database/MySQLTable";
 import memoize from "memoized-class-decorator";
 
 const fs: any = Bluebird.promisifyAll(require("fs"));
-const getExt = filename => path.extname(filename).slice(1);
+const getExt = filename => path.extname(filename).slice(1).toUpperCase();
 const readFile = filename => readline.createInterface({ input: fs.createReadStream(filename) });
 
 /**
