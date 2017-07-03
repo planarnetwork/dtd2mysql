@@ -2,7 +2,7 @@
 import {RSID, TUID} from "../native/Schedule";
 
 export interface Trip {
-  route_id: string;
+  route_id: number;
   service_id: string;
   trip_id: number;
   trip_headsign: TUID;

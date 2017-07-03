@@ -2,8 +2,9 @@
 import {StopTime} from "../file/StopTime";
 import {ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../file/Trip";
-import {RouteType} from "../file/Route";
+import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
+import {CRS} from "../file/Stop";
 
 export class Schedule {
 
@@ -22,9 +23,20 @@ export class Schedule {
     return this.stp === STP.Cancellation;
   }
 
-  public toTrip(serviceId: string): Trip {
+  public get origin(): CRS {
+    return this.stopTimes[0].stop_id;
+  }
+
+  public get destination(): CRS {
+    return this.stopTimes[this.stopTimes.length - 1].stop_id;
+  }
+
+  /**
+   * Convert to a GTFS Trip
+   */
+  public toTrip(serviceId: string, routeId: number): Trip {
     return {
-      route_id: "0",
+      route_id: routeId,
       service_id: serviceId,
       trip_id: this.id,
       trip_headsign: this.tuid,
@@ -37,6 +49,19 @@ export class Schedule {
     };
   }
 
+  public toRoute(): Route {
+    return {
+      route_id: this.id,
+      agency_id: this.operator,
+      route_short_name: `${this.operator}:${this.origin}->${this.destination}`,
+      route_long_name: `${this.operator} service from ${this.origin} to ${this.destination}`,
+      route_type: this.mode,
+      route_text_color: null,
+      route_color: null,
+      route_url: null,
+      route_desc: null
+    };
+  }
 }
 
 export type TUID = string;
