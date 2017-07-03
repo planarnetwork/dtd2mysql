@@ -13,7 +13,7 @@ describe("CalendarFactory", () => {
       schedule(2, "A", "2017-01-05", "2017-01-07")
     ];
 
-    const factory = new CalendarFactory([]);
+    const factory = new CalendarFactory();
     const [calendars, calendarDates] = factory.createCalendar(schedules);
 
     chai.expect(calendars[0].start_date).to.equal("20170101");
@@ -33,7 +33,7 @@ describe("CalendarFactory", () => {
       schedule(4, "A", "2017-01-15", "2017-02-15"),
     ];
 
-    const factory = new CalendarFactory([]);
+    const factory = new CalendarFactory();
     const [calendars] = factory.createCalendar(schedules);
 
     chai.expect(calendars[0].start_date).to.equal("20170101");
@@ -53,7 +53,7 @@ describe("CalendarFactory", () => {
       schedule(5, "C", "2017-01-01", "2017-01-31")
     ];
 
-    const factory = new CalendarFactory([]);
+    const factory = new CalendarFactory();
     const [calendars] = factory.createCalendar(schedules);
 
     chai.expect(calendars.length).to.equal(1);
@@ -78,6 +78,6 @@ function schedule(id: number, tuid: TUID, from: string, to: string): Schedule {
     ),
     RouteType.Rail,
     "LN",
-    STP.Permenant
+    STP.Overlay
   );
 }

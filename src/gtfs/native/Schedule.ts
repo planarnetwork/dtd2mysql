@@ -23,6 +23,10 @@ export class Schedule {
     return this.stp === STP.Cancellation;
   }
 
+  public get isPermanent(): boolean {
+    return this.stp === STP.Permenant;
+  }
+
   public get origin(): CRS {
     return this.stopTimes[0].stop_id;
   }

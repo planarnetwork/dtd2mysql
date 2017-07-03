@@ -6,6 +6,7 @@ import {Calendar} from "../file/Calendar";
 import {CalendarDate} from "../file/CalendarDate";
 
 export class ScheduleCalendar {
+  public static readonly SHORT_OVERLAY_LENGTH = 4;
 
   constructor(
     public readonly runsFrom: Moment,
@@ -26,22 +27,30 @@ export class ScheduleCalendar {
   }
 
   /**
-   * Returns true if this calendar is inside the date range of the given calendar
+   * Count the number of days that the overlay shares with this calendar and return true if the max has been exceeded
    */
-  public overlaps(calendar: ScheduleCalendar): boolean {
-    return (this.binaryDays & calendar.binaryDays) > 0 &&
-           (this.runsFrom.isSameOrAfter(calendar.runsFrom) && this.runsFrom.isSameOrBefore(calendar.runsTo) ||
-            this.runsTo.isSameOrBefore(calendar.runsTo) && this.runsTo.isSameOrAfter(calendar.runsFrom));
-  }
+  public getOverlap(overlay: ScheduleCalendar): OverlapType {
+    if ((this.binaryDays & overlay.binaryDays) === 0) return OverlapType.None;
 
-  /**
-   * Is the timeband short
-   *
-   * todo the length of the overlap between two bands should be considered rather than the length of the band
-   */
-  @memoize
-  public get isShort(): boolean {
-    return this.runsTo.diff(this.runsFrom, "days") < 5;
+    const start = overlay.runsFrom.clone();
+    let sharedDays = 0;
+
+    while (start.isSameOrBefore(overlay.runsTo)) {
+      const isSharedDay = overlay.days[start.day()] && this.days[start.day()];
+      const isRunning = start.isBetween(this.runsFrom, this.runsTo, "days", "[]");
+
+      if (isSharedDay && isRunning && ++sharedDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
+        return OverlapType.Long;
+      }
+
+      start.add(1, "days");
+    }
+
+    if (sharedDays > 0) {
+      return OverlapType.Short;
+    }
+
+    return OverlapType.None;
   }
 
   /**
@@ -63,41 +72,58 @@ export class ScheduleCalendar {
   }
 
   /**
-   * Add exception days for the list of dates
-   */
-  public addBankHolidays(holidays: Moment[]): void {
-    holidays
-      .filter(m => !this.bankHoliday && m.isBetween(this.runsFrom, this.runsTo, "days", "[]") && this.days[m.day()])
-      .forEach(m => this.excludeDays[m.format("YYYYMMDD")] = m)
-  }
-
-  /**
    * Remove the given date range from this calendar and return one or two calendars
    */
   public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
-    const calendars: ScheduleCalendar[] = [];
+    const calendars: ScheduleCalendar[] = [
+      this.cloneCalendar(this.runsFrom.clone(), calendar.runsFrom.clone().subtract(1, "days")),
+      this.cloneCalendar(calendar.runsTo.clone().add(1, "days"), this.runsTo.clone())
+    ];
 
-    if (this.runsFrom.isBefore(calendar.runsFrom)) {
-      const start = this.runsFrom;
-      const end = calendar.runsFrom.clone().subtract(1, "days");
-
-      // go back to the earliest valid date
-      while (this.days[end.day()] === 0) end.subtract(1, "days");
-
-      calendars.push(new ScheduleCalendar(start, end, this.days, this.bankHoliday, this.extractExcludeDays(start, end)));
+    // if there are any days left after applying the overlay
+    if (this.binaryDays - (this.binaryDays & calendar.binaryDays) > 0) {
+      calendars.push(this.cloneCalendar(
+        calendar.runsFrom.clone(),
+        calendar.runsTo.clone(),
+        calendar.days
+      ));
     }
 
-    if (this.runsTo.isAfter(calendar.runsTo)) {
-      const start = calendar.runsTo.clone().add(1, "days");
-      const end = this.runsTo;
+    return calendars.filter(c => c.runsFrom.isSameOrBefore(c.runsTo));
+  }
 
-      // go forward to the earliest valid date
-      while (this.days[start.day()] === 0) start.add(1, "days");
+  private cloneCalendar(start: Moment, end: Moment, removeDays: Days = { 0: 0, 1: 0, 2: 0, 3:0, 4: 0, 5: 0, 6: 0 }): ScheduleCalendar {
+    const days = this.removeDays(removeDays);
 
-      calendars.push(new ScheduleCalendar(start, end, this.days, this.bankHoliday, this.extractExcludeDays(start, end)));
+    // skip forward to the first day the schedule is operating
+    while (days[start.day()] === 0 || this.excludeDays[start.format("YYYYMMDD")]) {
+      start.add(1, "days");
     }
 
-    return calendars;
+    // skip backward to the first day the schedule is operating
+    while (days[end.day()] === 0  || this.excludeDays[end.format("YYYYMMDD")]) {
+      end.subtract(1, "days");
+    }
+
+    return new ScheduleCalendar(
+      start,
+      end,
+      days,
+      this.bankHoliday,
+      this.extractExcludeDays(start, end)
+    );
+  }
+
+  private removeDays(days: Days): Days {
+    return {
+      0: this.days[0] && !days[0] ? 1 : 0,
+      1: this.days[1] && !days[1] ? 1 : 0,
+      2: this.days[2] && !days[2] ? 1 : 0,
+      3: this.days[3] && !days[3] ? 1 : 0,
+      4: this.days[4] && !days[4] ? 1 : 0,
+      5: this.days[5] && !days[5] ? 1 : 0,
+      6: this.days[6] && !days[6] ? 1 : 0
+    };
   }
 
   private extractExcludeDays(from: Moment, until: Moment): ExcludeDays {
@@ -155,3 +181,9 @@ export interface Days {
 }
 
 export type BankHoliday = string;
+
+export enum OverlapType {
+  None = 0,
+  Short = 1,
+  Long = 2
+}

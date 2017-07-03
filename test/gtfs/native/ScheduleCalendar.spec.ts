@@ -1,29 +1,8 @@
 import * as chai from "chai";
 import moment = require("moment");
-import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
+import {Days, OverlapType, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 
 describe("ScheduleCalendar", () => {
-
-  it("adds exclude days for bank holidays", () => {
-    const perm = calendar("2017-01-01", "2017-01-31", { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }, 0);
-    const bankHolidays = [moment("2017-01-01"), moment("2017-08-31")];
-
-    perm.addBankHolidays(bankHolidays);
-
-    const excludeDays = Object.keys(perm.excludeDays);
-
-    chai.expect(excludeDays.length).to.equal(1);
-    chai.expect(excludeDays[0]).to.equal("20170101");
-  });
-
-  it("ignore bank holiday exceptions if running on bank holidays", () => {
-    const perm = calendar("2017-01-01", "2017-01-31");
-    const bankHolidays = [moment("2017-01-01"), moment("2017-08-31")];
-
-    perm.addBankHolidays(bankHolidays);
-
-    chai.expect(Object.keys(perm.excludeDays).length).to.equal(0);
-  });
 
   it("detects overlaps", () => {
     const perm = calendar("2017-01-01", "2017-01-31");
@@ -32,10 +11,10 @@ describe("ScheduleCalendar", () => {
     const overlay = calendar("2017-01-31", "2017-02-07");
     const nolay = calendar("2017-02-05", "2017-02-07");
 
-    chai.expect(underlay.overlaps(perm)).to.be.true;
-    chai.expect(innerlay.overlaps(perm)).to.be.true;
-    chai.expect(overlay.overlaps(perm)).to.be.true;
-    chai.expect(nolay.overlaps(perm)).to.be.false;
+    chai.expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Long);
+    chai.expect(perm.getOverlap(innerlay)).to.deep.equal(OverlapType.Short);
+    chai.expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Short);
+    chai.expect(perm.getOverlap(nolay)).to.deep.equal(OverlapType.None);
   });
 
   it("does not detect overlaps when the days don't match", () => {
@@ -43,9 +22,20 @@ describe("ScheduleCalendar", () => {
     const weekend = calendar("2017-01-01", "2017-01-31", { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1 });
     const tuesday = calendar("2017-01-01", "2017-01-31", { 0: 0, 1: 0, 2: 1, 3: 0, 4: 0, 5: 0, 6: 0 });
 
-    chai.expect(weekend.overlaps(weekday)).to.be.false;
-    chai.expect(weekday.overlaps(weekend)).to.be.false;
-    chai.expect(tuesday.overlaps(weekday)).to.be.true;
+    chai.expect(weekday.getOverlap(weekend)).to.deep.equal(OverlapType.None);
+    chai.expect(weekend.getOverlap(weekday)).to.deep.equal(OverlapType.None);
+    chai.expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Long);
+  });
+
+  it("detects short overlays", () => {
+    const perm = calendar("2017-01-01", "2017-01-31");
+    // Wed + Thurs for two weeks
+    const short = calendar("2017-01-11", "2017-01-19", { 0: 0, 1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0 });
+    // full two weeks
+    const long = calendar("2017-01-11", "2017-01-19");
+
+    chai.expect(perm.getOverlap(short)).to.deep.equal(OverlapType.Short);
+    chai.expect(perm.getOverlap(long)).to.deep.equal(OverlapType.Long);
   });
 
   it("adds exclude days", () => {
@@ -89,7 +79,7 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-29", "2017-02-07");
 
     const calendars = perm.divideAround(underlay);
-    chai.expect(calendars[0].runsFrom.isSame("2017-01-05")).to.be.be.true;
+    chai.expect(calendars[0].runsFrom.isSame("2017-01-05")).to.be.true;
     chai.expect(calendars[0].runsTo.isSame("2017-01-28")).to.be.true;
   });
 
@@ -109,10 +99,26 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-15", "2017-01-20");
 
     const calendars = perm.divideAround(underlay);
-    chai.expect(calendars[0].runsFrom.isSame("2017-01-05")).to.be.be.true;
+    chai.expect(calendars[0].runsFrom.isSame("2017-01-05")).to.be.true;
     chai.expect(calendars[0].runsTo.isSame("2017-01-14")).to.be.true;
-    chai.expect(calendars[1].runsFrom.isSame("2017-01-21")).to.be.be.true;
+    chai.expect(calendars[1].runsFrom.isSame("2017-01-21")).to.be.true;
     chai.expect(calendars[1].runsTo.isSame("2017-01-31")).to.be.true;
+  });
+
+  it("partially degrades the services", () => {
+    const perm = calendar("2017-01-01", "2017-01-31");
+    // Wed + Thurs for two weeks
+    const underlay = calendar("2017-01-11", "2017-01-19", { 0: 0, 1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0 });
+
+    const calendars = perm.divideAround(underlay);
+    chai.expect(calendars[0].runsFrom.isSame("2017-01-01")).to.be.true;
+    chai.expect(calendars[0].runsTo.isSame("2017-01-10")).to.be.true;
+    chai.expect(calendars[1].runsFrom.isSame("2017-01-20")).to.be.true;
+    chai.expect(calendars[1].runsTo.isSame("2017-01-31")).to.be.true;
+    chai.expect(calendars[2].days).to.deep.equal({0: 1, 1: 1, 2: 1, 3: 0, 4: 0, 5: 1, 6: 1});
+    // days where the service is not running are removed
+    chai.expect(calendars[2].runsFrom.isSame("2017-01-13")).to.be.true;
+    chai.expect(calendars[2].runsTo.isSame("2017-01-17")).to.be.true;
   });
 
 });

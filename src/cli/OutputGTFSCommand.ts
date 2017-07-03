@@ -72,11 +72,13 @@ export class OutputGTFSCommand implements CLICommand {
       const routes = {};
 
       for (const schedule of schedules) {
-        const route = schedule.toRoute();
-        routes[route.route_short_name] = routes[route.route_short_name] || route;
+        if (!schedule.isCancellation) {
+          const route = schedule.toRoute();
+          routes[route.route_short_name] = routes[route.route_short_name] || route;
 
-        trips.write(schedule.toTrip(serviceIds[schedule.id], routes[route.route_short_name].route_id));
-        schedule.stopTimes.forEach(r => stopTimes.write(r));
+          trips.write(schedule.toTrip(serviceIds[schedule.id], routes[route.route_short_name].route_id));
+          schedule.stopTimes.forEach(r => stopTimes.write(r));
+        }
       }
 
       for (const route of Object.values(routes)) {

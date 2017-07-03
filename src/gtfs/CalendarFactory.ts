@@ -1,15 +1,10 @@
 
 import {Schedule} from "./native/Schedule";
-import {ScheduleCalendar} from "./native/ScheduleCalendar";
+import {OverlapType, ScheduleCalendar} from "./native/ScheduleCalendar";
 import {Calendar} from "./file/Calendar";
 import {CalendarDate} from "./file/CalendarDate";
-import {Moment} from "moment";
 
 export class CalendarFactory {
-
-  constructor(
-    private readonly bankHolidays: Moment[]
-  ) {}
 
   /**
    * Load the schedules and create the calendar and calendar exceptions from the schedule records
@@ -23,8 +18,6 @@ export class CalendarFactory {
 
     for (const serviceId of Object.values(uniqueCalendars)) {
       for (const scheduleCalendar of calendarsByScheduleId[serviceId]) {
-        scheduleCalendar.addBankHolidays(this.bankHolidays);
-
         calendars.push(scheduleCalendar.toCalendar(serviceId));
         calendarDates.push(...scheduleCalendar.toCalendarDates(serviceId));
       }
@@ -41,20 +34,25 @@ export class CalendarFactory {
     const calendarBySchedule: CalendarIndex = {};
 
     for (const schedule of schedules) {
-      // for any schedules that share the same TUID
-      for (const scheduleJ of scheduleByTuid[schedule.tuid] || []) {
-        // check each of the schedules calendars
-        for (const calendarJ of calendarBySchedule[scheduleJ.id]) {
-          // to see if this schedules calendar overlaps it at any point
-          if (schedule.calendar.overlaps(calendarJ)) {
-            const replacementCalendars = schedule.calendar.isShort
-              ? calendarJ.addExcludeDays(schedule.calendar)
-              : calendarJ.divideAround(schedule.calendar);
+      // for all cancellation or overlays (perms don't overlap)
+      if (!schedule.isPermanent) {
+        // get any schedules that share the same TUID
+        for (const scheduleJ of scheduleByTuid[schedule.tuid] || []) {
+          // check each of the schedules calendars
+          for (const calendarJ of calendarBySchedule[scheduleJ.id]) {
+            const overlap = calendarJ.getOverlap(schedule.calendar);
 
-            // remove the current calendar and add the replacements
-            calendarBySchedule[scheduleJ.id] = calendarBySchedule[scheduleJ.id]
-              .filter(c => c !== calendarJ)
-              .concat(replacementCalendars);
+            // if this schedules calendar overlaps it at any point
+            if (overlap !== OverlapType.None) {
+              const replacementCalendars = overlap === OverlapType.Short
+                ? calendarJ.addExcludeDays(schedule.calendar)
+                : calendarJ.divideAround(schedule.calendar);
+
+              // remove the current calendar and add the replacements
+              calendarBySchedule[scheduleJ.id] = calendarBySchedule[scheduleJ.id]
+                .filter(c => c !== calendarJ)
+                .concat(replacementCalendars);
+            }
           }
         }
       }

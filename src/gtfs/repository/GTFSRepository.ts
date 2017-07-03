@@ -85,10 +85,10 @@ export class GTFSRepository {
           stop_time.id AS stop_id
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
-        JOIN stop_time ON schedule.id = stop_time.schedule
-        JOIN tiploc ON location = tiploc_code
-        WHERE public_arrival_time IS NOT NULL OR public_departure_time IS NOT NULL
-        ORDER BY stop_id
+        LEFT JOIN stop_time ON schedule.id = stop_time.schedule
+        LEFT JOIN tiploc ON location = tiploc_code
+        WHERE stop_time.id IS NULL OR public_arrival_time IS NOT NULL OR public_departure_time IS NOT NULL
+        ORDER BY FIELD(stp_indicator, "P", "N", "O", "C"), id, stop_id
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
