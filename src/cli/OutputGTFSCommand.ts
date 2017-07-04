@@ -1,24 +1,18 @@
 
 import {CLICommand} from "./CLICommand";
-import {Transfer} from "../gtfs/file/Transfer";
 import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
 import {FileOutput} from "../gtfs/FileOutput";
-import {ScheduleCalendar} from "../gtfs/native/ScheduleCalendar";
 import {Schedule} from "../gtfs/native/Schedule";
-import {CalendarFactory, ServiceIdIndex} from "../gtfs/CalendarFactory";
-import {Calendar} from "../gtfs/file/Calendar";
-import {CalendarDate} from "../gtfs/file/CalendarDate";
-import {Trip} from "../gtfs/file/Trip";
-import {StopTime} from "../gtfs/file/StopTime";
+import {ScheduleOverlayApplication} from "../gtfs/ScheduleOverlayApplication";
 import {agencies} from "../../config/gtfs/agency";
+import {CalendarFactory, ServiceIdIndex} from "../gtfs/CalendarFactory";
 
 export class OutputGTFSCommand implements CLICommand {
 
   private output: FileOutput;
 
   public constructor(
-    private readonly repository: GTFSRepository,
-    private readonly calendarFactory: CalendarFactory
+    private readonly repository: GTFSRepository
   ) {}
 
   /**
@@ -31,8 +25,8 @@ export class OutputGTFSCommand implements CLICommand {
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");
 
-    const schedules = await this.repository.getSchedules();
-    const [calendars, calendarDates, serviceIds] = this.calendarFactory.createCalendar(schedules);
+    const schedules = ScheduleOverlayApplication.processSchedules(await this.repository.getSchedules());
+    const [calendars, calendarDates, serviceIds] = CalendarFactory.getCalendar(schedules);
 
     const calendarP = this.copy(calendars, "calendar.txt");
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt");
@@ -72,13 +66,13 @@ export class OutputGTFSCommand implements CLICommand {
       const routes = {};
 
       for (const schedule of schedules) {
-        if (!schedule.isCancellation) {
-          const route = schedule.toRoute();
-          routes[route.route_short_name] = routes[route.route_short_name] || route;
+        const route = schedule.toRoute();
+        routes[route.route_short_name] = routes[route.route_short_name] || route;
+        const routeId = routes[route.route_short_name].route_id;
+        const serviceId = serviceIds[schedule.calendar.id];
 
-          trips.write(schedule.toTrip(serviceIds[schedule.id], routes[route.route_short_name].route_id));
-          schedule.stopTimes.forEach(r => stopTimes.write(r));
-        }
+        trips.write(schedule.toTrip(serviceId, routeId));
+        schedule.stopTimes.forEach(r => stopTimes.write(r));
       }
 
       for (const route of Object.values(routes)) {

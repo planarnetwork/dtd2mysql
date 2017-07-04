@@ -1,11 +1,14 @@
 
 import {StopTime} from "../file/StopTime";
-import {ScheduleCalendar} from "./ScheduleCalendar";
+import {OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../file/Trip";
 import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
 import {CRS} from "../file/Stop";
 
+/**
+ * A CIF schedule (BS record)
+ */
 export class Schedule {
 
   constructor(
@@ -18,14 +21,6 @@ export class Schedule {
     public readonly operator: AgencyID | null,
     public readonly stp: STP
   ) {}
-
-  public get isCancellation(): boolean {
-    return this.stp === STP.Cancellation;
-  }
-
-  public get isPermanent(): boolean {
-    return this.stp === STP.Permenant;
-  }
 
   public get origin(): CRS {
     return this.stopTimes[0].stop_id;
@@ -53,6 +48,9 @@ export class Schedule {
     };
   }
 
+  /**
+   * Convert to GTFS Route
+   */
   public toRoute(): Route {
     return {
       route_id: this.id,
@@ -66,13 +64,47 @@ export class Schedule {
       route_desc: null
     };
   }
+
+  /**
+   * Check if the given schedule overlaps the current one and if necessary divide this schedule into many others.
+   *
+   * If there is no overlap this Schedule will be returned intact.
+   */
+  public applyOverlay(schedule: Schedule, ids: IdGenerator): Schedule[] {
+    const overlap = this.calendar.getOverlap(schedule.calendar);
+
+    // if this schedules schedule overlaps it at any point
+    if (overlap === OverlapType.None) {
+      return [this];
+    }
+
+    return overlap === OverlapType.Short
+      ? this.calendar.addExcludeDays(schedule.calendar).map(calendar => this.clone(calendar, this.id))
+      : this.calendar.divideAround(schedule.calendar).map(calendar => this.clone(calendar, ids.next().value));
+  }
+
+  private clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
+    return new Schedule(
+      scheduleId,
+      this.stopTimes.map(st => Object.assign({}, st, {trip_id: scheduleId})),
+      this.tuid,
+      this.rsid,
+      calendar,
+      this.mode,
+      this.operator,
+      this.stp
+    );
+  }
 }
 
 export type TUID = string;
 export type RSID = string;
 
 export enum STP {
-  Permenant = "P",
-  Cancellation = "C",
-  Overlay = "O"
+  Permanent = "P",
+  Overlay = "O",
+  New = "N",
+  Cancellation = "C"
 }
+
+export type IdGenerator = IterableIterator<number>;

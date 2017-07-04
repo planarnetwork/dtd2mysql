@@ -11,10 +11,10 @@ describe("ScheduleCalendar", () => {
     const overlay = calendar("2017-01-31", "2017-02-07");
     const nolay = calendar("2017-02-05", "2017-02-07");
 
-    // chai.expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Long);
+    chai.expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Long);
     chai.expect(perm.getOverlap(innerlay)).to.deep.equal(OverlapType.Short);
-    // chai.expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Short);
-    // chai.expect(perm.getOverlap(nolay)).to.deep.equal(OverlapType.None);
+    chai.expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Short);
+    chai.expect(perm.getOverlap(nolay)).to.deep.equal(OverlapType.None);
   });
 
   it("does not detect overlaps when the days don't match", () => {
@@ -121,14 +121,28 @@ describe("ScheduleCalendar", () => {
     chai.expect(calendars[2].runsTo.isSame("2017-01-17")).to.be.true;
   });
 
+  it("degrades the service to the point where it doesn't run", () => {
+    // Monday + Friday service
+    const perm = calendar("2017-01-02", "2017-01-30", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    // Remove a Monday
+    const underlay = calendar("2017-01-15", "2017-01-19", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 });
+
+    const calendars = perm.divideAround(underlay);
+
+    chai.expect(calendars.length).to.equal(2);
+    chai.expect(calendars[0].runsFrom.isSame("2017-01-02")).to.be.true;
+    chai.expect(calendars[0].runsTo.isSame("2017-01-13")).to.be.true;
+    chai.expect(calendars[1].runsFrom.isSame("2017-01-20")).to.be.true;
+    chai.expect(calendars[1].runsTo.isSame("2017-01-30")).to.be.true;
+  });
+
 });
 
-function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }, bankHoliday: 0 | 1 = 1): ScheduleCalendar {
+function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }): ScheduleCalendar {
   return new ScheduleCalendar(
     moment(from),
     moment(to),
     days,
-    bankHoliday,
     {}
   );
 }

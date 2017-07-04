@@ -8,7 +8,7 @@ import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
-import {CalendarFactory} from "../gtfs/CalendarFactory";
+import {ScheduleOverlayApplication} from "../gtfs/ScheduleOverlayApplication";
 
 export class Container {
 
@@ -57,8 +57,7 @@ export class Container {
     ]);
 
     return new OutputGTFSCommand(
-      new GTFSRepository(promiseDb, streamDb),
-      new CalendarFactory()
+      new GTFSRepository(promiseDb, streamDb)
     );
   }
 

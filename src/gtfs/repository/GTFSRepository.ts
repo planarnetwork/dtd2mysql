@@ -80,7 +80,7 @@ export class GTFSRepository {
         SELECT
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          bank_holiday_running, stp_indicator, crs_code, train_category,
+          stp_indicator, crs_code, train_category,
           public_arrival_time, public_departure_time, platform, atoc_code,
           stop_time.id AS stop_id
         FROM schedule
@@ -88,13 +88,13 @@ export class GTFSRepository {
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
         LEFT JOIN tiploc ON location = tiploc_code
         WHERE stop_time.id IS NULL OR public_arrival_time IS NOT NULL OR public_departure_time IS NOT NULL
-        ORDER BY FIELD(stp_indicator, "P", "N", "O", "C"), id, stop_id
+        ORDER BY stp_indicator DESC, id, stop_id
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
           z_schedule.id AS id, train_uid, null, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          bank_holiday_running, stp_indicator, location, train_category,
+          stp_indicator, location, train_category,
           public_arrival_time, public_departure_time, platform, null,
           z_stop_time.id AS stop_id
         FROM z_schedule
@@ -128,7 +128,6 @@ interface ScheduleStopTimeRow {
   friday: 0 | 1,
   saturday: 0 | 1,
   sunday: 0 | 1,
-  bank_holiday_running: 0 | 1,
   stp_indicator: STP,
   location: CRS,
   train_category: string,
@@ -210,8 +209,7 @@ class ScheduleBuilder {
           4: row.thursday,
           5: row.friday,
           6: row.saturday
-        },
-        row.bank_holiday_running
+        }
       ),
       RouteTypeIndex[row.train_category] || RouteType.Rail,
       row.atoc_code,

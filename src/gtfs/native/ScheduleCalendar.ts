@@ -12,7 +12,6 @@ export class ScheduleCalendar {
     public readonly runsFrom: Moment,
     public readonly runsTo: Moment,
     public readonly days: Days,
-    public readonly bankHoliday: 0 | 1,
     public readonly excludeDays: ExcludeDays = {}
   )  { }
 
@@ -27,7 +26,7 @@ export class ScheduleCalendar {
   }
 
   /**
-   * Count the number of days that the overlay shares with this calendar and return true if the max has been exceeded
+   * Count the number of days that the overlay shares with this schedule and return true if the max has been exceeded
    */
   public getOverlap(overlay: ScheduleCalendar): OverlapType {
     // if there are no overlapping days
@@ -57,7 +56,7 @@ export class ScheduleCalendar {
     }
 
     return [
-      new ScheduleCalendar(this.runsFrom, this.runsTo, this.days, this.bankHoliday, excludeDays)
+      new ScheduleCalendar(this.runsFrom, this.runsTo, this.days, excludeDays)
     ];
   }
 
@@ -75,7 +74,7 @@ export class ScheduleCalendar {
   }
 
   /**
-   * Remove the given date range from this calendar and return one or two calendars
+   * Remove the given date range from this schedule and return one or two calendars
    */
   public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
     const calendars: ScheduleCalendar[] = [
@@ -108,13 +107,7 @@ export class ScheduleCalendar {
       end.subtract(1, "days");
     }
 
-    return new ScheduleCalendar(
-      start,
-      end,
-      days,
-      this.bankHoliday,
-      this.extractExcludeDays(start, end)
-    );
+    return new ScheduleCalendar(start, end, days, this.extractExcludeDays(start, end));
   }
 
   private removeDays(days: Days): Days {
@@ -139,7 +132,7 @@ export class ScheduleCalendar {
   /**
    * Convert to a GTFS Calendar object
    */
-  public toCalendar(serviceId: string): Calendar {
+  public toCalendar(serviceId: number): Calendar {
     return {
       service_id: serviceId,
       monday: this.days[1],
@@ -157,7 +150,7 @@ export class ScheduleCalendar {
   /**
    * Convert exclude days to GTFS Calendar Dates
    */
-  public toCalendarDates(serviceId: string): CalendarDate[] {
+  public toCalendarDates(serviceId: number): CalendarDate[] {
     return Object.values(this.excludeDays).map(d => {
       return {
         service_id: serviceId,

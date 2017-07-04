@@ -12,7 +12,8 @@
     "gtest": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts' --grep",
     "watch-test": "mocha -w --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
     "run": "ts-node ./src/index.ts",
-    "prepublishOnly": "tsc -p ./ --outDir dist/"
+    "prepublishOnly": "tsc -p ./ --outDir dist/",
+    "gtfs": "ts-node --max_old_space_size=2048 ./src/index.ts --gtfs"
   },
   "repository": {
     "type": "git",
