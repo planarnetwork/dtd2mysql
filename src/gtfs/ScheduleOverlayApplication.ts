@@ -8,7 +8,7 @@ export class ScheduleOverlayApplication {
    */
   public static processSchedules(schedules: Schedule[]): Schedule[] {
     const scheduleByTuid: ScheduleIndex = {};
-    const idGenerator = this.getIdGenerator(schedules[schedules.length -1].id);
+    const idGenerator = this.getIdGenerator(schedules[schedules.length -1].id + 1);
 
     for (const schedule of schedules) {
       // for all cancellation or overlays (perms don't overlap)

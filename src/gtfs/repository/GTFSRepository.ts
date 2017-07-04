@@ -15,7 +15,8 @@ export class GTFSRepository {
 
   constructor(
     private readonly db: DatabaseConnection,
-    private readonly stream: any
+    private readonly stream,
+    private readonly stationCoordinates: StationCoordinates
   ) {}
 
   /**
@@ -66,10 +67,12 @@ export class GTFSRepository {
         0 AS wheelchair_boarding 
       FROM tiploc 
       WHERE crs_code IS NOT NULL 
-      AND description IS NOT NULL;
+      AND description IS NOT NULL
+      ORDER BY crs_code
     `);
 
-    return results;
+    // overlay the long and latitude values from configuration
+    return results.map(stop => Object.assign(stop, this.stationCoordinates[stop.stop_id]));
   }
 
   public async getSchedules(): Promise<Schedule[]> {
@@ -92,7 +95,7 @@ export class GTFSRepository {
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
-          z_schedule.id AS id, train_uid, null, runs_from, runs_to,
+          500000 + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, location, train_category,
           public_arrival_time, public_departure_time, platform, null,
@@ -137,17 +140,6 @@ interface ScheduleStopTimeRow {
   platform: string
 }
 
-const RouteTypeIndex = {
-  "OO": RouteType.Rail,
-  "XX": RouteType.Rail,
-  "XZ": RouteType.Rail,
-  "BR": RouteType.Gondola,
-  "BS": RouteType.Bus,
-  "OL": RouteType.Rail,
-  "XC": RouteType.Rail,
-  "SS": RouteType.Rail
-};
-
 class ScheduleBuilder {
   public readonly schedules: Schedule[] = [];
 
@@ -158,9 +150,13 @@ class ScheduleBuilder {
     return new Promise<void>((resolve, reject) => {
       let stops: StopTime[] = [];
       let prevRow: ScheduleStopTimeRow;
-      let prevId = 1;
 
       results.on("result", row => {
+        if (prevRow && prevRow.id !== row.id) {
+          this.schedules.push(this.createSchedule(prevRow, stops));
+          stops = [];
+        }
+
         stops.push({
           trip_id: row.id,
           arrival_time: row.public_arrival_time,
@@ -174,13 +170,7 @@ class ScheduleBuilder {
           timepoint: 1
         });
 
-        if (prevId !== row.id) {
-          this.schedules.push(this.createSchedule(row, stops));
-
-          stops = [];
-          prevId = row.id;
-          prevRow = row;
-        }
+        prevRow = row;
       });
 
       results.on("end", () => {
@@ -217,3 +207,22 @@ class ScheduleBuilder {
     );
   }
 }
+
+const RouteTypeIndex = {
+  "OO": RouteType.Rail,
+  "XX": RouteType.Rail,
+  "XZ": RouteType.Rail,
+  "BR": RouteType.Gondola,
+  "BS": RouteType.Bus,
+  "OL": RouteType.Rail,
+  "XC": RouteType.Rail,
+  "SS": RouteType.Rail
+};
+
+export type StationCoordinates = {
+  [crs: string]: {
+    stop_lat: number,
+    stop_lon: number,
+    stop_name: string
+  }
+};
