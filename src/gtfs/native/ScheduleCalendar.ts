@@ -18,7 +18,7 @@ export class ScheduleCalendar {
 
   @memoize
   public get id() {
-    return this.runsFrom.format("YYYYMMDD") + this.runsTo.format("YYYYMMDD") + this.bankHoliday + Object.values(this.days).join("") + Object.keys(this.excludeDays).join("");
+    return this.runsFrom.format("YYYYMMDD") + this.runsTo.format("YYYYMMDD") + this.binaryDays + Object.keys(this.excludeDays).join("");
   }
 
   @memoize
@@ -30,45 +30,48 @@ export class ScheduleCalendar {
    * Count the number of days that the overlay shares with this calendar and return true if the max has been exceeded
    */
   public getOverlap(overlay: ScheduleCalendar): OverlapType {
-    if ((this.binaryDays & overlay.binaryDays) === 0) return OverlapType.None;
+    // if there are no overlapping days
+    if ((this.binaryDays & overlay.binaryDays) === 0) {
+      return OverlapType.None;
+    }
 
-    const start = overlay.runsFrom.clone();
-    let sharedDays = 0;
+    let numDays = 0;
 
-    while (start.isSameOrBefore(overlay.runsTo)) {
-      const isSharedDay = overlay.days[start.day()] && this.days[start.day()];
-      const isRunning = start.isBetween(this.runsFrom, this.runsTo, "days", "[]");
-
-      if (isSharedDay && isRunning && ++sharedDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
+    for (const _ of this.sharedDays(overlay)) {
+      if (++numDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
         return OverlapType.Long;
       }
-
-      start.add(1, "days");
     }
 
-    if (sharedDays > 0) {
-      return OverlapType.Short;
-    }
-
-    return OverlapType.None;
+    return (numDays > 0) ? OverlapType.Short : OverlapType.None;
   }
 
   /**
    * Add each date in the range as an exclude day
    */
-  public addExcludeDays(calendar: ScheduleCalendar): ScheduleCalendar[] {
-    const startDate = moment.max(this.runsFrom, calendar.runsFrom).clone();
-    const endDate = moment.min(this.runsTo, calendar.runsTo);
+  public addExcludeDays(overlay: ScheduleCalendar): ScheduleCalendar[] {
+    const excludeDays = Object.assign({}, this.excludeDays); // clone
+
+    for (const sharedDay of this.sharedDays(overlay)) {
+      excludeDays[sharedDay.format("YYYYMMDD")] = sharedDay;
+    }
+
+    return [
+      new ScheduleCalendar(this.runsFrom, this.runsTo, this.days, this.bankHoliday, excludeDays)
+    ];
+  }
+
+  private* sharedDays(overlay: ScheduleCalendar) {
+    const startDate = moment.max(this.runsFrom, overlay.runsFrom).clone();
+    const endDate = moment.min(this.runsTo, overlay.runsTo);
 
     while (startDate.isSameOrBefore(endDate)) {
-      if (this.days[startDate.day()]) {
-        this.excludeDays[startDate.format("YYYYMMDD")] = startDate.clone();
+      if (this.days[startDate.day()] && overlay.days[startDate.day()]) {
+        yield startDate.clone();
       }
 
       startDate.add(1, "days");
     }
-
-    return [this];
   }
 
   /**
