@@ -55,9 +55,9 @@ export class ScheduleCalendar {
       excludeDays[sharedDay.format("YYYYMMDD")] = sharedDay;
     }
 
-    return [
-      new ScheduleCalendar(this.runsFrom, this.runsTo, this.days, excludeDays)
-    ];
+    const calendar = this.cloneCalendar(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
+
+    return calendar.runsFrom.isSameOrBefore(calendar.runsTo) ? [calendar] : [];
   }
 
   private* sharedDays(overlay: ScheduleCalendar) {
@@ -87,27 +87,40 @@ export class ScheduleCalendar {
       calendars.push(this.cloneCalendar(
         calendar.runsFrom.clone(),
         calendar.runsTo.clone(),
-        calendar.days
+        calendar.days,
+        this.excludeDays
       ));
     }
 
     return calendars.filter(c => c.runsFrom.isSameOrBefore(c.runsTo));
   }
 
-  private cloneCalendar(start: Moment, end: Moment, removeDays: Days = { 0: 0, 1: 0, 2: 0, 3:0, 4: 0, 5: 0, 6: 0 }): ScheduleCalendar {
+  /**
+   * Remove the given days from the calendar then tighten the dates
+   */
+  private cloneCalendar(start: Moment,
+                        end: Moment,
+                        removeDays: Days = NO_DAYS,
+                        excludeDays: ExcludeDays = this.excludeDays): ScheduleCalendar {
+
     const days = this.removeDays(removeDays);
 
     // skip forward to the first day the schedule is operating
-    while (days[start.day()] === 0 || this.excludeDays[start.format("YYYYMMDD")]) {
+    while (days[start.day()] === 0 || excludeDays[start.format("YYYYMMDD")] && start.isSameOrBefore(end)) {
       start.add(1, "days");
     }
 
     // skip backward to the first day the schedule is operating
-    while (days[end.day()] === 0  || this.excludeDays[end.format("YYYYMMDD")]) {
+    while (days[end.day()] === 0  || excludeDays[end.format("YYYYMMDD")] && end.isSameOrAfter(start)) {
       end.subtract(1, "days");
     }
 
-    return new ScheduleCalendar(start, end, days, this.extractExcludeDays(start, end));
+    const newExcludes = Object
+      .values(excludeDays)
+      .filter(d => d.isBetween(start, end, "days", "[]"))
+      .reduce((days: ExcludeDays, day: Moment) => { days[day.format("YYYYMMDD")] = day; return days; }, {});
+
+    return new ScheduleCalendar(start, end, days, newExcludes);
   }
 
   private removeDays(days: Days): Days {
@@ -122,12 +135,6 @@ export class ScheduleCalendar {
     };
   }
 
-  private extractExcludeDays(from: Moment, until: Moment): ExcludeDays {
-    return Object
-      .values(this.excludeDays)
-      .filter(d => d.isBetween(from, until, "days", "[]"))
-      .reduce((days: ExcludeDays, day: Moment) => { days[day.format("YYYYMMDD")] = day; return days; }, {});
-  }
 
   /**
    * Convert to a GTFS Calendar object
@@ -183,3 +190,5 @@ export enum OverlapType {
   Short = 1,
   Long = 2
 }
+
+const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3:0, 4: 0, 5: 0, 6: 0 };
