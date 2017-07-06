@@ -167,6 +167,49 @@ export class ScheduleCalendar {
     });
   }
 
+  /**
+   * Returns true if this calendar would not be valid on any days before the given calendar starts
+   */
+  public canMerge(calendar: ScheduleCalendar): boolean {
+    const startDate = this.runsTo.clone().add(1, "days");
+
+    while (startDate.isBefore(calendar.runsFrom)) {
+      if (this.days[startDate.day()]) {
+        return false;
+      }
+
+      startDate.add(1, "days");
+    }
+
+    return true;
+  }
+
+  /**
+   * Return a new calendar starting from the runsFrom of this calendar and running to the runsTo of the given calendar.
+   *
+   * Exclude days are merged together.
+   */
+  public merge(calendar: ScheduleCalendar): ScheduleCalendar {
+    const excludeDays = Object.assign({}, calendar.excludeDays, this.excludeDays);
+
+    // for any shared
+    for (const sharedDay of this.sharedDays(calendar)) {
+      const key = sharedDay.format("YYYYMMDD");
+
+      // if the shared day is only excluded in one overlay, remove it
+        if (!(this.excludeDays[key] && calendar.excludeDays[key])) {
+        delete excludeDays[key];
+      }
+    }
+
+    return new ScheduleCalendar(
+      this.runsFrom,
+      moment.max(this.runsTo, calendar.runsTo),
+      this.days,
+      excludeDays
+    );
+  }
+
 }
 
 export type ExcludeDays = {

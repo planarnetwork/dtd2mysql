@@ -7,16 +7,16 @@ export class ScheduleOverlayApplication {
    * Index the schedules by TUID, detect overlays and create new schedules as necessary.
    */
   public static processSchedules(schedules: Schedule[]): Schedule[] {
-    const scheduleByTuid: ScheduleIndex = {};
+    const schedulesByTuid: ScheduleIndex = {};
     const idGenerator = this.getIdGenerator(schedules[schedules.length -1].id + 1);
 
     for (const schedule of schedules) {
       // for all cancellation or overlays (perms don't overlap)
       if (schedule.stp !== STP.Permanent) {
         // get any schedules that share the same TUID
-        for (const scheduleJ of scheduleByTuid[schedule.tuid] || []) {
+        for (const scheduleJ of schedulesByTuid[schedule.tuid] || []) {
           // remove the underlying schedule and add the replacement(s)
-          scheduleByTuid[schedule.tuid] = scheduleByTuid[schedule.tuid]
+          schedulesByTuid[schedule.tuid] = schedulesByTuid[schedule.tuid]
             .filter(s => s !== scheduleJ)
             .concat(scheduleJ.applyOverlay(schedule, idGenerator));
         }
@@ -24,21 +24,44 @@ export class ScheduleOverlayApplication {
 
       // add the schedule to the index, unless it's a cancellation
       if (schedule.stp !== STP.Cancellation) {
-        (scheduleByTuid[schedule.tuid] = scheduleByTuid[schedule.tuid] || []).push(schedule);
+        (schedulesByTuid[schedule.tuid] = schedulesByTuid[schedule.tuid] || []).push(schedule);
       }
     }
 
-    return this.flatten(scheduleByTuid);
+    return this.flatten(schedulesByTuid);
   }
 
   /**
-   * Flatten the index into a list of schedules
+   * Flatten the index into a list of schedules, detecting any schedules that can be merged in the process.
    */
-  private static flatten(scheduleByTuid: ScheduleIndex): Schedule[] {
+  private static flatten(schedulesByTuid: ScheduleIndex): Schedule[] {
     const results: Schedule[] = [];
 
-    for (const tuid in scheduleByTuid) {
-      results.push(...scheduleByTuid[tuid]);
+    for (const tuid in schedulesByTuid) {
+      // group schedules that run on the same days with the exact same stopping pattern
+      const schedulesByHash: ScheduleIndex = schedulesByTuid[tuid].reduce((prev, cur) => {
+        (prev[cur.hash] = prev[cur.hash] || []).push(cur);
+
+        return prev;
+      }, {});
+
+      // for each group of schedules that might be merged
+      for (const groupedSchedules of Object.values(schedulesByHash)) {
+        // sort by start date
+        groupedSchedules.sort(Schedule.sort);
+
+        // iterate through each schedule
+        for (let i = 0; i < groupedSchedules.length; i++) {
+          let scheduleI = groupedSchedules[i];
+
+          // merge as many schedules in as possible
+          while (groupedSchedules[i + 1] && scheduleI.calendar.canMerge(groupedSchedules[i + 1].calendar)) {
+            scheduleI = scheduleI.clone(scheduleI.calendar.merge(groupedSchedules[++i].calendar), scheduleI.id);
+          }
+
+          results.push(scheduleI);
+        }
+      }
     }
 
     return results;

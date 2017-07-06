@@ -150,6 +150,50 @@ describe("ScheduleCalendar", () => {
     chai.expect(calendars[1].runsTo.isSame("2017-01-30")).to.be.true;
   });
 
+  it("detects when a calendar can be merged with another", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    const c2 = calendar("2017-07-17", "2017-07-21", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    const c3 = calendar("2017-07-28", "2017-07-31", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+
+    chai.expect(c1.canMerge(c2)).to.be.true;
+    chai.expect(c1.canMerge(c3)).to.be.false;
+  });
+
+  it("can merge with another calendar", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c1.excludeDays["20170710"] = moment("20170710");
+
+    const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c2.excludeDays["20170721"] = moment("20170721");
+
+    const c3 = c1.merge(c2);
+
+    chai.expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
+    chai.expect(c3.runsTo.isSame(c2.runsTo)).to.be.true;
+    chai.expect(c3.excludeDays["20170710"]).to.not.be.undefined;
+    chai.expect(c3.excludeDays["20170721"]).to.not.be.undefined;
+  });
+
+  it("can merge with an overlapping calendar", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c1.excludeDays["20170717"] = moment("20170717");
+    c1.excludeDays["20170721"] = moment("20170721");
+
+    const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c2.excludeDays["20170721"] = moment("20170721");
+
+    const c3 = c1.merge(c2);
+
+    chai.expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
+    chai.expect(c3.runsTo.isSame(c1.runsTo)).to.be.true;
+    chai.expect(Object.keys(c3.excludeDays).length).to.equal(1);
+    chai.expect(c3.excludeDays["20170721"]).to.not.be.undefined;
+  });
+
+
 });
 
 function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }): ScheduleCalendar {
