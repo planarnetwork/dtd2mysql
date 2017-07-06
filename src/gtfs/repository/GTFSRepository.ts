@@ -97,7 +97,7 @@ export class GTFSRepository {
         SELECT
           500000 + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          stp_indicator, location, train_category,
+          stp_indicator, location AS crs_code, train_category,
           public_arrival_time, public_departure_time, platform, null,
           z_stop_time.id AS stop_id
         FROM z_schedule
