@@ -135,8 +135,8 @@ interface ScheduleStopTimeRow {
   location: CRS,
   train_category: string,
   atoc_code: string | null,
-  public_arrival_time: number,
-  public_departure_time: number,
+  public_arrival_time: string | null,
+  public_departure_time: string | null,
   platform: string
 }
 
@@ -150,17 +150,20 @@ class ScheduleBuilder {
     return new Promise<void>((resolve, reject) => {
       let stops: StopTime[] = [];
       let prevRow: ScheduleStopTimeRow;
+      let departureHour = 4;
 
       results.on("result", row => {
         if (prevRow && prevRow.id !== row.id) {
           this.schedules.push(this.createSchedule(prevRow, stops));
           stops = [];
+
+          departureHour = row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
         }
 
         stops.push({
           trip_id: row.id,
-          arrival_time: row.public_arrival_time,
-          departure_time: row.public_departure_time,
+          arrival_time: this.formatTime(row.public_arrival_time, departureHour),
+          departure_time: this.formatTime(row.public_departure_time, departureHour),
           stop_id: row.crs_code,
           stop_sequence: stops.length + 1,
           stop_headsign: row.platform,
@@ -205,6 +208,19 @@ class ScheduleBuilder {
       row.atoc_code,
       row.stp_indicator
     );
+  }
+
+  private formatTime(time: string | null, originDepartureHour: number) {
+    if (time === null) return null;
+
+    const departureHour = parseInt(time.substr(0, 2), 10);
+
+    // if the service started after 4am and after the current stops departure hour we've probably rolled over midnight
+    if (originDepartureHour >= 4 && originDepartureHour > departureHour) {
+      return (departureHour + 24) + time.substr(2);
+    }
+
+    return time;
   }
 }
 

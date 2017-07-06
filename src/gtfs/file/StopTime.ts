@@ -3,8 +3,8 @@ import {CRS} from "./Stop";
 
 export interface StopTime {
   trip_id: number;
-  arrival_time: number;
-  departure_time: number;
+  arrival_time: string | null;
+  departure_time: string | null;
   stop_id: CRS;
   stop_sequence: number;
   stop_headsign: Platform;
