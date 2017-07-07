@@ -33,8 +33,8 @@ describe("ScheduleOverlayApplication", () => {
     // need to add slightly different stopping pattern for the overlay to avoid merges
     const aDifferentStop: StopTime = {
       trip_id: 1,
-      arrival_time: 1,
-      departure_time: 1,
+      arrival_time: "",
+      departure_time: "",
       stop_id: "A",
       stop_sequence: 1,
       stop_headsign: "",
