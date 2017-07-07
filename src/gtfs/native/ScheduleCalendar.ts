@@ -6,7 +6,7 @@ import {Calendar} from "../file/Calendar";
 import {CalendarDate} from "../file/CalendarDate";
 
 export class ScheduleCalendar {
-  public static readonly SHORT_OVERLAY_LENGTH = 4;
+  public static readonly SHORT_OVERLAY_LENGTH = 7;
 
   constructor(
     public readonly runsFrom: Moment,
@@ -165,6 +165,55 @@ export class ScheduleCalendar {
         exception_type: 2
       };
     });
+  }
+
+  /**
+   * Returns true if this calendar would not be valid on any days before the given calendar starts
+   */
+  public canMerge(calendar: ScheduleCalendar): boolean {
+    const startDate = this.runsTo.clone();
+    let  numAdditionalExcludeDays = 0;
+
+    while (startDate.add(1, "days").isBefore(calendar.runsFrom)) {
+      if (this.days[startDate.day()] && ++numAdditionalExcludeDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Return a new calendar starting from the runsFrom of this calendar and running to the runsTo of the given calendar.
+   *
+   * Exclude days are merged together.
+   */
+  public merge(calendar: ScheduleCalendar): ScheduleCalendar {
+    const excludeDays = Object.assign({}, calendar.excludeDays, this.excludeDays);
+    const startDate = this.runsTo.clone();
+
+    while (startDate.add(1, "days").isBefore(calendar.runsFrom)) {
+      if (this.days[startDate.day()]) {
+        excludeDays[startDate.format("YYYYMMDD")] = startDate.clone();
+      }
+    }
+
+    // for any shared
+    for (const sharedDay of this.sharedDays(calendar)) {
+      const key = sharedDay.format("YYYYMMDD");
+
+      // if the shared day is only excluded in one overlay, remove it
+      if (!(this.excludeDays[key] && calendar.excludeDays[key])) {
+        delete excludeDays[key];
+      }
+    }
+
+    return new ScheduleCalendar(
+      this.runsFrom,
+      moment.max(this.runsTo, calendar.runsTo),
+      this.days,
+      excludeDays
+    );
   }
 
 }

@@ -1,16 +1,17 @@
 import * as chai from "chai";
 import {Schedule, STP, TUID} from "../../src/gtfs/native/Schedule";
-import {ScheduleCalendar} from "../../src/gtfs/native/ScheduleCalendar";
+import {Days, ScheduleCalendar} from "../../src/gtfs/native/ScheduleCalendar";
 import moment = require("moment");
 import {ScheduleOverlayApplication} from "../../src/gtfs/ScheduleOverlayApplication";
 import {RouteType} from "../../src/gtfs/file/Route";
+import {StopTime} from "../../src/gtfs/file/StopTime";
 
 describe("ScheduleOverlayApplication", () => {
 
   it("adds exclude days for short overlays", () => {
     const baseSchedules = [
       schedule(1, "A", "2017-01-01", "2017-01-31"),
-      schedule(2, "A", "2017-01-05", "2017-01-07")
+      schedule(2, "A", "2017-01-05", "2017-01-07", STP.Overlay, { 0: 0, 1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 1 })
     ];
 
     const schedules = ScheduleOverlayApplication.processSchedules(baseSchedules);
@@ -29,11 +30,25 @@ describe("ScheduleOverlayApplication", () => {
   });
 
   it("adds divides schedules where overlapped", () => {
+    // need to add slightly different stopping pattern for the overlay to avoid merges
+    const aDifferentStop: StopTime = {
+      trip_id: 1,
+      arrival_time: 1,
+      departure_time: 1,
+      stop_id: "A",
+      stop_sequence: 1,
+      stop_headsign: "",
+      pickup_type: 0,
+      drop_off_type: 0,
+      shape_dist_traveled: null,
+      timepoint: 0,
+    };
+
     const baseSchedules = [
       schedule(1, "A", "2017-01-01", "2017-01-31", STP.Permanent),
       schedule(2, "A", "2017-02-01", "2017-02-28", STP.Permanent),
       schedule(3, "B", "2017-01-02", "2017-03-15", STP.Permanent),
-      schedule(4, "A", "2017-01-15", "2017-02-15", STP.Overlay),
+      schedule(4, "A", "2017-01-15", "2017-02-15", STP.Overlay, ALL_DAYS, [aDifferentStop]),
     ];
 
     const schedules = ScheduleOverlayApplication.processSchedules(baseSchedules);
@@ -46,6 +61,22 @@ describe("ScheduleOverlayApplication", () => {
     chai.expect(schedules[2].calendar.runsTo.isSame("20170215")).to.be.true;
     chai.expect(schedules[3].calendar.runsFrom.isSame("20170102")).to.be.true;
     chai.expect(schedules[3].calendar.runsTo.isSame("20170315")).to.be.true;
+  });
+
+  it("merges schedules where they are the same", () => {
+    const baseSchedules = [
+      schedule(1, "A", "2017-01-01", "2017-01-31", STP.Permanent),
+      schedule(2, "A", "2017-02-01", "2017-02-28", STP.Permanent),
+      schedule(3, "B", "2017-01-02", "2017-03-15", STP.Permanent),
+      schedule(4, "A", "2017-01-15", "2017-02-15", STP.Overlay),
+    ];
+
+    const schedules = ScheduleOverlayApplication.processSchedules(baseSchedules);
+
+    chai.expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
+    chai.expect(schedules[0].calendar.runsTo.isSame("20170228")).to.be.true;
+    chai.expect(schedules[1].calendar.runsFrom.isSame("20170102")).to.be.true;
+    chai.expect(schedules[1].calendar.runsTo.isSame("20170315")).to.be.true;
   });
 
   it("removes cancellations", () => {
@@ -70,16 +101,25 @@ describe("ScheduleOverlayApplication", () => {
 
 });
 
-function schedule(id: number, tuid: TUID, from: string, to: string, stp: STP = STP.Overlay): Schedule {
+const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+
+function schedule(id: number,
+                  tuid: TUID,
+                  from: string,
+                  to: string,
+                  stp: STP = STP.Overlay,
+                  days: Days = ALL_DAYS,
+                  stops: StopTime[] = []): Schedule {
+
   return new Schedule(
     id,
-    [],
+    stops,
     tuid,
     "",
     new ScheduleCalendar(
       moment(from),
       moment(to),
-      { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 },
+      days,
       {}
     ),
     RouteType.Rail,

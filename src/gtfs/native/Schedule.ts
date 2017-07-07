@@ -30,6 +30,10 @@ export class Schedule {
     return this.stopTimes[this.stopTimes.length - 1].stop_id;
   }
 
+  public get hash(): string {
+    return this.tuid + this.stopTimes.map(s => s.stop_id + s.departure_time + s.arrival_time).join("") + this.calendar.binaryDays;
+  }
+
   /**
    * Convert to a GTFS Trip
    */
@@ -83,7 +87,7 @@ export class Schedule {
       : this.calendar.divideAround(schedule.calendar).map(calendar => this.clone(calendar, ids.next().value));
   }
 
-  private clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
+  public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
     return new Schedule(
       scheduleId,
       this.stopTimes.map(st => Object.assign({}, st, {trip_id: scheduleId})),
@@ -95,6 +99,14 @@ export class Schedule {
       this.stp
     );
   }
+
+  /**
+   * Sort the given schedules by date
+   */
+  public static sort(a: Schedule, b: Schedule): number {
+    return a.calendar.runsFrom.isSameOrBefore(b.calendar.runsFrom) ? -1 : 1;
+  }
+
 }
 
 export type TUID = string;

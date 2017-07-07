@@ -6,7 +6,7 @@ describe("ScheduleCalendar", () => {
 
   it("detects overlaps", () => {
     const perm = calendar("2017-01-01", "2017-01-31");
-    const underlay = calendar("2016-12-05", "2017-01-07");
+    const underlay = calendar("2016-12-05", "2017-01-09");
     const innerlay = calendar("2017-01-05", "2017-01-07");
     const overlay = calendar("2017-01-31", "2017-02-07");
     const nolay = calendar("2017-02-05", "2017-02-07");
@@ -24,7 +24,7 @@ describe("ScheduleCalendar", () => {
 
     chai.expect(weekday.getOverlap(weekend)).to.deep.equal(OverlapType.None);
     chai.expect(weekend.getOverlap(weekday)).to.deep.equal(OverlapType.None);
-    chai.expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Long);
+    chai.expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Short);
   });
 
   it("detects short overlays", () => {
@@ -148,6 +148,66 @@ describe("ScheduleCalendar", () => {
     chai.expect(calendars[0].runsTo.isSame("2017-01-13")).to.be.true;
     chai.expect(calendars[1].runsFrom.isSame("2017-01-20")).to.be.true;
     chai.expect(calendars[1].runsTo.isSame("2017-01-30")).to.be.true;
+  });
+
+  it("detects when a calendar can be merged with another", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    const c2 = calendar("2017-07-17", "2017-07-21", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    const c3 = calendar("2017-10-13", "2017-10-16", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+
+    chai.expect(c1.canMerge(c2)).to.be.true;
+    chai.expect(c1.canMerge(c3)).to.be.false;
+  });
+
+  it("can merge with another calendar", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c1.excludeDays["20170710"] = moment("20170710");
+
+    const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c2.excludeDays["20170721"] = moment("20170721");
+
+    const c3 = c1.merge(c2);
+
+    chai.expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
+    chai.expect(c3.runsTo.isSame(c2.runsTo)).to.be.true;
+    chai.expect(c3.excludeDays["20170710"]).to.not.be.undefined;
+    chai.expect(c3.excludeDays["20170721"]).to.not.be.undefined;
+  });
+
+  it("can merge with an overlapping calendar", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c1.excludeDays["20170717"] = moment("20170717");
+    c1.excludeDays["20170721"] = moment("20170721");
+
+    const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c2.excludeDays["20170721"] = moment("20170721");
+
+    const c3 = c1.merge(c2);
+
+    chai.expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
+    chai.expect(c3.runsTo.isSame(c1.runsTo)).to.be.true;
+    chai.expect(Object.keys(c3.excludeDays).length).to.equal(1);
+    chai.expect(c3.excludeDays["20170721"]).to.not.be.undefined;
+  });
+
+  it("can bridge the gap between a merging service with exclude days", () => {
+    // Monday + Friday service
+    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c1.excludeDays["20170710"] = moment("20170710");
+
+    const c2 = calendar("2017-07-21", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c2.excludeDays["20170721"] = moment("20170721");
+
+    const c3 = c1.merge(c2);
+
+    chai.expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
+    chai.expect(c3.runsTo.isSame(c2.runsTo)).to.be.true;
+    chai.expect(c3.excludeDays["20170710"]).to.not.be.undefined;
+    chai.expect(c3.excludeDays["20170717"]).to.not.be.undefined;
+    chai.expect(c3.excludeDays["20170721"]).to.not.be.undefined;
   });
 
 });
