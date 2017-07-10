@@ -1,11 +1,12 @@
 import * as chai from "chai";
-import {Schedule, STP, TUID} from "../../src/gtfs/native/Schedule";
-import {Days, ScheduleCalendar} from "../../src/gtfs/native/ScheduleCalendar";
 import moment = require("moment");
-import {RouteType} from "../../src/gtfs/file/Route";
-import {CalendarFactory} from "../../src/gtfs/CalendarFactory";
+import {createCalendar} from "../../../src/gtfs/command/CreateCalendar";
+import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
+import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
+import {Schedule} from "../../../src/gtfs/native/Schedule";
+import {RouteType} from "../../../src/gtfs/file/Route";
 
-describe("CalendarFactory", () => {
+describe("CreateCalendar", () => {
 
   it("returns unique calendar entries", () => {
     const schedules = [
@@ -14,7 +15,7 @@ describe("CalendarFactory", () => {
       schedule(5, "C", "2017-01-01", "2017-01-31")
     ];
 
-    const [calendars] = CalendarFactory.getCalendar(schedules);
+    const [calendars] = createCalendar(schedules);
 
     chai.expect(calendars.length).to.equal(1);
     chai.expect(calendars[0].start_date).to.equal("20170101");
@@ -29,7 +30,7 @@ describe("CalendarFactory", () => {
 
     const schedules = [schedule1, schedule2, schedule3, schedule4];
 
-    const [calendars, _, index] = CalendarFactory.getCalendar(schedules);
+    const [calendars, _, index] = createCalendar(schedules);
 
     chai.expect(index[schedule1.calendar.id]).to.equal(1);
     chai.expect(index[schedule2.calendar.id]).to.equal(1);

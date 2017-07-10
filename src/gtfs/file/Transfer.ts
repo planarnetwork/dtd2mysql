@@ -1,6 +1,4 @@
 
-import {Duration} from "../Duration";
-
 /**
  * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same) or a fixed
  * leg between two different stations (a walk or tube).
@@ -23,3 +21,8 @@ export enum TransferType {
   MinTime = 2,
   NotPossible = 3
 }
+
+/**
+ * A duration in seconds
+ */
+export type Duration = number;

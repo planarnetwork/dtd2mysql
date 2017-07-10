@@ -2,11 +2,13 @@
 import {DatabaseConnection} from "../../database/DatabaseConnection";
 import {Transfer} from "../file/Transfer";
 import {CRS, Stop} from "../file/Stop";
-import {RSID, Schedule, STP, TUID} from "../native/Schedule";
+import {Schedule} from "../native/Schedule";
 import {StopTime} from "../file/StopTime";
 import moment = require("moment");
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {RouteType} from "../file/Route";
+import {Association, AssociationType, DateIndicator} from "../native/Association";
+import {RSID, STP, TUID} from "../native/OverlayRecord";
 
 /**
  * Provide access to the CIF data in a vaguely GTFS-ish shape.
@@ -108,6 +110,43 @@ export class GTFSRepository {
 
     return scheduleBuilder.schedules;
   }
+
+  /**
+   * Get associations
+   */
+  public async getAssociations(): Promise<Association[]> {
+    const [results] = await this.db.query<AssociationRow[]>(`
+      SELECT 
+        a.id AS id, base_uid, assoc_uid, crs_code, assoc_date_ind, assoc_cat,
+        monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+        start_date, end_date, stp_indicator
+      FROM association a
+      JOIN tiploc ON assoc_location = tiploc_code
+      ORDER BY stp_indicator DESC, id
+    `);
+
+    return results.map(row => new Association(
+      row.id,
+      row.base_uid,
+      row.assoc_uid,
+      row.crs_code,
+      row.assoc_date_ind,
+      row.assoc_cat,
+      new ScheduleCalendar(
+        moment(row.start_date),
+        moment(row.end_date), {
+        0: row.sunday,
+        1: row.monday,
+        2: row.tuesday,
+        3: row.wednesday,
+        4: row.thursday,
+        5: row.friday,
+        6: row.saturday
+      }),
+      row.stp_indicator
+    ));
+  }
+
 
   /**
    * Close the underlying database
@@ -242,3 +281,22 @@ export type StationCoordinates = {
     stop_name: string
   }
 };
+
+interface AssociationRow {
+  id: number;
+  base_uid: string;
+  assoc_uid: string;
+  crs_code: CRS;
+  start_date: string;
+  end_date: string;
+  assoc_date_ind: DateIndicator,
+  assoc_cat: AssociationType,
+  sunday: 0 | 1;
+  monday: 0 | 1;
+  tuesday: 0 | 1;
+  wednesday: 0 | 1;
+  thursday: 0 | 1;
+  friday: 0 | 1;
+  saturda: 0 | 1;
+  stp_indicator: STP;
+}

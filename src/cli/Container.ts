@@ -8,7 +8,6 @@ import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
-import {ScheduleOverlayApplication} from "../gtfs/ScheduleOverlayApplication";
 import {stationCoordinates} from "../../config/gtfs/station-coordinates";
 
 export class Container {

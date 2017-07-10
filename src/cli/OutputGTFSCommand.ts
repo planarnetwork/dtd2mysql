@@ -1,11 +1,13 @@
-
 import {CLICommand} from "./CLICommand";
 import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
 import {FileOutput} from "../gtfs/FileOutput";
 import {Schedule} from "../gtfs/native/Schedule";
-import {ScheduleOverlayApplication} from "../gtfs/ScheduleOverlayApplication";
 import {agencies} from "../../config/gtfs/agency";
-import {CalendarFactory, ServiceIdIndex} from "../gtfs/CalendarFactory";
+import {Association} from "../gtfs/native/Association";
+import {applyOverlays} from "../gtfs/command/ApplyOverlays";
+import {mergeSchedules} from "../gtfs/command/MergeSchedules";
+import {applyAssociations} from "../gtfs/command/ApplyAssociations";
+import {createCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
 
 export class OutputGTFSCommand implements CLICommand {
 
@@ -24,9 +26,9 @@ export class OutputGTFSCommand implements CLICommand {
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");
+    const schedules = await OutputGTFSCommand.getSchedules(this.repository.getAssociations(), this.repository.getSchedules());
 
-    const schedules = ScheduleOverlayApplication.processSchedules(await this.repository.getSchedules());
-    const [calendars, calendarDates, serviceIds] = CalendarFactory.getCalendar(schedules);
+    const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
 
     const calendarP = this.copy(calendars, "calendar.txt");
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt");
@@ -49,7 +51,7 @@ export class OutputGTFSCommand implements CLICommand {
   private async copy(results: object[] | Promise<object[]>, filename: string): Promise<void> {
     const rows = await results;
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(resolve => {
       const output = this.output.open(filename);
 
       rows.forEach(row => output.write(row));
@@ -59,7 +61,7 @@ export class OutputGTFSCommand implements CLICommand {
   }
 
   private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(resolve => {
       const trips = this.output.open("trips.txt");
       const stopTimes = this.output.open("stop_times.txt");
       const routeFile = this.output.open("routes.txt");
@@ -87,4 +89,29 @@ export class OutputGTFSCommand implements CLICommand {
     });
   }
 
+  private static async getSchedules(associationP: Promise<Association[]>, scheduleP: Promise<Schedule[]>): Promise<Schedule[]> {
+    const associations = pipeline(
+      await associationP,
+      associations => applyOverlays(associations),
+      indexedAssociations => mergeSchedules(indexedAssociations)
+    );
+    return pipeline(
+      await scheduleP,
+      schedules => applyOverlays(schedules),
+      indexedSchedules => applyAssociations(indexedSchedules, associations),
+      indexedSchedules => mergeSchedules(indexedSchedules)
+    );
+  }
+
+}
+
+/**
+ * Create pipeline of function application (left to right)
+ */
+function pipeline(value, ...fns) {
+  for (let i = 0; i < fns.length; i++) {
+    value = fns[i](value);
+  }
+
+  return value;
 }

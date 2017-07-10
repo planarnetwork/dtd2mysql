@@ -5,11 +5,12 @@ import {Trip} from "../file/Trip";
 import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
 import {CRS} from "../file/Stop";
+import {IdGenerator, OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
 
 /**
  * A CIF schedule (BS record)
  */
-export class Schedule {
+export class Schedule implements OverlayRecord {
 
   constructor(
     public readonly id: number,
@@ -32,6 +33,22 @@ export class Schedule {
 
   public get hash(): string {
     return this.tuid + this.stopTimes.map(s => s.stop_id + s.departure_time + s.arrival_time).join("") + this.calendar.binaryDays;
+  }
+
+  /**
+   * Clone the current record with the new calendar and id
+   */
+  public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
+    return new Schedule(
+      scheduleId,
+      this.stopTimes.map(st => Object.assign({}, st, { trip_id: scheduleId })),
+      this.tuid,
+      this.rsid,
+      calendar,
+      this.mode,
+      this.operator,
+      this.stp
+    );
   }
 
   /**
@@ -69,54 +86,5 @@ export class Schedule {
     };
   }
 
-  /**
-   * Check if the given schedule overlaps the current one and if necessary divide this schedule into many others.
-   *
-   * If there is no overlap this Schedule will be returned intact.
-   */
-  public applyOverlay(schedule: Schedule, ids: IdGenerator): Schedule[] {
-    const overlap = this.calendar.getOverlap(schedule.calendar);
-
-    // if this schedules schedule overlaps it at any point
-    if (overlap === OverlapType.None) {
-      return [this];
-    }
-
-    return overlap === OverlapType.Short
-      ? this.calendar.addExcludeDays(schedule.calendar).map(calendar => this.clone(calendar, this.id))
-      : this.calendar.divideAround(schedule.calendar).map(calendar => this.clone(calendar, ids.next().value));
-  }
-
-  public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
-    return new Schedule(
-      scheduleId,
-      this.stopTimes.map(st => Object.assign({}, st, {trip_id: scheduleId})),
-      this.tuid,
-      this.rsid,
-      calendar,
-      this.mode,
-      this.operator,
-      this.stp
-    );
-  }
-
-  /**
-   * Sort the given schedules by date
-   */
-  public static sort(a: Schedule, b: Schedule): number {
-    return a.calendar.runsFrom.isSameOrBefore(b.calendar.runsFrom) ? -1 : 1;
-  }
-
 }
 
-export type TUID = string;
-export type RSID = string;
-
-export enum STP {
-  Permanent = "P",
-  Overlay = "O",
-  New = "N",
-  Cancellation = "C"
-}
-
-export type IdGenerator = IterableIterator<number>;
