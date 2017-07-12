@@ -15,9 +15,9 @@ export function applyOverlays(schedules: OverlayRecord[]): OverlayIndex {
       // get any schedules that share the same TUID
       for (const baseSchedule of schedulesByTuid[schedule.tuid] || []) {
         // remove the underlying schedule and add the replacement(s)
-        schedulesByTuid[schedule.tuid] = schedulesByTuid[schedule.tuid]
-          .filter(s => s !== baseSchedule)
-          .concat(applyOverlay(baseSchedule, schedule, idGenerator));
+        schedulesByTuid[schedule.tuid].splice(
+          schedulesByTuid[schedule.tuid].indexOf(baseSchedule), 1, ...applyOverlay(baseSchedule, schedule, idGenerator)
+        );
       }
     }
 

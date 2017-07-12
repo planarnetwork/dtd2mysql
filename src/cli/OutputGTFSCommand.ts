@@ -6,7 +6,7 @@ import {agencies} from "../../config/gtfs/agency";
 import {Association} from "../gtfs/native/Association";
 import {applyOverlays} from "../gtfs/command/ApplyOverlays";
 import {mergeSchedules} from "../gtfs/command/MergeSchedules";
-import {applyAssociations} from "../gtfs/command/ApplyAssociations";
+import {applyAssociations, AssociationIndex} from "../gtfs/command/ApplyAssociations";
 import {createCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
 
 export class OutputGTFSCommand implements CLICommand {
@@ -90,15 +90,12 @@ export class OutputGTFSCommand implements CLICommand {
   }
 
   private static async getSchedules(associationP: Promise<Association[]>, scheduleP: Promise<Schedule[]>): Promise<Schedule[]> {
-    const associations = pipeline(
-      await associationP,
-      associations => applyOverlays(associations),
-      indexedAssociations => mergeSchedules(indexedAssociations)
-    );
+    const associations = applyOverlays(await associationP);
+
     return pipeline(
       await scheduleP,
       schedules => applyOverlays(schedules),
-      indexedSchedules => applyAssociations(indexedSchedules, associations),
+      indexedSchedules => applyAssociations(indexedSchedules, <AssociationIndex>associations),
       indexedSchedules => mergeSchedules(indexedSchedules)
     );
   }

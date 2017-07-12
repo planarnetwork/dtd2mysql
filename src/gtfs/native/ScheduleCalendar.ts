@@ -36,8 +36,11 @@ export class ScheduleCalendar {
 
     let numDays = 0;
 
-    for (const _ of this.sharedDays(overlay)) {
-      if (++numDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
+    for (const sharedDay of this.sharedDays(overlay)) {
+      const key = sharedDay.format("YYYYMMDD");
+      const isShared = !this.excludeDays[key] && !overlay.excludeDays[key];
+
+      if (isShared && ++numDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
         return OverlapType.Long;
       }
     }
@@ -55,11 +58,14 @@ export class ScheduleCalendar {
       excludeDays[sharedDay.format("YYYYMMDD")] = sharedDay;
     }
 
-    const calendar = this.cloneCalendar(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
+    const calendar = this.clone(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
 
     return calendar.runsFrom.isSameOrBefore(calendar.runsTo) ? [calendar] : [];
   }
 
+  /**
+   * Returns the overlapping days between schedules (does not account for exclude days)
+   */
   private* sharedDays(overlay: ScheduleCalendar) {
     const startDate = moment.max(this.runsFrom, overlay.runsFrom).clone();
     const endDate = moment.min(this.runsTo, overlay.runsTo);
@@ -78,13 +84,13 @@ export class ScheduleCalendar {
    */
   public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
     const calendars: ScheduleCalendar[] = [
-      this.cloneCalendar(this.runsFrom.clone(), calendar.runsFrom.clone().subtract(1, "days")),
-      this.cloneCalendar(calendar.runsTo.clone().add(1, "days"), this.runsTo.clone())
+      this.clone(this.runsFrom.clone(), calendar.runsFrom.clone().subtract(1, "days")),
+      this.clone(calendar.runsTo.clone().add(1, "days"), this.runsTo.clone())
     ];
 
     // if there are any days left after applying the overlay
     if (this.binaryDays - (this.binaryDays & calendar.binaryDays) > 0) {
-      calendars.push(this.cloneCalendar(
+      calendars.push(this.clone(
         calendar.runsFrom.clone(),
         calendar.runsTo.clone(),
         calendar.days,
@@ -98,10 +104,10 @@ export class ScheduleCalendar {
   /**
    * Remove the given days from the calendar then tighten the dates
    */
-  private cloneCalendar(start: Moment,
-                        end: Moment,
-                        removeDays: Days = NO_DAYS,
-                        excludeDays: ExcludeDays = this.excludeDays): ScheduleCalendar {
+  public clone(start: Moment,
+               end: Moment,
+               removeDays: Days = NO_DAYS,
+               excludeDays: ExcludeDays = this.excludeDays): ScheduleCalendar {
 
     const days = this.removeDays(removeDays);
 
@@ -134,7 +140,6 @@ export class ScheduleCalendar {
       6: this.days[6] && !days[6] ? 1 : 0
     };
   }
-
 
   /**
    * Convert to a GTFS Calendar object
@@ -216,6 +221,63 @@ export class ScheduleCalendar {
     );
   }
 
+  /**
+   * Shift the calendar forward a day
+   */
+  public shiftForward(): ScheduleCalendar {
+    const excludeDays = {};
+
+    for (const day of Object.values(this.excludeDays)) {
+      const shiftedDay = day.clone().add(1, "days");
+
+      excludeDays[shiftedDay.format("YYYYMMDD")] = shiftedDay;
+    }
+
+    return new ScheduleCalendar(
+      this.runsFrom.clone().add(1, "days"),
+      this.runsTo.clone().add(1, "days"),
+      {
+        0: this.days[6],
+        1: this.days[0],
+        2: this.days[1],
+        3: this.days[2],
+        4: this.days[3],
+        5: this.days[4],
+        6: this.days[5],
+      },
+      excludeDays
+    )
+  }
+
+  /**
+   * Shift the calendar back a day
+   */
+  public shiftBackward(): ScheduleCalendar {
+    const excludeDays = {};
+
+    for (const day of Object.values(this.excludeDays)) {
+      const shiftedDay = day.clone().subtract(1, "days");
+
+      excludeDays[shiftedDay.format("YYYYMMDD")] = shiftedDay;
+    }
+
+    return new ScheduleCalendar(
+      this.runsFrom.clone().subtract(1, "days"),
+      this.runsTo.clone().subtract(1, "days"),
+      {
+        0: this.days[1],
+        1: this.days[2],
+        2: this.days[3],
+        3: this.days[4],
+        4: this.days[5],
+        5: this.days[6],
+        6: this.days[0],
+      },
+      excludeDays
+    )
+  }
+
+
 }
 
 export type ExcludeDays = {
@@ -240,4 +302,4 @@ export enum OverlapType {
   Long = 2
 }
 
-const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3:0, 4: 0, 5: 0, 6: 0 };
+const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };

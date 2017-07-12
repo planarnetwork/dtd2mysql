@@ -86,13 +86,13 @@ export class GTFSRepository {
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, crs_code, train_category,
-          public_arrival_time, public_departure_time, platform, atoc_code,
-          stop_time.id AS stop_id
+          public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
+          platform, atoc_code, stop_time.id AS stop_id
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
         LEFT JOIN tiploc ON location = tiploc_code
-        WHERE stop_time.id IS NULL OR public_arrival_time IS NOT NULL OR public_departure_time IS NOT NULL
+        WHERE stop_time.id IS NULL OR (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL)
         ORDER BY stp_indicator DESC, id, stop_id
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -100,8 +100,8 @@ export class GTFSRepository {
           500000 + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, location AS crs_code, train_category,
-          public_arrival_time, public_departure_time, platform, null,
-          z_stop_time.id AS stop_id
+          public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
+          platform, null, z_stop_time.id AS stop_id
         FROM z_schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
         ORDER BY stop_id
@@ -176,6 +176,8 @@ interface ScheduleStopTimeRow {
   atoc_code: string | null,
   public_arrival_time: string | null,
   public_departure_time: string | null,
+  scheduled_arrival_time: string | null,
+  scheduled_departure_time: string | null,
   platform: string
 }
 
@@ -201,8 +203,8 @@ class ScheduleBuilder {
 
         stops.push({
           trip_id: row.id,
-          arrival_time: this.formatTime(row.public_arrival_time, departureHour),
-          departure_time: this.formatTime(row.public_departure_time, departureHour),
+          arrival_time: this.formatTime(row.public_arrival_time || row.scheduled_arrival_time, departureHour),
+          departure_time: this.formatTime(row.public_departure_time || row.scheduled_departure_time, departureHour),
           stop_id: row.crs_code,
           stop_sequence: stops.length + 1,
           stop_headsign: row.platform,

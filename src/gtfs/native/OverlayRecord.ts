@@ -15,9 +15,9 @@ export type TUID = string;
 export type RSID = string;
 
 export enum STP {
-  Permanent = "P",
+  Permanent = "Previous",
   Overlay = "O",
-  New = "N",
+  New = "Next",
   Cancellation = "C"
 }
 

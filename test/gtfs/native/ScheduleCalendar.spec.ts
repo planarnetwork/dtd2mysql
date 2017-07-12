@@ -78,7 +78,6 @@ describe("ScheduleCalendar", () => {
     chai.expect(calendars.length).to.equal(0);
   });
 
-
   it("divides around a date range spanning the beginning", () => {
     const perm = calendar("2017-01-05", "2017-01-31");
     const underlay = calendar("2017-01-01", "2017-01-07");
@@ -208,6 +207,34 @@ describe("ScheduleCalendar", () => {
     chai.expect(c3.excludeDays["20170710"]).to.not.be.undefined;
     chai.expect(c3.excludeDays["20170717"]).to.not.be.undefined;
     chai.expect(c3.excludeDays["20170721"]).to.not.be.undefined;
+  });
+
+  it("shift forward", () => {
+    // Monday + Saturday service
+    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1 });
+    c1.excludeDays["20170710"] = moment("20170710");
+
+    const c2 = c1.shiftForward();
+
+    chai.expect(c2.days).to.deep.equal({ 0: 1, 1: 0, 2: 1, 3: 0, 4: 0, 5: 0, 6: 0 });
+    chai.expect(c2.runsFrom.isSame("20170704")).to.be.true;
+    chai.expect(c2.runsTo.isSame("20170715")).to.be.true;
+    chai.expect(c2.excludeDays["20170710"]).to.be.undefined;
+    chai.expect(c2.excludeDays["20170711"]).to.not.be.undefined;
+  });
+
+  it("shift backward", () => {
+    // Sunday + Friday service
+    const c1 = calendar("2017-07-02", "2017-07-14", { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
+    c1.excludeDays["20170709"] = moment("20170709");
+
+    const c2 = c1.shiftBackward();
+
+    chai.expect(c2.days).to.deep.equal({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 1, 5: 0, 6: 1 });
+    chai.expect(c2.runsFrom.isSame("20170701")).to.be.true;
+    chai.expect(c2.runsTo.isSame("20170713")).to.be.true;
+    chai.expect(c2.excludeDays["20170709"]).to.be.undefined;
+    chai.expect(c2.excludeDays["20170708"]).to.not.be.undefined;
   });
 
 });
