@@ -10,7 +10,7 @@ export class CSVRecord implements Record {
     public readonly key: string[],
     public readonly fields: FieldMap,
     public readonly indexes: string[] = [],
-    public readonly fieldDelimiter = ","
+    public readonly fieldDelimiter: string | RegExp = ","
   ) {}
 
   @memoize
