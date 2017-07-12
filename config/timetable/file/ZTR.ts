@@ -13,7 +13,7 @@ const schedule = new RecordWithManualIdentifier(
   "z_schedule",
   ["train_uid", "runs_from", "stp_indicator"], {
     "train_uid": new TextField(3, 6),
-    "runs_from": new ShortDateField(9), // todo z train date format is different?
+    "runs_from": new ShortDateField(9),
     "runs_to": new ShortDateField(15),
     "monday": new BooleanField(21),
     "tuesday": new BooleanField(22),

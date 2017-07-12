@@ -271,9 +271,9 @@ const RouteTypeIndex = {
   "XZ": RouteType.Rail,
   "BR": RouteType.Gondola,
   "BS": RouteType.Bus,
-  "OL": RouteType.Rail,
+  "OL": RouteType.Subway,
   "XC": RouteType.Rail,
-  "SS": RouteType.Rail
+  "SS": RouteType.Ferry
 };
 
 export type StationCoordinates = {
