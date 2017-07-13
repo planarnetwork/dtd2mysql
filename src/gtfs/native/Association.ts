@@ -48,34 +48,36 @@ export class Association implements OverlayRecord {
    * Apply the split or join to the given schedules
    */
   public apply(base: Schedule, assoc: Schedule): Schedule {
-    let stops: StopTime[];
     let tuid: TUID;
+    let start: StopTime[];
+    let assocStop: StopTime;
+    let end: StopTime[];
 
     if (this.assocType === AssociationType.Split) {
-      const assocIndex = base.stopTimes.findIndex(s => s.stop_id === this.assocLocation);
-      const baseStops = base.stopTimes.slice(0, assocIndex);
-      const arrivalTime = moment.duration(base.stopTimes[assocIndex].arrival_time || "00:00");
-      let stopSequence = base.stopTimes[assocIndex].stop_sequence;
-      const assocStops = assoc.stopTimes.map(s => cloneStop(arrivalTime, stopSequence++, s));
-
-      stops = baseStops.concat(assocStops);
       tuid = base.tuid + "_" + assoc.tuid;
+
+      start = base.before(this.assocLocation);
+      assocStop = mergeAssociationStop(base.stopAt(this.assocLocation), assoc.stopAt(this.assocLocation));
+      end = assoc.after(this.assocLocation);
     }
     else {
-      const assocIndex = base.stopTimes.findIndex(s => s.stop_id === this.assocLocation);
-      const assocStops = assoc.stopTimes.slice(0, -1);
-      const arrivalTime = moment.duration(base.stopTimes[assocIndex].arrival_time || "00:00");
-      let stopSequence = assocStops[assocStops.length -1].stop_sequence + 1;
-      const baseStops = base.stopTimes
-        .slice(assocIndex)
-        .map(s => cloneStop(arrivalTime, stopSequence++, s));
-
-      stops = assocStops.concat(baseStops);
       tuid = assoc.tuid + "_" + base.tuid;
+
+      start = assoc.before(this.assocLocation);
+      assocStop = mergeAssociationStop(assoc.stopAt(this.assocLocation), base.stopAt(this.assocLocation));
+      end = base.after(this.assocLocation)
     }
 
+    let stopSequence: number = 1;
+
+    const stops = [
+      ...start.map(s => cloneStop(s, stopSequence++, assoc.id)),
+      cloneStop(assocStop, stopSequence++, assoc.id),
+      ...end.map(s => cloneStop(s, stopSequence++, assoc.id, assocStop))
+    ];
+
     return new Schedule(
-      this.id,
+      assoc.id,
       stops,
       tuid,
       assoc.rsid,
@@ -89,9 +91,25 @@ export class Association implements OverlayRecord {
 }
 
 /**
+ * Take the arrival time of the first stop and the departure time of the second stop and put them into a new stop
+ */
+function mergeAssociationStop(arrivalStop: StopTime, departureStop: StopTime): StopTime {
+  const arrivalTime = moment.duration(arrivalStop.arrival_time || "00:00");
+  const departureTime = moment.duration(departureStop.departure_time || "00:00");
+  const departs = arrivalTime.asSeconds() <= departureTime.asSeconds() ? departureTime : departureTime.add(1, "day");
+
+  return Object.assign({}, arrivalStop, {
+    departure_time: formatDuration(departs.asSeconds()),
+    pickup_type: departureStop.pickup_type,
+    drop_off_type: arrivalStop.drop_off_type
+  });
+}
+
+/**
  * Clone the given stop overriding the sequence number and modifying the arrival/departure times if necessary
  */
-function cloneStop(assocTime: Duration, stopSequence: number, stop: StopTime): StopTime {
+function cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocStop: StopTime | null = null): StopTime {
+  const assocTime = moment.duration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
   const departureTime = stop.departure_time ? moment.duration(stop.departure_time) : null;
 
   if (departureTime && departureTime.asSeconds() < assocTime.asSeconds()) {
@@ -107,7 +125,8 @@ function cloneStop(assocTime: Duration, stopSequence: number, stop: StopTime): S
   return Object.assign({}, stop, {
     arrival_time: arrivalTime ? formatDuration(arrivalTime.asSeconds()) : null,
     departure_time: departureTime ? formatDuration(departureTime.asSeconds()) : null,
-    stop_sequence: stopSequence
+    stop_sequence: stopSequence,
+    trip_id: tripId
   });
 }
 

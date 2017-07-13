@@ -7,7 +7,7 @@ import config from "../../config";
 import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
-import {GTFSRepository} from "../gtfs/repository/GTFSRepository";
+import {CIFRepository} from "../gtfs/repository/CIFRepository";
 import {stationCoordinates} from "../../config/gtfs/station-coordinates";
 
 export class Container {
@@ -57,7 +57,7 @@ export class Container {
     ]);
 
     return new OutputGTFSCommand(
-      new GTFSRepository(promiseDb, streamDb, stationCoordinates)
+      new CIFRepository(promiseDb, streamDb, stationCoordinates)
     );
   }
 

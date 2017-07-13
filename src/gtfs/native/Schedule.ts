@@ -86,5 +86,17 @@ export class Schedule implements OverlayRecord {
     };
   }
 
+  public before(location: CRS): StopTime[] {
+    return this.stopTimes.slice(0, this.stopTimes.findIndex(s => s.stop_id === location));
+  }
+
+  public after(location: CRS): StopTime[] {
+    return this.stopTimes.slice(this.stopTimes.findIndex(s => s.stop_id === location) + 1);
+  }
+
+  public stopAt(location: CRS): StopTime {
+    return <StopTime>this.stopTimes.find(s => s.stop_id === location);
+  }
+
 }
 

@@ -1,12 +1,12 @@
 import {Calendar} from "../file/Calendar";
 import {CalendarDate} from "../file/CalendarDate";
 import {Schedule} from "../native/Schedule";
+import {ScheduleCalendar} from "../native/ScheduleCalendar";
 
 /**
  * Return the unique GTFS calendars and an index mapping calendar ID to service ID
- * @param schedules
  */
-export function createCalendar(schedules: Schedule[]): [Calendar[], CalendarDate[], ServiceIdIndex] {
+export function createCalendar(schedules: HasCalendar[]): [Calendar[], CalendarDate[], ServiceIdIndex] {
   const serviceIdIndex: ServiceIdIndex = {};
   const calendars: Calendar[] = [];
   const calendarDates: CalendarDate[] = [];
@@ -26,4 +26,8 @@ export function createCalendar(schedules: Schedule[]): [Calendar[], CalendarDate
 
 export type ServiceIdIndex = {
   [calendarId: number]: number;
+}
+
+export interface HasCalendar {
+  calendar: ScheduleCalendar;
 }

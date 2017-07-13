@@ -1,5 +1,5 @@
 
-import {StationCoordinates} from "../../src/gtfs/repository/GTFSRepository";
+import {StationCoordinates} from "../../src/gtfs/repository/CIFRepository";
 
 export const stationCoordinates: StationCoordinates = {
   "AAP": { stop_name: "Alexandra Palace", stop_lat: 51.597920, stop_lon: -0.120240 },

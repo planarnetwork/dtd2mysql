@@ -80,10 +80,8 @@ describe("ApplyOverlays", () => {
 
     chai.expect(s1).not.to.equal(perm);
     chai.expect(s1.tuid).to.equal(perm.tuid);
-    chai.expect(s1.id).to.be.greaterThan(perm.id);
     chai.expect(s2).not.to.equal(perm);
     chai.expect(s2.tuid).to.equal(perm.tuid);
-    chai.expect(s2.id).to.greaterThan(perm.id);
     chai.expect(s3).to.equal(long);
   });
 

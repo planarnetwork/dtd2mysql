@@ -2,18 +2,16 @@
 import {DatabaseConnection} from "../../database/DatabaseConnection";
 import {Transfer} from "../file/Transfer";
 import {CRS, Stop} from "../file/Stop";
-import {Schedule} from "../native/Schedule";
-import {StopTime} from "../file/StopTime";
 import moment = require("moment");
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
-import {RouteType} from "../file/Route";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";
+import {ScheduleBuilder, ScheduleResults} from "./ScheduleBuilder";
 
 /**
- * Provide access to the CIF data in a vaguely GTFS-ish shape.
+ * Provide access to the CIF/TTIS data in a vaguely GTFS-ish shape.
  */
-export class GTFSRepository {
+export class CIFRepository {
 
   constructor(
     private readonly db: DatabaseConnection,
@@ -25,7 +23,7 @@ export class GTFSRepository {
    * Return the interchange time between each station
    */
   public async getTransfers(): Promise<Transfer[]> {
-    // combine the interchange time with fixed links and a reverse of each fixed link (they are bi-directional)
+    // interchange time
     const [results] = await this.db.query<Transfer[]>(`
       SELECT 
         crs_code AS from_stop_id, 
@@ -33,25 +31,14 @@ export class GTFSRepository {
         2 AS transfer_type, 
         minimum_change_time * 60 AS duration 
       FROM physical_station
-      UNION
-      SELECT 
-        origin AS from_stop_id, 
-        destination AS to_stop_id, 
-        2 AS transfer_type, 
-        duration * 60 AS duration 
-      FROM fixed_link
-      UNION
-      SELECT 
-        destination AS from_stop_id, 
-        origin AS to_stop_id, 
-        2 AS transfer_type, 
-        duration * 60 AS duration 
-      FROM fixed_link
     `);
 
     return results;
   }
 
+  /**
+   * Return all the stops with some configurable long/lat applied
+   */
   public async getStops(): Promise<Stop[]> {
     const [results] = await this.db.query<Stop[]>(`
       SELECT
@@ -77,7 +64,10 @@ export class GTFSRepository {
     return results.map(stop => Object.assign(stop, this.stationCoordinates[stop.stop_id]));
   }
 
-  public async getSchedules(): Promise<Schedule[]> {
+  /**
+   * Return the schedules and z trains
+   */
+  public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
 
     await Promise.all([
@@ -108,7 +98,7 @@ export class GTFSRepository {
       `))
     ]);
 
-    return scheduleBuilder.schedules;
+    return scheduleBuilder.results;
   }
 
   /**
@@ -147,6 +137,34 @@ export class GTFSRepository {
     ));
   }
 
+  // public async getFixedLink(): Promise<FixedLink> {
+  //   // use the additional fixed links if possible and fill the missing data with fixed_links
+  //   const [rows] = await this.db.query<FixedLinkRow>(`
+  //     SELECT
+  //       mode, duration * 60 as duration, origin, destination,
+  //       start_time, end_time, start_date, end_date,
+  //       monday, tuesday, wednesday, thursday, friday, saturday, sunday
+  //     FROM additional_fixed_link
+  //     UNION
+  //     SELECT
+  //       "TRANSFER", duration * 60 as duration, origin, destination,
+  //       "00:00:00", "23:59:59", "1970-01-01", "2099-12-31",
+  //       1,1,1,1,1,1,1
+  //     FROM fixed_link
+  //     WHERE CONCAT(origin, destination) NOT IN (
+  //       SELECT CONCAT(origin, destination) FROM additional_fixed_link
+  //     )
+  //   `);
+  //
+  //   const results: FixedLink[] = [];
+  //
+  //   for (const row of rows) {
+  //     results.push(this.getFixedLinkRow(row.origin, row.destination, row));
+  //     results.push(this.getFixedLinkRow(row.destination, row.origin, row));
+  //   }
+  //
+  //   return results;
+  // }
 
   /**
    * Close the underlying database
@@ -157,7 +175,7 @@ export class GTFSRepository {
 
 }
 
-interface ScheduleStopTimeRow {
+export interface ScheduleStopTimeRow {
   id: number,
   train_uid: TUID,
   retail_train_id: RSID,
@@ -180,101 +198,6 @@ interface ScheduleStopTimeRow {
   scheduled_departure_time: string | null,
   platform: string
 }
-
-class ScheduleBuilder {
-  public readonly schedules: Schedule[] = [];
-
-  /**
-   * Take a stream of ScheduleStopTimeRow, turn them into Schedule objects and add the result to the schedules
-   */
-  public loadSchedules(results: any): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      let stops: StopTime[] = [];
-      let prevRow: ScheduleStopTimeRow;
-      let departureHour = 4;
-
-      results.on("result", row => {
-        if (prevRow && prevRow.id !== row.id) {
-          this.schedules.push(this.createSchedule(prevRow, stops));
-          stops = [];
-
-          departureHour = row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
-        }
-
-        stops.push({
-          trip_id: row.id,
-          arrival_time: this.formatTime(row.public_arrival_time || row.scheduled_arrival_time, departureHour),
-          departure_time: this.formatTime(row.public_departure_time || row.scheduled_departure_time, departureHour),
-          stop_id: row.crs_code,
-          stop_sequence: stops.length + 1,
-          stop_headsign: row.platform,
-          pickup_type: row.public_departure_time ? 0 : 1,
-          drop_off_type: row.public_arrival_time ? 0 : 1,
-          shape_dist_traveled: null,
-          timepoint: 1
-        });
-
-        prevRow = row;
-      });
-
-      results.on("end", () => {
-        this.schedules.push(this.createSchedule(prevRow, stops));
-
-        resolve();
-      });
-      results.on("error", reject);
-    });
-  }
-
-  private createSchedule(row: ScheduleStopTimeRow, stops: StopTime[]): Schedule {
-    return new Schedule(
-      row.id,
-      stops,
-      row.train_uid,
-      row.retail_train_id,
-      new ScheduleCalendar(
-        moment(row.runs_from),
-        moment(row.runs_to),
-        {
-          0: row.sunday,
-          1: row.monday,
-          2: row.tuesday,
-          3: row.wednesday,
-          4: row.thursday,
-          5: row.friday,
-          6: row.saturday
-        }
-      ),
-      RouteTypeIndex[row.train_category] || RouteType.Rail,
-      row.atoc_code,
-      row.stp_indicator
-    );
-  }
-
-  private formatTime(time: string | null, originDepartureHour: number) {
-    if (time === null) return null;
-
-    const departureHour = parseInt(time.substr(0, 2), 10);
-
-    // if the service started after 4am and after the current stops departure hour we've probably rolled over midnight
-    if (originDepartureHour >= 4 && originDepartureHour > departureHour) {
-      return (departureHour + 24) + time.substr(2);
-    }
-
-    return time;
-  }
-}
-
-const RouteTypeIndex = {
-  "OO": RouteType.Rail,
-  "XX": RouteType.Rail,
-  "XZ": RouteType.Rail,
-  "BR": RouteType.Gondola,
-  "BS": RouteType.Bus,
-  "OL": RouteType.Subway,
-  "XC": RouteType.Rail,
-  "SS": RouteType.Ferry
-};
 
 export type StationCoordinates = {
   [crs: string]: {

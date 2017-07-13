@@ -5,9 +5,8 @@ import {OverlapType} from "../native/ScheduleCalendar";
 /**
  * Index the schedules by TUID, detect overlays and create new schedules as necessary.
  */
-export function applyOverlays(schedules: OverlayRecord[]): OverlayIndex {
+export function applyOverlays(schedules: OverlayRecord[], idGenerator: IdGenerator = getDefaultIdGenerator()): OverlayIndex {
   const schedulesByTuid: OverlayIndex = {};
-  const idGenerator = getIdGenerator(600000);
 
   for (const schedule of schedules) {
     // for all cancellation or overlays (perms don't overlap)
@@ -33,8 +32,8 @@ export function applyOverlays(schedules: OverlayRecord[]): OverlayIndex {
 /**
  * Return a Iterator that generates incremental numbers starting at the given number
  */
-function *getIdGenerator(startId: number): IterableIterator<number> {
-  let id = startId + 1;
+function *getDefaultIdGenerator(): IterableIterator<number> {
+  let id = 0;
   while (true) {
     yield id++;
   }

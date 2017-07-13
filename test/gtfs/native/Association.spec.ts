@@ -18,7 +18,7 @@ describe("Association", () => {
       stop(4, "RAM", "13:00"),
     ]);
 
-    const assoc = schedule(1, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "ASH", "12:05"),
       stop(2, "DOV", "13:00"),
     ]);
@@ -32,6 +32,7 @@ describe("Association", () => {
     chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
     chai.expect(result.stopTimes[2].stop_id).to.equal("ASH");
     chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    chai.expect(result.stopTimes[2].arrival_time).to.equal("12:00:00");
     chai.expect(result.stopTimes[2].departure_time).to.equal("12:05:00");
     chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
     chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
@@ -44,11 +45,11 @@ describe("Association", () => {
       stop(5, "RAM", "13:00"),
     ]);
 
-    const assoc = schedule(1, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "ASH", "12:05"),
-      stop(3, "DOV", "13:00"),
-      stop(5, "A", "13:20"),
-      stop(7, "B", "13:40"),
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "12:05", 2),
+      stop(3, "DOV", "13:00", 2),
+      stop(5, "A", "13:20", 2),
+      stop(7, "B", "13:40", 2),
     ]);
 
     const result = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc);
@@ -56,14 +57,19 @@ describe("Association", () => {
     chai.expect(result.tuid).to.equal("A_B");
     chai.expect(result.stopTimes[0].stop_id).to.equal("PDW");
     chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    chai.expect(result.stopTimes[0].trip_id).to.equal(2);
     chai.expect(result.stopTimes[1].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(3);
+    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    chai.expect(result.stopTimes[1].trip_id).to.equal(2);
     chai.expect(result.stopTimes[2].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(4);
+    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    chai.expect(result.stopTimes[2].trip_id).to.equal(2);
     chai.expect(result.stopTimes[3].stop_id).to.equal("A");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(5);
+    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    chai.expect(result.stopTimes[3].trip_id).to.equal(2);
     chai.expect(result.stopTimes[4].stop_id).to.equal("B");
-    chai.expect(result.stopTimes[4].stop_sequence).to.equal(6);
+    chai.expect(result.stopTimes[4].stop_sequence).to.equal(5);
+    chai.expect(result.stopTimes[4].trip_id).to.equal(2);
   });
 
   it("applies overnight splits", () => {
@@ -74,7 +80,7 @@ describe("Association", () => {
       stop(4, "RAM", "25:00"),
     ]);
 
-    const assoc = schedule(1, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
       stop(1, "ASH", "00:35"),
       stop(2, "DOV", "01:00"),
     ]);
@@ -90,6 +96,7 @@ describe("Association", () => {
     chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
     chai.expect(result.stopTimes[2].stop_id).to.equal("ASH");
     chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    chai.expect(result.stopTimes[2].arrival_time).to.equal("24:30:00");
     chai.expect(result.stopTimes[2].departure_time).to.equal("24:35:00");
     chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
     chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
@@ -105,7 +112,7 @@ describe("Association", () => {
       stop(9, "TON", "14:00"),
     ]);
 
-    const assoc = schedule(1, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "DOV", "11:00"),
       stop(3, "ASH", "11:55"),
     ]);
@@ -117,6 +124,7 @@ describe("Association", () => {
     chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
     chai.expect(result.stopTimes[1].stop_id).to.equal("ASH");
     chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    chai.expect(result.stopTimes[1].arrival_time).to.equal("11:55:00");
     chai.expect(result.stopTimes[1].departure_time).to.equal("12:00:00");
     chai.expect(result.stopTimes[2].stop_id).to.equal("PDW");
     chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
@@ -132,12 +140,12 @@ describe("Association", () => {
       stop(7, "TON", "14:00"),
     ]);
 
-    const assoc = schedule(1, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "A", "10:00"),
-      stop(3, "B", "10:20"),
-      stop(5, "C", "10:40"),
-      stop(7, "DOV", "11:00"),
-      stop(9, "ASH", "11:55"),
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "A", "10:00", 2),
+      stop(3, "B", "10:20", 2),
+      stop(5, "C", "10:40", 2),
+      stop(7, "DOV", "11:00", 2),
+      stop(9, "ASH", "11:55", 2),
     ]);
 
     const result = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc);
@@ -145,18 +153,25 @@ describe("Association", () => {
     chai.expect(result.tuid).to.equal("B_A");
     chai.expect(result.stopTimes[0].stop_id).to.equal("A");
     chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    chai.expect(result.stopTimes[0].trip_id).to.equal(2);
     chai.expect(result.stopTimes[1].stop_id).to.equal("B");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(3);
+    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    chai.expect(result.stopTimes[1].trip_id).to.equal(2);
     chai.expect(result.stopTimes[2].stop_id).to.equal("C");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(5);
+    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    chai.expect(result.stopTimes[2].trip_id).to.equal(2);
     chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(7);
+    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    chai.expect(result.stopTimes[3].trip_id).to.equal(2);
     chai.expect(result.stopTimes[4].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[4].stop_sequence).to.equal(8);
+    chai.expect(result.stopTimes[4].stop_sequence).to.equal(5);
+    chai.expect(result.stopTimes[4].trip_id).to.equal(2);
     chai.expect(result.stopTimes[5].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[5].stop_sequence).to.equal(9);
+    chai.expect(result.stopTimes[5].stop_sequence).to.equal(6);
+    chai.expect(result.stopTimes[5].trip_id).to.equal(2);
     chai.expect(result.stopTimes[6].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[6].stop_sequence).to.equal(10);
+    chai.expect(result.stopTimes[6].stop_sequence).to.equal(7);
+    chai.expect(result.stopTimes[6].trip_id).to.equal(2);
   });
 
 
@@ -189,9 +204,9 @@ function schedule(id: number,
   );
 }
 
-function stop(stopSequence: number, location: CRS, time: string): StopTime {
+function stop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
   return {
-    trip_id: 1,
+    trip_id: tripId,
     arrival_time: time,
     departure_time: time + ":30",
     stop_id: location,
@@ -203,6 +218,37 @@ function stop(stopSequence: number, location: CRS, time: string): StopTime {
     timepoint: 0,
   };
 }
+
+function arrivalStop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
+  return {
+    trip_id: tripId,
+    arrival_time: time,
+    departure_time: null,
+    stop_id: location,
+    stop_sequence: stopSequence,
+    stop_headsign: "",
+    pickup_type: 1,
+    drop_off_type: 0,
+    shape_dist_traveled: null,
+    timepoint: 0,
+  };
+}
+
+function departureStop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
+  return {
+    trip_id: tripId,
+    arrival_time: null,
+    departure_time: time,
+    stop_id: location,
+    stop_sequence: stopSequence,
+    stop_headsign: "",
+    pickup_type: 0,
+    drop_off_type: 1,
+    shape_dist_traveled: null,
+    timepoint: 0,
+  };
+}
+
 
 function association(base: Schedule,
                      assoc: Schedule,
