@@ -6,6 +6,7 @@ import {Duration, Moment} from "moment";
 import {OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
 import moment = require("moment");
+import {formatDuration} from "./Duration";
 
 export class Association implements OverlayRecord {
 
@@ -128,15 +129,6 @@ function cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocSt
     stop_sequence: stopSequence,
     trip_id: tripId
   });
-}
-
-function formatDuration(duration: number): string {
-  const hours = Math.floor(duration / 3600);
-  const hoursFormatted = hours < 10 ? "0" + hours : hours;
-  const mins = Math.floor((duration % 3600) / 60);
-  const minsFormatted = mins < 10 ? "0" + mins : mins;
-
-  return `${hoursFormatted}:${minsFormatted}:00`;
 }
 
 export enum DateIndicator {

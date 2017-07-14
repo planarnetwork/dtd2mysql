@@ -1,3 +1,4 @@
+import {Duration} from "../native/Duration";
 
 /**
  * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same) or a fixed
@@ -22,7 +23,3 @@ export enum TransferType {
   NotPossible = 3
 }
 
-/**
- * A duration in seconds
- */
-export type Duration = number;

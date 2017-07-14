@@ -81,9 +81,9 @@ CREATE TABLE `feed_info` (
 DROP TABLE IF EXISTS `frequencies`;
 CREATE TABLE `frequencies` (
   `trip_id` mediumint(12) unsigned NOT NULL,
-  `start_time` date NOT NULL,
-  `end_time` date NOT NULL,
-  `headway_secs` varchar(100) NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `headway_secs` smallint(5) NOT NULL,
   `exact_times` tinyint(1) unsigned DEFAULT NULL,
   PRIMARY KEY (`trip_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

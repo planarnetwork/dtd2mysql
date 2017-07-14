@@ -6,6 +6,7 @@ import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
 import {CRS} from "../file/Stop";
 import {IdGenerator, OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
+import memoize = require("memoized-class-decorator");
 
 /**
  * A CIF schedule (BS record)
@@ -77,13 +78,26 @@ export class Schedule implements OverlayRecord {
       route_id: this.id,
       agency_id: this.operator,
       route_short_name: `${this.operator}:${this.origin}->${this.destination}`,
-      route_long_name: `${this.operator} service from ${this.origin} to ${this.destination}`,
+      route_long_name: `${this.operator} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
       route_type: this.mode,
       route_text_color: null,
       route_color: null,
       route_url: null,
-      route_desc: null
+      route_desc: this.modeDescription
     };
+  }
+
+  @memoize
+  public get modeDescription(): string {
+    switch (this.mode) {
+      case RouteType.Rail: return "Train";
+      case RouteType.Subway: return "Underground";
+      case RouteType.Tram: return "Tram";
+      case RouteType.Bus: return "Bus";
+      case RouteType.Gondola: return "Replacement bus";
+      case RouteType.Ferry: return "Boat";
+      default: return "Train";
+    }
   }
 
   public before(location: CRS): StopTime[] {

@@ -7,6 +7,9 @@ import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";
 import {ScheduleBuilder, ScheduleResults} from "./ScheduleBuilder";
+import {FixedLink} from "../native/FixedLink";
+import {RouteType} from "../file/Route";
+import {Duration} from "../native/Duration";
 
 /**
  * Provide access to the CIF/TTIS data in a vaguely GTFS-ish shape.
@@ -30,7 +33,8 @@ export class CIFRepository {
         crs_code AS to_stop_id, 
         2 AS transfer_type, 
         minimum_change_time * 60 AS duration 
-      FROM physical_station
+      FROM physical_station WHERE cate_interchange_status IS NOT NULL
+      GROUP BY crs_code
     `);
 
     return results;
@@ -42,21 +46,20 @@ export class CIFRepository {
   public async getStops(): Promise<Stop[]> {
     const [results] = await this.db.query<Stop[]>(`
       SELECT
-        crs_code AS stop_id,             
-        tiploc_code AS stop_code,           
-        description AS stop_name,           
-        description AS stop_desc,           
-        NULL AS stop_lat,            
-        NULL AS stop_lon,            
-        NULL AS zone_id,             
-        NULL AS stop_url,            
-        NULL AS location_type,       
-        NULL AS parent_station,      
-        "Europe/London" AS stop_timezone,       
+        crs_code AS stop_id, 
+        tiploc_code AS stop_code,
+        station_name AS stop_name,
+        station_name AS stop_desc,
+        0 AS stop_lat,
+        0 AS stop_lon,
+        NULL AS zone_id,
+        NULL AS stop_url,
+        NULL AS location_type,
+        NULL AS parent_station,
+        "Europe/London" AS stop_timezone,
         0 AS wheelchair_boarding 
-      FROM tiploc 
-      WHERE crs_code IS NOT NULL 
-      AND description IS NOT NULL
+      FROM physical_station
+      GROUP BY crs_code
       ORDER BY crs_code
     `);
 
@@ -81,8 +84,8 @@ export class CIFRepository {
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
-        LEFT JOIN tiploc ON location = tiploc_code
-        WHERE stop_time.id IS NULL OR (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL)
+        LEFT JOIN physical_station ON location = tiploc_code
+        WHERE stop_time.id IS NULL OR (crs_code IS NOT NULL AND (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL))
         ORDER BY stp_indicator DESC, id, stop_id
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -137,34 +140,63 @@ export class CIFRepository {
     ));
   }
 
-  // public async getFixedLink(): Promise<FixedLink> {
-  //   // use the additional fixed links if possible and fill the missing data with fixed_links
-  //   const [rows] = await this.db.query<FixedLinkRow>(`
-  //     SELECT
-  //       mode, duration * 60 as duration, origin, destination,
-  //       start_time, end_time, start_date, end_date,
-  //       monday, tuesday, wednesday, thursday, friday, saturday, sunday
-  //     FROM additional_fixed_link
-  //     UNION
-  //     SELECT
-  //       "TRANSFER", duration * 60 as duration, origin, destination,
-  //       "00:00:00", "23:59:59", "1970-01-01", "2099-12-31",
-  //       1,1,1,1,1,1,1
-  //     FROM fixed_link
-  //     WHERE CONCAT(origin, destination) NOT IN (
-  //       SELECT CONCAT(origin, destination) FROM additional_fixed_link
-  //     )
-  //   `);
-  //
-  //   const results: FixedLink[] = [];
-  //
-  //   for (const row of rows) {
-  //     results.push(this.getFixedLinkRow(row.origin, row.destination, row));
-  //     results.push(this.getFixedLinkRow(row.destination, row.origin, row));
-  //   }
-  //
-  //   return results;
-  // }
+  /**
+   * Return the ALF information
+   */
+  public async getFixedLinks(): Promise<FixedLink[]> {
+    // use the additional fixed links if possible and fill the missing data with fixed_links
+    const [rows] = await this.db.query<FixedLinkRow>(`
+      SELECT
+        mode, duration * 60 as duration, origin, destination,
+        start_time, end_time, start_date, end_date,
+        monday, tuesday, wednesday, thursday, friday, saturday, sunday
+      FROM additional_fixed_link
+      WHERE origin IN (SELECT crs_code FROM physical_station)
+      AND destination IN (SELECT crs_code FROM physical_station)
+      UNION
+      SELECT
+        "TRANSFER", duration * 60 as duration, origin, destination,
+        "00:00:00", "23:59:59", "2017-01-01", "2038-01-19",
+        1,1,1,1,1,1,1
+      FROM fixed_link
+      WHERE CONCAT(origin, destination) NOT IN (
+        SELECT CONCAT(origin, destination) FROM additional_fixed_link
+      )
+    `);
+
+    const results: FixedLink[] = [];
+
+    for (const row of rows) {
+      results.push(this.getFixedLinkRow(row.origin, row.destination, row));
+      results.push(this.getFixedLinkRow(row.destination, row.origin, row));
+    }
+
+    return results;
+  }
+
+  private getFixedLinkRow(origin: CRS, destination: CRS, row: FixedLinkRow): FixedLink {
+    return new FixedLink(
+      origin,
+      destination,
+      fixedLinkModeRouteModeMap[row.mode],
+      row.duration,
+      row.start_time,
+      row.end_time,
+      new ScheduleCalendar(
+        moment(row.start_date || "2017-01-01"),
+        moment(row.end_date || "2038-01-19"),
+        {
+          0: row.sunday,
+          1: row.monday,
+          2: row.tuesday,
+          3: row.wednesday,
+          4: row.thursday,
+          5: row.friday,
+          6: row.saturday,
+        }
+      )
+    )
+  }
 
   /**
    * Close the underlying database
@@ -225,3 +257,37 @@ interface AssociationRow {
   saturda: 0 | 1;
   stp_indicator: STP;
 }
+
+interface FixedLinkRow {
+  mode: FixedLinkMode;
+  duration: Duration;
+  origin: CRS;
+  destination: CRS;
+  start_time: string;
+  end_time: string;
+  start_date: string | null;
+  end_date: string | null;
+  monday: 0 | 1;
+  tuesday: 0 | 1;
+  wednesday: 0 | 1;
+  thursday: 0 | 1;
+  friday: 0 | 1;
+  saturday: 0 | 1;
+  sunday: 0 | 1;
+}
+
+enum FixedLinkMode {
+  Walk = "WALK",
+  Metro = "METRO",
+  Transfer = "TRANSFER",
+  Tube = "TUBE",
+  Bus = "BUS"
+}
+
+const fixedLinkModeRouteModeMap = {
+  "WALK": RouteType.Cable,
+  "METRO": RouteType.Funicular,
+  "TRANSFER": RouteType.Ferry,
+  "TUBE": RouteType.Subway,
+  "BUS": RouteType.Bus
+};

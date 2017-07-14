@@ -1,5 +1,4 @@
-
-import {RSID, TUID} from "../native/Schedule";
+import {RSID, TUID} from "../native/OverlayRecord";
 
 export interface Trip {
   route_id: number;
