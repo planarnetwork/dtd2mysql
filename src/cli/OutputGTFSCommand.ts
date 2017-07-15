@@ -6,11 +6,9 @@ import {agencies} from "../../config/gtfs/agency";
 import {Association} from "../gtfs/native/Association";
 import {applyOverlays} from "../gtfs/command/ApplyOverlays";
 import {mergeSchedules} from "../gtfs/command/MergeSchedules";
-import {applyAssociations, AssociationIndex} from "../gtfs/command/ApplyAssociations";
-import {createCalendar, HasCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
+import {applyAssociations, AssociationIndex, ScheduleIndex} from "../gtfs/command/ApplyAssociations";
+import {createCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
 import {ScheduleResults} from "../gtfs/repository/ScheduleBuilder";
-import {FixedLink} from "../gtfs/native/FixedLink";
-import {IdGenerator} from "../gtfs/native/OverlayRecord";
 
 export class OutputGTFSCommand implements CLICommand {
 
@@ -26,23 +24,19 @@ export class OutputGTFSCommand implements CLICommand {
   public async run(argv: string[]): Promise<void> {
     this.output = new FileOutput(argv[3] || "./");
 
+    const associationsP = this.repository.getAssociations();
+    const scheduleResultsP = this.repository.getSchedules();
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");
+    const fixedLinksP = this.copy(this.repository.getFixedLinks(), "links.txt");
 
-    const [associations, scheduleResults, fixedLinks] = await Promise.all([
-      this.repository.getAssociations(),
-      this.repository.getSchedules(),
-      this.repository.getFixedLinks()
-    ]);
-
-    const schedules = this.getSchedules(associations, scheduleResults);
-    const calendarRecords: HasCalendar[] = [];
-    const [calendars, calendarDates, serviceIds] = createCalendar(calendarRecords.concat(schedules, fixedLinks));
+    const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
+    const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
 
     const calendarP = this.copy(calendars, "calendar.txt");
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt");
-    const tripsP = this.copyTrips(schedules, fixedLinks, serviceIds, scheduleResults.idGenerator);
+    const tripsP = this.copyTrips(schedules, serviceIds);
 
     await Promise.all([
       agencyP,
@@ -51,6 +45,7 @@ export class OutputGTFSCommand implements CLICommand {
       calendarP,
       calendarDatesP,
       tripsP,
+      fixedLinksP,
       this.repository.end()
     ]);
   }
@@ -70,14 +65,10 @@ export class OutputGTFSCommand implements CLICommand {
     });
   }
 
-  private copyTrips(schedules: Schedule[],
-                    fixedLinks: FixedLink[],
-                    serviceIds: ServiceIdIndex,
-                    idGenerator: IdGenerator): Promise<void> {
+  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex): Promise<void> {
     return new Promise<void>(resolve => {
       const trips = this.output.open("trips.txt");
       const stopTimes = this.output.open("stop_times.txt");
-      const frequencies = this.output.open("frequencies.txt");
       const routeFile = this.output.open("routes.txt");
       const routes = {};
 
@@ -91,25 +82,12 @@ export class OutputGTFSCommand implements CLICommand {
         schedule.stopTimes.forEach(r => stopTimes.write(r));
       }
 
-      for (const fixedLink of fixedLinks) {
-        const tripId = idGenerator.next().value;
-        const serviceId = serviceIds[fixedLink.calendar.id];
-        const route = fixedLink.toRoute(tripId);
-        routes[route.route_short_name] = routes[route.route_short_name] || route;
-        const routeId = routes[route.route_short_name].route_id;
-
-        trips.write(fixedLink.toTrip(routeId, serviceId, tripId));
-        frequencies.write(fixedLink.toFrequency(tripId));
-        fixedLink.toStops(tripId).forEach(s => stopTimes.write(s));
-      }
-
       for (const route of Object.values(routes)) {
         routeFile.write(route);
       }
 
       trips.end();
       stopTimes.end();
-      frequencies.end();
       routeFile.end();
 
       resolve();
@@ -117,24 +95,11 @@ export class OutputGTFSCommand implements CLICommand {
   }
 
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults): Schedule[] {
-    const processedAssociations = applyOverlays(associations);
+    const processedAssociations = <AssociationIndex>applyOverlays(associations);
+    const processedSchedules = <ScheduleIndex>applyOverlays(scheduleResults.schedules, scheduleResults.idGenerator);
+    const associatedSchedules = applyAssociations(processedSchedules, processedAssociations);
 
-    return pipeline(
-      applyOverlays(scheduleResults.schedules, scheduleResults.idGenerator),
-      indexedSchedules => applyAssociations(indexedSchedules, <AssociationIndex>processedAssociations),
-      indexedSchedules => mergeSchedules(indexedSchedules)
-    );
+    return <Schedule[]>mergeSchedules(associatedSchedules);
   }
 
-}
-
-/**
- * Create pipeline of function application (left to right)
- */
-function pipeline(value, ...fns) {
-  for (let i = 0; i < fns.length; i++) {
-    value = fns[i](value);
-  }
-
-  return value;
 }

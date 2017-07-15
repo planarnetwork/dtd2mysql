@@ -7,9 +7,9 @@ import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";
 import {ScheduleBuilder, ScheduleResults} from "./ScheduleBuilder";
-import {FixedLink} from "../native/FixedLink";
 import {RouteType} from "../file/Route";
 import {Duration} from "../native/Duration";
+import {FixedLink} from "../file/FixedLink";
 
 /**
  * Provide access to the CIF/TTIS data in a vaguely GTFS-ish shape.
@@ -175,27 +175,23 @@ export class CIFRepository {
   }
 
   private getFixedLinkRow(origin: CRS, destination: CRS, row: FixedLinkRow): FixedLink {
-    return new FixedLink(
-      origin,
-      destination,
-      fixedLinkModeRouteModeMap[row.mode],
-      row.duration,
-      row.start_time,
-      row.end_time,
-      new ScheduleCalendar(
-        moment(row.start_date || "2017-01-01"),
-        moment(row.end_date || "2038-01-19"),
-        {
-          0: row.sunday,
-          1: row.monday,
-          2: row.tuesday,
-          3: row.wednesday,
-          4: row.thursday,
-          5: row.friday,
-          6: row.saturday,
-        }
-      )
-    )
+    return {
+      from_stop_id: origin,
+      to_stop_id: destination,
+      mode: row.mode,
+      duration: row.duration,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      start_date: (row.start_date || "2017-01-01"),
+      end_date: (row.end_date || "2038-01-19"),
+      monday: row.monday,
+      tuesday: row.tuesday,
+      wednesday: row.wednesday,
+      thursday: row.thursday,
+      friday: row.friday,
+      saturday: row.saturday,
+      sunday: row.sunday
+    };
   }
 
   /**
@@ -283,11 +279,3 @@ enum FixedLinkMode {
   Tube = "TUBE",
   Bus = "BUS"
 }
-
-const fixedLinkModeRouteModeMap = {
-  "WALK": RouteType.Cable,
-  "METRO": RouteType.Funicular,
-  "TRANSFER": RouteType.Ferry,
-  "TUBE": RouteType.Subway,
-  "BUS": RouteType.Bus
-};
