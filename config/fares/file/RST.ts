@@ -257,7 +257,7 @@ const railcard = new FixedWidthRecord(
     "route_code": new ZeroFillIntField(14, 5, true),
     "location": new TextField(19, 3, true),
     "restriction_code": new TextField(22, 2, true),
-    "total_ban": new TextField(24, 1, true)
+    "total_ban": new BooleanField(24, false, ["Y"], [" "], [])
   }
 );
 
