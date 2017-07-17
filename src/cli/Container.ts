@@ -9,6 +9,9 @@ import {ShowHelpCommand} from "./ShowHelpCommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import {CIFRepository} from "../gtfs/repository/CIFRepository";
 import {stationCoordinates} from "../../config/gtfs/station-coordinates";
+import {FileOutput} from "../gtfs/output/FileOutput";
+import {GTFSOutput} from "../gtfs/output/GTFSOutput";
+import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 
 export class Container {
 
@@ -20,6 +23,7 @@ export class Container {
       case "--routeing": return this.getRouteingImportCommand();
       case "--timetable": return this.getTimetableImportCommand();
       case "--gtfs": return this.getOutputGTFSCommand();
+      case "--gtfs-zip": return this.getOutputGTFSZipCommand();
       default: return this.getShowHelpCommand();
     }
   }
@@ -50,15 +54,26 @@ export class Container {
   }
 
   @memoize
-  private async getOutputGTFSCommand(): Promise<OutputGTFSCommand> {
+  private async getOutputGTFSCommandWithOutput(output: GTFSOutput): Promise<OutputGTFSCommand> {
     const [promiseDb, streamDb] = await Promise.all([
       this.getDatabaseConnection(),
       this.getDatabaseStream()
     ]);
 
     return new OutputGTFSCommand(
-      new CIFRepository(promiseDb, streamDb, stationCoordinates)
+      new CIFRepository(promiseDb, streamDb, stationCoordinates),
+      output
     );
+  }
+
+  @memoize
+  private async getOutputGTFSCommand(): Promise<OutputGTFSCommand> {
+    return this.getOutputGTFSCommandWithOutput(new FileOutput());
+  }
+
+  @memoize
+  private async getOutputGTFSZipCommand(): Promise<OutputGTFSZipCommand> {
+    return new OutputGTFSZipCommand(await this.getOutputGTFSCommand());
   }
 
   @memoize

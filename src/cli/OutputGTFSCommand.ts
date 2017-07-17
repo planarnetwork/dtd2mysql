@@ -1,6 +1,5 @@
 import {CLICommand} from "./CLICommand";
 import {CIFRepository} from "../gtfs/repository/CIFRepository";
-import {FileOutput} from "../gtfs/FileOutput";
 import {Schedule} from "../gtfs/native/Schedule";
 import {agencies} from "../../config/gtfs/agency";
 import {Association} from "../gtfs/native/Association";
@@ -9,20 +8,27 @@ import {mergeSchedules} from "../gtfs/command/MergeSchedules";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../gtfs/command/ApplyAssociations";
 import {createCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
 import {ScheduleResults} from "../gtfs/repository/ScheduleBuilder";
+import {GTFSOutput} from "../gtfs/output/GTFSOutput";
+import * as fs from "fs";
+import streamToPromise = require("stream-to-promise");
 
 export class OutputGTFSCommand implements CLICommand {
-
-  private output: FileOutput;
+  private baseDir: string;
 
   public constructor(
-    private readonly repository: CIFRepository
+    private readonly repository: CIFRepository,
+    private readonly output: GTFSOutput
   ) {}
 
   /**
    * Turn the timetable feed into GTFS files
    */
   public async run(argv: string[]): Promise<void> {
-    this.output = new FileOutput(argv[3] || "./");
+    this.baseDir = argv[3] || "./";
+
+    if (!fs.existsSync(this.baseDir)) {
+      throw new Error(`Output path ${this.baseDir} does not exist.`);
+    }
 
     const associationsP = this.repository.getAssociations();
     const scheduleResultsP = this.repository.getSchedules();
@@ -46,7 +52,8 @@ export class OutputGTFSCommand implements CLICommand {
       calendarDatesP,
       tripsP,
       fixedLinksP,
-      this.repository.end()
+      this.repository.end(),
+      this.output.end()
     ]);
   }
 
@@ -55,43 +62,48 @@ export class OutputGTFSCommand implements CLICommand {
    */
   private async copy(results: object[] | Promise<object[]>, filename: string): Promise<void> {
     const rows = await results;
+    const output = this.output.open(this.baseDir + filename);
 
-    return new Promise<void>(resolve => {
-      const output = this.output.open(filename);
+    console.log("Writing " + filename);
+    rows.forEach(row => output.write(row));
+    output.end();
 
-      rows.forEach(row => output.write(row));
-      output.end();
-      resolve();
-    });
+    return streamToPromise(output);
   }
 
-  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex): Promise<void> {
-    return new Promise<void>(resolve => {
-      const trips = this.output.open("trips.txt");
-      const stopTimes = this.output.open("stop_times.txt");
-      const routeFile = this.output.open("routes.txt");
-      const routes = {};
+  /**
+   * trips.txt, stop_times.txt and routes.txt have interdependencies so they are written together
+   */
+  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex): Promise<any> {
+    console.log("Writing trips.txt, stop_times.txt and routes.txt");
+    const trips = this.output.open(this.baseDir + "trips.txt");
+    const stopTimes = this.output.open(this.baseDir + "stop_times.txt");
+    const routeFile = this.output.open(this.baseDir + "routes.txt");
+    const routes = {};
 
-      for (const schedule of schedules) {
-        const route = schedule.toRoute();
-        routes[route.route_short_name] = routes[route.route_short_name] || route;
-        const routeId = routes[route.route_short_name].route_id;
-        const serviceId = serviceIds[schedule.calendar.id];
+    for (const schedule of schedules) {
+      const route = schedule.toRoute();
+      routes[route.route_short_name] = routes[route.route_short_name] || route;
+      const routeId = routes[route.route_short_name].route_id;
+      const serviceId = serviceIds[schedule.calendar.id];
 
-        trips.write(schedule.toTrip(serviceId, routeId));
-        schedule.stopTimes.forEach(r => stopTimes.write(r));
-      }
+      trips.write(schedule.toTrip(serviceId, routeId));
+      schedule.stopTimes.forEach(r => stopTimes.write(r));
+    }
 
-      for (const route of Object.values(routes)) {
-        routeFile.write(route);
-      }
+    for (const route of Object.values(routes)) {
+      routeFile.write(route);
+    }
 
-      trips.end();
-      stopTimes.end();
-      routeFile.end();
+    trips.end();
+    stopTimes.end();
+    routeFile.end();
 
-      resolve();
-    });
+    return Promise.all([
+      streamToPromise(trips),
+      streamToPromise(stopTimes),
+      streamToPromise(routeFile),
+    ]);
   }
 
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults): Schedule[] {
