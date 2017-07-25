@@ -30,10 +30,13 @@ export class ScheduleBuilder {
           departureHour = row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
         }
 
+        const arrivalTime = this.formatTime(row.public_arrival_time || row.scheduled_arrival_time, departureHour);
+        const departureTime = this.formatTime(row.public_departure_time || row.scheduled_departure_time, departureHour);
+
         stops.push({
           trip_id: row.id,
-          arrival_time: this.formatTime(row.public_arrival_time || row.scheduled_arrival_time, departureHour),
-          departure_time: this.formatTime(row.public_departure_time || row.scheduled_departure_time, departureHour),
+          arrival_time: arrivalTime || departureTime,
+          departure_time: departureTime || arrivalTime,
           stop_id: row.crs_code,
           stop_sequence: stops.length + 1,
           stop_headsign: row.platform,

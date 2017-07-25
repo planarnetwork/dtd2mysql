@@ -219,37 +219,6 @@ function stop(stopSequence: number, location: CRS, time: string, tripId: number 
   };
 }
 
-function arrivalStop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
-  return {
-    trip_id: tripId,
-    arrival_time: time,
-    departure_time: null,
-    stop_id: location,
-    stop_sequence: stopSequence,
-    stop_headsign: "",
-    pickup_type: 1,
-    drop_off_type: 0,
-    shape_dist_traveled: null,
-    timepoint: 0,
-  };
-}
-
-function departureStop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
-  return {
-    trip_id: tripId,
-    arrival_time: null,
-    departure_time: time,
-    stop_id: location,
-    stop_sequence: stopSequence,
-    stop_headsign: "",
-    pickup_type: 0,
-    drop_off_type: 1,
-    shape_dist_traveled: null,
-    timepoint: 0,
-  };
-}
-
-
 function association(base: Schedule,
                      assoc: Schedule,
                      type: AssociationType,
