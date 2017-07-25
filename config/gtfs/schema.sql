@@ -88,6 +88,24 @@ CREATE TABLE `frequencies` (
   PRIMARY KEY (`trip_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS `links`;
+CREATE TABLE `links` (
+  `from_stop_id` char(3) NOT NULL,
+  `to_stop_id` char(3) NOT NULL,
+  `mode` VARCHAR (15) NOT NULL,
+  `duration` smallint(8) unsigned NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `monday` tinyint(1) unsigned NOT NULL,
+  `tuesday` tinyint(1) unsigned NOT NULL,
+  `wednesday` tinyint(1) unsigned NOT NULL,
+  `thursday` tinyint(1) unsigned NOT NULL,
+  `friday` tinyint(1) unsigned NOT NULL,
+  `saturday` tinyint(1) unsigned NOT NULL,
+  `sunday` tinyint(1) unsigned NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `routes`;
 CREATE TABLE `routes` (
