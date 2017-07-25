@@ -46,7 +46,7 @@ describe("ApplyAssociations", () => {
       <AssociationIndex>applyOverlays([association1])
     );
 
-    const [result1, result2, other] = resultByTuid["B"];
+    const [result1, result2, other] = resultByTuid["A_B"];
 
     // make sure that it only matches base1 to assoc1 and base2 to assoc2
     chai.expect(result1.tuid).to.equal("A_B");

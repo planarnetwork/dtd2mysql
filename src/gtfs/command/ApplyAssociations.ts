@@ -30,10 +30,11 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex, associationsIn
         const baseSchedules = findSchedules(schedulesByTuid[association.baseTUID] || [], baseCalendar);
 
         if (baseSchedules.length > 0) {
+          const replacement = association.apply(baseSchedules[0], assocSchedule);
+
           // replace the assoc schedule with a new schedule that has the split/join applied
-          schedulesByTuid[association.assocTUID].splice(
-            schedulesByTuid[association.assocTUID].indexOf(assocSchedule), 1, association.apply(baseSchedules[0], assocSchedule)
-          );
+          delete schedulesByTuid[association.assocTUID][schedulesByTuid[association.assocTUID].indexOf(assocSchedule)];
+          (schedulesByTuid[replacement.tuid] = schedulesByTuid[replacement.tuid] || []).push(replacement);
         }
       }
     }
