@@ -35,8 +35,8 @@ export class ScheduleBuilder {
 
         stops.push({
           trip_id: row.id,
-          arrival_time: arrivalTime || departureTime,
-          departure_time: departureTime || arrivalTime,
+          arrival_time: <string>(arrivalTime || departureTime),
+          departure_time: <string>(departureTime || arrivalTime),
           stop_id: row.crs_code,
           stop_sequence: stops.length + 1,
           stop_headsign: row.platform,
