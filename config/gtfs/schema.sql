@@ -37,7 +37,7 @@ CREATE TABLE `calendar` (
 
 DROP TABLE IF EXISTS `calendar_dates`;
 CREATE TABLE `calendar_dates` (
-  `service_id` varchar(20) NOT NULL,
+  `service_id` smallint(12) unsigned NOT NULL,
   `date` date NOT NULL,
   `exception_type` tinyint(2) unsigned NOT NULL,
   PRIMARY KEY (`service_id`, `date`)
