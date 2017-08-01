@@ -19,17 +19,35 @@ npm install -g dtd2mysql
 Each of these commands relies on the database settings being set in the environment variables. For example `DATABASE_USERNAME=root DATABASE_NAME=fares dtd2mysql --fares-clean`.
 
 ### Import
+
+Import the fares into a database, creating the schema if necessary. This operation is destructive and will remove any existing data.
+
 ```
 dtd2mysql --fares /path/to/RJFAFxxx.ZIP
 ```
-### Clean (remove old an inaccurate data)
+### Clean 
+
+Removes expired data and invalid fares, corrects railcard passenger quantities, adds full date entries to restriction date records. This command will occasionally fail due to a MySQL timeout (depending on hardware), re-running the command should correct the problem.
+
 ```
 dtd2mysql --fares-clean
 ```
 ## Timetables
 ### Import
+
+Import the timetable information into a database, creating the schema if necessary. This operation is destructive and will remove any existing data.
+
 ```
 dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
+```
+
+### Convert to GTFS
+
+Convert the DTD/TTIS version of the timetable to GTFS. 
+
+```
+dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
+dtd2mysql --gtfs-zip filename-of-gtfs.zip
 ```
 
 ## Routeing Guide
