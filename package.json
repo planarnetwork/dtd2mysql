@@ -9,9 +9,12 @@
   },
   "scripts": {
     "test": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
+    "gtest": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts' --grep",
     "watch-test": "mocha -w --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
     "run": "ts-node ./src/index.ts",
-    "prepublishOnly": "tsc -p ./ --outDir dist/"
+    "prepublishOnly": "tsc -p ./ --outDir dist/",
+    "gtfs": "ts-node --max_old_space_size=2048 ./src/index.ts --gtfs",
+    "gtfs-zip": "ts-node --max_old_space_size=2048 ./src/index.ts --gtfs-zip"
   },
   "repository": {
     "type": "git",
@@ -35,21 +38,24 @@
   "dependencies": {
     "adm-zip": "^0.4.7",
     "bluebird": "^3.5.0",
+    "csv-write-stream": "^2.0.0",
+    "iconv-lite": "^0.4.18",
     "memoized-class-decorator": "^1.2.0",
     "moment": "^2.18.1",
-    "mysql2": "^1.3.5"
+    "mysql2": "^1.3.6",
+    "stream-to-promise": "^2.2.0"
   },
   "engines": {
     "node": "^8.0.0"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.0.32",
-    "@types/chai": "^4.0.0",
+    "@types/bluebird": "^3.5.8",
+    "@types/chai": "^4.0.1",
     "@types/mocha": "^2.2.41",
-    "@types/node": "^7.0.31",
-    "chai": "^4.0.2",
-    "mocha": "^3.4.2",
-    "ts-node": "^2.1.0",
-    "typescript": "^2.4.0"
+    "@types/node": "^8.0.17",
+    "chai": "^4.1.0",
+    "mocha": "^3.5.0",
+    "ts-node": "^3.3.0",
+    "typescript": "^2.4.2"
   }
 }

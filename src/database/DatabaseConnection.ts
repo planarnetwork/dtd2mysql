@@ -1,7 +1,7 @@
 
 export interface DatabaseConnection {
 
-  query<T = void>(sql: any, parameters?: any[]): Promise<[T, any]>;
+  query<T = void>(sql: any, parameters?: any[]): any;
   end(): Promise<void>;
 
 }
