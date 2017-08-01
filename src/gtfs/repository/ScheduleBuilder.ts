@@ -20,6 +20,7 @@ export class ScheduleBuilder {
     return new Promise<void>((resolve, reject) => {
       let stops: StopTime[] = [];
       let prevRow: ScheduleStopTimeRow;
+      let arrivalTime, departureTime;
       let departureHour = 4;
 
       results.on("result", row => {
@@ -30,13 +31,21 @@ export class ScheduleBuilder {
           departureHour = row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
         }
 
-        const arrivalTime = this.formatTime(row.public_arrival_time || row.scheduled_arrival_time, departureHour);
-        const departureTime = this.formatTime(row.public_departure_time || row.scheduled_departure_time, departureHour);
+        // if either public time is set, use those
+        if (row.public_arrival_time || row.public_departure_time) {
+          arrivalTime = this.formatTime(row.public_arrival_time, departureHour);
+          departureTime = this.formatTime(row.public_departure_time, departureHour);
+        }
+        // if no public time at all (no set down or pick) use the scheduled time
+        else {
+          arrivalTime = this.formatTime(row.scheduled_arrival_time, departureHour);
+          departureTime = this.formatTime(row.scheduled_departure_time, departureHour);
+        }
 
         stops.push({
           trip_id: row.id,
-          arrival_time: <string>(arrivalTime || departureTime),
-          departure_time: <string>(departureTime || arrivalTime),
+          arrival_time: (arrivalTime || departureTime),
+          departure_time: (departureTime || arrivalTime),
           stop_id: row.crs_code,
           stop_sequence: stops.length + 1,
           stop_headsign: row.platform,
