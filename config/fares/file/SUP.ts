@@ -33,7 +33,7 @@ const supplementRule = new FixedWidthRecord(
   "supplement_rule",
   ["rule_number", "end_date"],
   {
-    "rule_number": new IntField(2, 3),
+    "rule_number": new IntField(2, 3, false, []),
     "end_date": new DateField(5),
     "start_date": new DateField(13),
     "quote_date": new DateField(21),
@@ -57,7 +57,7 @@ const supplementRuleApplies = new FixedWidthRecord(
   "supplement_rule_applies",
   ["rule_number", "end_date", "ie_marker", "condition_type", "ie_code"],
   {
-    "rule_number": new IntField(2, 3),
+    "rule_number": new IntField(2, 3, false, []),
     "end_date": new DateField(5),
     "ie_marker": new TextField(13, 1),
     "condition_type": new TextField(14, 1),
@@ -69,7 +69,7 @@ const supplementRuleSupplement = new FixedWidthRecord(
   "supplement_rule_supplement",
   ["rule_number", "end_date", "supplement_code"],
   {
-    "rule_number": new IntField(2, 3),
+    "rule_number": new IntField(2, 3, false, []),
     "end_date": new DateField(5),
     "supplement_code": new TextField(13, 3),
     "om_flag": new TextField(16, 1)

@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,7 +11,7 @@
     "test": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
     "gtest": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts' --grep",
     "watch-test": "mocha -w --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
-    "run": "ts-node ./src/index.ts",
+    "start": "ts-node ./src/index.ts",
     "prepublishOnly": "tsc -p ./ --outDir dist/",
     "gtfs": "ts-node --max_old_space_size=2048 ./src/index.ts --gtfs",
     "gtfs-zip": "ts-node --max_old_space_size=2048 ./src/index.ts --gtfs-zip"
@@ -50,9 +50,9 @@
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.8",
-    "@types/chai": "^4.0.1",
+    "@types/chai": "^4.0.2",
     "@types/mocha": "^2.2.41",
-    "@types/node": "^8.0.17",
+    "@types/node": "^8.0.19",
     "chai": "^4.1.0",
     "mocha": "^3.5.0",
     "ts-node": "^3.3.0",

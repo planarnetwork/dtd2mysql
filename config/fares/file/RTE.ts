@@ -42,7 +42,7 @@ const location = new FixedWidthRecord(
     "end_date": new DateField(7),
     "admin_area_code": new TextField(15, 3),
     "nlc_code": new TextField(18, 4),
-    "crs_code": new TextField(22, 3),
+    "crs_code": new TextField(22, 3, true),
     "incl_excl": new TextField(25, 1)
   }
 );

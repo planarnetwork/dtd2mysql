@@ -46,7 +46,9 @@ const QUERIES = [
   "DELETE FROM status WHERE end_date < CURDATE()",
   "DELETE FROM route_location WHERE end_date < CURDATE()",
   "DELETE FROM route WHERE end_date < CURDATE()",
-  `DELETE FROM non_derivable_fare_override WHERE end_date < CURDATE() OR composite_indicator != 'Y' OR adult_fare < 50 OR child_fare < 50 OR ticket_code NOT IN (${TICKET_CODE_WHITELIST})`,
+  `DELETE FROM non_derivable_fare_override WHERE end_date < CURDATE()`,
+  `DELETE FROM non_derivable_fare_override WHERE ticket_code NOT IN (${TICKET_CODE_WHITELIST})`,
+  `DELETE FROM non_derivable_fare_override WHERE end_date < CURDATE() OR composite_indicator != 'Y' OR adult_fare < 50 OR child_fare < 50`,
   "UPDATE non_derivable_fare_override SET adult_fare = null WHERE adult_fare = 99999 OR adult_fare > 999999",
   "UPDATE non_derivable_fare_override SET child_fare = null WHERE child_fare = 99999 OR child_fare > 999999",
   `DELETE FROM non_standard_discount WHERE end_date < CURDATE()  OR ticket_code NOT IN (${TICKET_CODE_WHITELIST})`,
@@ -64,7 +66,7 @@ const QUERIES = [
   "UPDATE railcard SET min_adults=3, max_adults=9, min_children=0, max_children=0, max_passengers=9 WHERE railcard_code='GS3'",
   "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='JCP'",
   "UPDATE railcard SET min_adults=0, max_adults=9, min_children=0, max_children=9, max_passengers=9 WHERE railcard_code=''",
-  "UPDATE railcard SET child_status = '001' WHERE child_status='XXX'",
+  "UPDATE railcard SET child_status = null WHERE child_status='XXX' OR (child_status='001' AND railcard_code != '   ')",
   "UPDATE status_discount SET discount_indicator = 'X' WHERE status_code != '000' and status_code != '001' AND discount_percentage = 0",
 ];
 
