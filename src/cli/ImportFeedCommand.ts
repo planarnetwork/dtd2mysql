@@ -9,8 +9,8 @@ import * as path from "path";
 import * as readline from "readline";
 import {MySQLTable} from "../database/MySQLTable";
 import memoize from "memoized-class-decorator";
+import fs = require("fs-extra");
 
-const fs: any = Bluebird.promisifyAll(require("fs"));
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
 const readFile = filename => readline.createInterface({ input: fs.createReadStream(filename) });
 
@@ -52,12 +52,14 @@ export class ImportFeedCommand implements CLICommand {
    */
   private async doImport(filename: string): Promise<any> {
     console.log(`Extracting ${filename} to ${this.tmpFolder}`);
+    fs.emptyDirSync(this.tmpFolder);
+
     new AdmZip(filename).extractAllTo(this.tmpFolder);
 
-    const schemaSetup = this.fileArray.map(file => this.setupSchema(file));
-    const [files] = await Promise.all([fs.readdirAsync(this.tmpFolder), ...schemaSetup]);
+    await Promise.all(this.fileArray.map(file => this.setupSchema(file)));
+
     const inserts =
-      files
+      fs.readdirSync(this.tmpFolder)
         .filter(filename => this.getFeedFile(filename))
         .map(filename => this.processFile(filename));
 
