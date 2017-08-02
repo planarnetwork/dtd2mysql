@@ -58,14 +58,14 @@ export class Association implements OverlayRecord {
       tuid = base.tuid + "_" + assoc.tuid;
 
       start = base.before(this.assocLocation);
-      assocStop = mergeAssociationStop(base.stopAt(this.assocLocation), assoc.stopAt(this.assocLocation));
+      assocStop = this.mergeAssociationStop(base.stopAt(this.assocLocation), assoc.stopAt(this.assocLocation));
       end = assoc.after(this.assocLocation);
     }
     else {
       tuid = assoc.tuid + "_" + base.tuid;
 
       start = assoc.before(this.assocLocation);
-      assocStop = mergeAssociationStop(assoc.stopAt(this.assocLocation), base.stopAt(this.assocLocation));
+      assocStop = this.mergeAssociationStop(assoc.stopAt(this.assocLocation), base.stopAt(this.assocLocation));
       end = base.after(this.assocLocation)
     }
 
@@ -89,21 +89,24 @@ export class Association implements OverlayRecord {
     )
   }
 
-}
+  /**
+   * Take the arrival time of the first stop and the departure time of the second stop and put them into a new stop
+   */
+  public mergeAssociationStop(arrivalStop: StopTime, departureStop: StopTime): StopTime {
+    const arrivalTime = moment.duration(arrivalStop.arrival_time);
+    let departureTime = moment.duration(departureStop.departure_time);
 
-/**
- * Take the arrival time of the first stop and the departure time of the second stop and put them into a new stop
- */
-function mergeAssociationStop(arrivalStop: StopTime, departureStop: StopTime): StopTime {
-  const arrivalTime = moment.duration(arrivalStop.arrival_time);
-  const departureTime = moment.duration(departureStop.departure_time);
-  const departs = arrivalTime.asSeconds() <= departureTime.asSeconds() ? departureTime : departureTime.add(1, "day");
+    if (arrivalTime.asSeconds() > departureTime.asSeconds()) {
+      departureTime = this.dateIndicator === DateIndicator.Next ? departureTime.add(1, "days") : arrivalTime;
+    }
 
-  return Object.assign({}, arrivalStop, {
-    departure_time: formatDuration(departs.asSeconds()),
-    pickup_type: departureStop.pickup_type,
-    drop_off_type: arrivalStop.drop_off_type
-  });
+    return Object.assign({}, arrivalStop, {
+      departure_time: formatDuration(departureTime.asSeconds()),
+      pickup_type: departureStop.pickup_type,
+      drop_off_type: arrivalStop.drop_off_type
+    });
+  }
+
 }
 
 /**
