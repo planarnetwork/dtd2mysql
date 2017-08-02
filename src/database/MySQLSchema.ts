@@ -51,8 +51,8 @@ export class MySQLSchema {
   }
 
   private static getFieldType(field: Field): string {
-    if (field instanceof VariableLengthText) return `VARCHAR(${field.length})`;
-    if (field instanceof TextField)          return `CHAR(${field.length})`;
+    if (field instanceof VariableLengthText) return `VARCHAR(${field.length}) CHARACTER SET latin1 COLLATE latin1_general_cs`;
+    if (field instanceof TextField)          return `CHAR(${field.length}) CHARACTER SET latin1 COLLATE latin1_general_cs`;
     if (field instanceof BooleanField)       return `TINYINT(1) unsigned`;
     if (field instanceof ShortDateField)     return `DATE`;
     if (field instanceof DateField)          return `DATE`;
