@@ -6,9 +6,9 @@ Although both the timetable and fares feed are open data you will need to obtain
 
 At the moment only MySQL compatible databases are supported but it could be extended to support other data stores. PRs are very welcome.
 
-## Install
+## Download / Install
 
-You don't have to install it globally but it makes it easier if you are not going to use it as part of another project. The `-g` option usually requires `sudo`.
+You don't have to install it globally but it makes it easier if you are not going to use it as part of another project. The `-g` option usually requires `sudo`. It is not necessary to git clone this repository unless you would like to contribute.
 
 ```
 npm install -g dtd2mysql
@@ -73,11 +73,15 @@ The timetable data does not map to a relational database in a very logical fashi
 
 ## Contributing
 
-Issues and PRs are very welcome.  
+Issues and PRs are very welcome. To get the project set up run
 
-If there is a way of automatically downloading the feed from the ATOC website that would be useful too.
+```
+git clone git@github.com:open-track/dtd2mysql
+npm install --dev
+npm test
+```
 
-The project is written in TypeScript.
+If you would like to send a pull request please write your contribution in TypeScript and if possible, add a test.
 
 ## License
 
