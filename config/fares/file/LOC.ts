@@ -96,7 +96,8 @@ const groupMember = new FixedWidthRecord(
     "end_date": new DateField(9),
     "member_uic_code": new TextField(17, 7),
     "member_crs_code": new TextField(24, 3)
-  }
+  },
+  ["member_uic_code"]
 );
 
 const synonym = new FixedWidthRecord(
