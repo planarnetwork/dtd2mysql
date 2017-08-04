@@ -13,7 +13,7 @@ const londonRoute = new CSVRecord(
   }
 );
 
-const routeDate = new CSVRecord(
+const routeData = new CSVRecord(
   "route_data",
   [],
   {
@@ -28,7 +28,7 @@ const routeDate = new CSVRecord(
 
 const RGK = new MultiRecordFile({
   "L": londonRoute,
-  "D": routeDate,
+  "D": routeData,
 }, 6);
 
 
