@@ -41,7 +41,7 @@ describe("MySQLSchema", () => {
     schema.createSchema();
 
     chai.expect(db.queries[0]).is.equal(
-      "CREATE TABLE IF NOT EXISTS `test` (id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY,`field` SMALLINT(4) unsigned NOT NULL,`field2` SMALLINT(3) unsigned zerofill NOT NULL,`field3` CHAR(5) NOT NULL,`field4` VARCHAR(5) NOT NULL,`field5` DATE NOT NULL,`field6` TIME NOT NULL,`field7` TINYINT(1) unsigned NOT NULL,`field8` DOUBLE(7, 5) unsigned NOT NULL, UNIQUE test_key (field,field4), KEY field5 (field5), KEY field6 (field6)) Engine=InnoDB"
+      "CREATE TABLE IF NOT EXISTS `test` (id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY,`field` SMALLINT(4) unsigned NOT NULL,`field2` SMALLINT(3) unsigned zerofill NOT NULL,`field3` CHAR(5) CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,`field4` VARCHAR(5) CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,`field5` DATE NOT NULL,`field6` TIME NOT NULL,`field7` TINYINT(1) unsigned NOT NULL,`field8` DOUBLE(7, 5) unsigned NOT NULL, UNIQUE test_key (field,field4), KEY field5 (field5), KEY field6 (field6)) Engine=InnoDB"
     );
   });
 
