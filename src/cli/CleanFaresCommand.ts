@@ -53,6 +53,7 @@ const QUERIES = [
   "UPDATE non_derivable_fare_override SET child_fare = null WHERE child_fare = 99999 OR child_fare > 999999",
   `DELETE FROM non_standard_discount WHERE end_date < CURDATE()  OR ticket_code NOT IN (${TICKET_CODE_WHITELIST})`,
   `DELETE FROM railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${ACCEPTED_RAILCARDS})`,
+  `DELETE FROM location_railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${ACCEPTED_RAILCARDS})`,
   `DELETE FROM railcard_minimum_fare WHERE end_date < CURDATE() OR railcard_code NOT IN (${ACCEPTED_RAILCARDS}) OR ticket_code NOT IN (${TICKET_CODE_WHITELIST})`,
   "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='YNG'",
   "UPDATE railcard SET min_adults=1, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='DIS'",
