@@ -76,6 +76,14 @@ dtd2mysql --download-timetable /path/
 dtd2mysql --download-routeing /path/
 ```
 
+Or download and process in one command
+
+```
+dtd2mysql --get-fares
+dtd2mysql --get-timetable
+dtd2mysql --get-routeing
+```
+
 ## Notes
 ### null values
 

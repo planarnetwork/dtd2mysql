@@ -14,6 +14,7 @@ import {FileOutput} from "../gtfs/output/FileOutput";
 import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
+import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 
 export class Container {
 
@@ -26,9 +27,12 @@ export class Container {
       case "--timetable": return this.getTimetableImportCommand();
       case "--gtfs": return this.getOutputGTFSCommand();
       case "--gtfs-zip": return this.getOutputGTFSZipCommand();
-      case "--download-fares": return this.getDownloadFaresCommand("/fares/");
-      case "--download-timetable": return this.getDownloadFaresCommand("/timetable/");
-      case "--download-routeing": return this.getDownloadFaresCommand("/routeing_guide/");
+      case "--download-fares": return this.getDownloadCommand("/fares/");
+      case "--download-timetable": return this.getDownloadCommand("/timetable/");
+      case "--download-routeing": return this.getDownloadCommand("/routeing_guide/");
+      case "--get-fares": return this.getDownloadAndProcessCommand("/fares/", this.getFaresImportCommand());
+      case "--get-timetable": return this.getDownloadAndProcessCommand("/timetable/", this.getTimetableImportCommand());
+      case "--get-routeing": return this.getDownloadAndProcessCommand("/routeing_guide/", this.getRouteingImportCommand());
       default: return this.getShowHelpCommand();
     }
   }
@@ -82,8 +86,13 @@ export class Container {
   }
 
   @memoize
-  private async getDownloadFaresCommand(path: string): Promise<DownloadCommand> {
+  private async getDownloadCommand(path: string): Promise<DownloadCommand> {
     return new DownloadCommand(await this.getSFTP(), path);
+  }
+
+  @memoize
+  private async getDownloadAndProcessCommand(path: string, process: Promise<ImportFeedCommand>): Promise<DownloadAndProcessCommand> {
+    return new DownloadAndProcessCommand(await this.getDownloadCommand(path), await process);
   }
 
   @memoize

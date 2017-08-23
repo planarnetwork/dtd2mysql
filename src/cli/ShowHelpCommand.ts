@@ -17,6 +17,9 @@ Import a DTD feed into a MySQL compatible database
   --download-fares [DIR]     download latest fares refresh from DTD
   --download-timetable [DIR] download latest timetable refresh from DTD
   --download-routeing [DIR]  download latest routeing refresh from DTD
+  --get-fares [DIR]          download and process latest fares refresh from DTD
+  --get-timetable [DIR]      download and process latest timetable refresh from DTD
+  --get-routeing [DIR]       download and process latest routeing refresh from DTD
   
 The following environment properties are expected to be set:
   
@@ -25,7 +28,7 @@ The following environment properties are expected to be set:
   DATABASE_NAME              mysql database name
   DATABASE_HOST              mysql database host (defaults to localhost)
   
-The download commands require SFTP environment properties:
+The --get-* and --download-* commands require SFTP environment properties:
 
   SFTP_USERNAME              SFTP username
   SFTP_PASSWORD              SFTP password
