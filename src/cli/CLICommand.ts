@@ -2,8 +2,8 @@
 export interface CLICommand {
 
   /**
-   * Run the command and *something*
+   * Run the command and do *something*
    */
-  run(argv: string[]): Promise<void>;
+  run(argv: string[]): Promise<any>;
 
 }

@@ -1,4 +1,5 @@
 import memoize from "memoized-class-decorator";
+import SFTP = require("ssh2-sftp-client");
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConnection} from "../database/DatabaseConnection";
@@ -12,6 +13,7 @@ import {stationCoordinates} from "../../config/gtfs/station-coordinates";
 import {FileOutput} from "../gtfs/output/FileOutput";
 import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
+import {DownloadCommand} from "./DownloadCommand";
 
 export class Container {
 
@@ -24,6 +26,9 @@ export class Container {
       case "--timetable": return this.getTimetableImportCommand();
       case "--gtfs": return this.getOutputGTFSCommand();
       case "--gtfs-zip": return this.getOutputGTFSZipCommand();
+      case "--download-fares": return this.getDownloadFaresCommand("/fares/");
+      case "--download-timetable": return this.getDownloadFaresCommand("/timetable/");
+      case "--download-routeing": return this.getDownloadFaresCommand("/routeing_guide/");
       default: return this.getShowHelpCommand();
     }
   }
@@ -77,15 +82,33 @@ export class Container {
   }
 
   @memoize
+  private async getDownloadFaresCommand(path: string): Promise<DownloadCommand> {
+    return new DownloadCommand(await this.getSFTP(), path);
+  }
+
+  @memoize
+  private async getSFTP(): Promise<SFTP> {
+    const sftp = new SFTP();
+
+    await sftp.connect({
+      host: process.env.SFTP_HOSTNAME || "dtd.atocrsp.org",
+      username: process.env.SFTP_USERNAME,
+      password: process.env.SFTP_PASSWORD,
+    });
+
+    return sftp;
+  }
+
+  @memoize
   public async getDatabaseConnection(): Promise<DatabaseConnection> {
-    if (!process.env.DATABASE_NAME || !process.env.DATABASE_USERNAME) {
+    if (!process.env.DATABASE_NAME) {
       throw new Error("Please set the database environment variables.");
     }
 
     return await require('mysql2/promise').createPool({
-      host: process.env.DATABASE_HOSTNAME,
-      user: process.env.DATABASE_USERNAME,
-      password: process.env.DATABASE_PASSWORD,
+      host: process.env.DATABASE_HOSTNAME || "localhost",
+      user: process.env.DATABASE_USERNAME || "root",
+      password: process.env.DATABASE_PASSWORD || null,
       database: process.env.DATABASE_NAME,
       connectionLimit: 3,
       multipleStatements: true,
@@ -96,14 +119,14 @@ export class Container {
 
   @memoize
   public async getDatabaseStream(): Promise<any> {
-    if (!process.env.DATABASE_NAME || !process.env.DATABASE_USERNAME) {
+    if (!process.env.DATABASE_NAME) {
       throw new Error("Please set the database environment variables.");
     }
 
     return await require('mysql2').createPool({
-      host: process.env.DATABASE_HOSTNAME,
-      user: process.env.DATABASE_USERNAME,
-      password: process.env.DATABASE_PASSWORD,
+      host: process.env.DATABASE_HOSTNAME || "localhost",
+      user: process.env.DATABASE_USERNAME || "root",
+      password: process.env.DATABASE_PASSWORD || null,
       database: process.env.DATABASE_NAME,
       connectionLimit: 3,
       multipleStatements: true,
