@@ -1,6 +1,6 @@
 # dtd2mysql [![Build Status](https://travis-ci.org/open-track/dtd2mysql.svg?branch=master)](https://travis-ci.org/open-track/dtd2mysql)
 
-A import the British rail fares, routeing and timetable feeds into a database.
+An import tool for the British rail fares, routeing and timetable feeds into a database.
 
 Although both the timetable and fares feed are open data you will need to obtain the fares feed via the [ATOC website](http://data.atoc.org/fares-data). The formal specification for the data inside the feed also available on the [ATOC website](http://data.atoc.org/sites/all/themes/atoc/files/SP0035.pdf).
 
@@ -54,6 +54,26 @@ dtd2mysql --gtfs-zip filename-of-gtfs.zip
 ### Import
 ```
 dtd2mysql --routeing /path/to/RJRGxxxx.ZIP
+```
+
+## Download from SFTP server
+
+The download commands will take the latest full refresh from an SFTP server (by default the DTD server).
+
+Requires the following environment variables:
+
+```
+SFTP_USERNAME=dtd_username
+SFTP_PASSWORD=dtd_password
+SFTP_HOSTNAME=dtd_hostname (this will default to dtd.atocrsp.org)
+```
+
+There is a command for each feed
+
+```
+dtd2mysql --download-fares /path/
+dtd2mysql --download-timetable /path/
+dtd2mysql --download-routeing /path/
 ```
 
 ## Notes
