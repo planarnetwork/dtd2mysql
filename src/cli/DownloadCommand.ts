@@ -13,7 +13,7 @@ export class DownloadCommand implements CLICommand {
      * Download the latest refresh file from an SFTP server
      */
     public async run(argv: string[]): Promise<string> {
-      console.log("Connected to server.");
+      console.log("Connected to server");
       const outputDirectory = argv[3] || "/tmp/";
       const filename = await this.getLastFullRefresh();
       const outputStream = fs.createWriteStream(outputDirectory + filename, { defaultEncoding: 'binary' });
@@ -26,7 +26,7 @@ export class DownloadCommand implements CLICommand {
       return new Promise<string>((resolve, reject) => {
         outputStream.on("error", reject);
         outputStream.on("finish", () => {
-          console.log("Finished download.");
+          console.log("Finished download");
 
           this.sftp.end().then(() => resolve(outputDirectory + filename));
         });
