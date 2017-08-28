@@ -1,6 +1,6 @@
 
 import {RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
-import {TextField} from "../../../src/feed/field/TextField";
+import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 import {ShortDateField} from "../../../src/feed/field/DateField";
@@ -57,7 +57,7 @@ const stopRecordTypes = {
     "platform": new TextField(19, 3, true),
     "line": new TextField(22, 3, true),
     "path": new TextField(43, 3, true),
-    "activity": new TextField(29, 12, true),
+    "activity": new VariableLengthText(29, 12, false, []),
     "engineering_allowance": new TextField(25, 2, true),
     "pathing_allowance": new TextField(27, 2, true),
     "performance_allowance": new TextField(41, 2, true)
@@ -73,7 +73,7 @@ const stopRecordTypes = {
     "platform": new TextField(33, 3, true),
     "line": new TextField(36, 3, true),
     "path": new TextField(39, 3, true),
-    "activity": new TextField(42, 12, true),
+    "activity": new VariableLengthText(42, 12, false, []),
     "engineering_allowance": new TextField(54, 2, true),
     "pathing_allowance": new TextField(56, 2, true),
     "performance_allowance": new TextField(58, 2, true)
@@ -89,7 +89,7 @@ const stopRecordTypes = {
     "platform": new TextField(19, 3, true),
     "line": new TextField(43, 3, true),
     "path": new TextField(22, 3, true),
-    "activity": new TextField(25, 12, true),
+    "activity": new VariableLengthText(25, 12, false, []),
     "engineering_allowance": new TextField(54, 2, true),
     "pathing_allowance": new TextField(56, 2, true),
     "performance_allowance": new TextField(58, 2, true)

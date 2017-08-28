@@ -1,10 +1,14 @@
-import {IdGenerator} from "../native/OverlayRecord";
+import {IdGenerator, STP} from "../native/OverlayRecord";
 import {Schedule} from "../native/Schedule";
 import {RouteType} from "../file/Route";
 import moment = require("moment");
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
+
+const pickupActivities = ["T ", "TB", "U "];
+const dropOffActivities = ["T ", "TF", "D "];
+const coordinatedActivity = ["R "];
 
 /**
  * This class takes a stream of results and builds a list of Schedules
@@ -20,10 +24,9 @@ export class ScheduleBuilder {
     return new Promise<void>((resolve, reject) => {
       let stops: StopTime[] = [];
       let prevRow: ScheduleStopTimeRow;
-      let arrivalTime, departureTime;
       let departureHour = 4;
 
-      results.on("result", row => {
+      results.on("result", (row: ScheduleStopTimeRow) => {
         if (prevRow && prevRow.id !== row.id) {
           this.schedules.push(this.createSchedule(prevRow, stops));
           stops = [];
@@ -31,29 +34,9 @@ export class ScheduleBuilder {
           departureHour = row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
         }
 
-        // if either public time is set, use those
-        if (row.public_arrival_time || row.public_departure_time) {
-          arrivalTime = this.formatTime(row.public_arrival_time, departureHour);
-          departureTime = this.formatTime(row.public_departure_time, departureHour);
+        if (row.stp_indicator !== STP.Cancellation) {
+          stops.push(this.createStop(row, stops.length + 1, departureHour));
         }
-        // if no public time at all (no set down or pick) use the scheduled time
-        else {
-          arrivalTime = this.formatTime(row.scheduled_arrival_time, departureHour);
-          departureTime = this.formatTime(row.scheduled_departure_time, departureHour);
-        }
-
-        stops.push({
-          trip_id: row.id,
-          arrival_time: (arrivalTime || departureTime),
-          departure_time: (departureTime || arrivalTime),
-          stop_id: row.crs_code,
-          stop_sequence: stops.length + 1,
-          stop_headsign: row.platform,
-          pickup_type: row.public_departure_time ? 0 : 1,
-          drop_off_type: row.public_arrival_time ? 0 : 1,
-          shape_dist_traveled: null,
-          timepoint: 1
-        });
 
         prevRow = row;
       });
@@ -92,6 +75,38 @@ export class ScheduleBuilder {
       row.atoc_code,
       row.stp_indicator
     );
+  }
+
+  private createStop(row: ScheduleStopTimeRow, stopId: number, departHour: number): StopTime {
+    let arrivalTime, departureTime;
+
+    // if either public time is set, use those
+    if (row.public_arrival_time || row.public_departure_time) {
+      arrivalTime = this.formatTime(row.public_arrival_time, departHour);
+      departureTime = this.formatTime(row.public_departure_time, departHour);
+    }
+    // if no public time at all (no set down or pick) use the scheduled time
+    else {
+      arrivalTime = this.formatTime(row.scheduled_arrival_time, departHour);
+      departureTime = this.formatTime(row.scheduled_departure_time, departHour);
+    }
+
+    const pickup = pickupActivities.find(a => row.activity.indexOf(a) !== -1) ? 0 : 1;
+    const coordinatedDropOff = coordinatedActivity.find(a => row.activity.indexOf(a) !== -1) ? 3 : 0;
+    const dropOff = dropOffActivities.find(a => row.activity.indexOf(a) !== -1) ? 0 : 1;
+
+    return {
+      trip_id: row.id,
+      arrival_time: (arrivalTime || departureTime),
+      departure_time: (departureTime || arrivalTime),
+      stop_id: row.crs_code,
+      stop_sequence: stopId,
+      stop_headsign: row.platform,
+      pickup_type: pickup,
+      drop_off_type: coordinatedDropOff || dropOff,
+      shape_dist_traveled: null,
+      timepoint: 1
+    };
   }
 
   private formatTime(time: string | null, originDepartureHour: number) {
