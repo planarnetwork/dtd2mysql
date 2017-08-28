@@ -102,7 +102,8 @@ const extraDetails = new FixedWidthRecord(
 const stopRecordTypes = {
   "LO": {
     "schedule": new ForeignKeyField(schedule),
-    "location": new TextField(2, 8),
+    "location": new TextField(2, 7),
+    "suffix": new IntField(9, 1, true),
     "scheduled_arrival_time": new TimeField(43, true, [" ", "0"]),
     "scheduled_departure_time": new TimeField(10),
     "scheduled_pass_time": new TimeField(43, true, [" ", "0"]),
@@ -118,7 +119,8 @@ const stopRecordTypes = {
   },
   "LI": {
     "schedule": new ForeignKeyField(schedule),
-    "location": new TextField(2, 8),
+    "location": new TextField(2, 7),
+    "suffix": new IntField(9, 1, true),
     "scheduled_arrival_time": new TimeField(10, true, [" ", "0"]),
     "scheduled_departure_time": new TimeField(15, true, [" ", "0"]),
     "scheduled_pass_time": new TimeField(20, true, [" ", "0"]),
@@ -134,7 +136,8 @@ const stopRecordTypes = {
   },
   "LT": {
     "schedule": new ForeignKeyField(schedule),
-    "location": new TextField(2, 8),
+    "location": new TextField(2, 7),
+    "suffix": new IntField(9, 1, true),
     "scheduled_arrival_time": new TimeField(10),
     "scheduled_departure_time": new TimeField(43, true, [" ", "0"]),
     "scheduled_pass_time": new TimeField(43, true, [" ", "0"]),
@@ -152,7 +155,7 @@ const stopRecordTypes = {
 
 const stop = new MultiFormatRecord(
   "stop_time",
-  ["schedule", "location", "public_departure_time"],
+  ["schedule", "location", "suffix", "public_departure_time"],
   stopRecordTypes.LI,
   stopRecordTypes,
   0, 2
