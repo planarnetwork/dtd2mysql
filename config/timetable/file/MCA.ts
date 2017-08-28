@@ -62,7 +62,7 @@ const schedule = new RecordWithManualIdentifier(
     "friday": new BooleanField(25),
     "saturday": new BooleanField(26),
     "sunday": new BooleanField(27),
-    "bank_holiday_running": new BooleanField(28, false, ["X"], [" "], []),
+    "bank_holiday_running": new BooleanField(28, false, [" "], ["X"], []),
     "train_status": new TextField(29, 1, true),
     "train_category": new TextField(30, 2, true),
     "train_identity": new TextField(32, 4, true),
