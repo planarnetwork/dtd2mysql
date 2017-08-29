@@ -155,7 +155,7 @@ const stopRecordTypes = {
 
 const stop = new MultiFormatRecord(
   "stop_time",
-  ["schedule", "location", "suffix", "public_departure_time"],
+  ["schedule", "location", "suffix",  "public_departure_time"],
   stopRecordTypes.LI,
   stopRecordTypes,
   0, 2
