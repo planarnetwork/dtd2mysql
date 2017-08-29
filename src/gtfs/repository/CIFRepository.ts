@@ -86,6 +86,7 @@ export class CIFRepository {
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
         LEFT JOIN physical_station ON location = tiploc_code
         WHERE stop_time.id IS NULL OR (crs_code IS NOT NULL AND (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL))
+        AND runs_from < CURDATE() + INTERVAL 3 MONTH
         ORDER BY stp_indicator DESC, id, stop_id
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -97,6 +98,7 @@ export class CIFRepository {
           platform, null, z_stop_time.id AS stop_id, activity
         FROM z_schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
+        WHERE runs_from < CURDATE() + INTERVAL 3 MONTH
         ORDER BY stop_id
       `))
     ]);
