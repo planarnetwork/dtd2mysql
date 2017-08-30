@@ -43,7 +43,7 @@ dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
 
 ### Convert to GTFS
 
-Convert the DTD/TTIS version of the timetable to GTFS. 
+Convert the DTD/TTIS version of the timetable (up to 3 months into the future) to GTFS. 
 
 ```
 dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
@@ -98,6 +98,11 @@ At present journey segments, class legends, rounding rules, print formats  and t
 ### timetable format
 
 The timetable data does not map to a relational database in a very logical fashion so all LO, LI and LT records map to a single `stop_time` table.
+
+### GTFS feed cutoff date
+
+Only schedule records that **start** up to 3 months into the future (using date of import as a reference point) are exported to GTFS for performance reasons.
+This will cause any data after that point to be either incomplete or incorrect, as override/cancellation records after that will be ignored as well.
 
 ## Contributing
 
