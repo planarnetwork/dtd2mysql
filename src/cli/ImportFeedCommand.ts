@@ -38,6 +38,7 @@ export class ImportFeedCommand implements CLICommand {
     }
     catch (err) {
       console.error(err);
+      process.exit(-1);
     }
 
     try {
@@ -98,8 +99,15 @@ export class ImportFeedCommand implements CLICommand {
         }
       });
 
-      readStream.on('close', () => console.log(`Finished ${filename}`) || resolve(Promise.all(Object.values(tables).map(t => t.close()))));
-      readStream.on('SIGINT', () => reject());
+      readStream.on('SIGINT', reject);
+      readStream.on('close', () => {
+        console.log(`Finished ${filename}`);
+
+        Promise
+          .all(Object.values(tables).map(t => t.close()))
+          .then(resolve)
+          .catch(reject);
+      });
     });
   }
 
