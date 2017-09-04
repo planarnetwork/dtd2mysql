@@ -17,8 +17,8 @@ const easement = new CSVRecord(
     "easement_class": new IntField(6, 1),
     "category": new IntField(7, 1),
     "valid_days": new TextField(8, 7),
-    "start_time": new TimeField(9, true),
-    "end_time": new TimeField(10, true),
+    "start_time": new TimeField(9, 4),
+    "end_time": new TimeField(10, 4),
   }
 );
 

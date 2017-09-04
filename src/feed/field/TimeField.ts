@@ -3,8 +3,8 @@ import {Field} from "./Field";
 
 export class TimeField extends Field {
 
-  constructor(start: number, nullable: boolean = false, nullChars: string[] = [" ", "*"]) {
-    super(start, 5, nullable, nullChars);
+  constructor(start: number, length: number, nullable: boolean = true, nullChars: string[] = [" ", "0"]) {
+    super(start, length, nullable, nullChars);
   }
 
   /**
@@ -14,7 +14,7 @@ export class TimeField extends Field {
   protected parse(value: string): string {
     const minsAndSeconds = `${value.substr(0, 2)}:${value.substr(2, 2)}`;
 
-    return value.charAt(4) === "H" ? minsAndSeconds + ":30" : minsAndSeconds + ":00";
+    return this.length === 5 && value.charAt(4) === "H" ? minsAndSeconds + ":30" : minsAndSeconds + ":00";
   }
 
 }

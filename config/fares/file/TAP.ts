@@ -17,7 +17,7 @@ const record = new FixedWidthRecord(
     "start_date": new DateField(16),
     "check_type": new TextField(24, 1),
     "ap_data": new TextField(25, 8),
-    "booking_time": new TimeField(33, true)
+    "booking_time": new TimeField(33, 4)
   }
 );
 
