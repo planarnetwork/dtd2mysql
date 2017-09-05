@@ -1,9 +1,9 @@
 
 import {Schedule} from "./Schedule";
-import {OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
+import {NO_DAYS, OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
 import {CRS, Stop} from "../file/Stop";
 import {Duration, Moment} from "moment";
-import {OverlayRecord, STP, TUID} from "./OverlayRecord";
+import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
 import moment = require("moment");
 import {formatDuration} from "./Duration";
@@ -46,9 +46,39 @@ export class Association implements OverlayRecord {
   }
 
   /**
+   * Apply the join or split to the associated schedule. Check for any days that the associated service runs but the
+   * association does not and create additional schedules to cover those periods.
+   */
+  public apply(base: Schedule, assoc: Schedule, idGenerator: IdGenerator): Schedule[] {
+    const assocCalendar = this.dateIndicator === DateIndicator.Next ? this.calendar.shiftForward() : this.calendar;
+    const schedules = [this.mergeSchedules(base, assoc)];
+
+    // if the associated train starts running before the association, clone the associated schedule for those dates
+    if (assoc.calendar.runsFrom.isBefore(assocCalendar.runsFrom)) {
+      const before = assoc.calendar.clone(assoc.calendar.runsFrom, assocCalendar.runsFrom.clone().subtract(1, "days"));
+
+      schedules.push(assoc.clone(before, idGenerator.next().value));
+    }
+
+    // if the associated train runs after the association has finished, clone the associated schedule for those dates
+    if (assoc.calendar.runsTo.isAfter(assocCalendar.runsTo)) {
+      const after = assoc.calendar.clone(assocCalendar.runsTo.clone().add(1, "days"), assoc.calendar.runsTo);
+
+      schedules.push(assoc.clone(after, idGenerator.next().value));
+    }
+
+    // for each exclude day of the association
+    for (const excludeDay of Object.values(assocCalendar.excludeDays)) {
+      schedules.push(assoc.clone(assoc.calendar.clone(excludeDay, excludeDay), idGenerator.next().value));
+    }
+
+    return schedules;
+  }
+
+  /**
    * Apply the split or join to the given schedules
    */
-  public apply(base: Schedule, assoc: Schedule): Schedule {
+  private mergeSchedules(base: Schedule, assoc: Schedule): Schedule {
     let tuid: TUID;
     let start: StopTime[];
     let assocStop: StopTime;
@@ -77,12 +107,18 @@ export class Association implements OverlayRecord {
       ...end.map(s => cloneStop(s, stopSequence++, assoc.id, assocStop))
     ];
 
+    const calendar = this.dateIndicator === DateIndicator.Next ? assoc.calendar.shiftBackward() : assoc.calendar;
+
     return new Schedule(
       assoc.id,
       stops,
       tuid,
       assoc.rsid,
-      this.dateIndicator === DateIndicator.Next ? assoc.calendar.shiftBackward() : assoc.calendar,
+      // only take the part of the schedule that the association applies to
+      calendar.clone(
+        moment.max(this.calendar.runsFrom, calendar.runsFrom),
+        moment.min(this.calendar.runsTo, calendar.runsTo)
+      ),
       assoc.mode,
       assoc.operator,
       assoc.stp

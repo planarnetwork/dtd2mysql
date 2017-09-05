@@ -2,6 +2,7 @@
 import {Association, DateIndicator} from "../native/Association";
 import {Schedule} from "../native/Schedule";
 import {OverlapType, ScheduleCalendar} from "../native/ScheduleCalendar";
+import {IdGenerator} from "../native/OverlayRecord";
 
 /**
  * Iterate through the associations matching association schedules records with base schedules and applying the
@@ -10,7 +11,10 @@ import {OverlapType, ScheduleCalendar} from "../native/ScheduleCalendar";
  * Splits prepend the base schedule (0, point of split) to the association schedule
  * Joins append the base schedule (point of split, end) to the association schedule
  */
-export function applyAssociations(schedulesByTuid: ScheduleIndex, associationsIndex: AssociationIndex): ScheduleIndex {
+export function applyAssociations(schedulesByTuid: ScheduleIndex,
+                                  associationsIndex: AssociationIndex,
+                                  idGenerator: IdGenerator): ScheduleIndex {
+
   for (const associations of Object.values(associationsIndex)) {
     // for each association
     for (const association of associations) {
@@ -30,11 +34,15 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex, associationsIn
         const baseSchedules = findSchedules(schedulesByTuid[association.baseTUID] || [], baseCalendar);
 
         if (baseSchedules.length > 0) {
-          const replacement = association.apply(baseSchedules[0], assocSchedule);
+          const [replacement, ...associatedSchedules] = association.apply(baseSchedules[0], assocSchedule,idGenerator);
 
-          // replace the assoc schedule with a new schedule that has the split/join applied
-          delete schedulesByTuid[association.assocTUID][schedulesByTuid[association.assocTUID].indexOf(assocSchedule)];
+          // add the merged base and associated schedule to the TUID index
           (schedulesByTuid[replacement.tuid] = schedulesByTuid[replacement.tuid] || []).push(replacement);
+
+          // remove the original associated schedule and replace with any substitute schedules created
+          schedulesByTuid[assocSchedule.tuid].splice(
+            schedulesByTuid[assocSchedule.tuid].indexOf(assocSchedule), 1, ...associatedSchedules
+          );
         }
       }
     }

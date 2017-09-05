@@ -43,7 +43,8 @@ describe("ApplyAssociations", () => {
 
     const resultByTuid = applyAssociations(
       <ScheduleIndex>applyOverlays([base1, assoc1, base2, assoc2]),
-      <AssociationIndex>applyOverlays([association1])
+      <AssociationIndex>applyOverlays([association1]),
+      idGenerator()
     );
 
     const [result1, result2, other] = resultByTuid["A_B"];
@@ -139,4 +140,11 @@ function association(base: TUID,
     calendar,
     STP.Overlay
   );
+}
+
+function *idGenerator(): IterableIterator<number> {
+  let id = 0;
+  while (true) {
+    yield id++;
+  }
 }

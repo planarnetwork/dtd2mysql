@@ -23,7 +23,7 @@ describe("Association", () => {
       stop(2, "DOV", "13:00"),
     ]);
 
-    const result = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc);
+    const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
 
     chai.expect(result.tuid).to.equal("A_B");
     chai.expect(result.stopTimes[0].stop_id).to.equal("TON");
@@ -52,7 +52,7 @@ describe("Association", () => {
       stop(7, "B", "13:40", 2),
     ]);
 
-    const result = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc);
+    const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
 
     chai.expect(result.tuid).to.equal("A_B");
     chai.expect(result.stopTimes[0].stop_id).to.equal("PDW");
@@ -85,7 +85,7 @@ describe("Association", () => {
       stop(2, "DOV", "01:00"),
     ]);
 
-    const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next).apply(base, assoc);
+    const [result] = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next).apply(base, assoc, idGenerator());
 
     chai.expect(result.tuid).to.equal("A_B");
     chai.expect(result.calendar.runsFrom.isSame("2017-07-10")).to.be.true;
@@ -117,7 +117,7 @@ describe("Association", () => {
       stop(3, "ASH", "11:55"),
     ]);
 
-    const result = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc);
+    const [result] = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator());
 
     chai.expect(result.tuid).to.equal("B_A");
     chai.expect(result.stopTimes[0].stop_id).to.equal("DOV");
@@ -148,7 +148,7 @@ describe("Association", () => {
       stop(9, "ASH", "11:55", 2),
     ]);
 
-    const result = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc);
+    const [result] = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator());
 
     chai.expect(result.tuid).to.equal("B_A");
     chai.expect(result.stopTimes[0].stop_id).to.equal("A");
@@ -174,6 +174,53 @@ describe("Association", () => {
     chai.expect(result.stopTimes[6].trip_id).to.equal(2);
   });
 
+  it("creates a copy of the associated schedule where the association does not apply", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-09-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "PDW", "11:00"),
+      stop(3, "ASH", "12:00"),
+      stop(4, "RAM", "13:00"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-10", "2017-09-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    const excludeDays = {
+      "20170801": moment("2017-08-01"),
+      "20170805": moment("2017-08-05")
+    };
+
+    const association1 = new Association(
+      1,
+      base.tuid,
+      assoc.tuid,
+      "ASH",
+      DateIndicator.Same,
+      AssociationType.Split,
+      new ScheduleCalendar(moment("2017-07-20"), moment("2017-08-16"), ALL_DAYS, excludeDays),
+      STP.Overlay
+    );
+
+    const [result, before, after, ex1, ex2] = association1.apply(base, assoc, idGenerator());
+
+    chai.expect(result.tuid).to.equal("A_B");
+    chai.expect(result.calendar.runsFrom.isSame("2017-07-20")).to.equal(true);
+    chai.expect(result.calendar.runsTo.isSame("2017-08-16")).to.equal(true);
+    chai.expect(before.tuid).to.equal("B");
+    chai.expect(before.calendar.runsFrom.isSame("2017-07-10")).to.equal(true);
+    chai.expect(before.calendar.runsTo.isSame("2017-07-19")).to.equal(true);
+    chai.expect(after.tuid).to.equal("B");
+    chai.expect(after.calendar.runsFrom.isSame("2017-08-17")).to.equal(true);
+    chai.expect(after.calendar.runsTo.isSame("2017-09-16")).to.equal(true);
+    chai.expect(ex1.tuid).to.equal("B");
+    chai.expect(ex1.calendar.runsFrom.isSame("2017-08-01")).to.equal(true);
+    chai.expect(ex1.calendar.runsTo.isSame("2017-08-01")).to.equal(true);
+    chai.expect(ex2.tuid).to.equal("B");
+    chai.expect(ex2.calendar.runsFrom.isSame("2017-08-05")).to.equal(true);
+    chai.expect(ex2.calendar.runsTo.isSame("2017-08-05")).to.equal(true);
+  });
 
 });
 
@@ -234,4 +281,11 @@ function association(base: Schedule,
     base.calendar,
     STP.Overlay
   );
+}
+
+function *idGenerator(): IterableIterator<number> {
+  let id = 0;
+  while (true) {
+    yield id++;
+  }
 }

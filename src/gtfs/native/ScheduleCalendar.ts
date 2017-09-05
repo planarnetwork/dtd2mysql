@@ -224,6 +224,7 @@ export class ScheduleCalendar {
   /**
    * Shift the calendar forward a day
    */
+  @memoize
   public shiftForward(): ScheduleCalendar {
     const excludeDays = {};
 
@@ -252,6 +253,7 @@ export class ScheduleCalendar {
   /**
    * Shift the calendar back a day
    */
+  @memoize
   public shiftBackward(): ScheduleCalendar {
     const excludeDays = {};
 
@@ -302,4 +304,4 @@ export enum OverlapType {
   Long = 2
 }
 
-const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+export const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
