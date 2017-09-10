@@ -129,14 +129,20 @@ export class Association implements OverlayRecord {
    * Take the arrival time of the first stop and the departure time of the second stop and put them into a new stop
    */
   public mergeAssociationStop(arrivalStop: StopTime, departureStop: StopTime): StopTime {
-    const arrivalTime = moment.duration(arrivalStop.arrival_time);
+    let arrivalTime = moment.duration(arrivalStop.arrival_time);
     let departureTime = moment.duration(departureStop.departure_time);
 
     if (arrivalTime.asSeconds() > departureTime.asSeconds()) {
-      departureTime = this.dateIndicator === DateIndicator.Next ? departureTime.add(1, "days") : arrivalTime;
+      if (this.dateIndicator === DateIndicator.Next) {
+        departureTime.add(1, "days");
+      }
+      else {
+        arrivalTime = moment.duration(departureStop.arrival_time);
+      }
     }
 
     return Object.assign({}, arrivalStop, {
+      arrival_time: formatDuration(arrivalTime.asSeconds()),
       departure_time: formatDuration(departureTime.asSeconds()),
       pickup_type: departureStop.pickup_type,
       drop_off_type: arrivalStop.drop_off_type
