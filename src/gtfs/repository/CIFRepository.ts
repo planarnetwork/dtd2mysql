@@ -48,8 +48,8 @@ export class CIFRepository {
       SELECT
         crs_code AS stop_id, 
         tiploc_code AS stop_code,
-        station_name AS stop_name,
-        station_name AS stop_desc,
+        name AS stop_name,
+        name AS stop_desc,
         0 AS stop_lat,
         0 AS stop_lon,
         NULL AS zone_id,
@@ -58,9 +58,13 @@ export class CIFRepository {
         NULL AS parent_station,
         "Europe/London" AS stop_timezone,
         0 AS wheelchair_boarding 
-      FROM physical_station
+      FROM 
+      (  
+        SELECT crs_code, tiploc_code, station_name AS name FROM physical_station WHERE crs_code IS NOT NULL
+        UNION ALL
+        SELECT crs_code, tiploc_code, description AS name FROM tiploc WHERE crs_code IS NOT NULL
+      ) t1
       GROUP BY crs_code
-      ORDER BY crs_code
     `);
 
     // overlay the long and latitude values from configuration
@@ -78,14 +82,23 @@ export class CIFRepository {
         SELECT
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          stp_indicator, crs_code, train_category,
+          stp_indicator, IFNULL(ps.crs_code, tp.crs_code) as crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
           platform, atoc_code, stop_time.id AS stop_id, activity
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
-        LEFT JOIN physical_station ON location = tiploc_code
-        WHERE stop_time.id IS NULL OR (crs_code IS NOT NULL AND (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL))
+        LEFT JOIN physical_station ps ON location = ps.tiploc_code
+        LEFT JOIN tiploc tp ON location = tp.tiploc_code 
+        WHERE 
+        (
+          stop_time.id IS NULL OR 
+          (
+            (ps.crs_code IS NOT NULL OR tp.crs_code IS NOT NULL)
+            AND 
+            (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL)
+          )
+        )
         AND runs_from < CURDATE() + INTERVAL 3 MONTH
         AND runs_to >= CURDATE()
         ORDER BY stp_indicator DESC, id, stop_id
