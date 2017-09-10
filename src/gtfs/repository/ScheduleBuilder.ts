@@ -6,7 +6,7 @@ import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
 
-const pickupActivities = ["T ", "TB", "U ", ""];
+const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
 const coordinatedActivity = ["R ", "N "];
 
@@ -91,9 +91,10 @@ export class ScheduleBuilder {
       departureTime = this.formatTime(row.scheduled_departure_time, departHour);
     }
 
-    const pickup = pickupActivities.find(a => row.activity.indexOf(a) !== -1) ? 0 : 1;
-    const coordinatedDropOff = coordinatedActivity.find(a => row.activity.indexOf(a) !== -1) ? 3 : 0;
-    const dropOff = dropOffActivities.find(a => row.activity.indexOf(a) !== -1) ? 0 : 1;
+    const activities = row.activity.match(/.{1,2}/g) || [];
+    const pickup = pickupActivities.find(a => activities.indexOf(a) !== -1) ? 0 : 1;
+    const coordinatedDropOff = coordinatedActivity.find(a => activities.indexOf(a) !== -1) ? 3 : 0;
+    const dropOff = dropOffActivities.find(a => activities.indexOf(a) !== -1) ? 0 : 1;
 
     return {
       trip_id: row.id,
