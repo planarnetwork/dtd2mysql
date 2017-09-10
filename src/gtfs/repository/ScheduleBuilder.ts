@@ -6,9 +6,9 @@ import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
 
-const pickupActivities = ["T ", "TB", "U "];
+const pickupActivities = ["T ", "TB", "U ", ""];
 const dropOffActivities = ["T ", "TF", "D "];
-const coordinatedActivity = ["R "];
+const coordinatedActivity = ["R ", "N "];
 
 /**
  * This class takes a stream of results and builds a list of Schedules
