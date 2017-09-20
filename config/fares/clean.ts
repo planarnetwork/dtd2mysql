@@ -32,7 +32,7 @@ export const ticketCodeBlacklist = `"0AA","0AB","0AC","0AD","0AE","0AF","0AG","0
 "HAE","HAF","HAG","HAS","HC2","HCA","HCB","HCD","HCE","HCF","HCG","HCH","HCI","HCJ","HCK","HCL","HCM","HCN","HCO","HCP",
 "HCQ","HCR","HCU","HCV","HCW","HCX","HEA","HEB","HEF","HEG","HER","HES","HF2","HF3","HF4","HFC","HFF","HGF","HH1","HH2",
 "HHH","HL1","HL2","HLC","HMC","HNC","HPA","HPC","HPF","HPP","HPR","HS7","HTD","HU2","HU3","HU4","HUA","HUB","HUC","I1H",
-"IF1","IF3","IFR","IFS","IS0","IS1","IS3","ISR","ISS","IT1","IT2","ITS","IXF","IXS","K4Q","K4R","HX1","HX2","HX3","HX4",
+"IF1","IF3","IFR","IFS","IS0","IS1","IS3","ISR","ISS","IT1","IT2","ITS","IXF","IXS","K4Q","K4R","HZ1","HZ2","HZ3","HZ4",
 "K4S","KFF","KGF","L1R","L2R","LBT","LCF","LG2","LG3","LG4","LG5","LGR","LME","LMM","LNO","LNR","LOG","LSS","LVR","LYE",
 "LYF","MBA","MBB","MBC","MBD","MCA","MCM","MCQ","MCR","MCW","MFB","MKS","MLA","MLM","MLW","MM1","MM2","MMA","MMB","MMC",
 "MMD","MML","MMM","MMP","MMQ","MMR","MRM","MRT","MRW","MRY","MSB","MSS","MST","MSV","MSW","MTY","MXR","ND1","ND2","ND3",
