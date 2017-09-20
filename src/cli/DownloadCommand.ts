@@ -16,7 +16,7 @@ export class DownloadCommand implements CLICommand {
       console.log("Connected to server");
       const outputDirectory = argv[3] || "/tmp/";
       const filename = await this.getLastFullRefresh();
-      const outputStream = fs.createWriteStream(outputDirectory + filename, { defaultEncoding: 'binary' });
+      const outputStream = fs.createWriteStream(outputDirectory + filename, { encoding: 'binary' });
       // cast this.sftp to any due to wrong get type definition
       const inputStream = await (this.sftp as any).get(this.directory + filename, false, 'binary');
 
