@@ -11,7 +11,7 @@ const discountFixedWidthRecord = new FixedWidthRecord(
     "origin_code": new TextField(1, 4, true),
     "destination_code": new TextField(5, 4, true),
     "route_code": new ZeroFillIntField(9, 5, true),
-    "railcard_code": new TextField(14, 3, true),
+    "railcard_code": new TextField(14, 3, true, ["*"]),
     "ticket_code": new TextField(17, 3, true),
     "end_date": new DateField(20),
     "start_date": new DateField(28),
