@@ -65,7 +65,8 @@ export class CleanFaresCommand implements CLICommand {
       console.log("Applying restriction dates");
       const [[current, future]] = await this.db.query<RestrictionDateRow[]>("SELECT * FROM restriction_date ORDER BY cf_mkr");
 
-      current.start_date = new Date(current.start_date.getFullYear(), 1, 1);
+      current.start_date = new Date(current.start_date.getFullYear(), 0, 1);
+      future.start_date = new Date(future.start_date.getFullYear(), 0, 1);
 
       await Promise.all(
         this.restrictionTables.map(tableName => this.updateRestrictionDatesOnTable(tableName, current, future))
