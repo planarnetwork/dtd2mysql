@@ -2,7 +2,8 @@
 import {CLICommand} from "./CLICommand";
 import {execSync} from "child_process";
 import {DatabaseConfiguration} from "../database/DatabaseConnection";
-import {readFileSync} from "fs";
+import {schema} from "../../config/gtfs/schema";
+import {importSQL} from "../../config/gtfs/import";
 
 
 export class GTFSImportCommand implements CLICommand {
@@ -16,14 +17,12 @@ export class GTFSImportCommand implements CLICommand {
    */
   public async run(argv: string[]): Promise<void> {
     const path = argv[3] || "./";
-    const schemaPath = require.resolve("../../config/gtfs/schema.sql");
-    const importPath = require.resolve("../../config/gtfs/import.sql");
-    const schema = readFileSync(schemaPath, "utf8").replace(/`/g, "\\`");
-    const importSQL = readFileSync(importPath, "utf8").replace(/`/g, "\\`");
+    const schemaEsc = schema.replace(/`/g, "\\`");
+    const importSQLEsc = importSQL.replace(/`/g, "\\`");
     const mysqlExec = `mysql -h${this.db.host} -u${this.db.user} ${this.db.password ? "-p" + this.db.password : ""} ${this.db.database} -e`;
 
-    execSync(`${mysqlExec} "${schema}"`, { cwd: path });
-    execSync(`${mysqlExec} "${importSQL}"`, { cwd: path });
+    execSync(`${mysqlExec} "${schemaEsc}"`, { cwd: path });
+    execSync(`${mysqlExec} "${importSQLEsc}"`, { cwd: path });
   }
 
 }
