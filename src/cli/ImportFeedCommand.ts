@@ -1,4 +1,3 @@
-import Bluebird = require("bluebird");
 import AdmZip = require("adm-zip");
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "../../config";
@@ -8,7 +7,7 @@ import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
 import * as readline from "readline";
 import {MySQLTable} from "../database/MySQLTable";
-import memoize from "memoized-class-decorator";
+import * as memoize from "memoized-class-decorator";
 import fs = require("fs-extra");
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();

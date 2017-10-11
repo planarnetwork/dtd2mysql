@@ -1,6 +1,6 @@
 
 import {Moment} from "moment";
-import memoize = require("memoized-class-decorator");
+import * as memoize from "memoized-class-decorator";
 import moment = require("moment");
 import {Calendar} from "../file/Calendar";
 import {CalendarDate} from "../file/CalendarDate";

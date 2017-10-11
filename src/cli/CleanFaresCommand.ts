@@ -16,24 +16,25 @@ export class CleanFaresCommand implements CLICommand {
   ) {
     this.tableUpdates = restrictionTables.map(t => `ALTER TABLE ${t} ADD COLUMN start_date DATE, ADD COLUMN end_date DATE`);
     this.queries = [
-      `DELETE FROM fare WHERE fare < 50 OR ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM fare WHERE fare < 50 OR fare = 99999 OR fare >= 999999 OR ticket_code IN (${ticketCodeBlacklist})`,
       `DELETE FROM ticket_type WHERE ticket_code IN (${ticketCodeBlacklist})`,
-      "DELETE FROM flow WHERE usage_code = 'G'",
-      "DELETE FROM flow WHERE flow_id NOT IN (SELECT flow_id FROM fare)",
+      "DELETE FROM flow WHERE flow_id NOT IN (SELECT distinct flow_id FROM fare) OR usage_code = 'G'",
       "DELETE FROM location WHERE end_date < CURDATE()",
       "DELETE FROM status_discount WHERE end_date < CURDATE()",
       "DELETE FROM status WHERE end_date < CURDATE()",
       "DELETE FROM route_location WHERE end_date < CURDATE()",
       "DELETE FROM route WHERE end_date < CURDATE()",
-      `DELETE FROM non_derivable_fare_override WHERE end_date < CURDATE()`,
-      `DELETE FROM non_derivable_fare_override WHERE ticket_code IN (${ticketCodeBlacklist})`,
-      `DELETE FROM non_derivable_fare_override WHERE end_date < CURDATE() OR composite_indicator != 'Y' OR adult_fare < 50 OR child_fare < 50`,
-      "UPDATE non_derivable_fare_override SET adult_fare = null WHERE adult_fare = 99999 OR adult_fare > 999999",
-      "UPDATE non_derivable_fare_override SET child_fare = null WHERE child_fare = 99999 OR child_fare > 999999",
-      `DELETE FROM non_standard_discount WHERE end_date < CURDATE()  OR ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM non_standard_discount WHERE end_date < CURDATE() OR ticket_code IN (${ticketCodeBlacklist})`,
       `DELETE FROM railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList})`,
       `DELETE FROM location_railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList})`,
       `DELETE FROM railcard_minimum_fare WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList}) OR ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM non_derivable_fare_override 
+         WHERE ticket_code IN (${ticketCodeBlacklist}) 
+         OR end_date < CURDATE() 
+         OR composite_indicator != 'Y'
+      `,
+      "UPDATE non_derivable_fare_override SET adult_fare = null WHERE adult_fare = 99999 OR adult_fare >= 999999",
+      "UPDATE non_derivable_fare_override SET child_fare = null WHERE child_fare = 99999 OR child_fare >= 999999",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='YNG'",
       "UPDATE railcard SET min_adults=1, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='DIS'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=1, max_children=1, max_passengers=2 WHERE railcard_code='DIC'",

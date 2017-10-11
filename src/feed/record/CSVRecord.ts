@@ -1,7 +1,7 @@
 
 import {Field, FieldValue} from "../field/Field";
 import {FieldMap, Record} from "./Record";
-import memoize from "memoized-class-decorator";
+import * as memoize from "memoized-class-decorator";
 
 export class CSVRecord implements Record {
 

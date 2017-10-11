@@ -1,4 +1,4 @@
-import memoize from "memoized-class-decorator";
+import * as memoize from "memoized-class-decorator";
 import * as SFTP from "ssh2-sftp-client";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
@@ -97,7 +97,7 @@ export class Container {
   }
 
   @memoize
-  private async getSFTP(): Promise<SFTP.Client> {
+  private async getSFTP(): Promise<SFTP> {
     const sftp = new SFTP();
 
     await sftp.connect({

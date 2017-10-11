@@ -6,7 +6,7 @@ import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
 import {CRS} from "../file/Stop";
 import {IdGenerator, OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
-import memoize = require("memoized-class-decorator");
+import * as memoize  from "memoized-class-decorator";
 
 /**
  * A CIF schedule (BS record)

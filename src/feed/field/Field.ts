@@ -1,6 +1,6 @@
 
 import {isNullOrUndefined} from "util";
-import memoize from "memoized-class-decorator";
+import * as memoize from "memoized-class-decorator";
 
 /**
  * Parent class for all fields

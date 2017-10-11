@@ -5,7 +5,7 @@ import * as fs from "fs";
 export class DownloadCommand implements CLICommand {
 
     constructor(
-        private readonly sftp: SFTP.Client,
+        private readonly sftp: SFTP,
         private readonly directory: string
     ) {}
 
@@ -18,7 +18,7 @@ export class DownloadCommand implements CLICommand {
       const filename = await this.getLastFullRefresh();
       const outputStream = fs.createWriteStream(outputDirectory + filename, { encoding: 'binary' });
       // cast this.sftp to any due to wrong get type definition
-      const inputStream = await (this.sftp as any).get(this.directory + filename, false, 'binary');
+      const inputStream = await this.sftp.get(this.directory + filename, false, 'binary');
 
       console.log(`Downloading ${filename}...`);
       inputStream.pipe(outputStream);

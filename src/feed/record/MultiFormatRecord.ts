@@ -1,6 +1,5 @@
-import {Field, FieldValue} from "../field/Field";
+import {FieldValue} from "../field/Field";
 import {FieldMap, Record} from "./Record";
-import memoize from "memoized-class-decorator";
 
 export class MultiFormatRecord implements Record {
 
