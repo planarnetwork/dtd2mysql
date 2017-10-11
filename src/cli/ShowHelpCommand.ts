@@ -14,6 +14,7 @@ Import a DTD feed into a MySQL compatible database
   --routeing [FILE]          import the routeing guide data
   --gtfs [DIR]               convert timetable data to GTFS and output txt files in DIR
   --gtfs-zip [FILE]          convert timetable data to GTFS and output zip
+  --gtfs-import [DIR]        import the GTFS files in the DIR to a MySQL database
   --download-fares [DIR]     download latest fares refresh from DTD
   --download-timetable [DIR] download latest timetable refresh from DTD
   --download-routeing [DIR]  download latest routeing refresh from DTD

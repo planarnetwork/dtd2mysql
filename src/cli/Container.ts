@@ -2,7 +2,7 @@ import * as memoize from "memoized-class-decorator";
 import * as SFTP from "ssh2-sftp-client";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
-import {DatabaseConnection} from "../database/DatabaseConnection";
+import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseConnection";
 import Bluebird = require("bluebird");
 import config from "../../config";
 import {CleanFaresCommand} from "./CleanFaresCommand";
@@ -16,6 +16,7 @@ import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 import {acceptedRailcards, restrictionTables, ticketCodeBlacklist} from "../../config/fares/clean";
+import {GTFSImportCommand} from "./GTFSImportCommand";
 
 export class Container {
 
@@ -27,6 +28,7 @@ export class Container {
       case "--routeing": return this.getRouteingImportCommand();
       case "--timetable": return this.getTimetableImportCommand();
       case "--gtfs": return this.getOutputGTFSCommand();
+      case "--gtfs-import": return this.getImportGTFSCommand();
       case "--gtfs-zip": return this.getOutputGTFSZipCommand();
       case "--download-fares": return this.getDownloadCommand("/fares/");
       case "--download-timetable": return this.getDownloadCommand("/timetable/");
@@ -61,6 +63,11 @@ export class Container {
   @memoize
   public async getShowHelpCommand(): Promise<CLICommand> {
     return new ShowHelpCommand();
+  }
+
+  @memoize
+  public getImportGTFSCommand(): Promise<GTFSImportCommand> {
+    return Promise.resolve(new GTFSImportCommand(this.databaseConfiguration));
   }
 
   @memoize
@@ -111,17 +118,8 @@ export class Container {
 
   @memoize
   public async getDatabaseConnection(): Promise<DatabaseConnection> {
-    if (!process.env.DATABASE_NAME) {
-      throw new Error("Please set the database environment variables.");
-    }
-
     return await require('mysql2/promise').createPool({
-      host: process.env.DATABASE_HOSTNAME || "localhost",
-      user: process.env.DATABASE_USERNAME || "root",
-      password: process.env.DATABASE_PASSWORD || null,
-      database: process.env.DATABASE_NAME,
-      connectionLimit: 3,
-      multipleStatements: true,
+      ...this.databaseConfiguration,
       promise: Bluebird,
       //debug: ['ComQueryPacket', 'RowDataPacket']
     });
@@ -129,21 +127,23 @@ export class Container {
 
   @memoize
   public async getDatabaseStream(): Promise<any> {
-    if (!process.env.DATABASE_NAME) {
-      throw new Error("Please set the database environment variables.");
-    }
-
-    return await require('mysql2').createPool({
-      host: process.env.DATABASE_HOSTNAME || "localhost",
-      user: process.env.DATABASE_USERNAME || "root",
-      password: process.env.DATABASE_PASSWORD || null,
-      database: process.env.DATABASE_NAME,
-      connectionLimit: 3,
-      multipleStatements: true,
-      //debug: ['ComQueryPacket', 'RowDataPacket']
-    });
+    return await require('mysql2').createPool(this.databaseConfiguration);
 
   }
 
+  public get databaseConfiguration(): DatabaseConfiguration {
+    if (!process.env.DATABASE_NAME) {
+      throw new Error("Please set the DATABASE_NAME environment variable.");
+    }
+
+    return {
+      host: process.env.DATABASE_HOSTNAME || "localhost",
+      user: process.env.DATABASE_USERNAME || "root",
+      password: process.env.DATABASE_PASSWORD || null,
+      database: <string>process.env.DATABASE_NAME,
+      connectionLimit: 3,
+      multipleStatements: true
+    };
+  }
 
 }
