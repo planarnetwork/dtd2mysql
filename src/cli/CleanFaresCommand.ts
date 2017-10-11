@@ -113,7 +113,7 @@ export class CleanFaresCommand implements CLICommand {
     return moment((earliestDate.getFullYear() + yearOffset) + restrictionMonth, "YYYYMMDD");
   }
 
-  private async queryWithRetry(query: string, max: number = 3, current: number = 1): Promise<void> {
+  private async queryWithRetry(query: string, max: number = 10, current: number = 1): Promise<void> {
     try {
       await this.db.query(query)
     }
