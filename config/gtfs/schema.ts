@@ -45,7 +45,7 @@ CREATE TABLE \`calendar_dates\` (
 
 DROP TABLE IF EXISTS \`fare_attributes\`;
 CREATE TABLE \`fare_attributes\` (
-  \`fare_id\` varchar(100) DEFAULT NULL,
+  \`fare_id\` varchar(100) NOT NULL,
   \`price\` varchar(50) NOT NULL,
   \`currency_type\` varchar(50) NOT NULL,
   \`payment_method\` tinyint(1) unsigned NOT NULL,
@@ -58,8 +58,8 @@ CREATE TABLE \`fare_attributes\` (
 
 DROP TABLE IF EXISTS \`fare_rules\`;
 CREATE TABLE \`fare_rules\` (
-  \`fare_id\` varchar(100) DEFAULT NULL,
-  \`route_id\` mediumint(12) unsigned DEFAULT NULL,
+  \`fare_id\` varchar(100) NOT NULL,
+  \`route_id\` mediumint(12) unsigned NOT NULL,
   \`origin_id\` varchar(100) DEFAULT NULL,
   \`destination_id\` varchar(100) DEFAULT NULL,
   \`contains_id\` varchar(100) DEFAULT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE \`feed_info\` (
   \`feed_lang\` varchar(255) NOT NULL,
   \`feed_start_date\` date NOT NULL,
   \`feed_end_date\` date DEFAULT NULL,
-  \`feed_version\` varchar(10) DEFAULT NULL,
+  \`feed_version\` varchar(10) NOT NULL,
   PRIMARY KEY (\`feed_version\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -151,7 +151,7 @@ CREATE TABLE \`stop_times\` (
 
 DROP TABLE IF EXISTS \`stops\`;
 CREATE TABLE \`stops\` (
-  \`stop_id\` char(3) DEFAULT NULL,
+  \`stop_id\` char(3) NOT NULL,
   \`stop_code\` varchar(50) DEFAULT NULL,
   \`stop_name\` varchar(255) NOT NULL,
   \`stop_desc\` varchar(255) DEFAULT NULL,
