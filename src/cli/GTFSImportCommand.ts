@@ -19,7 +19,7 @@ export class GTFSImportCommand implements CLICommand {
     const path = argv[3] || "./";
     const schemaEsc = schema.replace(/`/g, "\\`");
     const importSQLEsc = importSQL.replace(/`/g, "\\`");
-    const mysqlExec = `mysql -h${this.db.host} -u${this.db.user} ${this.db.password ? "-p" + this.db.password : ""} ${this.db.database} -e`;
+    const mysqlExec = `mysql --local-infile -h${this.db.host} -u${this.db.user} ${this.db.password ? "-p" + this.db.password : ""} ${this.db.database} -e`;
 
     execSync(`${mysqlExec} "${schemaEsc}"`, { cwd: path });
     execSync(`${mysqlExec} "${importSQLEsc}"`, { cwd: path });
