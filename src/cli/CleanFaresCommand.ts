@@ -16,9 +16,9 @@ export class CleanFaresCommand implements CLICommand {
   ) {
     this.tableUpdates = restrictionTables.map(t => `ALTER TABLE ${t} ADD COLUMN start_date DATE, ADD COLUMN end_date DATE`);
     this.queries = [
-      `DELETE FROM fare WHERE fare < 50 OR fare = 99999 OR fare >= 999999 OR ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM fare WHERE fare < 5 OR fare = 99999 OR fare >= 999999 OR ticket_code IN (${ticketCodeBlacklist});
+       DELETE FROM flow WHERE flow_id NOT IN (SELECT distinct flow_id FROM fare)`,
       `DELETE FROM ticket_type WHERE ticket_code IN (${ticketCodeBlacklist})`,
-      "DELETE FROM flow WHERE flow_id NOT IN (SELECT distinct flow_id FROM fare) OR usage_code = 'G'",
       "DELETE FROM location WHERE end_date < CURDATE()",
       "DELETE FROM status_discount WHERE end_date < CURDATE()",
       "DELETE FROM status WHERE end_date < CURDATE()",
