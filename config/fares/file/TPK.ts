@@ -12,9 +12,9 @@ const pkg = new FixedWidthRecord(
     "end_date": new DateField(4),
     "start_date": new DateField(12),
     "quote_date": new DateField(20),
-    "restriction_code": new TextField(28, 2),
-    "origin_facilities": new TextField(30, 26),
-    "destination_facilities": new TextField(56, 26)
+    "restriction_code": new TextField(28, 2, true),
+    "origin_facilities": new TextField(30, 26, true),
+    "destination_facilities": new TextField(56, 26, true)
   }
 );
 

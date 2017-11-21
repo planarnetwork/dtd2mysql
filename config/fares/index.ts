@@ -16,6 +16,8 @@ import RST from "./file/RST";
 import TAP from "./file/TAP";
 import TOC from "./file/TOC";
 import TVL from "./file/TVL";
+import TRR from "./file/TRR";
+import TPK from "./file/TPK";
 
 const specification: FeedConfig = {
   DIS: DIS,
@@ -32,6 +34,8 @@ const specification: FeedConfig = {
   SUP: SUP,
   TAP: TAP,
   TOC: TOC,
+  TPK: TPK,
+  TRR: TRR,
   TSP: TSP,
   TTY: TTY,
   TVL: TVL
