@@ -10,7 +10,7 @@ const record = new CSVRecord(
   {
     "start_station": new TextField(0, 3),
     "end_station": new TextField(1, 3),
-    "distance": new DoubleField(2, 5, 5)
+    "distance": new DoubleField(2, 7, 4)
   }
 );
 
