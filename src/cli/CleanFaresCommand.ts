@@ -20,6 +20,7 @@ export class CleanFaresCommand implements CLICommand {
        DELETE FROM flow WHERE flow_id NOT IN (SELECT distinct flow_id FROM fare)`,
       `DELETE FROM ticket_type WHERE ticket_code IN (${ticketCodeBlacklist})`,
       "DELETE FROM location WHERE end_date < CURDATE()",
+      "DELETE FROM location_group_member WHERE end_date < CURDATE()",
       "DELETE FROM status_discount WHERE end_date < CURDATE()",
       "DELETE FROM status WHERE end_date < CURDATE()",
       "DELETE FROM route_location WHERE end_date < CURDATE()",
