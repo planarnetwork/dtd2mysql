@@ -21,7 +21,7 @@ export const ticketCodeBlacklist = `"0AA","0AB","0AC","0AD","0AE","0AF","0AG","0
 "CL1","CL2","CLA","CLS","CM1","CM2","CNE","CNM","CNR","CNS","COA","COB","COH","COL","COM","COR","COS","CPF","CPP","CPR",
 "CPS","CQP","CR1","CR2","CSA","CST","CT1","CTM","CTW","CWR","CWS","CYC","CZS","DAA","DAF","DDO","DEF","DPC","DRS","DS1",
 "DS4","DSD","DST","DTA","DTE","DTF","DTP","E40","E41","E42","E43","E44","E60","E61","E62","E63","E64","EAR","EAS","EBP",
-"ECS","EDA","EDF","EDR","EDS","EFR","EFS","EGG","EJA","EJB","EJC","EJD","ELF","ELR","ELS","ELV","EM0","EM2","EM3","EM4",
+"ECS","EDA","EDF","EDR","EDS","EFR","EFS","EGG","EIS","EJA","EJB","EJC","EJD","ELF","ELR","ELS","ELV","EM0","EM2","EM3","EM4",
 "EM5","EM6","EMB","EMD","EME","EOR","EOS","EPT","ES1","ES2","ES3","ES4","ES5","ES6","ESC","ESP","EVE","EVF","EVR","EVS",
 "EWR","EXV","F1F","F1L","F2F","F55","F56","FAW","FB0","FB1","FB2","FB3","FB4","FBD","FBM","FBW","FC1","FC2","FC3","FC4",
 "FCB","FCF","FCP","FCU","FCV","FCW","FES","FFA","FFF","FFM","FFO","FFP","FFT","FFW","FFY","FMM","FMR","FMS","FMW","FND",
