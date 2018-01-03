@@ -32,10 +32,10 @@ export class Container {
       case "--gtfs-zip": return this.getOutputGTFSZipCommand();
       case "--download-fares": return this.getDownloadCommand("/fares/");
       case "--download-timetable": return this.getDownloadCommand("/timetable/");
-      case "--download-routeing": return this.getDownloadCommand("/routeing_guide/");
+      case "--download-routeing": return this.getDownloadCommand("/routing_guide/");
       case "--get-fares": return this.getDownloadAndProcessCommand("/fares/", this.getFaresImportCommand());
       case "--get-timetable": return this.getDownloadAndProcessCommand("/timetable/", this.getTimetableImportCommand());
-      case "--get-routeing": return this.getDownloadAndProcessCommand("/routeing_guide/", this.getRouteingImportCommand());
+      case "--get-routeing": return this.getDownloadAndProcessCommand("/routing_guide/", this.getRouteingImportCommand());
       default: return this.getShowHelpCommand();
     }
   }

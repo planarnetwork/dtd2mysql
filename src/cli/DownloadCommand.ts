@@ -17,7 +17,6 @@ export class DownloadCommand implements CLICommand {
       const outputDirectory = argv[3] || "/tmp/";
       const filename = await this.getLastFullRefresh();
       const outputStream = fs.createWriteStream(outputDirectory + filename, { encoding: 'binary' });
-      // cast this.sftp to any due to wrong get type definition
       const inputStream = await this.sftp.get(this.directory + filename, false, 'binary');
 
       console.log(`Downloading ${filename}...`);
@@ -42,7 +41,7 @@ export class DownloadCommand implements CLICommand {
 
       dir.sort(sortByDate);
 
-      const item = dir.find(item => item.name.charAt(4) === "F");
+      const item = dir.find(item => item.name.charAt(4) === "F" || item.name.startsWith("RJRG"));
 
       if (item) {
         return item.name
