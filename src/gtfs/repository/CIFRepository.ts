@@ -129,6 +129,8 @@ export class CIFRepository {
         start_date, end_date, stp_indicator
       FROM association a
       JOIN tiploc ON assoc_location = tiploc_code
+      WHERE start_date < CURDATE() + INTERVAL 3 MONTH
+      AND end_date >= CURDATE()
       ORDER BY stp_indicator DESC, id
     `);
 

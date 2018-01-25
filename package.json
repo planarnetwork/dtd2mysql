@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -51,11 +51,11 @@
     "node": "^8.0.0"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.19",
-    "@types/chai": "^4.0.10",
+    "@types/bluebird": "^3.5.20",
+    "@types/chai": "^4.1.2",
     "@types/fs-extra": "^4.0.7",
-    "@types/mocha": "^2.2.45",
-    "@types/node": "^8.5.5",
+    "@types/mocha": "^2.2.47",
+    "@types/node": "^8.5.9",
     "@types/ssh2-sftp-client": "^1.1.0",
     "chai": "^4.1.2",
     "mocha": "^3.5.3",
