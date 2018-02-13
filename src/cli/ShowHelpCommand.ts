@@ -12,15 +12,18 @@ Import a DTD feed into a MySQL compatible database
   --fares-clean              remove old and irrelevant data
   --timetable [FILE]         import the timetable feed 
   --routeing [FILE]          import the routeing guide data
+  --nfm64 [FILE]             import the nfm64 data
   --gtfs [DIR]               convert timetable data to GTFS and output txt files in DIR
   --gtfs-zip [FILE]          convert timetable data to GTFS and output zip
   --gtfs-import [DIR]        import the GTFS files in the DIR to a MySQL database
   --download-fares [DIR]     download latest fares refresh from DTD
   --download-timetable [DIR] download latest timetable refresh from DTD
   --download-routeing [DIR]  download latest routeing refresh from DTD
+  --nfm64 [DIR]              download nfm64 data
   --get-fares [DIR]          download and process latest fares refresh from DTD
   --get-timetable [DIR]      download and process latest timetable refresh from DTD
   --get-routeing [DIR]       download and process latest routeing refresh from DTD
+  --get-nfm64 [DIR]          download and process latest nfm64 file
   
 The following environment properties are expected to be set:
   

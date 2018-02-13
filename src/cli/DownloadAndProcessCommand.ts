@@ -1,12 +1,11 @@
 
 import {CLICommand} from "./CLICommand";
-import {DownloadCommand} from "./DownloadCommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 
 export class DownloadAndProcessCommand implements CLICommand {
 
   constructor(
-    private readonly download: DownloadCommand,
+    private readonly download: FileProvider,
     private readonly process: ImportFeedCommand
   ) {}
 
@@ -19,4 +18,8 @@ export class DownloadAndProcessCommand implements CLICommand {
     return this.process.run(["", "", "", filename]);
   }
 
+}
+
+export interface FileProvider {
+  run(args: any[]): Promise<string>;
 }

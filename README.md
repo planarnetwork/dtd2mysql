@@ -54,6 +54,8 @@ dtd2mysql --gtfs-zip filename-of-gtfs.zip
 ### Import
 ```
 dtd2mysql --routeing /path/to/RJRGxxxx.ZIP
+# optional
+dtd2mysql --nfm64 /path/to/nfm64.zip 
 ```
 
 ## Download from SFTP server
@@ -74,6 +76,7 @@ There is a command for each feed
 dtd2mysql --download-fares /path/
 dtd2mysql --download-timetable /path/
 dtd2mysql --download-routeing /path/
+dtd2mysql --download-nfm64 /path/
 ```
 
 Or download and process in one command
@@ -82,6 +85,7 @@ Or download and process in one command
 dtd2mysql --get-fares
 dtd2mysql --get-timetable
 dtd2mysql --get-routeing
+dtd2mysql --get-nfm64
 ```
 
 ## Notes

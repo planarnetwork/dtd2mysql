@@ -5,7 +5,8 @@ import {Record} from "../record/Record";
 export class SingleRecordFile implements FeedFile {
 
   constructor(
-    private readonly recordType: Record
+    private readonly recordType: Record,
+    private readonly filter: RecordFilter | null = null
   ) {}
 
   /**
@@ -18,7 +19,13 @@ export class SingleRecordFile implements FeedFile {
   /**
    * Return the record type
    */
-  public getRecord(line: string): Record {
-    return this.recordType;
+  public getRecord(line: string): Record | null {
+    if (this.filter === null || this.filter(line)) {
+      return this.recordType;
+    }
+
+    return null;
   }
 }
+
+export type RecordFilter = (line: string) => boolean;

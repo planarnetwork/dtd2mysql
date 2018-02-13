@@ -11,5 +11,5 @@ export interface FeedFile {
   /**
    * Return the relevant Record for the line
    */
-  getRecord(line: string): Record;
+  getRecord(line: string): Record | null;
 }

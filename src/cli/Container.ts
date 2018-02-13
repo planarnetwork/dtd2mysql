@@ -17,6 +17,9 @@ import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 import {acceptedRailcards, restrictionTables, ticketCodeBlacklist} from "../../config/fares/clean";
 import {GTFSImportCommand} from "./GTFSImportCommand";
+import {downloadUrl} from "../../config/nfm64";
+import {DownloadFileCommand} from "./DownloadFileCommand";
+import nfm64 from "../../dist/config/nfm64/file/nfm64";
 
 export class Container {
 
@@ -27,15 +30,18 @@ export class Container {
       case "--fares-clean": return this.getCleanFaresCommand();
       case "--routeing": return this.getRouteingImportCommand();
       case "--timetable": return this.getTimetableImportCommand();
+      case "--nfm64": return this.getNFM64ImportCommand();
       case "--gtfs": return this.getOutputGTFSCommand();
       case "--gtfs-import": return this.getImportGTFSCommand();
       case "--gtfs-zip": return this.getOutputGTFSZipCommand();
       case "--download-fares": return this.getDownloadCommand("/fares/");
       case "--download-timetable": return this.getDownloadCommand("/timetable/");
       case "--download-routeing": return this.getDownloadCommand("/routing_guide/");
+      case "--download-nfm64": return this.getDownloadNFM64Command();
       case "--get-fares": return this.getDownloadAndProcessCommand("/fares/", this.getFaresImportCommand());
       case "--get-timetable": return this.getDownloadAndProcessCommand("/timetable/", this.getTimetableImportCommand());
       case "--get-routeing": return this.getDownloadAndProcessCommand("/routing_guide/", this.getRouteingImportCommand());
+      case "--get-nfm64": return this.getDownloadAndProcessNFM64Command();
       default: return this.getShowHelpCommand();
     }
   }
@@ -54,6 +60,12 @@ export class Container {
   public async getTimetableImportCommand(): Promise<ImportFeedCommand> {
     return new ImportFeedCommand(await this.getDatabaseConnection(), config.timetable, "/tmp/dtd/timetable/");
   }
+
+  @memoize
+  public async getNFM64ImportCommand(): Promise<ImportFeedCommand> {
+    return new ImportFeedCommand(await this.getDatabaseConnection(), config.nfm64, "/tmp/dtd/nfm64/");
+  }
+
 
   @memoize
   public async getCleanFaresCommand(): Promise<CLICommand> {
@@ -99,8 +111,21 @@ export class Container {
   }
 
   @memoize
+  private async getDownloadNFM64Command(): Promise<DownloadFileCommand> {
+    return Promise.resolve(new DownloadFileCommand(downloadUrl));
+  }
+
+  @memoize
   private async getDownloadAndProcessCommand(path: string, process: Promise<ImportFeedCommand>): Promise<DownloadAndProcessCommand> {
     return new DownloadAndProcessCommand(await this.getDownloadCommand(path), await process);
+  }
+
+  @memoize
+  private async getDownloadAndProcessNFM64Command(): Promise<DownloadAndProcessCommand> {
+    return new DownloadAndProcessCommand(
+      await this.getDownloadNFM64Command(),
+      await this.getNFM64ImportCommand()
+    );
   }
 
   @memoize
