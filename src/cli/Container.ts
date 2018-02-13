@@ -19,7 +19,6 @@ import {acceptedRailcards, restrictionTables, ticketCodeBlacklist} from "../../c
 import {GTFSImportCommand} from "./GTFSImportCommand";
 import {downloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
-import nfm64 from "../../dist/config/nfm64/file/nfm64";
 
 export class Container {
 
