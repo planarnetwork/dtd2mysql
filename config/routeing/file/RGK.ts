@@ -17,7 +17,7 @@ const routeData = new CSVRecord(
   "route_data",
   [],
   {
-    "route_code": new TextField(0, 5),
+    "route_code": new ZeroFillIntField(0, 5),
     "entry_type": new TextField(2, 1),
     "crs_code": new TextField(3, 3, true),
     "group_mkr": new BooleanField(4),
