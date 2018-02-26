@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -8,13 +8,13 @@
     "dtd2mysql": "bin/dtd2mysql.sh"
   },
   "scripts": {
-    "test": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
-    "gtest": "mocha --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts' --grep",
+    "test": "mocha --require ts-node/register 'test/**/*.spec.ts'",
+    "gtest": "mocha --require ts-node/register 'test/**/*.spec.ts' --grep",
     "watch-test": "mocha -w --compilers ts:ts-node/register,tsx:ts-node/register 'test/**/*.spec.ts'",
     "start": "ts-node ./src/index.ts",
     "prepublishOnly": "tsc -p ./ --outDir dist/",
-    "gtfs": "ts-node --max_old_space_size=3000 ./src/index.ts --gtfs",
-    "gtfs-zip": "ts-node --max_old_space_size=3000 ./src/index.ts --gtfs-zip"
+    "gtfs": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs",
+    "gtfs-zip": "NODE_OPTIONS='--max-old-space-size=3000' ./src/index.ts --gtfs-zip"
   },
   "repository": {
     "type": "git",
@@ -39,27 +39,26 @@
     "adm-zip": "^0.4.7",
     "bluebird": "^3.5.1",
     "csv-write-stream": "^2.0.0",
-    "fs-extra": "^4.0.3",
-    "iconv-lite": "^0.4.19",
+    "fs-extra": "^5.0.0",
     "memoized-class-decorator": "^1.5.0",
     "moment": "^2.20.1",
     "mysql2": "^1.5.2",
-    "ssh2-sftp-client": "^1.1.0",
+    "ssh2-sftp-client": "^2.0.1",
     "stream-to-promise": "^2.2.0"
   },
   "engines": {
-    "node": "^8.0.0"
+    "node": "^8.9.0"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.20",
     "@types/chai": "^4.1.2",
-    "@types/fs-extra": "^4.0.7",
+    "@types/fs-extra": "^5.0.0",
     "@types/mocha": "^2.2.48",
     "@types/node": "^9.4.6",
-    "@types/ssh2-sftp-client": "^1.1.0",
+    "@types/ssh2-sftp-client": "^2.0.0",
     "chai": "^4.1.2",
     "mocha": "^5.0.1",
-    "ts-node": "^4.1.0",
+    "ts-node": "^5.0.0",
     "typescript": "^2.7.2"
   }
 }

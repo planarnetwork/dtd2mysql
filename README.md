@@ -1,4 +1,11 @@
-# dtd2mysql [![Build Status](https://travis-ci.org/open-track/dtd2mysql.svg?branch=master)](https://travis-ci.org/open-track/dtd2mysql)
+# dtd2mysql 
+
+
+[![Travis](https://img.shields.io/travis/open-track/dtd2mysql.svg?style=flat-square)](https://travis-ci.org/open-track/dtd2mysql) ![npm](https://img.shields.io/npm/v/dtd2mysql.svg?style=flat-square) ![npm](https://img.shields.io/npm/dw/dtd2mysql.svg?style=flat-square) 
+![David](https://img.shields.io/david/open-track/dtd2mysql.svg?style=flat-square)
+
+
+
 
 An import tool for the British rail fares, routeing and timetable feeds into a database.
 

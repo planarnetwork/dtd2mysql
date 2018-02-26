@@ -135,6 +135,7 @@ export class Container {
       host: process.env.SFTP_HOSTNAME || "dtd.atocrsp.org",
       username: process.env.SFTP_USERNAME,
       password: process.env.SFTP_PASSWORD,
+      algorithms: { serverHostKey: ['ssh-dss'] }
     });
 
     return sftp;
