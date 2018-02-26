@@ -90,11 +90,7 @@ export class CIFRepository {
         WHERE 
         (
           stop_time.id IS NULL OR 
-          (
-            ps.crs_code IS NOT NULL
-            AND 
-            (scheduled_arrival_time IS NOT NULL OR scheduled_departure_time IS NOT NULL)
-          )
+          ps.crs_code IS NOT NULL
         )
         AND runs_from < CURDATE() + INTERVAL 3 MONTH
         AND runs_to >= CURDATE()
