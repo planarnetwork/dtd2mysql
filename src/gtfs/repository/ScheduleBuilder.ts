@@ -103,7 +103,7 @@ export class ScheduleBuilder {
       stop_id: row.crs_code,
       stop_sequence: stopId,
       stop_headsign: row.platform,
-      pickup_type: pickup,
+      pickup_type: coordinatedDropOff || pickup,
       drop_off_type: coordinatedDropOff || dropOff,
       shape_dist_traveled: null,
       timepoint: 1
