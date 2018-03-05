@@ -4,21 +4,27 @@ import {IntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {TimeField} from "../../../src/feed/field/TimeField";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
+import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
+import {BooleanField} from "../../../src/feed/field/BooleanField";
 
-const easement = new CSVRecord(
+const easement = new FixedWidthRecord(
   "easement",
   ["easement_ref"],
   {
-    "easement_ref": new TextField(1, 6),
-    "start_date": new DateField(2),
-    "end_date": new DateField(3),
-    "text_ref": new TextField(4, 6),
-    "easement_type": new IntField(5, 1),
-    "easement_class": new IntField(6, 1),
-    "category": new IntField(7, 1),
-    "valid_days": new TextField(8, 7),
-    "start_time": new TimeField(9, 4),
-    "end_time": new TimeField(10, 4),
+    "easement_ref": new TextField(2, 6),
+    "start_date": new DateField(9),
+    "end_date": new DateField(18),
+    "text_ref": new TextField(27, 6),
+    "easement_type": new IntField(34, 1),
+    "easement_class": new IntField(36, 1),
+    "category": new IntField(38, 1),
+    "monday": new BooleanField(40),
+    "tuesday": new BooleanField(41),
+    "wednesday": new BooleanField(42),
+    "thursday": new BooleanField(43),
+    "friday": new BooleanField(44),
+    "saturday": new BooleanField(45),
+    "sunday": new BooleanField(46)
   }
 );
 
