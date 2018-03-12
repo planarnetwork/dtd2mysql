@@ -167,7 +167,7 @@ export class CIFRepository {
       AND destination IN (SELECT crs_code FROM physical_station)
       UNION
       SELECT
-        "TRANSFER", duration * 60 as duration, origin, destination,
+        mode, duration * 60 as duration, origin, destination,
         "00:00:00", "23:59:59", "2017-01-01", "2038-01-19",
         1,1,1,1,1,1,1
       FROM fixed_link
