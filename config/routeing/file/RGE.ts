@@ -1,4 +1,3 @@
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
 import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
 import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
