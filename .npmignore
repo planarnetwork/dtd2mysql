@@ -3,3 +3,4 @@ config/
 node_modules/
 npm-shrinkwrap.json
 tsconfig.json
+*.txt
