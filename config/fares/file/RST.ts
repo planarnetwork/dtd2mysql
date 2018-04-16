@@ -51,41 +51,6 @@ const headerDate = new FixedWidthRecord(
   }
 );
 
-// Defunct
-// const headerLocation = new FixedWidthRecord(
-//   "restriction_header_route_location",
-//   ["cf_mkr", "restriction_code", "location_crs_code"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "location_crs_code": new TextField(6, 3),
-//   }
-// );
-
-// Defunct
-// const headerChanges = new FixedWidthRecord(
-//   "restriction_header_allowed_change",
-//   ["cf_mkr", "restriction_code", "allowed_change"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "allowed_change": new TextField(6, 3),
-//   }
-// );
-
-// Defunct
-// const headerAdditional = new FixedWidthRecord(
-//   "restriction_header_additional_restriction",
-//   ["cf_mkr", "restriction_code", "additional_restriction", "origin", "destination"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "additional_restriction": new TextField(6, 2),
-//     "origin": new TextField(9, 3),
-//     "destination": new TextField(12, 3)
-//   }
-// );
-
 const time = new FixedWidthRecord(
   "restriction_time",
   ["cf_mkr", "restriction_code", "sequence_no", "out_ret"],
@@ -94,8 +59,8 @@ const time = new FixedWidthRecord(
     "restriction_code": new TextField(4, 2),
     "sequence_no": new TextField(6, 4),
     "out_ret": new TextField(10, 1),
-    "time_from": new TimeField(11, 4, false),
-    "time_to": new TimeField(15, 4, false),
+    "time_from": new TimeField(11, 4, false, []),
+    "time_to": new TimeField(15, 4, false, []),
     "arr_dep_via": new TextField(19, 1),
     "location": new TextField(20, 3, true),
     "rstr_type": new TextField(23, 1),
