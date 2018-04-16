@@ -40,7 +40,7 @@ export class CleanFaresCommand implements CLICommand {
       "UPDATE railcard SET min_adults=1, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='DIS'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=1, max_children=1, max_passengers=2 WHERE railcard_code='DIC'",
       "UPDATE railcard SET min_adults=1, max_adults=4, min_children=1, max_children=4, max_passengers=8 WHERE railcard_code='FAM'",
-      "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='HMF'",
+      "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=4, max_passengers=5 WHERE railcard_code='HMF'",
       "UPDATE railcard SET min_adults=1, max_adults=4, min_children=0, max_children=4, max_passengers=8 WHERE railcard_code='NGC'",
       "UPDATE railcard SET min_adults=1, max_adults=4, min_children=0, max_children=4, max_passengers=8 WHERE railcard_code='NEW'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='SRN'",
