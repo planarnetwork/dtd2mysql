@@ -10,27 +10,27 @@ export class CleanFaresCommand implements CLICommand {
 
   constructor(
     private readonly db: DatabaseConnection,
-    private readonly ticketCodeBlacklist: string,
+    private readonly ticketCodeWhitelist: string,
     private readonly railcardWhiteList: string,
     private readonly restrictionTables: string[]
   ) {
     this.tableUpdates = restrictionTables.map(t => `ALTER TABLE ${t} ADD COLUMN start_date DATE, ADD COLUMN end_date DATE`);
     this.queries = [
-      `DELETE FROM fare WHERE fare < 5 OR fare = 99999 OR fare >= 999999 OR ticket_code IN (${ticketCodeBlacklist});
+      `DELETE FROM fare WHERE fare < 5 OR fare = 99999 OR fare >= 999999 OR ticket_code NOT IN (${ticketCodeWhitelist});
        DELETE FROM flow WHERE flow_id NOT IN (SELECT distinct flow_id FROM fare)`,
-      `DELETE FROM ticket_type WHERE ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM ticket_type WHERE ticket_code NOT IN (${ticketCodeWhitelist}) OR end_date < CURDATE()`,
       "DELETE FROM location WHERE end_date < CURDATE()",
       "DELETE FROM location_group_member WHERE end_date < CURDATE()",
       "DELETE FROM status_discount WHERE end_date < CURDATE()",
       "DELETE FROM status WHERE end_date < CURDATE()",
       "DELETE FROM route_location WHERE end_date < CURDATE()",
       "DELETE FROM route WHERE end_date < CURDATE()",
-      `DELETE FROM non_standard_discount WHERE end_date < CURDATE() OR ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM non_standard_discount WHERE end_date < CURDATE() OR ticket_code NOT IN (${ticketCodeWhitelist})`,
       `DELETE FROM railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList})`,
       `DELETE FROM location_railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList})`,
-      `DELETE FROM railcard_minimum_fare WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList}) OR ticket_code IN (${ticketCodeBlacklist})`,
+      `DELETE FROM railcard_minimum_fare WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList}) OR ticket_code NOT IN (${ticketCodeWhitelist})`,
       `DELETE FROM non_derivable_fare_override 
-         WHERE ticket_code IN (${ticketCodeBlacklist}) 
+         WHERE ticket_code NOT IN (${ticketCodeWhitelist}) 
          OR end_date < CURDATE() 
          OR composite_indicator != 'Y'
       `,
@@ -39,7 +39,7 @@ export class CleanFaresCommand implements CLICommand {
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='YNG'",
       "UPDATE railcard SET min_adults=1, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='DIS'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=1, max_children=1, max_passengers=2 WHERE railcard_code='DIC'",
-      "UPDATE railcard SET min_adults=1, max_adults=4, min_children=0, max_children=4, max_passengers=8 WHERE railcard_code='FAM'",
+      "UPDATE railcard SET min_adults=1, max_adults=4, min_children=1, max_children=4, max_passengers=8 WHERE railcard_code='FAM'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='HMF'",
       "UPDATE railcard SET min_adults=1, max_adults=4, min_children=0, max_children=4, max_passengers=8 WHERE railcard_code='NGC'",
       "UPDATE railcard SET min_adults=1, max_adults=4, min_children=0, max_children=4, max_passengers=8 WHERE railcard_code='NEW'",
@@ -48,7 +48,6 @@ export class CleanFaresCommand implements CLICommand {
       "UPDATE railcard SET min_adults=3, max_adults=9, min_children=0, max_children=0, max_passengers=9 WHERE railcard_code='GS3'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='JCP'",
       "UPDATE railcard SET min_adults=0, max_adults=9, min_children=0, max_children=9, max_passengers=9 WHERE railcard_code=''",
-      "UPDATE railcard SET child_status = null WHERE child_status='XXX' OR (child_status='001' AND railcard_code != '   ')",
       "UPDATE status_discount SET discount_indicator = 'X' WHERE status_code != '000' and status_code != '001' AND discount_percentage = 0",
     ];
   }
