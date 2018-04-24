@@ -28,6 +28,7 @@ export class CleanFaresCommand implements CLICommand {
       `DELETE FROM non_standard_discount WHERE end_date < CURDATE() OR ticket_code NOT IN (${ticketCodeWhitelist})`,
       `DELETE FROM railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList})`,
       `DELETE FROM location_railcard WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList})`,
+      `DELETE FROM restriction_railcard WHERE railcard_code NOT IN (${railcardWhiteList})`,
       `DELETE FROM railcard_minimum_fare WHERE end_date < CURDATE() OR railcard_code NOT IN (${railcardWhiteList}) OR ticket_code NOT IN (${ticketCodeWhitelist})`,
       `DELETE FROM non_derivable_fare_override 
          WHERE ticket_code NOT IN (${ticketCodeWhitelist}) 
