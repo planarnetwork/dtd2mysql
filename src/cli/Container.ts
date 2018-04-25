@@ -3,7 +3,6 @@ import * as SFTP from "ssh2-sftp-client";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseConnection";
-import Bluebird = require("bluebird");
 import config from "../../config";
 import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
@@ -135,7 +134,9 @@ export class Container {
       host: process.env.SFTP_HOSTNAME || "dtd.atocrsp.org",
       username: process.env.SFTP_USERNAME,
       password: process.env.SFTP_PASSWORD,
-      algorithms: { serverHostKey: ['ssh-dss'] }
+      algorithms: {
+        serverHostKey: ['ssh-dss']
+      }
     });
 
     return sftp;
@@ -145,7 +146,6 @@ export class Container {
   public async getDatabaseConnection(): Promise<DatabaseConnection> {
     return await require('mysql2/promise').createPool({
       ...this.databaseConfiguration,
-      promise: Bluebird,
       //debug: ['ComQueryPacket', 'RowDataPacket']
     });
   }

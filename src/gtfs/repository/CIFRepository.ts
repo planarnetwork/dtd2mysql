@@ -56,7 +56,7 @@ export class CIFRepository {
         NULL AS stop_url,
         NULL AS location_type,
         NULL AS parent_station,
-        "Europe/London" AS stop_timezone,
+        IF(POSITION("(CIE" IN name), "Europe/Dublin", "Europe/London") AS stop_timezone,
         0 AS wheelchair_boarding 
       FROM 
       (  
