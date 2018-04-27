@@ -7,7 +7,7 @@ export class IntField extends Field {
               length: number,
               nullable: boolean = false,
               nullChars: string[] = [" ", "*", "9"]) {
-    super(position, length, nullable, nullChars)
+    super(position, length, nullable, nullChars);
   }
 
   /**
@@ -25,4 +25,13 @@ export class IntField extends Field {
 
 }
 
-export class ZeroFillIntField extends IntField {}
+export class ZeroFillIntField extends Field {
+
+  /**
+   * Zero filled ints are stored as padded chars
+   */
+  protected parse(value: string): string {
+    return value.padStart(this.length, "0");
+  }
+
+}

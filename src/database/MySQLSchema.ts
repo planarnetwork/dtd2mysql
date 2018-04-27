@@ -58,7 +58,7 @@ export class MySQLSchema {
     if (field instanceof DateField)          return `DATE`;
     if (field instanceof TimeField)          return `TIME`;
     if (field instanceof DoubleField)        return `DOUBLE(${field.length}, ${field.decimalDigits}) unsigned`;
-    if (field instanceof ZeroFillIntField)   return `${MySQLSchema.getIntType(field.length)} unsigned zerofill`;
+    if (field instanceof ZeroFillIntField)   return `CHAR(${field.length})`;
     if (field instanceof IntField)           return `${MySQLSchema.getIntType(field.length)} unsigned`;
     if (field instanceof ForeignKeyField)    return `INT(11) unsigned`;
 
