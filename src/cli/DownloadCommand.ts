@@ -1,11 +1,11 @@
-import * as SFTP from "ssh2-sftp-client";
 import {CLICommand} from "./CLICommand";
-import * as fs from "fs";
+import {PromiseSFTP} from "../sftp/PromiseSFTP";
+import {FileEntry} from "ssh2-streams";
 
 export class DownloadCommand implements CLICommand {
 
     constructor(
-        private readonly sftp: SFTP,
+        private readonly sftp: PromiseSFTP,
         private readonly directory: string
     ) {}
 
@@ -16,47 +16,41 @@ export class DownloadCommand implements CLICommand {
       console.log("Connected to server");
       const outputDirectory = argv[3] || "/tmp/";
       const filename = await this.getLastFullRefresh();
-      const outputStream = fs.createWriteStream(outputDirectory + filename, { encoding: 'binary' });
-      const inputStream = await this.sftp.get(this.directory + filename, false, 'binary');
+      const from = this.directory + filename;
+      const to = outputDirectory + filename;
 
       console.log(`Downloading ${filename}...`);
-      inputStream.pipe(outputStream);
 
-      // wait until the write has finished before resolving the promise
-      return new Promise<string>((resolve, reject) => {
-        outputStream.on("error", reject);
-        outputStream.on("finish", () => {
-          console.log("Finished download");
+      try {
+        await this.sftp.fastGet(from, to);
+      }
+      catch (err) {
+        console.error(err);
+      }
 
-          this.sftp.end().then(() => resolve(outputDirectory + filename));
-        });
-      });
+      console.log("Finished download");
+      this.sftp.end();
+
+      return to;
     }
 
   /**
    * Do a directory listing to get the filename of the last full refresh
    */
   private async getLastFullRefresh(): Promise<string> {
-      const dir: DirectoryListingItem[] = await this.sftp.list(this.directory);
+    const dir = await this.sftp.readdir(this.directory);
 
-      dir.sort(sortByDate);
+    dir.sort((a: FileEntry, b: FileEntry) => b.attrs.mtime - a.attrs.mtime);
 
-      const item = dir.find(item => item.name.charAt(4) === "F" || item.name.startsWith("RJRG"));
+    const item = dir.find(item => item.filename.charAt(4) === "F" || item.filename.startsWith("RJRG"));
 
-      if (item) {
-        return item.name
-      }
-      else {
-        throw new Error(`Could not find full refresh file in ${this.directory}`);
-      }
+    if (item) {
+      return item.filename
     }
+    else {
+      throw new Error(`Could not find full refresh file in ${this.directory}`);
+    }
+  }
+
 }
 
-function sortByDate(a: DirectoryListingItem, b: DirectoryListingItem): number {
-  return b.modifyTime - a.modifyTime;
-}
-
-interface DirectoryListingItem {
-  modifyTime: number;
-  name: string;
-}

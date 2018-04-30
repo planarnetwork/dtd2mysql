@@ -1,5 +1,5 @@
 import * as memoize from "memoized-class-decorator";
-import * as SFTP from "ssh2-sftp-client";
+import {Client, SFTPWrapper} from "ssh2";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseConnection";
@@ -18,6 +18,7 @@ import {acceptedRailcards, restrictionTables, ticketCodeWhitelist} from "../../c
 import {GTFSImportCommand} from "./GTFSImportCommand";
 import {downloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
+import {PromiseSFTP} from "../sftp/PromiseSFTP";
 
 export class Container {
 
@@ -127,10 +128,8 @@ export class Container {
   }
 
   @memoize
-  private async getSFTP(): Promise<SFTP> {
-    const sftp = new SFTP();
-
-    await sftp.connect({
+  private getSFTP(): Promise<PromiseSFTP> {
+    return PromiseSFTP.connect({
       host: process.env.SFTP_HOSTNAME || "dtd.atocrsp.org",
       username: process.env.SFTP_USERNAME,
       password: process.env.SFTP_PASSWORD,
@@ -138,8 +137,6 @@ export class Container {
         serverHostKey: ['ssh-dss']
       }
     });
-
-    return sftp;
   }
 
   @memoize
