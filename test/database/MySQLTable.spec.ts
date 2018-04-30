@@ -10,7 +10,7 @@ describe("MySQLTable", () => {
 
     table.insert(["some", "values"]);
 
-    chai.expect(db.inserts[0]).is.equal("INSERT INTO \`my_table\` VALUES ?");
+    chai.expect(db.inserts[0]).is.equal("REPLACE INTO \`my_table\` VALUES ?");
   });
 
   it("buffers inserts", () => {
@@ -21,7 +21,7 @@ describe("MySQLTable", () => {
     chai.expect(db.inserts.length).is.equal(0);
 
     table.insert(["some", "values"]);
-    chai.expect(db.inserts[0]).is.equal("INSERT INTO \`my_table\` VALUES ?");
+    chai.expect(db.inserts[0]).is.equal("REPLACE INTO \`my_table\` VALUES ?");
   });
 
   it("flushes all remaining inserts", () => {
@@ -31,7 +31,7 @@ describe("MySQLTable", () => {
     table.insert(["some", "values"]);
 
     table.close();
-    chai.expect(db.inserts[0]).is.equal("INSERT INTO \`my_table\` VALUES ?");
+    chai.expect(db.inserts[0]).is.equal("REPLACE INTO \`my_table\` VALUES ?");
   });
 
 });

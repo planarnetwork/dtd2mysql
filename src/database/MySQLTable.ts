@@ -31,7 +31,7 @@ export class MySQLTable {
   private flush(): void {
     if (this.inserts.length === 0) return;
 
-    const promise = this.db.query(`INSERT INTO \`${this.tableName}\` VALUES ?`, [this.inserts]);
+    const promise = this.query(`REPLACE INTO \`${this.tableName}\` VALUES ?`, this.inserts);
 
     this.promiseBuffer.push(promise);
     this.inserts = [];
@@ -44,6 +44,23 @@ export class MySQLTable {
     this.flush();
 
     return Promise.all(this.promiseBuffer);
+  }
+
+  /**
+   * Query with retry. REPLACE INTO generates a lock which causes quite a lot of problems when bulk inserting
+   */
+  public async query(sql: string, rows: MySQLRow[], numRetries: number = 3): Promise<void> {
+    try {
+      await this.db.query(sql, [rows]);
+    }
+    catch (err) {
+      if (err.errno === 1213 && numRetries > 0) {
+        return this.query(sql, rows, numRetries - 1);
+      }
+      else {
+        throw err;
+      }
+    }
   }
 
 }

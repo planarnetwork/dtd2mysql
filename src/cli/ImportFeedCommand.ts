@@ -9,6 +9,8 @@ import * as readline from "readline";
 import {MySQLTable} from "../database/MySQLTable";
 import * as memoize from "memoized-class-decorator";
 import fs = require("fs-extra");
+import {MultiRecordFile} from "../feed/file/MultiRecordFile";
+import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
 const readFile = filename => readline.createInterface({ input: fs.createReadStream(filename) });
@@ -37,40 +39,40 @@ export class ImportFeedCommand implements CLICommand {
     }
     catch (err) {
       console.error(err);
-      process.exit(-1);
     }
 
-    try {
-      await this.db.end();
-    }
-    catch (err) {}
-    console.log("Done");
+    return this.end();
   }
 
   /**
    * Extract the zip, set up the schema and do the inserts
    */
-  private async doImport(filePath: string): Promise<void> {
+  public async doImport(filePath: string): Promise<void> {
     console.log(`Extracting ${filePath} to ${this.tmpFolder}`);
     fs.emptyDirSync(this.tmpFolder);
 
     new AdmZip(filePath).extractAllTo(this.tmpFolder);
 
-    const filename = path.basename(filePath);
+    const zipName = path.basename(filePath);
 
     // if the file is a full refresh (or routeing guide), reset the database schema
-    if (filename.charAt(4) === "F" || filename.startsWith("RJRG")) {
+    if (zipName.charAt(4) === "F" || zipName.startsWith("RJRG")) {
       await Promise.all(this.fileArray.map(file => this.setupSchema(file)));
       await this.createLastProcessedSchema();
     }
 
-    const inserts =
-      fs.readdirSync(this.tmpFolder)
-        .filter(filename => this.getFeedFile(filename))
-        .map(filename => this.processFile(filename));
+    if (this.files["CFA"] instanceof MultiRecordFile) {
+      const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+      (<RecordWithManualIdentifier>(<MultiRecordFile>this.files["CFA"]).records["BS"]).lastId = lastSchedule.id;
+    }
 
-    await Promise.all(inserts);
-    await this.updateLastFile(filename);
+    const files = fs.readdirSync(this.tmpFolder).filter(filename => this.getFeedFile(filename));
+
+    for (const filename of files) {
+      await this.processFile(filename);
+    }
+
+    await this.updateLastFile(zipName);
   }
 
   /**
@@ -101,7 +103,7 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Process the records inside the given file
    */
-  private processFile(filename: string): Promise<any> {
+  private async processFile(filename: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const file = this.getFeedFile(filename);
       const tables = this.tables(file);
@@ -151,6 +153,13 @@ export class ImportFeedCommand implements CLICommand {
 
       return records;
     }, {});
+  }
+
+  /**
+   * Close the underling database connection
+   */
+  public end(): Promise<void> {
+    return this.db.end();
   }
 
 }

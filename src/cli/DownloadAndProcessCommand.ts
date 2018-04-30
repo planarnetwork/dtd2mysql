@@ -13,13 +13,22 @@ export class DownloadAndProcessCommand implements CLICommand {
    * Download and process the feed in one command
    */
   public async run(argv: string[]): Promise<any> {
-    const filename = await this.download.run([]);
+    const files = await this.download.run([]);
 
-    return this.process.run(["", "", "", filename]);
+    for (const filename of files) {
+      try {
+        await this.process.doImport(filename);
+      }
+      catch (err) {
+        console.error(err);
+      }
+    }
+
+    return this.process.end();
   }
 
 }
 
 export interface FileProvider {
-  run(args: any[]): Promise<string>;
+  run(args: any[]): Promise<string[]>;
 }

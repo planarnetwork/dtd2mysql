@@ -40,9 +40,8 @@ export class RecordWithManualIdentifier extends FixedWidthRecord {
     this.lastId++;
 
     const values = this.fieldValues.map(f => f.extract(line.substr(f.position, f.length)));
-    const result: FieldValue[] = [this.lastId];
 
-    return result.concat(values);
+    return [this.lastId, ...values];
   }
 
 }
