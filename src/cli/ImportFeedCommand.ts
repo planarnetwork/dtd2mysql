@@ -50,20 +50,27 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Extract the zip, set up the schema and do the inserts
    */
-  private async doImport(filename: string): Promise<any> {
-    console.log(`Extracting ${filename} to ${this.tmpFolder}`);
+  private async doImport(filePath: string): Promise<void> {
+    console.log(`Extracting ${filePath} to ${this.tmpFolder}`);
     fs.emptyDirSync(this.tmpFolder);
 
-    new AdmZip(filename).extractAllTo(this.tmpFolder);
+    new AdmZip(filePath).extractAllTo(this.tmpFolder);
 
-    await Promise.all(this.fileArray.map(file => this.setupSchema(file)));
+    const filename = path.basename(filePath);
+
+    // if the file is a full refresh (or routeing guide), reset the database schema
+    if (filename.charAt(4) === "F" || filename.startsWith("RJRG")) {
+      await Promise.all(this.fileArray.map(file => this.setupSchema(file)));
+      await this.createLastProcessedSchema();
+    }
 
     const inserts =
       fs.readdirSync(this.tmpFolder)
         .filter(filename => this.getFeedFile(filename))
         .map(filename => this.processFile(filename));
 
-    return Promise.all(inserts);
+    await Promise.all(inserts);
+    await this.updateLastFile(filename);
   }
 
   /**
@@ -72,6 +79,23 @@ export class ImportFeedCommand implements CLICommand {
   private async setupSchema(file: FeedFile): Promise<void> {
     await Promise.all(this.schemas(file).map(schema => schema.dropSchema()));
     await Promise.all(this.schemas(file).map(schema => schema.createSchema()));
+  }
+
+  /**
+   * Create the last_file table (if it doesn't already exist)
+   */
+  private createLastProcessedSchema(): Promise<void> {
+    return this.db.query(`
+      CREATE TABLE IF NOT EXISTS log ( 
+        id INT(11) unsigned not null primary key auto_increment, 
+        filename VARCHAR(12), 
+        processed DATETIME 
+      )
+    `);
+  }
+
+  private updateLastFile(filename: string): Promise<void> {
+    return this.db.query("INSERT INTO log VALUES (null, ?, NOW())", [filename]);
   }
 
   /**
