@@ -4,6 +4,7 @@ import {DoubleField} from "../../../src/feed/field/DoubleField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {CSVRecord} from "../../../src/feed/record/CSVRecord";
 import {DateField} from "../../../src/feed/field/DateField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 describe("CSVRecord", () => {
 
@@ -20,7 +21,15 @@ describe("CSVRecord", () => {
         "field3": field3
     });
 
-    chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal([null, 10.12, "Hi ", "2999-12-31"]);
+    chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: null,
+        field: 10.12,
+        field2: "Hi ",
+        field3: "2999-12-31"
+      }
+    });
   });
 
   it("ignores missing fields", () => {
@@ -34,7 +43,14 @@ describe("CSVRecord", () => {
         "field2": field2,
       });
 
-    chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal([null, 10.12, "Hi "]);
+    chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: null,
+        field: 10.12,
+        field2: "Hi "
+      }
+    });
   });
 
 

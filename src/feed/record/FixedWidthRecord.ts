@@ -1,30 +1,39 @@
 
-import {Field, FieldValue} from "../field/Field";
-import {FieldMap, Record} from "./Record";
-import * as memoize from "memoized-class-decorator";
+import {FieldMap, ParsedRecord, Record, RecordAction} from "./Record";
 
+const actionMap = {
+  "I": RecordAction.Insert,
+  "A": RecordAction.Update,
+  "D": RecordAction.Delete,
+  "R": RecordAction.Insert
+};
+
+/**
+ * Record with fixed with fields
+ */
 export class FixedWidthRecord implements Record {
 
   constructor(
     public readonly name: string,
     public readonly key: string[],
     public readonly fields: FieldMap,
-    public readonly indexes: string[] = []
+    public readonly indexes: string[] = [],
+    public readonly hasUpdateMarker: boolean = false
   ) {}
-
-  @memoize
-  protected get fieldValues(): Field[] {
-    return Object.values(this.fields);
-  }
 
   /**
    * Extract the relevant part of the line for each field and then get the value from the field
    */
-  public extractValues(line: string): FieldValue[] {
-    const values = this.fieldValues.map(f => f.extract(line.substr(f.position, f.length)));
-    const result: FieldValue[] = [null];
+  public extractValues(line: string): ParsedRecord {
+    const action = this.hasUpdateMarker ? actionMap[line.charAt(0)] : RecordAction.Insert;
+    const values = action === RecordAction.Delete ? {} : { id: null };
+    const fields = action === RecordAction.Delete ? this.key : Object.keys(this.fields);
 
-    return result.concat(values);
+    for (const key of fields) {
+      values[key] = this.fields[key].extract(line.substr(this.fields[key].position, this.fields[key].length));
+    }
+
+    return { action, values } as ParsedRecord;
   }
 
 }
@@ -36,13 +45,15 @@ export class FixedWidthRecord implements Record {
 export class RecordWithManualIdentifier extends FixedWidthRecord {
   public lastId: number = 0;
 
-  public extractValues(line: string): FieldValue[] {
-    this.lastId++;
+  public extractValues(line: string): ParsedRecord {
+    const values = { id: ++this.lastId };
+    const action = RecordAction.Insert;
 
-    const values = this.fieldValues.map(f => f.extract(line.substr(f.position, f.length)));
-    const result: FieldValue[] = [this.lastId];
+    for (const key in this.fields) {
+      values[key] = this.fields[key].extract(line.substr(this.fields[key].position, this.fields[key].length));
+    }
 
-    return result.concat(values);
+    return { action, values };
   }
 
 }

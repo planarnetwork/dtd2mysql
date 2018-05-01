@@ -106,7 +106,7 @@ export class Container {
 
   @memoize
   private async getDownloadCommand(path: string): Promise<DownloadCommand> {
-    return new DownloadCommand(await this.getSFTP(), path);
+    return new DownloadCommand(await this.getDatabaseConnection(), await this.getSFTP(), path);
   }
 
   @memoize

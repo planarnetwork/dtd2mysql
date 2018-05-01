@@ -15,7 +15,9 @@ const dates = new FixedWidthRecord(
     "start_date": new DateField(4),
     "end_date": new DateField(12),
     "atb_desc": new TextField(20, 5, true),
-  }
+  },
+  [],
+  true
 );
 
 const header = new FixedWidthRecord(
@@ -30,7 +32,9 @@ const header = new FixedWidthRecord(
     "type_out": new TextField(136, 1),
     "type_ret": new TextField(137, 1),
     "change_ind": new BooleanField(138),
-  }
+  },
+  [],
+  true
 );
 
 const headerDate = new FixedWidthRecord(
@@ -48,7 +52,9 @@ const headerDate = new FixedWidthRecord(
     "friday": new BooleanField(18),
     "saturday": new BooleanField(19),
     "sunday": new BooleanField(20)
-  }
+  },
+  [],
+  true
 );
 
 const time = new FixedWidthRecord(
@@ -66,7 +72,9 @@ const time = new FixedWidthRecord(
     "rstr_type": new TextField(23, 1),
     "train_type": new TextField(24, 1),
     "min_fare_flag": new BooleanField(25)
-  }
+  },
+  [],
+  true
 );
 
 const timeDateBand = new FixedWidthRecord(
@@ -86,7 +94,9 @@ const timeDateBand = new FixedWidthRecord(
     "friday": new BooleanField(23),
     "saturday": new BooleanField(24),
     "sunday": new BooleanField(25),
-  }
+  },
+  [],
+  true
 );
 
 const timeToc = new FixedWidthRecord(
@@ -98,39 +108,10 @@ const timeToc = new FixedWidthRecord(
     "sequence_no": new TextField(6, 4),
     "out_ret": new TextField(10, 1),
     "toc_code": new TextField(11, 2)
-  }
+  },
+  [],
+  true
 );
-
-// Defunct
-// const timePriviledge = new FixedWidthRecord(
-//   "restriction_time_priviledge",
-//   ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "sequence_no": new TextField(6, 4),
-//     "out_ret": new TextField(10, 1),
-//     "barred_class": new TextField(11, 1),
-//     "barred_tickets": new TextField(12, 1),
-//     "barred_seasons": new TextField(13, 1),
-//     "barred_first": new TextField(14, 1),
-//     "from_location": new TextField(15, 3, true),
-//     "to_location": new TextField(18, 3, true)
-//   }
-// );
-
-// Defunct
-// const timePriviledgeException = new FixedWidthRecord(
-//   "restriction_time_priviledge_exception",
-//   ["cf_mkr", "restriction_code", "sequence_no", "out_ret", "pass_exception"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "sequence_no": new TextField(6, 4),
-//     "out_ret": new TextField(10, 1),
-//     "pass_exception": new TextField(11, 1)
-//   }
-// );
 
 const train = new FixedWidthRecord(
   "restriction_train",
@@ -142,9 +123,10 @@ const train = new FixedWidthRecord(
     "out_ret": new TextField(12, 1),
     "quota_ind": new TextField(13, 1),
     "sleeper_ind": new TextField(14, 1)
-  }
+  },
+  [],
+  true
 );
-
 
 const trainDate = new FixedWidthRecord(
   "restriction_train_date",
@@ -163,7 +145,9 @@ const trainDate = new FixedWidthRecord(
     "friday": new BooleanField(25),
     "saturday": new BooleanField(26),
     "sunday": new BooleanField(27)
-  }
+  },
+  [],
+  true
 );
 
 const trainQuota = new FixedWidthRecord(
@@ -177,39 +161,10 @@ const trainQuota = new FixedWidthRecord(
     "location": new TextField(13, 3),
     "quota_ind": new TextField(16, 1, true),
     "arr_dep": new TextField(17, 1)
-  }
+  },
+  [],
+  true
 );
-
-// Defunct
-// const trainPriviledge = new FixedWidthRecord(
-//   "restriction_train_priviledge",
-//   ["cf_mkr", "restriction_code", "train_no", "out_ret", "barred_class", "barred_tickets", "barred_seasons", "barred_first", "from_location", "to_location"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "train_no": new TextField(6, 6),
-//     "out_ret": new TextField(12, 1),
-//     "barred_class": new TextField(13, 1),
-//     "barred_tickets": new TextField(14, 1),
-//     "barred_seasons": new TextField(15, 1),
-//     "barred_first": new TextField(16, 1),
-//     "from_location": new TextField(17, 3, true),
-//     "to_location": new TextField(20, 3, true)
-//   }
-// );
-
-// Defunct
-// const trainPriviledgeException = new FixedWidthRecord(
-//   "restriction_train_priviledge_exception",
-//   ["cf_mkr", "restriction_code", "train_no", "out_ret", "pass_exception"],
-//   {
-//     "cf_mkr": new TextField(3, 1),
-//     "restriction_code": new TextField(4, 2),
-//     "train_no": new TextField(6, 6),
-//     "out_ret": new TextField(12, 1),
-//     "pass_exception": new TextField(13, 1)
-//   }
-// );
 
 const railcard = new FixedWidthRecord(
   "restriction_railcard",
@@ -223,7 +178,9 @@ const railcard = new FixedWidthRecord(
     "location": new TextField(19, 3, true),
     "restriction_code": new TextField(22, 2, true),
     "total_ban": new BooleanField(24, false, ["Y"], [" "], [])
-  }
+  },
+  [],
+  true
 );
 
 const exceptionCode = new FixedWidthRecord(
@@ -233,7 +190,9 @@ const exceptionCode = new FixedWidthRecord(
     "cf_mkr": new TextField(3, 1),
     "exception_code": new TextField(4, 1),
     "description": new TextField(5, 50)
-  }
+  },
+  [],
+  true
 );
 
 const ticketCalendar = new FixedWidthRecord(
@@ -254,7 +213,9 @@ const ticketCalendar = new FixedWidthRecord(
     "friday": new BooleanField(26),
     "saturday": new BooleanField(27),
     "sunday": new BooleanField(28),
-  }
+  },
+  [],
+  true
 );
 
 
@@ -262,19 +223,12 @@ const RST = new MultiRecordFile({
   "RD": dates,
   "RH": header,
   "HD": headerDate,
-  // "HL": headerLocation,
-  // "HC": headerChanges,
-  // "HA": headerAdditional,
   "TR": time,
   "TD": timeDateBand,
   "TT": timeToc,
-  // "TP": timePriviledge,
-  // "TE": timePriviledgeException,
   "SR": train,
   "SD": trainDate,
   "SQ": trainQuota,
-  // "SP": trainPriviledge,
-  // "SE": trainPriviledgeException,
   "RR": railcard,
   "EC": exceptionCode,
   "CA": ticketCalendar

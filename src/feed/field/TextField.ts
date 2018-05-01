@@ -1,6 +1,9 @@
 
 import {Field} from "./Field";
 
+/**
+ * Basic text field, with a fixed length
+ */
 export class TextField extends Field {
 
   /**
@@ -12,4 +15,7 @@ export class TextField extends Field {
 
 }
 
+/**
+ * Text field with a variable length
+ */
 export class VariableLengthText extends TextField {}

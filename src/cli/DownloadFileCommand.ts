@@ -11,13 +11,13 @@ export class DownloadFileCommand implements CLICommand {
   /**
    * Download the file from a HTTP server
    */
-  public async run(argv: string[]): Promise<string> {
+  public async run(argv: string[]): Promise<string[]> {
     console.log(`Downloading ${this.url}...`);
 
     const outputDirectory = argv[3] || "/tmp/";
     const filename = outputDirectory + "nfm64.zip";
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string[]>((resolve, reject) => {
       const file = fs.createWriteStream(filename);
 
       http.get(this.url, response => {
@@ -26,7 +26,7 @@ export class DownloadFileCommand implements CLICommand {
         file.on("error", reject);
         file.on("finish", () => {
           file.close();
-          resolve(filename);
+          resolve([filename]);
         });
       });
     });

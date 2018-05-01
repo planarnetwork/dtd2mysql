@@ -1,6 +1,6 @@
 
 import {Field, FieldValue} from "../field/Field";
-import {FieldMap, Record} from "./Record";
+import {FieldMap, ParsedRecord, Record, RecordAction} from "./Record";
 import * as memoize from "memoized-class-decorator";
 
 export class CSVRecord implements Record {
@@ -14,28 +14,29 @@ export class CSVRecord implements Record {
   ) {}
 
   @memoize
-  private get fieldValues(): Field[] {
-    return Object.values(this.fields);
+  private get fieldValues(): [string, Field][] {
+    return Object.entries(this.fields);
   }
 
   /**
    * Split the CSV string and look up the relevant field to do the parsing
    */
-  extractValues(line: string): FieldValue[] {
+  extractValues(line: string): ParsedRecord {
     const fieldValues = line.trim().split(this.fieldDelimiter);
-    const result: FieldValue[] = [null];
+    const values = { id: null };
+    const action = RecordAction.Insert;
 
     for (let i = 0; i < fieldValues.length; i++) {
-      const field = this.fieldValues.find(f => (f.position + fieldValues.length) % fieldValues.length === i);
+      const entry = this.fieldValues.find(([k, f]) => (f.position + fieldValues.length) % fieldValues.length === i);
 
-      if (field) {
-        const value = field.extract(fieldValues[i]);
+      if (entry) {
+        const [key, field] = entry;
 
-        result.push(value);
+        values[key] = field.extract(fieldValues[i]);
       }
     }
 
-    return result;
+    return { action, values };
   }
 
 }
