@@ -54,6 +54,7 @@ export class DownloadCommand implements CLICommand {
       return undefined;
     }
   }
+
   /**
    * Do a directory listing to get the filename of the last full refresh
    */
