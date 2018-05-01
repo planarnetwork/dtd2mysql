@@ -15,7 +15,6 @@ export class DownloadCommand implements CLICommand {
    * Download the latest refresh file from an SFTP server
    */
   public async run(argv: string[]): Promise<string[]> {
-    console.log("Connected to server");
     const outputDirectory = argv[3] || "/tmp/";
     const [remoteFiles, lastProcessedFile] = await Promise.all([
       this.sftp.readdir(this.directory),
@@ -24,20 +23,22 @@ export class DownloadCommand implements CLICommand {
 
     const files = this.getFilesToProcess(remoteFiles, lastProcessedFile);
 
+    if (files.length > 0) {
+      console.log(`Downloading ${files.length} feed file(s)`);
+    }
+    else {
+      console.log("No files to update.");
+    }
+
     try {
       await Promise.all(
-        files.map(filename => {
-          console.log(`Downloading ${filename}...`);
-
-          return this.sftp.fastGet(this.directory + filename, outputDirectory + filename);
-        })
+        files.map(f => this.sftp.fastGet(this.directory + f, outputDirectory + f))
       );
     }
     catch (err) {
       console.error(err);
     }
 
-    console.log("Finished download");
     this.sftp.end();
 
     return files.map(filename => outputDirectory + filename);
