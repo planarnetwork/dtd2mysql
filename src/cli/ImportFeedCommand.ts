@@ -63,7 +63,9 @@ export class ImportFeedCommand implements CLICommand {
 
     if (this.files["CFA"] instanceof MultiRecordFile) {
       const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
-      (<RecordWithManualIdentifier>(<MultiRecordFile>this.files["CFA"]).records["BS"]).lastId = lastSchedule.id;
+      const lastId = lastSchedule ? lastSchedule.id : 0;
+
+      (<RecordWithManualIdentifier>(<MultiRecordFile>this.files["CFA"]).records["BS"]).lastId = lastId;
     }
 
     const files = fs.readdirSync(this.tmpFolder).filter(filename => this.getFeedFile(filename));
@@ -116,7 +118,7 @@ export class ImportFeedCommand implements CLICommand {
 
         if (record) {
           try {
-            tables[record.name].insert(record.extractValues(line));
+            tables[record.name].apply(record.extractValues(line));
           }
           catch (err) {
             reject(`Error processing ${filename} with data ${line}` + err.stack);

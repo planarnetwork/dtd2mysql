@@ -26,7 +26,9 @@ const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
     "composite_indicator": new TextField(64, 1, true),
     "cross_london_ind": new BooleanField(65, true),
     "ps_ind": new TextField(66, 1, true)
-  }
+  },
+  [],
+  true
 );
 
 const NFO = new SingleRecordFile(nonDerivableFareFixedWidthRecord);

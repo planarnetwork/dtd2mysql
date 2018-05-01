@@ -23,7 +23,9 @@ const discountFixedWidthRecord = new FixedWidthRecord(
     "child_nodis_flag": new TextField(58, 1, false, []),
     "child_add_on_amount": new IntField(59, 8, true),
     "child_rebook_flag": new TextField(67, 1)
-  }
+  },
+  [],
+  true
 );
 
 const FNS = new SingleRecordFile(discountFixedWidthRecord);

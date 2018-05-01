@@ -22,7 +22,9 @@ const flowFixedWidthRecord = new FixedWidthRecord(
     "ns_disc_ind": new IntField(40, 1),
     "publication_ind": new TextField(41, 1),
     "flow_id": new IntField(42, 7),
-  }
+  },
+  [],
+  true,
 );
 
 const fareFixedWidthRecord = new FixedWidthRecord(
@@ -33,7 +35,9 @@ const fareFixedWidthRecord = new FixedWidthRecord(
     "ticket_code": new TextField(9, 3),
     "fare": new IntField(12, 8),
     "restriction_code": new TextField(20, 2, true)
-  }
+  },
+  [],
+  true
 );
 
 const FFL = new MultiRecordFile({

@@ -9,7 +9,7 @@ export class ForeignKeyField extends Field {
   }
 
   /**
-   * Return the last insert ID of the foreign record
+   * Return the last apply ID of the foreign record
    */
   protected parse(value: string): number {
     return this.foreignRecord.lastId;

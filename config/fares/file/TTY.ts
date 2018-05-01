@@ -40,7 +40,9 @@ const ticketTypeFixedWidthRecord = new FixedWidthRecord(
     "package_mkr": new TextField(107, 1),
     "fare_multiplier": new IntField(108, 3),
     "discount_category": new IntField(111, 2)
-  }
+  },
+  [],
+  true
 );
 
 const TTY = new SingleRecordFile(ticketTypeFixedWidthRecord);

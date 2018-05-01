@@ -7,7 +7,7 @@ import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 import memoize = require("memoized-class-decorator");
-import {Record, FieldMap} from "../../../src/feed/record/Record";
+import {Record, FieldMap, ParsedRecord, RecordAction} from "../../../src/feed/record/Record";
 import {FieldValue} from "../../../src/feed/field/Field";
 import {isNullOrUndefined} from "util";
 
@@ -80,30 +80,31 @@ class ALFRecord implements Record {
    *
    * M=TRANSFER,O=LBG,D=WAT,T=25,S=0001,E=2359,P=6,F=29/08/2017,U=01/09/2017,R=0111100
    */
-  extractValues(line: string): FieldValue[] {
+  extractValues(line: string): ParsedRecord {
     const entries = <[string, string][]>line
       .trim()
       .split(",")
       .map(field => field.split("="));
 
-    const values = new Map(entries);
-    const result: FieldValue[] = [null];
+    const csvMap = new Map(entries);
+    const values = { id: null };
+    const action = RecordAction.Insert;
 
     for (const [name, field] of Object.entries(this.fields)) {
       const [fieldKey, position] = this.fieldMap[name];
-      const rawValue = values.get(fieldKey);
+      const rawValue = csvMap.get(fieldKey);
 
       if (isNullOrUndefined(rawValue)) {
-        result.push(null);
+        values[fieldKey] = null;
       }
       else {
         const value = !isNullOrUndefined(position) ? rawValue.charAt(position) : rawValue;
-        result.push(field.extract(value));
+        values[fieldKey] = field.extract(value);
       }
 
     }
 
-    return result;
+    return { action, values };
   }
 
 }

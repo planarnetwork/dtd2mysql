@@ -11,10 +11,23 @@ export interface Record {
   /**
    * Turn the given line into a list of values
    */
-  extractValues(line: string): FieldValue[];
+  extractValues(line: string): ParsedRecord;
 
 }
 
-export type FieldMap = {
-  [field: string]: Field
-};
+export interface FieldMap {
+  [field: string]: Field;
+}
+
+export enum RecordAction {
+  Insert = "I",
+  Update = "A",
+  Delete = "D"
+}
+
+export interface ParsedRecord {
+  action: RecordAction;
+  values: {
+    [field: string]: FieldValue;
+  };
+}

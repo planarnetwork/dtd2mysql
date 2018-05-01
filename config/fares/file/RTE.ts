@@ -31,7 +31,9 @@ const route = new FixedWidthRecord(
     "uts_east": new TextField(254, 3),
     "uts_south": new TextField(257, 3),
     "uts_west": new TextField(260, 3)
-  }
+  },
+  [],
+  true
 );
 
 const location = new FixedWidthRecord(
@@ -44,7 +46,9 @@ const location = new FixedWidthRecord(
     "nlc_code": new TextField(18, 4),
     "crs_code": new TextField(22, 3, true),
     "incl_excl": new TextField(25, 1)
-  }
+  },
+  [],
+  true
 );
 
 const RTE = new MultiRecordFile({

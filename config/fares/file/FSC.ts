@@ -12,7 +12,9 @@ const clusterFixedWidthRecord = new FixedWidthRecord(
     "cluster_nlc": new TextField(5, 4),
     "end_date": new DateField(9),
     "start_date": new DateField(17)
-  }
+  },
+  [],
+  true
 );
 
 const FSC = new SingleRecordFile(clusterFixedWidthRecord);

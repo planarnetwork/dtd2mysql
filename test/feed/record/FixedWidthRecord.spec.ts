@@ -4,6 +4,7 @@ import {IntField} from "../../../src/feed/field/IntField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {FixedWidthRecord, RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 describe("FixedWidthRecord", () => {
 
@@ -20,7 +21,15 @@ describe("FixedWidthRecord", () => {
         "field3": field3
     });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([null, 1012, "Hi ", "2999-12-31"]);
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: null,
+        field: 1012,
+        field2: "Hi ",
+        field3: "2999-12-31"
+      }
+    });
   });
 
   it("ignores missing fields", () => {
@@ -34,10 +43,51 @@ describe("FixedWidthRecord", () => {
         "field2": field2,
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([null, 1012, "Hi "]);
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: null,
+        field: 1012,
+        field2: "Hi "
+      }
+    });
   });
 
-});
+  it("picks the correct action", () => {
+    const field = new IntField(1, 4);
+    const field2 = new TextField(5, 3);
+    const field3 = new DateField(8);
+
+    const record = new FixedWidthRecord(
+      "test",
+      ["field", "field2"],
+      {
+        "field": field,
+        "field2": field2,
+        "field3": field3
+      },
+      [],
+      true
+    );
+
+    chai.expect(record.extractValues("D1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Delete,
+      values: {
+        field: 1012,
+        field2: "Hi "
+      }
+    });
+
+    chai.expect(record.extractValues("A1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Update,
+      values: {
+        id: null,
+        field: 1012,
+        field2: "Hi ",
+        field3: "2999-12-31"
+      }
+    });
+  });
 
 describe("RecordWithManualIdentifier", () => {
 
@@ -54,7 +104,16 @@ describe("RecordWithManualIdentifier", () => {
         "field3": field3
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([1, 1012, "Hi ", "2999-12-31"]);
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: 1,
+        field: 1012,
+        field2: "Hi ",
+        field3: "2999-12-31"
+      }
+    });
+  });
   });
 
   it("increments the id field", () => {
@@ -68,9 +127,32 @@ describe("RecordWithManualIdentifier", () => {
         "field2": field2,
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([1, 1012, "Hi "]);
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([2, 1012, "Hi "]);
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal([3, 1012, "Hi "]);
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: 1,
+        field: 1012,
+        field2: "Hi "
+      }
+    });
+
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: 2,
+        field: 1012,
+        field2: "Hi "
+      }
+    });
+
+    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+      action: RecordAction.Insert,
+      values: {
+        id: 3,
+        field: 1012,
+        field2: "Hi "
+      }
+    });
   });
 
 });

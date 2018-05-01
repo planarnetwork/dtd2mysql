@@ -50,7 +50,9 @@ const location = new FixedWidthRecord(
     "uts_east": new TextField(280, 3, true),
     "uts_south": new TextField(283, 3, true),
     "uts_west": new TextField(286, 3, true)
-  }
+  },
+  [],
+  true
 );
 
 const association = new FixedWidthRecord(
@@ -61,7 +63,9 @@ const association = new FixedWidthRecord(
     "end_date": new DateField(9),
     "assoc_uic_code": new TextField(17, 7),
     "assoc_crs_code": new TextField(24, 3)
-  }
+  },
+  [],
+  true
 );
 
 const railcard = new FixedWidthRecord(
@@ -71,7 +75,9 @@ const railcard = new FixedWidthRecord(
     "uic_code": new TextField(2, 7),
     "railcard_code": new TextField(9, 3),
     "end_date": new DateField(12)
-  }
+  },
+  [],
+  true
 );
 
 const group = new FixedWidthRecord(
@@ -85,7 +91,9 @@ const group = new FixedWidthRecord(
     "description": new TextField(33, 16),
     "ers_country": new TextField(49, 2, true),
     "ers_code": new TextField(51, 3, true)
-  }
+  },
+  [],
+  true
 );
 
 const groupMember = new FixedWidthRecord(
@@ -97,7 +105,8 @@ const groupMember = new FixedWidthRecord(
     "member_uic_code": new TextField(17, 7),
     "member_crs_code": new TextField(24, 3)
   },
-  ["member_uic_code"]
+  ["member_uic_code"],
+  true
 );
 
 const synonym = new FixedWidthRecord(
@@ -108,7 +117,9 @@ const synonym = new FixedWidthRecord(
     "end_date": new DateField(9),
     "start_date": new DateField(17),
     "description": new TextField(25, 16)
-  }
+  },
+  [],
+  true
 );
 
 const LOC = new MultiRecordFile({

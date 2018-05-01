@@ -26,7 +26,9 @@ const supplement = new FixedWidthRecord(
     "sep_tkt_ind": new TextField(81, 1),
     "resvn_type": new TextField(82, 2),
     "sundry_code": new ZeroFillIntField(84, 5, true)
-  }
+  },
+  [],
+  true
 );
 
 const supplementRule = new FixedWidthRecord(
@@ -50,7 +52,9 @@ const supplementRule = new FixedWidthRecord(
     "status": new TextField(83, 1),
     "reservation_status": new TextField(84, 3, true),
     "sectors": new TextField(87, 3, true)
-  }
+  },
+  [],
+  true
 );
 
 const supplementRuleApplies = new FixedWidthRecord(
@@ -62,7 +66,9 @@ const supplementRuleApplies = new FixedWidthRecord(
     "ie_marker": new TextField(13, 1),
     "condition_type": new TextField(14, 1),
     "ie_code": new TextField(15, 3)
-  }
+  },
+  [],
+  true
 );
 
 const supplementRuleSupplement = new FixedWidthRecord(
@@ -73,7 +79,9 @@ const supplementRuleSupplement = new FixedWidthRecord(
     "end_date": new DateField(5),
     "supplement_code": new TextField(13, 3),
     "om_flag": new TextField(16, 1)
-  }
+  },
+  [],
+  true
 );
 
 const supplementOverride = new FixedWidthRecord(
@@ -83,7 +91,9 @@ const supplementOverride = new FixedWidthRecord(
     "supplement_code": new TextField(2, 3),
     "end_date": new DateField(5),
     "overridden_supplement": new TextField(13, 3)
-  }
+  },
+  [],
+  true
 );
 
 const SUP = new MultiRecordFile({

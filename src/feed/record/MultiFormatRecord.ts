@@ -1,6 +1,9 @@
-import {FieldValue} from "../field/Field";
-import {FieldMap, Record} from "./Record";
 
+import {FieldMap, ParsedRecord, Record, RecordAction} from "./Record";
+
+/**
+ * Record that has multiple row types, used for LI, LO stop records
+ */
 export class MultiFormatRecord implements Record {
 
   constructor(
@@ -16,14 +19,17 @@ export class MultiFormatRecord implements Record {
   /**
    * Extract the relevant part of the line for each field and then get the value from the field
    */
-  public extractValues(line: string): FieldValue[] {
+  public extractValues(line: string): ParsedRecord {
     const type = line.substr(this.recordIdentifierStart, this.recordIdentifierLength);
     const record = this.records[type];
-    const fields = Object.values(record);
-    const values = fields.map(f => f.extract(line.substr(f.position, f.length)));
-    const result: FieldValue[] = [null];
+    const values = { id: null };
+    const action = RecordAction.Insert;
 
-    return result.concat(values);
+    for (const key in record) {
+      values[key] = record[key].extract(line.substr(record[key].position, record[key].length));
+    }
+
+    return { action, values };
   }
 
 }
