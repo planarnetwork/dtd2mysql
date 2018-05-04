@@ -63,7 +63,9 @@ export class DownloadCommand implements CLICommand {
 
     const lastRefresh = dir.findIndex(i => i.filename.charAt(4) === "F" || i.filename.startsWith("RJRG"));
     const lastFile = dir.findIndex(i => i.filename === lastProcessed);
-    const files = lastFile > -1 && lastFile <= lastRefresh ? dir.slice(0, lastFile) : dir.slice(0, lastRefresh + 1);
+    const files = lastFile > -1 && (lastFile <= lastRefresh || lastRefresh < 0)
+      ? dir.slice(0, lastFile)
+      : dir.slice(0, lastRefresh + 1);
 
     return files.map(f => f.filename).reverse();
   }

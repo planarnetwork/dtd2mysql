@@ -6,7 +6,7 @@ import {Record} from "../feed/record/Record";
 import {TextField, VariableLengthText} from "../feed/field/TextField";
 import {IntField, ZeroFillIntField} from "../feed/field/IntField";
 import {BooleanField} from "../feed/field/BooleanField";
-import {DateField, ShortDateField} from "../feed/field/DateField";
+import {DateField, NullDateField, ShortDateField} from "../feed/field/DateField";
 import {TimeField} from "../feed/field/TimeField";
 import {DoubleField} from "../feed/field/DoubleField";
 import {ForeignKeyField} from "../feed/field/ForeignKeyField";
@@ -56,6 +56,7 @@ export class MySQLSchema {
     if (field instanceof BooleanField)       return `TINYINT(1) unsigned`;
     if (field instanceof ShortDateField)     return `DATE`;
     if (field instanceof DateField)          return `DATE`;
+    if (field instanceof NullDateField)      return `DATE`;
     if (field instanceof TimeField)          return `TIME`;
     if (field instanceof DoubleField)        return `DOUBLE(${field.length}, ${field.decimalDigits}) unsigned`;
     if (field instanceof ZeroFillIntField)   return `CHAR(${field.length})`;

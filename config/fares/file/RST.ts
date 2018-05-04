@@ -5,7 +5,7 @@ import {TextField} from "../../../src/feed/field/TextField";
 import {ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 import {TimeField} from "../../../src/feed/field/TimeField";
-import {DateField} from "../../../src/feed/field/DateField";
+import {DateField, NullDateField} from "../../../src/feed/field/DateField";
 
 const dates = new FixedWidthRecord(
   "restriction_date",
@@ -51,7 +51,9 @@ const headerDate = new FixedWidthRecord(
     "thursday": new BooleanField(17),
     "friday": new BooleanField(18),
     "saturday": new BooleanField(19),
-    "sunday": new BooleanField(20)
+    "sunday": new BooleanField(20),
+    "start_date": new NullDateField(),
+    "end_date": new NullDateField()
   },
   [],
   true
@@ -94,6 +96,8 @@ const timeDateBand = new FixedWidthRecord(
     "friday": new BooleanField(23),
     "saturday": new BooleanField(24),
     "sunday": new BooleanField(25),
+    "start_date": new NullDateField(),
+    "end_date": new NullDateField()
   },
   [],
   true
@@ -144,7 +148,9 @@ const trainDate = new FixedWidthRecord(
     "thursday": new BooleanField(24),
     "friday": new BooleanField(25),
     "saturday": new BooleanField(26),
-    "sunday": new BooleanField(27)
+    "sunday": new BooleanField(27),
+    "start_date": new NullDateField(),
+    "end_date": new NullDateField()
   },
   [],
   true
@@ -213,6 +219,8 @@ const ticketCalendar = new FixedWidthRecord(
     "friday": new BooleanField(26),
     "saturday": new BooleanField(27),
     "sunday": new BooleanField(28),
+    "start_date": new NullDateField(),
+    "end_date": new NullDateField()
   },
   [],
   true

@@ -37,3 +37,21 @@ export class ShortDateField extends Field {
   }
 
 }
+
+/**
+ * Placeholder date for the restriction date columns
+ */
+export class NullDateField extends Field {
+
+  constructor() {
+    super(0, 0, true, [""]);
+  }
+
+  /**
+   * Always return null
+   */
+  protected parse(value: string): null {
+    return null;
+  }
+
+}

@@ -5,7 +5,6 @@ import moment = require("moment");
 import {Moment} from "moment";
 
 export class CleanFaresCommand implements CLICommand {
-  private readonly tableUpdates: string[];
   private readonly queries: string[];
 
   constructor(
@@ -14,7 +13,6 @@ export class CleanFaresCommand implements CLICommand {
     private readonly railcardWhiteList: string,
     private readonly restrictionTables: string[]
   ) {
-    this.tableUpdates = restrictionTables.map(t => `ALTER TABLE ${t} ADD COLUMN start_date DATE, ADD COLUMN end_date DATE`);
     this.queries = [
       `DELETE FROM fare WHERE fare < 5 OR fare = 99999 OR fare >= 999999 OR ticket_code NOT IN (${ticketCodeWhitelist});
        DELETE FROM flow WHERE flow_id NOT IN (SELECT distinct flow_id FROM fare)`,
@@ -59,10 +57,7 @@ export class CleanFaresCommand implements CLICommand {
   public async run(argv: string[]): Promise<void> {
     try {
       console.log("Removing old and irrelevant fares data");
-      await Promise.all([
-        ... this.queries.map(q => this.queryWithRetry(q)),
-        ... this.tableUpdates.map(q => this.queryWithSilentFailure(q))
-      ]);
+      await Promise.all(this.queries.map(q => this.queryWithRetry(q)));
 
       console.log("Applying restriction dates");
       const [[current, future]] = await this.db.query<RestrictionDateRow[]>("SELECT * FROM restriction_date ORDER BY cf_mkr");
@@ -70,9 +65,7 @@ export class CleanFaresCommand implements CLICommand {
       current.start_date = new Date(current.start_date.getFullYear(), 0, 1);
       future.start_date = new Date(future.start_date.getFullYear(), 0, 1);
 
-      await Promise.all(
-        this.restrictionTables.map(tableName => this.updateRestrictionDatesOnTable(tableName, current, future))
-      );
+      await Promise.all(this.restrictionTables.map(t => this.updateRestrictionDatesOnTable(t, current, future)));
     }
     catch (err) {
       console.error(err);
@@ -128,12 +121,6 @@ export class CleanFaresCommand implements CLICommand {
     }
   }
 
-  private async queryWithSilentFailure(query: string): Promise<void> {
-    try {
-      await this.db.query(query)
-    }
-    catch (err) { }
-  }
 }
 
 interface RestrictionRow {
