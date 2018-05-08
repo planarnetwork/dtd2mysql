@@ -4,6 +4,7 @@ import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const supplement = new FixedWidthRecord(
   "supplement",
@@ -28,7 +29,12 @@ const supplement = new FixedWidthRecord(
     "sundry_code": new ZeroFillIntField(84, 5, true)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const supplementRule = new FixedWidthRecord(
@@ -54,7 +60,12 @@ const supplementRule = new FixedWidthRecord(
     "sectors": new TextField(87, 3, true)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const supplementRuleApplies = new FixedWidthRecord(
@@ -68,7 +79,12 @@ const supplementRuleApplies = new FixedWidthRecord(
     "ie_code": new TextField(15, 3)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const supplementRuleSupplement = new FixedWidthRecord(
@@ -81,7 +97,12 @@ const supplementRuleSupplement = new FixedWidthRecord(
     "om_flag": new TextField(16, 1)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const supplementOverride = new FixedWidthRecord(
@@ -93,7 +114,12 @@ const supplementOverride = new FixedWidthRecord(
     "overridden_supplement": new TextField(13, 3)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const SUP = new MultiRecordFile({

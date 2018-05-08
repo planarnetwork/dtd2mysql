@@ -4,6 +4,7 @@ import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const route = new FixedWidthRecord(
   "route",
@@ -33,7 +34,12 @@ const route = new FixedWidthRecord(
     "uts_west": new TextField(260, 3)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const location = new FixedWidthRecord(
@@ -48,7 +54,12 @@ const location = new FixedWidthRecord(
     "incl_excl": new TextField(25, 1)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const RTE = new MultiRecordFile({

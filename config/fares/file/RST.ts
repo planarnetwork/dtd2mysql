@@ -6,6 +6,7 @@ import {ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 import {TimeField} from "../../../src/feed/field/TimeField";
 import {DateField, NullDateField} from "../../../src/feed/field/DateField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const dates = new FixedWidthRecord(
   "restriction_date",
@@ -17,7 +18,12 @@ const dates = new FixedWidthRecord(
     "atb_desc": new TextField(20, 5, true),
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const header = new FixedWidthRecord(
@@ -34,7 +40,12 @@ const header = new FixedWidthRecord(
     "change_ind": new BooleanField(138),
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const headerDate = new FixedWidthRecord(
@@ -56,7 +67,12 @@ const headerDate = new FixedWidthRecord(
     "end_date": new NullDateField()
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const time = new FixedWidthRecord(
@@ -76,7 +92,12 @@ const time = new FixedWidthRecord(
     "min_fare_flag": new BooleanField(25)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const timeDateBand = new FixedWidthRecord(
@@ -100,7 +121,12 @@ const timeDateBand = new FixedWidthRecord(
     "end_date": new NullDateField()
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const timeToc = new FixedWidthRecord(
@@ -114,7 +140,12 @@ const timeToc = new FixedWidthRecord(
     "toc_code": new TextField(11, 2)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const train = new FixedWidthRecord(
@@ -129,7 +160,12 @@ const train = new FixedWidthRecord(
     "sleeper_ind": new TextField(14, 1)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const trainDate = new FixedWidthRecord(
@@ -153,7 +189,12 @@ const trainDate = new FixedWidthRecord(
     "end_date": new NullDateField()
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const trainQuota = new FixedWidthRecord(
@@ -169,7 +210,12 @@ const trainQuota = new FixedWidthRecord(
     "arr_dep": new TextField(17, 1)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const railcard = new FixedWidthRecord(
@@ -186,7 +232,12 @@ const railcard = new FixedWidthRecord(
     "total_ban": new BooleanField(24, false, ["Y"], [" "], [])
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const exceptionCode = new FixedWidthRecord(
@@ -198,7 +249,12 @@ const exceptionCode = new FixedWidthRecord(
     "description": new TextField(5, 50)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const ticketCalendar = new FixedWidthRecord(
@@ -223,7 +279,12 @@ const ticketCalendar = new FixedWidthRecord(
     "end_date": new NullDateField()
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 

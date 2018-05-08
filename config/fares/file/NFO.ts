@@ -5,6 +5,7 @@ import {TextField} from "../../../src/feed/field/TextField";
 import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
   "non_derivable_fare_override",
@@ -28,7 +29,12 @@ const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
     "ps_ind": new TextField(66, 1, true)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const NFO = new SingleRecordFile(nonDerivableFareFixedWidthRecord);

@@ -19,7 +19,7 @@ describe("FixedWidthRecord", () => {
         "field": field,
         "field2": field2,
         "field3": field3
-    });
+      });
 
     chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
@@ -67,7 +67,12 @@ describe("FixedWidthRecord", () => {
         "field3": field3
       },
       [],
-      true
+      {
+        "I": RecordAction.Insert,
+        "A": RecordAction.Update,
+        "D": RecordAction.Delete,
+        "R": RecordAction.Insert
+      }
     );
 
     chai.expect(record.extractValues("D1012Hi 31122999")).to.deep.equal({
@@ -88,6 +93,7 @@ describe("FixedWidthRecord", () => {
       }
     });
   });
+});
 
 describe("RecordWithManualIdentifier", () => {
 
@@ -113,7 +119,6 @@ describe("RecordWithManualIdentifier", () => {
         field3: "2999-12-31"
       }
     });
-  });
   });
 
   it("increments the id field", () => {
@@ -156,3 +161,4 @@ describe("RecordWithManualIdentifier", () => {
   });
 
 });
+

@@ -3,6 +3,7 @@ import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {DateField} from "../../../src/feed/field/DateField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const discountFixedWidthRecord = new FixedWidthRecord(
   "non_standard_discount",
@@ -25,7 +26,12 @@ const discountFixedWidthRecord = new FixedWidthRecord(
     "child_rebook_flag": new TextField(67, 1)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const FNS = new SingleRecordFile(discountFixedWidthRecord);

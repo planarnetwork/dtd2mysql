@@ -5,6 +5,7 @@ import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {IntField} from "../../../src/feed/field/IntField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const ticketTypeFixedWidthRecord = new FixedWidthRecord(
   "ticket_type",
@@ -42,7 +43,12 @@ const ticketTypeFixedWidthRecord = new FixedWidthRecord(
     "discount_category": new IntField(111, 2)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const TTY = new SingleRecordFile(ticketTypeFixedWidthRecord);

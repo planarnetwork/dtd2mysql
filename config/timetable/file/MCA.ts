@@ -8,6 +8,7 @@ import {IntField} from "../../../src/feed/field/IntField";
 import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
 import {TimeField} from "../../../src/feed/field/TimeField";
 import {MultiFormatRecord} from "../../../src/feed/record/MultiFormatRecord";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const tiplocInsert = new FixedWidthRecord(
   "tiploc",
@@ -26,7 +27,7 @@ const tiplocInsert = new FixedWidthRecord(
 
 const association = new FixedWidthRecord(
   "association",
-  [], {
+  ["base_uid", "assoc_uid", "assoc_location", "start_date", "stp_indicator"], {
     "base_uid": new TextField(3, 6),
     "assoc_uid": new TextField(9, 6),
     "start_date": new ShortDateField(15),
@@ -46,7 +47,13 @@ const association = new FixedWidthRecord(
     "association_type": new TextField(47, 1, true),
     "stp_indicator": new TextField(79, 1)
   },
-  ["base_uid", "assoc_uid", "assoc_location", "start_date", "end_date"]
+  ["end_date"],
+  {
+    "N": RecordAction.Insert,
+    "R": RecordAction.Update,
+    "D": RecordAction.Delete
+  },
+  2
 );
 
 const schedule = new RecordWithManualIdentifier(
@@ -82,7 +89,13 @@ const schedule = new RecordWithManualIdentifier(
     "service_branding": new TextField(74, 4, true),
     "stp_indicator": new TextField(79, 1)
   },
-  ["runs_from"]
+  ["runs_from"],
+  {
+    "N": RecordAction.Insert,
+    "R": RecordAction.Update,
+    "D": RecordAction.Delete
+  },
+  2
 );
 
 const extraDetails = new FixedWidthRecord(
@@ -165,6 +178,7 @@ const stop = new MultiFormatRecord(
 const MCA = new MultiRecordFile({
   "AA": association,
   "TI": tiplocInsert,
+  "TA": tiplocInsert,
   "BS": schedule,
   "BX": extraDetails,
   "LO": stop,

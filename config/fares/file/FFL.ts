@@ -4,6 +4,7 @@ import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 const flowFixedWidthRecord = new FixedWidthRecord(
   "flow",
@@ -24,7 +25,12 @@ const flowFixedWidthRecord = new FixedWidthRecord(
     "flow_id": new IntField(42, 7),
   },
   [],
-  true,
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const fareFixedWidthRecord = new FixedWidthRecord(
@@ -37,7 +43,12 @@ const fareFixedWidthRecord = new FixedWidthRecord(
     "restriction_code": new TextField(20, 2, true)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const FFL = new MultiRecordFile({

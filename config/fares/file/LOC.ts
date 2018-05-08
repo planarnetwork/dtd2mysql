@@ -4,6 +4,7 @@ import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {RecordAction} from "../../../src/feed/record/Record";
 
 
 const location = new FixedWidthRecord(
@@ -52,7 +53,12 @@ const location = new FixedWidthRecord(
     "uts_west": new TextField(286, 3, true)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const association = new FixedWidthRecord(
@@ -65,7 +71,12 @@ const association = new FixedWidthRecord(
     "assoc_crs_code": new TextField(24, 3)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const railcard = new FixedWidthRecord(
@@ -77,7 +88,12 @@ const railcard = new FixedWidthRecord(
     "end_date": new DateField(12)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const group = new FixedWidthRecord(
@@ -93,7 +109,12 @@ const group = new FixedWidthRecord(
     "ers_code": new TextField(51, 3, true)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const groupMember = new FixedWidthRecord(
@@ -106,7 +127,12 @@ const groupMember = new FixedWidthRecord(
     "member_crs_code": new TextField(24, 3)
   },
   ["member_uic_code"],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const synonym = new FixedWidthRecord(
@@ -119,7 +145,12 @@ const synonym = new FixedWidthRecord(
     "description": new TextField(25, 16)
   },
   [],
-  true
+  {
+    "I": RecordAction.Insert,
+    "A": RecordAction.Update,
+    "D": RecordAction.Delete,
+    "R": RecordAction.Insert
+  }
 );
 
 const LOC = new MultiRecordFile({
