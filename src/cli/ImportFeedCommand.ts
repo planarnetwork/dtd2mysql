@@ -55,8 +55,8 @@ export class ImportFeedCommand implements CLICommand {
 
     const zipName = path.basename(filePath);
 
-    // if the file is a full refresh (or routeing guide), reset the database schema
-    if (zipName.charAt(4) === "F" || zipName.startsWith("RJRG")) {
+    // if the file is a not an incremental, reset the database schema
+    if (zipName.charAt(4) !== "C") {
       await Promise.all(this.fileArray.map(file => this.setupSchema(file)));
       await this.createLastProcessedSchema();
     }
