@@ -4,3 +4,4 @@ typings/
 npm-debug.log
 dist/
 *.txt
+*.d.ts
