@@ -21,7 +21,9 @@ export class Schedule implements OverlayRecord {
     public readonly calendar: ScheduleCalendar,
     public readonly mode: RouteType,
     public readonly operator: AgencyID | null,
-    public readonly stp: STP
+    public readonly stp: STP,
+    public readonly firstClassAvailable: boolean,
+    public readonly reservationPossible: boolean
   ) {}
 
   public get origin(): CRS {
@@ -48,7 +50,9 @@ export class Schedule implements OverlayRecord {
       calendar,
       this.mode,
       this.operator,
-      this.stp
+      this.stp,
+      this.firstClassAvailable,
+      this.reservationPossible
     );
   }
 
@@ -77,18 +81,17 @@ export class Schedule implements OverlayRecord {
     return {
       route_id: this.id,
       agency_id: this.operator,
-      route_short_name: `${this.operator}:${this.origin}->${this.destination}`,
-      route_long_name: `${this.operator} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
+      route_short_name: `${this.origin}->${this.destination}`,
+      route_long_name: `${this.operator || "Z"} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
       route_type: this.mode,
       route_text_color: null,
       route_color: null,
       route_url: null,
-      route_desc: this.modeDescription
+      route_desc: [this.modeDescription, this.classDescription, this.reservationDescription].join(". ")
     };
   }
 
-  @memoize
-  public get modeDescription(): string {
+  private get modeDescription(): string {
     switch (this.mode) {
       case RouteType.Rail: return "Train";
       case RouteType.Subway: return "Underground";
@@ -98,6 +101,14 @@ export class Schedule implements OverlayRecord {
       case RouteType.Ferry: return "Boat";
       default: return "Train";
     }
+  }
+
+  private get classDescription(): string {
+    return this.firstClassAvailable ? "First class available" : "Standard class only";
+  }
+
+  private get reservationDescription(): string {
+    return this.reservationPossible ? "Reservation possible" : "Reservation not possible";
   }
 
   public before(location: CRS): StopTime[] {

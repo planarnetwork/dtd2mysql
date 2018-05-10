@@ -121,7 +121,9 @@ export class Association implements OverlayRecord {
       ),
       assoc.mode,
       assoc.operator,
-      assoc.stp
+      assoc.stp,
+      assoc.firstClassAvailable,
+      assoc.reservationPossible
     )
   }
 

@@ -1,12 +1,8 @@
 import * as chai from "chai";
-import moment = require("moment");
-import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
+import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {applyOverlays} from "../../../src/gtfs/command/ApplyOverlays";
-import {StopTime} from "../../../src/gtfs/file/StopTime";
-import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
-import {Schedule} from "../../../src/gtfs/native/Schedule";
-import {RouteType} from "../../../src/gtfs/file/Route";
 import {mergeSchedules} from "../../../src/gtfs/command/MergeSchedules";
+import {schedule} from "./MergeSchedules.spec";
 
 describe("ApplyOverlays", () => {
 
@@ -106,30 +102,3 @@ describe("ApplyOverlays", () => {
   });
 
 });
-
-const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
-
-function schedule(id: number,
-                  tuid: TUID,
-                  from: string,
-                  to: string,
-                  stp: STP = STP.Overlay,
-                  days: Days = ALL_DAYS,
-                  stops: StopTime[] = []): Schedule {
-
-  return new Schedule(
-    id,
-    stops,
-    tuid,
-    "",
-    new ScheduleCalendar(
-      moment(from),
-      moment(to),
-      days,
-      {}
-    ),
-    RouteType.Rail,
-    "LN",
-    stp
-  );
-}

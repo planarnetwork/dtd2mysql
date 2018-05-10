@@ -3,12 +3,11 @@ import moment = require("moment");
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
 import {StopTime} from "../../../src/gtfs/file/StopTime";
-import {Schedule} from "../../../src/gtfs/native/Schedule";
-import {RouteType} from "../../../src/gtfs/file/Route";
 import {CRS} from "../../../src/gtfs/file/Stop";
 import {Association, AssociationType, DateIndicator} from "../../../src/gtfs/native/Association";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../../../src/gtfs/command/ApplyAssociations";
 import {applyOverlays} from "../../../src/gtfs/command/ApplyOverlays";
+import {schedule} from "./MergeSchedules.spec";
 
 describe("ApplyAssociations", () => {
 
@@ -84,30 +83,6 @@ describe("ApplyAssociations", () => {
 
 const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 
-function schedule(id: number,
-                  tuid: TUID,
-                  from: string,
-                  to: string,
-                  stp: STP = STP.Overlay,
-                  days: Days = ALL_DAYS,
-                  stops: StopTime[] = []): Schedule {
-
-  return new Schedule(
-    id,
-    stops,
-    tuid,
-    "",
-    new ScheduleCalendar(
-      moment(from),
-      moment(to),
-      days,
-      {}
-    ),
-    RouteType.Rail,
-    "LN",
-    stp
-  );
-}
 
 function stop(stopSequence: number, location: CRS, time: string): StopTime {
   return {

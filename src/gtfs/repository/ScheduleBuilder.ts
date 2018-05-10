@@ -42,7 +42,9 @@ export class ScheduleBuilder {
       });
 
       results.on("end", () => {
-        this.schedules.push(this.createSchedule(prevRow, stops));
+        if (prevRow) {
+          this.schedules.push(this.createSchedule(prevRow, stops));
+        }
 
         resolve();
       });
@@ -73,7 +75,9 @@ export class ScheduleBuilder {
       ),
       RouteTypeIndex[row.train_category] || RouteType.Rail,
       row.atoc_code,
-      row.stp_indicator
+      row.stp_indicator,
+      row.reservations !== null,
+      row.train_class !== "S"
     );
   }
 

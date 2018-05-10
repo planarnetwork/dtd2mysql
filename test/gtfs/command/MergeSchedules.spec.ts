@@ -30,13 +30,13 @@ describe("MergeSchedules", () => {
 
 const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 
-function schedule(id: number,
-                  tuid: TUID,
-                  from: string,
-                  to: string,
-                  stp: STP = STP.Overlay,
-                  days: Days = ALL_DAYS,
-                  stops: StopTime[] = []): Schedule {
+export function schedule(id: number,
+                         tuid: TUID,
+                         from: string,
+                         to: string,
+                         stp: STP = STP.Overlay,
+                         days: Days = ALL_DAYS,
+                         stops: StopTime[] = []): Schedule {
 
   return new Schedule(
     id,
@@ -51,6 +51,8 @@ function schedule(id: number,
     ),
     RouteType.Rail,
     "LN",
-    stp
+    stp,
+    true,
+    true
   );
 }

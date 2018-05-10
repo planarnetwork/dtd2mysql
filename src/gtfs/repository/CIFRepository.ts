@@ -83,7 +83,7 @@ export class CIFRepository {
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, ps.crs_code as crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
-          platform, atoc_code, stop_time.id AS stop_id, activity
+          platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
@@ -103,7 +103,7 @@ export class CIFRepository {
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, location AS crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
-          platform, null, z_stop_time.id AS stop_id, activity
+          platform, NULL AS atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class 
         FROM z_schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
         WHERE runs_from < CURDATE() + INTERVAL 3 MONTH
@@ -238,7 +238,9 @@ export interface ScheduleStopTimeRow {
   scheduled_arrival_time: string | null,
   scheduled_departure_time: string | null,
   platform: string,
-  activity: string
+  activity: string,
+  train_class: null | "S" | "B",
+  reservations: null | "R" | "S" | "A"
 }
 
 export type StationCoordinates = {
