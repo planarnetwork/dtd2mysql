@@ -45,7 +45,7 @@ dtd2mysql --fares-clean
 Import the timetable information into a database, creating the schema if necessary. This operation is destructive and will remove any existing data.
 
 ```
-dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
+dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 ```
 
 ### Convert to GTFS
@@ -53,7 +53,7 @@ dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
 Convert the DTD/TTIS version of the timetable (up to 3 months into the future) to GTFS. 
 
 ```
-dtd2mysql --timetable /path/to/RJTAFxxx.ZIP
+dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip filename-of-gtfs.zip
 ```
 
