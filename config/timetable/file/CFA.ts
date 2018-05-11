@@ -22,7 +22,8 @@ const tiplocInsert = new FixedWidthRecord(
     "po_mcp_code": new IntField(49, 4),
     "crs_code": new TextField(53, 3, true),
     "description": new TextField(56, 16, true)
-  }
+  },
+  ["crs_code"]
 );
 
 const association = new FixedWidthRecord(
