@@ -158,21 +158,21 @@ export class Association implements OverlayRecord {
  */
 function cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocStop: StopTime | null = null): StopTime {
   const assocTime = moment.duration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
-  const departureTime = moment.duration(stop.departure_time);
+  const departureTime = stop.departure_time ? moment.duration(stop.departure_time) : undefined;
 
   if (departureTime && departureTime.asSeconds() < assocTime.asSeconds()) {
     departureTime.add(1, "day");
   }
 
-  const arrivalTime = moment.duration(stop.arrival_time);
+  const arrivalTime = stop.arrival_time ? moment.duration(stop.arrival_time) : undefined;
 
   if (arrivalTime && arrivalTime.asSeconds() < assocTime.asSeconds()) {
     arrivalTime.add(1, "day");
   }
 
   return Object.assign({}, stop, {
-    arrival_time: formatDuration(arrivalTime.asSeconds()),
-    departure_time: formatDuration(departureTime.asSeconds()),
+    arrival_time: arrivalTime ? formatDuration(arrivalTime.asSeconds()) : undefined,
+    departure_time: departureTime ? formatDuration(departureTime.asSeconds()) : undefined,
     stop_sequence: stopSequence,
     trip_id: tripId
   });
