@@ -13,7 +13,8 @@ const physicalStation = new FixedWidthRecord(
     "crs_reference_code": new TextField(43, 3, true),
     "crs_code": new TextField(49, 3, true),
     "minimum_change_time": new IntField(63, 2, false, [])
-  }
+  },
+  ["crs_code"]
 );
 
 const alias = new FixedWidthRecord(
