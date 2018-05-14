@@ -87,8 +87,7 @@ export class CIFRepository {
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
-        LEFT JOIN tiploc tl ON location = tl.tiploc_code
-        LEFT JOIN physical_station ps USING (crs_code, tiploc_code)
+        LEFT JOIN physical_station ps ON location = ps.tiploc_code
         WHERE 
         (
           stop_time.id IS NULL OR 
