@@ -8,7 +8,7 @@ import {StopTime} from "../file/StopTime";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
-const coordinatedActivity = ["R ", "N "];
+const coordinatedActivity = ["R "];
 
 /**
  * This class takes a stream of results and builds a list of Schedules
