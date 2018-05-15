@@ -70,7 +70,19 @@ export class CIFRepository {
   }
 
   /**
-   * Return the schedules and z trains
+   * Return the schedules and z trains. These queries probably require some explaination:
+   *
+   * The first query selects the stop times for all passenger services between now and + 3 months. The noise in the
+   * query is to map the tiploc codes in the stop times to valid crs codes. Unfortunately many tiplocs map to the same
+   * tiploc codes, in most cases this is valid but in some cases (GLC, BRI) the tiplocs are nothing to do with those
+   * stations. This leads to multiple stops at the same station. To avoid this the stop time selection criteria states
+   * that the stop must have a CRS code and either a public time or an interchange status of < 9. In all cases I've
+   * found the incorrectly mapped tiploc codes have a status of 9. Just looking for things with a public time is not
+   * enough as there are some publicly timed stops at places without a CRS code. Parsing the stop activity in SQL is
+   * probably not a sane thing to do.
+   *
+   * The second query selects all the z-trains (usually replacement buses) within three months. They already use CRS
+   * codes as the location so avoid the disaster above.
    */
   public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
@@ -90,8 +102,13 @@ export class CIFRepository {
         LEFT JOIN physical_station ps ON location = ps.tiploc_code
         WHERE 
         (
-          stop_time.id IS NULL OR 
-          ps.crs_code IS NOT NULL
+          stop_time.id IS NULL OR (
+            crs_code IS NOT NULL AND (
+              public_departure_time IS NOT NULL OR 
+              public_arrival_time IS NOT NULL OR 
+              cate_interchange_status != 9
+            )
+          )
         )
         AND runs_from < CURDATE() + INTERVAL 3 MONTH
         AND runs_to >= CURDATE()
