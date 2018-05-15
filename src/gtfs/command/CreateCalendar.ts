@@ -1,6 +1,5 @@
 import {Calendar} from "../file/Calendar";
 import {CalendarDate} from "../file/CalendarDate";
-import {Schedule} from "../native/Schedule";
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 
 /**
