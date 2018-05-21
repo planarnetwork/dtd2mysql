@@ -26,7 +26,6 @@ export class CIFRepository {
    * Return the interchange time between each station
    */
   public async getTransfers(): Promise<Transfer[]> {
-    // interchange time
     const [results] = await this.db.query<Transfer[]>(`
       SELECT 
         crs_code AS from_stop_id, 
@@ -70,7 +69,7 @@ export class CIFRepository {
   }
 
   /**
-   * Return the schedules and z trains. These queries probably require some explaination:
+   * Return the schedules and z trains. These queries probably require some explanation:
    *
    * The first query selects the stop times for all passenger services between now and + 3 months. The noise in the
    * query is to map the tiploc codes in the stop times to valid crs codes. Unfortunately many tiplocs map to the same

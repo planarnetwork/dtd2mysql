@@ -1,4 +1,4 @@
-export const acceptedRailcards = "'','YNG','DIS','DIC','FAM','HMF','NGC','NEW','SRN','2TR','GS3','JCP'";
+export const acceptedRailcards = "'','YNG','DIS','DIC','FAM','HMF','NGC','NEW','SRN','2TR','GS3','JCP','TST'";
 
 export const ticketCodeWhitelist = `
 "1AB","1AF","1AS","1BB","1BF","1BS","1CB","1CF","1CS","1DB","1DF","1DS","1EF","1ES","1FF","1FS","1GF","1GS","1HF","1HS",

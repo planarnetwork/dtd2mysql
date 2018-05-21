@@ -42,6 +42,7 @@ export class CleanFaresCommand implements CLICommand {
       "UPDATE location SET lul_zone_5 = 1 WHERE nlc = '0031'",
       "UPDATE location SET lul_zone_6 = 1 WHERE nlc = '0071'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='YNG'",
+      "UPDATE railcard SET min_adults=1, max_adults=1, min_children=0, max_children=0, max_passengers=1 WHERE railcard_code='TST'",
       "UPDATE railcard SET min_adults=1, max_adults=2, min_children=0, max_children=0, max_passengers=2 WHERE railcard_code='DIS'",
       "UPDATE railcard SET min_adults=1, max_adults=1, min_children=1, max_children=1, max_passengers=2 WHERE railcard_code='DIC'",
       "UPDATE railcard SET min_adults=1, max_adults=4, min_children=1, max_children=4, max_passengers=8 WHERE railcard_code='FAM'",
