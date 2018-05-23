@@ -140,8 +140,8 @@ export class CleanFaresCommand implements CLICommand {
   }
 
   private async setNetworkAreaRestrictionCodes(): Promise<void> {
-    await this.db.query("DROP TABLE IF EXISTS network_flow_restriction");
-    await this.db.query(`
+    await this.queryWithRetry("DROP TABLE IF EXISTS network_flow_restriction");
+    await this.queryWithRetry(`
       CREATE TABLE network_flow_restriction (
         origin CHAR(4) NOT NULL,
         destination CHAR(4) NOT NULL,
@@ -150,7 +150,7 @@ export class CleanFaresCommand implements CLICommand {
         restriction_code CHAR(2) NOT NULL
       )`);
 
-    await this.db.query(`
+    await this.queryWithRetry(`
       INSERT INTO network_flow_restriction
       SELECT origin_code, destination_code, route_code, direction, restriction_code
       FROM flow
