@@ -14,7 +14,7 @@ const clusterFixedWidthRecord = new FixedWidthRecord(
     "end_date": new DateField(9),
     "start_date": new DateField(17)
   },
-  [],
+  ["cluster_nlc"],
   {
     "I": RecordAction.Insert,
     "A": RecordAction.Update,

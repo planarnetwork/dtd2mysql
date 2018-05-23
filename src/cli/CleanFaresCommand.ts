@@ -63,22 +63,33 @@ export class CleanFaresCommand implements CLICommand {
    */
   public async run(argv: string[]): Promise<void> {
     try {
-      console.log("Removing old and irrelevant fares data");
-      await Promise.all(this.queries.map(q => this.queryWithRetry(q)));
-
-      console.log("Applying restriction dates");
-      const [[current, future]] = await this.db.query<RestrictionDateRow[]>("SELECT * FROM restriction_date ORDER BY cf_mkr");
-
-      current.start_date = new Date(current.start_date.getFullYear(), 0, 1);
-      future.start_date = new Date(future.start_date.getFullYear(), 0, 1);
-
-      await Promise.all(this.restrictionTables.map(t => this.updateRestrictionDatesOnTable(t, current, future)));
+      await Promise.all([
+        this.setNetworkAreaRestrictionCodes(),
+        this.clean(),
+        this.applyRestrictionDates()
+      ]);
     }
     catch (err) {
       console.error(err);
     }
 
-    return this.db.end();
+    await this.db.end();
+  }
+
+  private async clean(): Promise<void> {
+    await Promise.all(this.queries.map(q => this.queryWithRetry(q)));
+
+    console.log("Removed old and irrelevant fares data");
+  }
+
+  private async applyRestrictionDates(): Promise<void> {
+    const [[current, future]] = await this.db.query<RestrictionDateRow[]>("SELECT * FROM restriction_date ORDER BY cf_mkr");
+    current.start_date = new Date(current.start_date.getFullYear(), 0, 1);
+
+    future.start_date = new Date(future.start_date.getFullYear(), 0, 1);
+    await Promise.all(this.restrictionTables.map(t => this.updateRestrictionDatesOnTable(t, current, future)));
+
+    console.log("Applied restriction dates");
   }
 
   private async updateRestrictionDatesOnTable(tableName: string, current: RestrictionDateRow, future: RestrictionDateRow): Promise<any> {
@@ -126,6 +137,40 @@ export class CleanFaresCommand implements CLICommand {
         await this.queryWithRetry(query, max, current + 1);
       }
     }
+  }
+
+  private async setNetworkAreaRestrictionCodes(): Promise<void> {
+    await this.db.query("DROP TABLE IF EXISTS network_flow_restriction");
+    await this.db.query(`
+      CREATE TABLE network_flow_restriction (
+        origin CHAR(4) NOT NULL,
+        destination CHAR(4) NOT NULL,
+        route_code CHAR(5) NOT NULL,
+        direction CHAR(1) NOT NULL,
+        restriction_code CHAR(2) NOT NULL
+      )`);
+
+    await this.db.query(`
+      INSERT INTO network_flow_restriction
+      SELECT origin_code, destination_code, route_code, direction, restriction_code
+      FROM flow
+      JOIN fare USING (flow_id)
+      LEFT JOIN station_cluster oc ON origin_code = oc.cluster_nlc
+      LEFT JOIN station_cluster dc ON destination_code = dc.cluster_nlc
+      WHERE ticket_code IN ('CDR', 'CDS', 'ODT')
+      AND restriction_code IS NOT NULL
+      AND (
+        origin_code IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW') OR 
+        oc.cluster_id IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW')
+      )
+      AND (
+        destination_code IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW') OR 
+        dc.cluster_id IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW')
+      )
+      GROUP BY origin_code, destination_code, route_code
+    `);
+
+    console.log("Calculated network area restrictions");
   }
 
 }

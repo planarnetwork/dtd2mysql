@@ -1,5 +1,4 @@
 import * as memoize from "memoized-class-decorator";
-import {Client, SFTPWrapper} from "ssh2";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseConnection";
