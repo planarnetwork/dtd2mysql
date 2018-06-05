@@ -92,19 +92,20 @@ export class CIFRepository {
         SELECT
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          stp_indicator, ps.crs_code as crs_code, train_category,
+          stp_indicator, IFNULL(ps.crs_code, tiploc.crs_code) as crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
           platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
         LEFT JOIN physical_station ps ON location = ps.tiploc_code
-        WHERE 
+        LEFT JOIN tiploc ON location = tiploc.tiploc_code
+        WHERE
         (
           stop_time.id IS NULL OR (
-            crs_code IS NOT NULL AND (
-              public_departure_time IS NOT NULL OR 
-              public_arrival_time IS NOT NULL OR 
+            IFNULL(ps.crs_code, tiploc.crs_code) IS NOT NULL AND (
+              public_departure_time IS NOT NULL OR
+              public_arrival_time IS NOT NULL OR
               cate_interchange_status != 9
             )
           )
