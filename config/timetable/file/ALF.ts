@@ -95,11 +95,11 @@ class ALFRecord implements Record {
       const rawValue = csvMap.get(fieldKey);
 
       if (isNullOrUndefined(rawValue)) {
-        values[fieldKey] = null;
+        values[name] = null;
       }
       else {
         const value = !isNullOrUndefined(position) ? rawValue.charAt(position) : rawValue;
-        values[fieldKey] = field.extract(value);
+        values[name] = field.extract(value);
       }
 
     }
