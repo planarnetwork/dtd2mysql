@@ -32,7 +32,9 @@ export const ticketCodeWhitelist = `
 "VF4","VF5","VF6","VF7","VF8","VVF","VZP","W1A","W1C","W1E","W1G","W1H","W1J","W1L","W1N","W1O","W1P","W1Q","W1R","W1S",
 "W1T","W2A","W2B","W2C","W2D","W2E","W2F","W2G","W2H","W2I","W2J","W2K","W2L","W2M","W2N","W2O","W2P","W2Q","W2R","W2S",
 "W2T","WAS","WBS","WCS","WDS","WDT","WES","WFS","WGS","WHS","WJS","WK1","WK2","WK3","WKS","WKT","WLS","WRE","WTC","XAF",
-"XBF","XBR","XC1","XCF","XDF","XEF","XFF","XGF","XP1","XP2","XS1","XS2","XS3","XS5","XS6","XS8","SVH"
+"XBF","XBR","XC1","XCF","XDF","XEF","XFF","XGF","XP1","XP2","XS1","XS2","XS3","XS5","XS6","XS8","SVH","FB0","FB1","FB2",
+"FB3","FB4","FPW","FPZ","SB0","SB1","SB2","SB3","SB4","SBD","SBE","SBF","SBG","SBH","SSJ","SSK","SSL","SSM","SSN","A40",
+"A41","A42","A43","A44","A60","A61","A62","A63","A64","BCP","1SA","1SB","1SC","1SD","1SE"
 `;
 
 export const restrictionTables = [

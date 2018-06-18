@@ -47,7 +47,7 @@ export class CIFRepository {
       SELECT
         crs_code AS stop_id, 
         tiploc_code AS stop_code,
-        name AS stop_name,
+        station_name AS stop_name,
         cate_interchange_status AS stop_desc,
         0 AS stop_lat,
         0 AS stop_lon,
@@ -55,12 +55,9 @@ export class CIFRepository {
         NULL AS stop_url,
         NULL AS location_type,
         NULL AS parent_station,
-        IF(POSITION("(CIE" IN name), "Europe/Dublin", "Europe/London") AS stop_timezone,
+        IF(POSITION("(CIE" IN station_name), "Europe/Dublin", "Europe/London") AS stop_timezone,
         0 AS wheelchair_boarding 
-      FROM 
-      (  
-        SELECT crs_code, tiploc_code, station_name AS name, cate_interchange_status FROM physical_station WHERE crs_code IS NOT NULL
-      ) t1
+      FROM physical_station WHERE crs_code IS NOT NULL
       GROUP BY crs_code
     `);
 
