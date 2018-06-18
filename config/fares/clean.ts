@@ -32,9 +32,14 @@ export const ticketCodeWhitelist = `
 "VF4","VF5","VF6","VF7","VF8","VVF","VZP","W1A","W1C","W1E","W1G","W1H","W1J","W1L","W1N","W1O","W1P","W1Q","W1R","W1S",
 "W1T","W2A","W2B","W2C","W2D","W2E","W2F","W2G","W2H","W2I","W2J","W2K","W2L","W2M","W2N","W2O","W2P","W2Q","W2R","W2S",
 "W2T","WAS","WBS","WCS","WDS","WDT","WES","WFS","WGS","WHS","WJS","WK1","WK2","WK3","WKS","WKT","WLS","WRE","WTC","XAF",
-"XBF","XBR","XC1","XCF","XDF","XEF","XFF","XGF","XP1","XP2","XS1","XS2","XS3","XS5","XS6","XS8","SVH","FB0","FB1","FB2",
-"FB3","FB4","FPW","FPZ","SB0","SB1","SB2","SB3","SB4","SBD","SBE","SBF","SBG","SBH","SSJ","SSK","SSL","SSM","SSN","A40",
-"A41","A42","A43","A44","A60","A61","A62","A63","A64","1SA","1SB","1SC","1SD","1SE"
+"XBF","XBR","XC1","XCF","XDF","XEF","XFF","XGF","XP1","XP2","XS1","XS2","XS3","XS5","XS6","XS8","SVH","1D0","1F0","1F1",
+"1F2","1F3","1F4","1FA","1FB","1G0","1G1","1G2","1G3","1G4","1GA","1GB","1S0","1S1","1S2","1S3","1S4","1S8","1S9","1SA",
+"1SB","1SC","1SD","1SE","1T0","1T1","1T2","1T3","1T4","1T8","1T9","2D0","2F0","2F1","2F2","2F3","2F4","2F8","2F9","2G0",
+"2G1","2G2","2G3","2G4","2G8","2G9","2S0","2S1","2S2","2S3","2S4","2S8","2S9","2T0","2T1","2T2","2T3","2T4","2T8","2T9",
+"A18","A19","A20","A21","A22","A23","A24","A40","A41","A42","A43","A44","A60","A61","A62","A63","A64","AX0","AX1","AX2",
+"AX3","AX4","AX8","AX9","E18","E19","E20","E21","E22","E23","E24","E40","E41","E42","E43","E44","E60","E61","E62","E63",
+"E64","EX0","EX1","EX2","EX3","EX4","EX8","EX9","FB0","FB1","FB2","FB3","FB4","FPW","FPZ","FS0","FS1","FS2","FS3","FS4",
+"SB0","SB1","SB2","SB3","SB4","SBD","SBE","SBF","SBG","SBH","SSJ","SSK","SSL","SSM","SSN"
 `;
 
 export const restrictionTables = [
