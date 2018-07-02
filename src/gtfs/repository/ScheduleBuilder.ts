@@ -76,8 +76,8 @@ export class ScheduleBuilder {
       RouteTypeIndex[row.train_category] || RouteType.Rail,
       row.atoc_code,
       row.stp_indicator,
-      row.reservations !== null,
-      row.train_class !== "S"
+      row.train_class !== "S",
+      row.reservations !== null
     );
   }
 

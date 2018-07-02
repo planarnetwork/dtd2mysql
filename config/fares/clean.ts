@@ -39,7 +39,10 @@ export const ticketCodeWhitelist = `
 "A18","A19","A20","A21","A22","A23","A24","A40","A41","A42","A43","A44","A60","A61","A62","A63","A64","AX0","AX1","AX2",
 "AX3","AX4","AX8","AX9","E18","E19","E20","E21","E22","E23","E24","E40","E41","E42","E43","E44","E60","E61","E62","E63",
 "E64","EX0","EX1","EX2","EX3","EX4","EX8","EX9","FB0","FB1","FB2","FB3","FB4","FPW","FPZ","FS0","FS1","FS2","FS3","FS4",
-"SB0","SB1","SB2","SB3","SB4","SBD","SBE","SBF","SBG","SBH","SSJ","SSK","SSL","SSM","SSN"
+"SB0","SB1","SB2","SB3","SB4","SBD","SBE","SBF","SBG","SBH","SSJ","SSK","SSL","SSM","SSN",
+
+"0AM","1WK","4WK","7DF","7DS","7TF","7TS","ACP","C13","C14","C28","C2W","C4W","MRM","MRW","MRY","PB7","PSF","PSS","R71",
+"R81","R91","RA1","RM7","TRF","TRV"
 `;
 
 export const restrictionTables = [
