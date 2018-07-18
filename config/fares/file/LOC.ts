@@ -52,7 +52,7 @@ const location = new FixedWidthRecord(
     "uts_south": new TextField(283, 3, true),
     "uts_west": new TextField(286, 3, true)
   },
-  [],
+  ["nlc"],
   {
     "I": RecordAction.Insert,
     "A": RecordAction.Update,
