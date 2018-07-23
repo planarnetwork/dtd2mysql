@@ -44,7 +44,9 @@ export const ticketCodeWhitelist = `
 "0AM","1WK","4WK","7DF","7DS","7TF","7TS","ACP","C13","C14","C28","C2W","C4W","MRM","MRW","MRY","PB7","PSF","PSS","R71",
 "R81","R91","RA1","RM7","TRF","TRV",
 
-"PBD","PBW","PB7","PBM","PBQ","PBA"
+"PBD","PBW","PB7","PBM","PBQ","PBA",
+
+"TKR","TKS","TKT","CFF","CFS","KFQ","GF1","FFC"
 `;
 
 export const restrictionTables = [
