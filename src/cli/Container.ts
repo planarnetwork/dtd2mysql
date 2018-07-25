@@ -13,7 +13,6 @@ import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
-import {acceptedRailcards, restrictionTables, ticketCodeWhitelist} from "../../config/fares/clean";
 import {GTFSImportCommand} from "./GTFSImportCommand";
 import {downloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
@@ -67,7 +66,7 @@ export class Container {
 
   @memoize
   public async getCleanFaresCommand(): Promise<CLICommand> {
-    return new CleanFaresCommand(await this.getDatabaseConnection(), ticketCodeWhitelist, acceptedRailcards, restrictionTables);
+    return new CleanFaresCommand(await this.getDatabaseConnection());
   }
 
   @memoize
