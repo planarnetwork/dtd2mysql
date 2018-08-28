@@ -62,10 +62,8 @@ export class ImportFeedCommand implements CLICommand {
     }
 
     if (this.files["CFA"] instanceof MultiRecordFile) {
-      const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
-      const lastId = lastSchedule ? lastSchedule.id : 0;
-
-      (<RecordWithManualIdentifier>(<MultiRecordFile>this.files["CFA"]).records["BS"]).lastId = lastId;
+      await this.setLastScheduleId();
+      this.ensureALFExists(zipName.substring(0, zipName.length - 4));
     }
 
     const files = fs.readdirSync(this.tmpFolder).filter(filename => this.getFeedFile(filename));
@@ -96,6 +94,22 @@ export class ImportFeedCommand implements CLICommand {
         processed DATETIME 
       )
     `);
+  }
+
+  /**
+   * Set the last schedule ID in the CFA record
+   */
+  private async setLastScheduleId(): Promise<void> {
+    const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+    const lastId = lastSchedule ? lastSchedule.id : 0;
+
+    (<RecordWithManualIdentifier>(<MultiRecordFile>this.files["CFA"]).records["BS"]).lastId = lastId;
+  }
+
+  private ensureALFExists(filename): void {
+    if (!fs.existsSync(this.tmpFolder + filename + ".alf")) {
+      fs.copyFileSync(__dirname + "/../../config/timetable/data/fixed.alf", this.tmpFolder + "fixed.alf");
+    }
   }
 
   private updateLastFile(filename: string): Promise<void> {
