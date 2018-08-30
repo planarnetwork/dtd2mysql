@@ -29,7 +29,7 @@ const price = new FixedWidthRecord(
   {
     "rover_code": new TextField(1, 3),
     "end_date": new DateField(4),
-    "railcard_code": new TextField(12, 3, true),
+    "railcard_code": new TextField(12, 3, false, []),
     "rover_class": new IntField(15, 1),
     "adult_fare": new IntField(16, 8, true),
     "child_fare": new IntField(24, 8, true),
