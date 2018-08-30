@@ -30,7 +30,7 @@ The following environment properties are expected to be set:
   DATABASE_USERNAME          mysql username (defaults to root)
   DATABASE_PASSWORD          mysql password (defaults to none)
   DATABASE_NAME              mysql database name
-  DATABASE_HOST              mysql database host (defaults to localhost)
+  DATABASE_HOSTNAME          mysql database host (defaults to localhost)
   
 The --get-* and --download-* commands require SFTP environment properties:
 
