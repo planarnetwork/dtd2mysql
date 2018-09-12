@@ -84,7 +84,7 @@ describe("ApplyAssociations", () => {
 const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 
 
-function stop(stopSequence: number, location: CRS, time: string): StopTime {
+export function stop(stopSequence: number, location: CRS, time: string): StopTime {
   return {
     trip_id: 1,
     arrival_time: time,

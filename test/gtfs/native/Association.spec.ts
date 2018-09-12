@@ -131,33 +131,6 @@ describe("Association", () => {
     chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
   });
 
-  it("preserves null arrival/departure times", () => {
-    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "TON", "10:00"),
-      stop(2, "PDW", "11:00"),
-      stop(3, "ASH", "12:00"),
-      stop(4, "RAM", "13:00"),
-    ]);
-
-    base.stopTimes[1].departure_time = undefined;
-    base.stopTimes[1].arrival_time = undefined;
-
-    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "ASH", "11:59"),
-      stop(2, "DOV", "13:00"),
-    ]);
-
-    const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
-
-    chai.expect(result.tuid).to.equal("A_B");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[1].arrival_time).to.equal(undefined);
-    chai.expect(result.stopTimes[1].departure_time).to.equal(undefined);
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-  });
-
   it("applies joins", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "RAM", "10:00"),

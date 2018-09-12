@@ -90,7 +90,9 @@ export class CIFRepository {
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, IFNULL(ps.crs_code, tiploc.crs_code) as crs_code, train_category,
-          public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
+          public_arrival_time, public_departure_time, 
+          IFNULL(scheduled_arrival_time, scheduled_pass_time) AS scheduled_arrival_time, 
+          IFNULL(scheduled_departure_time, scheduled_pass_time) AS scheduled_departure_time,
           platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule

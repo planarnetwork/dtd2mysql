@@ -11,6 +11,7 @@ import {ScheduleResults} from "../gtfs/repository/ScheduleBuilder";
 import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import * as fs from "fs";
 import streamToPromise = require("stream-to-promise");
+import {addLateNightServices} from "../gtfs/command/AddLateNightServices";
 
 export class OutputGTFSCommand implements CLICommand {
   private baseDir: string;
@@ -110,8 +111,10 @@ export class OutputGTFSCommand implements CLICommand {
     const processedAssociations = <AssociationIndex>applyOverlays(associations);
     const processedSchedules = <ScheduleIndex>applyOverlays(scheduleResults.schedules, scheduleResults.idGenerator);
     const associatedSchedules = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
+    const mergedSchedules = <Schedule[]>mergeSchedules(associatedSchedules);
+    const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
 
-    return <Schedule[]>mergeSchedules(associatedSchedules);
+    return schedules;
   }
 
 }
