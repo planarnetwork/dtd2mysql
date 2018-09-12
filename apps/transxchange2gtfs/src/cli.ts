@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import {WriteStream, ReadStream} from "fs";
 import {Container} from "./Container";
 
 const [input, output] = process.argv.slice(2);

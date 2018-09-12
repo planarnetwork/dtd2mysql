@@ -1,8 +1,12 @@
-import {TransXChangeStream} from "./transxchange/TransXChangeStream";
-import {XML2JSON} from "./xml/XML2JSON";
+import {ParseXML} from "./xml/ParseXML";
 import {promisify} from "util";
 import {parseString} from "xml2js";
 import {Converter} from "./converter/Converter";
+import {StopsFactory} from "./gtfs/StopsFactory";
+import parse = require("csv-parse");
+import {NaPTANFactory} from "./reference/NaPTAN";
+import AdmZip = require("adm-zip");
+import {TransXChangeFactory} from "./transxchange/TransXChange";
 
 /**
  * Dependency container
@@ -10,15 +14,35 @@ import {Converter} from "./converter/Converter";
 export class Container {
 
   public async getConverter(): Promise<Converter> {
-    return new Converter(this.getXML2JSON(), this.getTransXChangeStream());
+    const stopsFactory = await this.getStopsFactory();
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+
+    console.log(`Memory usage: ${Math.round(used * 100) / 100} MB`);
+
+    return new Converter(
+      this.getParseXML(),
+      new AdmZip(),
+      this.getTransXChangeFactory().getTransXChange,
+      stopsFactory.getStops
+    );
   }
 
-  public getTransXChangeStream(): TransXChangeStream {
-    return new TransXChangeStream();
+  public async getStopsFactory(): Promise<StopsFactory> {
+    const naptanFactory = new NaPTANFactory(
+      new AdmZip(__dirname + "/../resource/Stops.zip"),
+      parse()
+    );
+
+    const naptanIndex = await naptanFactory.getIndex();
+
+    return new StopsFactory(naptanIndex);
   }
 
-  public getXML2JSON(): XML2JSON {
-    return new XML2JSON(promisify(parseString as any));
+  public getParseXML(): ParseXML {
+    return promisify(parseString as any);
   }
 
+  public getTransXChangeFactory(): TransXChangeFactory {
+    return new TransXChangeFactory();
+  }
 }

@@ -8,7 +8,7 @@
     "transxchange2gtfs": "bin/transxchange2gtfs.sh"
   },
   "scripts": {
-    "start": "ts-node src/cli.ts",
+    "start": "NODE_OPTIONS='--max-old-space-size=3000' ts-node src/cli.ts",
     "prepublishOnly": "rm -r dist;tsc -p ./ --outDir dist/; cp -r ./resource ./dist/",
     "test": "npm run lint && mocha --require ts-node/register 'test/**/*.spec.ts'",
     "lint-raw": "tslint --project tsconfig.json",
@@ -31,13 +31,24 @@
   },
   "homepage": "https://github.com/planarnetwork/transxchange2gtfs#readme",
   "devDependencies": {
+    "@types/adm-zip": "^0.4.31",
+    "@types/autobind-decorator": "^2.1.0",
+    "@types/chai": "^4.1.4",
+    "@types/csv-parse": "^1.1.11",
+    "@types/mocha": "^5.2.5",
     "@types/node": "^10.9.4",
     "@types/xml2js": "^0.4.3",
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "typescript": "^3.0.3"
   },
   "dependencies": {
+    "adm-zip": "^0.4.11",
+    "autobind-decorator": "^2.1.0",
+    "csv-parse": "^3.0.0",
+    "stream-to-string": "^1.1.0",
     "xml2js": "^0.4.19"
   }
 }

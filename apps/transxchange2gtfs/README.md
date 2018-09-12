@@ -1,7 +1,7 @@
 transxchange2gtfs
 =========================
 
-transxchange2gtfs converts [transxchange](http://naptan.dft.gov.uk/transxchange/index.htm) timetable data into a [GTFS](https://developers.google.com/transit/gtfs/) zip.
+transxchange2gtfs converts [TransXChange](http://naptan.dft.gov.uk/transxchange/index.htm) timetable data into a [GTFS](https://developers.google.com/transit/gtfs/) zip.
 
 ## Current status
 
@@ -9,7 +9,7 @@ Non-functional, in development.
 
 ## Usage
 
-**transxchange2gtfs requires [node 10.x](https://nodejs.org) or above**
+**please note that [node 10.x](https://nodejs.org) or above is required**
 
 transxchange2gtfs is a CLI tool that can be installed via NPM:
 
@@ -32,7 +32,8 @@ cat transxchange.xml | transxchange2gtfs > gtfs.zip
 ## Notes
 
 - All timezones are UTC
-- Stop data is derived from [NapTAN](http://naptan.app.dft.gov.uk/datarequest/help)
+- Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
+ 
 
 ## Contributing
 
