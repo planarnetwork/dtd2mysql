@@ -11,7 +11,7 @@ export function addLateNightServices(schedules: Schedule[], idGenerator: IdGener
     result.push(schedule);
     const departureHour = parseInt(schedule.stopTimes[0].departure_time.substr(0, 2), 10);
 
-    if (departureHour <= 4) {
+    if (departureHour <= 3) {
       for (const stop of schedule.stopTimes) {
         stop.departure_time = (parseInt(stop.departure_time.substr(0, 2), 10) + 24) + stop.departure_time.substr(2);
         stop.arrival_time = (parseInt(stop.arrival_time.substr(0, 2), 10) + 24) + stop.arrival_time.substr(2);
