@@ -12,12 +12,14 @@ export function addLateNightServices(schedules: Schedule[], idGenerator: IdGener
     const departureHour = parseInt(schedule.stopTimes[0].departure_time.substr(0, 2), 10);
 
     if (departureHour <= 3) {
-      for (const stop of schedule.stopTimes) {
+      const newSchedule = schedule.clone(schedule.calendar.shiftBackward(), idGenerator.next().value);
+
+      for (const stop of newSchedule.stopTimes) {
         stop.departure_time = (parseInt(stop.departure_time.substr(0, 2), 10) + 24) + stop.departure_time.substr(2);
         stop.arrival_time = (parseInt(stop.arrival_time.substr(0, 2), 10) + 24) + stop.arrival_time.substr(2);
       }
 
-      result.push(schedule.clone(schedule.calendar.shiftBackward(), idGenerator.next().value));
+      result.push(newSchedule);
     }
   }
 
