@@ -6,7 +6,7 @@ import {StopsFactory} from "./gtfs/StopsFactory";
 import parse = require("csv-parse");
 import {NaPTANFactory} from "./reference/NaPTAN";
 import AdmZip = require("adm-zip");
-import {TransXChangeFactory} from "./transxchange/TransXChange";
+import {TransXChangeFactory} from "./transxchange/TransXChangeFactory";
 
 /**
  * Dependency container

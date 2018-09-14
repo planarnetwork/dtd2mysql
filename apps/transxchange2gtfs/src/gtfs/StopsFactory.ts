@@ -18,7 +18,7 @@ export class StopsFactory {
 
   public getStops(data: TransXChange): string {
     return "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station\n"
-      + data.stops.map(this.getStop).join("\n");
+      + data.StopPoints.map(this.getStop).join("\n");
   }
 
   private getStop(stop: StopPoint): string {

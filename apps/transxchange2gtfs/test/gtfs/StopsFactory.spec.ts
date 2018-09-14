@@ -12,13 +12,13 @@ describe("StopsFactory", () => {
   });
   it("uses naptan data if it's available", async () => {
     const csv = factory.getStops({
-      stops: [{
+      StopPoints: [{
         StopPointRef: "a",
         CommonName: "name",
         LocalityName: "locality",
         LocalityQualifier: "qualifier"
       }]
-    });
+    } as any);
 
     const [stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon] = splitCSV(csv.split("\n")[1]);
     chai.expect(stop_id).to.equal("a");
@@ -31,13 +31,13 @@ describe("StopsFactory", () => {
 
   it("uses feed data if NaPTAN location is not found", async () => {
     const csv = factory.getStops({
-      stops: [{
+      StopPoints: [{
         StopPointRef: "NotInIndex",
         CommonName: "name",
         LocalityName: "locality",
         LocalityQualifier: "qualifier"
       }]
-    });
+    } as any);
 
     const [stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon] = splitCSV(csv.split("\n")[1]);
 
@@ -51,13 +51,13 @@ describe("StopsFactory", () => {
 
   it("uses the town if it is city is not present", async () => {
     const csv = factory.getStops({
-      stops: [{
+      StopPoints: [{
         StopPointRef: "b",
         CommonName: "name",
         LocalityName: "locality",
         LocalityQualifier: "qualifier"
       }]
-    });
+    } as any);
 
     const [stop_id, stop_code, stop_name] = splitCSV(csv.split("\n")[1]);
 
@@ -68,13 +68,13 @@ describe("StopsFactory", () => {
 
   it("adds the street name if it is useful", async () => {
     const csv = factory.getStops({
-      stops: [{
+      StopPoints: [{
         StopPointRef: "c",
         CommonName: "name",
         LocalityName: "locality",
         LocalityQualifier: "qualifier"
       }]
-    });
+    } as any);
 
     const [stop_id, stop_code, stop_name] = splitCSV(csv.split("\n")[1]);
 
@@ -85,13 +85,13 @@ describe("StopsFactory", () => {
 
   it("removes -> from the indicator", async () => {
     const csv = factory.getStops({
-      stops: [{
+      StopPoints: [{
         StopPointRef: "d",
         CommonName: "name",
         LocalityName: "locality",
         LocalityQualifier: "qualifier"
       }]
-    });
+    } as any);
 
     const [stop_id, stop_code, stop_name] = splitCSV(csv.split("\n")[1]);
 

@@ -2,7 +2,7 @@ import {Readable, Writable} from "stream";
 import {ParseXML} from "../xml/ParseXML";
 import {GetStops} from "../gtfs/StopsFactory";
 import * as AdmZip from "adm-zip";
-import {ParseTransXChange} from "../transxchange/TransXChange";
+import {ParseTransXChange} from "../transxchange/TransXChangeFactory";
 
 const streamToString = require("stream-to-string");
 
