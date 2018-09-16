@@ -20,20 +20,20 @@ npm install -g transxchange2gtfs
 It can be run by specifying the input and output files as CLI arguments:
 
 ```
-transxchange2gtfs transxchange.xml gtfs.zip
+transxchange2gtfs transxchange1.xml transxchange2.xml gtfs-output.zip
 ```
 
-Or using unix pipes:
+Or using zip files:
 
 ```
-cat transxchange.xml | transxchange2gtfs > gtfs.zip
+transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.zip single-transxchange.xml gtfs-output.zip
 ```
 
 ## Notes
 
 - All timezones are UTC
 - Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
- 
+
 
 ## Contributing
 

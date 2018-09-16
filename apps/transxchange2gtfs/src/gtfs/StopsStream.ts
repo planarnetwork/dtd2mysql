@@ -1,24 +1,19 @@
 import {TransXChange, StopPoint} from "../transxchange/TransXChange";
-import autobind from "autobind-decorator";
 import {NaPTANIndex} from "../reference/NaPTAN";
+import {GTFSFileStream} from "./GTFSFileStream";
 
-/**
- * Function that will return a reference.txt file when given a TransXChange object
- */
-export type GetStops = (data: TransXChange) => string;
-
-@autobind
-export class StopsFactory {
-
+export class StopsStream extends GTFSFileStream {
+  protected header = "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station";
   private static readonly STREET_BLACKLIST = ["Road", "Street", "Lane", "Avenue"];
 
-  constructor(
-    private readonly naptan: NaPTANIndex
-  ) {}
+  constructor(private readonly naptan: NaPTANIndex) {
+    super();
+  }
 
-  public getStops(data: TransXChange): string {
-    return "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station\n"
-      + data.StopPoints.map(this.getStop).join("\n");
+  protected transform(data: TransXChange): void {
+    for (const stop of data.StopPoints) {
+      this.push(this.getStop(stop));
+    }
   }
 
   private getStop(stop: StopPoint): string {
@@ -45,7 +40,6 @@ export class StopsFactory {
     return street.length > 1
       && name !== street
       && street !== "---"
-      && StopsFactory.STREET_BLACKLIST.every(i => !name.includes(i));
+      && StopsStream.STREET_BLACKLIST.every(i => !name.includes(i));
   }
 }
-

@@ -1,20 +1,26 @@
-import autobind from "autobind-decorator";
 import {JourneyPatternSections, JourneyStop, Operators, TransXChange} from "./TransXChange";
+import {Transform, TransformCallback} from "stream";
 
-@autobind
-export class TransXChangeFactory {
+/**
+ * Transforms JSON objects into a TransXChange objects
+ */
+export class TransXChangeStream extends Transform {
+
+  constructor() {
+    super({ objectMode: true });
+  }
 
   /**
-   * Extract the stops
+   * Extract the stops, journeys and operators and emit them as a TransXChange object
    */
-  public getTransXChange(data: any): TransXChange {
+  public _transform(data: any, encoding: string, callback: TransformCallback): void {
     const tx = data.TransXChange;
 
-    return {
+    callback(undefined, {
       StopPoints: tx.StopPoints[0].AnnotatedStopPointRef,
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
       Operators: tx.Operators[0].Operator.reduce(this.getOperators, {})
-    };
+    });
   }
 
   private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
@@ -46,8 +52,3 @@ export class TransXChangeFactory {
   }
 
 }
-
-/**
- * Function that converts the JSON output from the XML parser into a TransXChange object
- */
-export type ParseTransXChange = (data: Object) => TransXChange;

@@ -1,12 +1,11 @@
-import * as fs from "fs";
 import {Container} from "./Container";
 
-const [input, output] = process.argv.slice(2);
-const inStream = input ? fs.createReadStream(input, "utf8") : process.stdin;
-const outStream = output ? fs.createWriteStream(output) : process.stdout;
+const input = process.argv.slice(2, process.argv.length - 2);
+const output = process.argv[process.argv.length - 1];
+
 const container = new Container();
 
 container.getConverter()
-  .then(c => c.process(inStream, outStream))
+  .then(c => c.process(input, output))
   .catch(err => console.error(err));
 
