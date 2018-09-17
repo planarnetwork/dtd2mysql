@@ -1,8 +1,8 @@
 # dtd2mysql 
 
 
-[![Travis](https://img.shields.io/travis/open-track/dtd2mysql.svg?style=flat-square)](https://travis-ci.org/open-track/dtd2mysql) ![npm](https://img.shields.io/npm/v/dtd2mysql.svg?style=flat-square) ![npm](https://img.shields.io/npm/dw/dtd2mysql.svg?style=flat-square) 
-![David](https://img.shields.io/david/open-track/dtd2mysql.svg?style=flat-square)
+[![Travis](https://img.shields.io/travis/planarnetwork/dtd2mysql.svg?style=flat-square)](https://travis-ci.org/planarnetwork/dtd2mysql) ![npm](https://img.shields.io/npm/v/dtd2mysql.svg?style=flat-square) ![npm](https://img.shields.io/npm/dw/dtd2mysql.svg?style=flat-square) 
+![David](https://img.shields.io/david/planarnetwork/dtd2mysql.svg?style=flat-square)
 
 
 
@@ -120,7 +120,7 @@ This will cause any data after that point to be either incomplete or incorrect, 
 Issues and PRs are very welcome. To get the project set up run
 
 ```
-git clone git@github.com:open-track/dtd2mysql
+git clone git@github.com:planarnetwork/dtd2mysql
 npm install --dev
 npm test
 ```
