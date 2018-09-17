@@ -8,6 +8,7 @@ import {NaPTANFactory} from "./reference/NaPTAN";
 import AdmZip = require("adm-zip");
 import {TransXChangeStream} from "./transxchange/TransXChangeStream";
 import {FileStream} from "./converter/FileStream";
+import {AgencyStream} from "./gtfs/AgencyStream";
 
 /**
  * Dependency container
@@ -22,7 +23,8 @@ export class Container {
       new XMLStream(this.getParseXML()),
       new TransXChangeStream(),
       {
-        "stops.txt": stopsStream
+        "stops.txt": stopsStream,
+        "agency.txt": new AgencyStream()
       },
       new AdmZip()
     );

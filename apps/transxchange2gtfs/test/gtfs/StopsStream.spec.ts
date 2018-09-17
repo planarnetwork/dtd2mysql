@@ -1,6 +1,6 @@
 import * as chai from "chai";
 import {StopsStream} from "../../src/gtfs/StopsStream";
-import {awaitStream} from "../util";
+import {awaitStream, splitCSV} from "../util";
 
 // tslint:disable
 
@@ -148,27 +148,3 @@ describe("StopsStream", () => {
   });
 
 });
-
-function splitCSV(csv: string): string[] {
-  const row = [];
-  let i = 0;
-
-  while (i < csv.length) {
-    if (csv.charAt(i) === '"') {
-      const endIndex = csv.indexOf('"', i + 1);
-      const value = csv.substring(i + 1, endIndex);
-
-      row.push(value);
-      i = endIndex + 2;
-    }
-    else {
-      const endIndex = csv.indexOf(',', i);
-      const value = csv.substring(i, endIndex);
-
-      row.push(value);
-      i = endIndex + 1;
-    }
-  }
-
-  return row;
-}
