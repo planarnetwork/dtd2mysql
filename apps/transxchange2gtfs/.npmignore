@@ -7,3 +7,4 @@ test/
 tsconfig.json
 .travis.yml
 gtfs.zip
+resource/
