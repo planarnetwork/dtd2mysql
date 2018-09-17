@@ -22,7 +22,7 @@ export class Converter {
     private readonly gtfsFiles: GTFSFiles,
     private readonly archive: AdmZip
   ) {}
-rm 
+
   /**
    * Load the XML into memory, convert it to JSON, then a TransXChange object and the pass that to each of the GTFS file
    * factory methods.
