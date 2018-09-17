@@ -1,8 +1,7 @@
 transxchange2gtfs
 =========================
 
-[![Travis](https://img.shields.io/travis/planarnetwork/transxchange2gtfs.svg?style=flat-square)](https://travis-ci.org/planarnetwork/transxchange2gtfs) ![npm](https://img.shields.io/npm/v/transxchange2gtfs.svg?style=flat-square)  
-![David](https://img.shields.io/david/planarnetwork/transxchange2gtfs.svg?style=flat-square)
+[![Travis](https://img.shields.io/travis/planarnetwork/transxchange2gtfs.svg?style=flat-square)](https://travis-ci.org/planarnetwork/transxchange2gtfs) ![npm](https://img.shields.io/npm/v/transxchange2gtfs.svg?style=flat-square)![David](https://img.shields.io/david/planarnetwork/transxchange2gtfs.svg?style=flat-square)
 
 transxchange2gtfs converts [TransXChange](http://naptan.dft.gov.uk/transxchange/index.htm) timetable data into a [GTFS](https://developers.google.com/transit/gtfs/) zip.
 
