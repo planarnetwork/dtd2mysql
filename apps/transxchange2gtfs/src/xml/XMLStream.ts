@@ -13,14 +13,9 @@ export class XMLStream extends Transform {
    * Transform the XML usign the parseXML method
    */
   public async _transform(chunk: string, encoding: string, callback: TransformCallback): Promise<void> {
-    try {
-      const xml = await this.parseXML(chunk);
+    const xml = await this.parseXML(chunk);
 
-      callback(undefined, xml);
-    }
-    catch (err) {
-      callback(err);
-    }
+    callback(undefined, xml);
   }
 
 }

@@ -1,9 +1,12 @@
-import {JourneyPatternSections, JourneyStop, Operators, TransXChange} from "./TransXChange";
+import {JourneyPatternSections, JourneyStop, Operators, StopPoint, TransXChange} from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
+import autobind from "autobind-decorator";
+import {ATCOCode} from "../reference/NaPTAN";
 
 /**
  * Transforms JSON objects into a TransXChange objects
  */
+@autobind
 export class TransXChangeStream extends Transform {
 
   constructor() {
@@ -16,11 +19,22 @@ export class TransXChangeStream extends Transform {
   public _transform(data: any, encoding: string, callback: TransformCallback): void {
     const tx = data.TransXChange;
 
-    callback(undefined, {
-      StopPoints: tx.StopPoints[0].AnnotatedStopPointRef,
+    this.push({
+      StopPoints: tx.StopPoints[0].AnnotatedStopPointRef.map(this.getStop),
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
       Operators: tx.Operators[0].Operator.reduce(this.getOperators, {})
     });
+
+    callback();
+  }
+
+  private getStop(stop: any): StopPoint {
+    return {
+      StopPointRef: stop.StopPointRef[0],
+      CommonName: stop.CommonName[0],
+      LocalityName: stop.LocalityName[0],
+      LocalityQualifier: stop.LocalityQualifier[0]
+    };
   }
 
   private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
@@ -45,7 +59,7 @@ export class TransXChangeStream extends Transform {
     index[operator.$.id] = {
       OperatorCode: operator.OperatorCode[0],
       OperatorShortName: operator.OperatorShortName[0],
-      OperatorNameOnLicence: operator.OperatorNameOnLicence[0],
+      OperatorNameOnLicence: operator.OperatorNameOnLicence && operator.OperatorNameOnLicence[0],
     };
 
     return index;

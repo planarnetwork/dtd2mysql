@@ -67,6 +67,6 @@ export type Operators = Record<string, Operator>;
 export interface Operator {
   OperatorCode: string,
   OperatorShortName: string,
-  OperatorNameOnLicence: string
+  OperatorNameOnLicence: string | undefined
 }
 

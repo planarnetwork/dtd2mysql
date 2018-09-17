@@ -1,6 +1,6 @@
 import {Container} from "./Container";
 
-const input = process.argv.slice(2, process.argv.length - 2);
+const input = process.argv.slice(2, process.argv.length - 1);
 const output = process.argv[process.argv.length - 1];
 
 const container = new Container();

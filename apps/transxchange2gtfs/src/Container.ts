@@ -7,8 +7,7 @@ import parse = require("csv-parse");
 import {NaPTANFactory} from "./reference/NaPTAN";
 import AdmZip = require("adm-zip");
 import {TransXChangeStream} from "./transxchange/TransXChangeStream";
-import {ZipReadStream} from "./input/ZipReadStream";
-import {FileReadStream} from "./input/FileReadStream";
+import {FileStream} from "./converter/FileStream";
 
 /**
  * Dependency container
@@ -17,13 +16,9 @@ export class Container {
 
   public async getConverter(): Promise<Converter> {
     const stopsStream = await this.getStopsStream();
-    const used = process.memoryUsage().heapUsed / 1024 / 1024;
-
-    console.log(`Memory usage: ${Math.round(used * 100) / 100} MB`);
 
     return new Converter(
-      new ZipReadStream(),
-      new FileReadStream(),
+      new FileStream(),
       new XMLStream(this.getParseXML()),
       new TransXChangeStream(),
       {

@@ -4,7 +4,7 @@ import {awaitStream} from "../util";
 
 // tslint:disable
 
-describe("Stops", () => {
+describe("StopsStream", () => {
   const naptan = {
     "a": ["a", "naptanA", "nameA", "streetA", "NE", "townA", "cityA", "1.00", "1.00"],
     "b": ["b", "naptanB", "nameB", "streetB", "NE", "townB", "", "1.00", "1.00"],
@@ -121,6 +121,32 @@ describe("Stops", () => {
       chai.expect(stop_name).to.equal("nameD (SW), streetD, cityD");
     });
   });
+
+  it("does not emit the same stop twice", async () => {
+    const stops = new StopsStream(naptan);
+    stops.write({
+      StopPoints: [{
+        StopPointRef: "a",
+        CommonName: "name",
+        LocalityName: "locality",
+        LocalityQualifier: "qualifier"
+      }]
+    });
+    stops.write({
+      StopPoints: [{
+        StopPointRef: "a",
+        CommonName: "name",
+        LocalityName: "locality",
+        LocalityQualifier: "qualifier"
+      }]
+    });
+    stops.end();
+
+    return awaitStream(stops, (rows: string[]) => {
+      chai.expect(rows.length).to.equal(2);
+    });
+  });
+
 });
 
 function splitCSV(csv: string): string[] {
