@@ -9,6 +9,7 @@ import AdmZip = require("adm-zip");
 import {TransXChangeStream} from "./transxchange/TransXChangeStream";
 import {FileStream} from "./converter/FileStream";
 import {AgencyStream} from "./gtfs/AgencyStream";
+import {RoutesStream} from "./gtfs/RoutesStream";
 
 /**
  * Dependency container
@@ -24,7 +25,8 @@ export class Container {
       new TransXChangeStream(),
       {
         "stops.txt": stopsStream,
-        "agency.txt": new AgencyStream()
+        "agency.txt": new AgencyStream(),
+        "routes.txt": new RoutesStream()
       },
       new AdmZip()
     );

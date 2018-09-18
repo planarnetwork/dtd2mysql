@@ -1,7 +1,14 @@
-import {JourneyPatternSections, JourneyStop, Operators, StopPoint, TransXChange} from "./TransXChange";
+import {
+  JourneyPatternSections,
+  JourneyStop,
+  Lines,
+  Operators, Service,
+  StopPoint,
+  TransXChange
+} from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
-import {ATCOCode} from "../reference/NaPTAN";
+import {LocalDate} from "js-joda";
 
 /**
  * Transforms JSON objects into a TransXChange objects
@@ -18,14 +25,14 @@ export class TransXChangeStream extends Transform {
    */
   public _transform(data: any, encoding: string, callback: TransformCallback): void {
     const tx = data.TransXChange;
-
-    this.push({
+    const result: TransXChange = {
       StopPoints: tx.StopPoints[0].AnnotatedStopPointRef.map(this.getStop),
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
-      Operators: tx.Operators[0].Operator.reduce(this.getOperators, {})
-    });
+      Operators: tx.Operators[0].Operator.reduce(this.getOperators, {}),
+      Services: tx.Services[0].Service.map(this.getService)
+    };
 
-    callback();
+    callback(undefined, result);
   }
 
   private getStop(stop: any): StopPoint {
@@ -65,4 +72,25 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
+  private getService(service: any): Service {
+    return {
+      ServiceCode: service.ServiceCode[0],
+      Lines: service.Lines[0].Line.reduce(this.getLines, {}),
+      OperatingPeriod: {
+        StartDate: LocalDate.parse(service.OperatingPeriod[0].StartDate[0]),
+        EndDate: service.OperatingPeriod[0].EndDate[0]
+          ? LocalDate.parse(service.OperatingPeriod[0].EndDate[0])
+          : LocalDate.parse("2099-12-31"),
+      },
+      RegisteredOperatorRef: service.RegisteredOperatorRef[0],
+      Description: service.Description[0],
+      Mode: service.Mode[0]
+    };
+  }
+
+  private getLines(index: Lines, line: any): Lines {
+    index[line.$.id] = line.LineName[0];
+
+    return index;
+  }
 }

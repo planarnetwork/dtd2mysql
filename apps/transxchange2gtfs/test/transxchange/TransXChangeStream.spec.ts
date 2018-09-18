@@ -3,6 +3,7 @@ import * as chai from "chai";
 import {awaitStream} from "../util";
 import {TransXChangeStream} from "../../src/transxchange/TransXChangeStream";
 import {TransXChange} from "../../src/transxchange/TransXChange";
+import {LocalDate} from "js-joda";
 
 describe("TransXChangeStream", () => {
 
@@ -170,6 +171,31 @@ describe("TransXChangeStream", () => {
           "WaitTime": "PT5M"
         }
       });
+    });
+  });
+
+  it("extracts the services", async () => {
+    const stream = new TransXChangeStream();
+
+    stream.write(example);
+    stream.end();
+
+    return awaitStream(stream, ([row]: TransXChange[]) => {
+      chai.expect(row.Services).to.deep.equal([
+        {
+          "Description": "Falmouth - Victoria,London",
+          "Lines": {
+            "l_M6_MEGA": "M6"
+          },
+          "Mode": "coach",
+          "OperatingPeriod": {
+            "EndDate": LocalDate.parse("2099-12-31"),
+            "StartDate": LocalDate.parse("2018-06-24")
+          },
+          "RegisteredOperatorRef": "OId_MEGA",
+          "ServiceCode": "M6_MEGA"
+        }
+      ]);
     });
   });
 });

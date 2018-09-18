@@ -1,5 +1,4 @@
 import {GTFSFileStream} from "./GTFSFileStream";
-import {TransformOptions} from "stream";
 import {TransXChange} from "../transxchange/TransXChange";
 
 /**
