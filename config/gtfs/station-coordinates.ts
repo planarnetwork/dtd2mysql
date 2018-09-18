@@ -1495,6 +1495,7 @@ export const stationCoordinates: StationCoordinates = {
   "LZB": { stop_name: "Lazonby & Kirkoswald", stop_lat: 54.750440, stop_lon: -2.703210 },
   "MAC": { stop_name: "Macclesfield", stop_lat: 53.259340, stop_lon: -2.121980 },
   "MAG": { stop_name: "Maghull", stop_lat: 53.506470, stop_lon: -2.930850 },
+  "MNS": { stop_name: "Maghull North", stop_lat: 53.5168, stop_lon: -2.9409 },
   "MAI": { stop_name: "Maidenhead", stop_lat: 51.518670, stop_lon: -0.722660 },
   "MAL": { stop_name: "Malden Manor", stop_lat: 51.384730, stop_lon: -0.261270 },
   "MAN": { stop_name: "Manchester Piccadilly", stop_lat: 53.477360, stop_lon: -2.230910 },
