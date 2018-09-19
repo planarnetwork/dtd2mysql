@@ -19,7 +19,7 @@ export class RoutesStream extends GTFSFileStream {
   };
 
   protected transform(data: TransXChange): void {
-    for (const service of data.Services) {
+    for (const service of Object.values(data.Services)) {
       this.addRoute(service);
     }
   }

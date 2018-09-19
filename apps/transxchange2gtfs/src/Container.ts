@@ -10,6 +10,9 @@ import {TransXChangeStream} from "./transxchange/TransXChangeStream";
 import {FileStream} from "./converter/FileStream";
 import {AgencyStream} from "./gtfs/AgencyStream";
 import {RoutesStream} from "./gtfs/RoutesStream";
+import {CalendarStream} from "./gtfs/CalendarStream";
+import {LocalDate} from "js-joda";
+import {Holiday} from "./transxchange/TransXChange";
 
 /**
  * Dependency container
@@ -26,7 +29,8 @@ export class Container {
       {
         "stops.txt": stopsStream,
         "agency.txt": new AgencyStream(),
-        "routes.txt": new RoutesStream()
+        "routes.txt": new RoutesStream(),
+        "calendar.txt": new CalendarStream({} as Record<Holiday, LocalDate[][]>)
       },
       new AdmZip()
     );

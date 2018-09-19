@@ -3,7 +3,7 @@ import * as chai from "chai";
 import {awaitStream} from "../util";
 import {TransXChangeStream} from "../../src/transxchange/TransXChangeStream";
 import {TransXChange} from "../../src/transxchange/TransXChange";
-import {LocalDate} from "js-joda";
+import {LocalDate, LocalTime} from "js-joda";
 
 describe("TransXChangeStream", () => {
 
@@ -181,7 +181,7 @@ describe("TransXChangeStream", () => {
     stream.end();
 
     return awaitStream(stream, ([row]: TransXChange[]) => {
-      chai.expect(row.Services).to.deep.equal([
+      chai.expect(row.Services["M6_MEGA"]).to.deep.equal(
         {
           "Description": "Falmouth - Victoria,London",
           "Lines": {
@@ -195,9 +195,65 @@ describe("TransXChangeStream", () => {
           "RegisteredOperatorRef": "OId_MEGA",
           "ServiceCode": "M6_MEGA"
         }
-      ]);
+      );
     });
   });
+
+  it("extracts the vehicle journeys", async () => {
+    const stream = new TransXChangeStream();
+
+    stream.write(example);
+    stream.end();
+
+    return awaitStream(stream, ([row]: TransXChange[]) => {
+      chai.expect(row.VehicleJourneys[5]).to.deep.equal({
+        "DepartureTime": LocalTime.parse("13:00"),
+        "JourneyPatternRef": "JP371",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[0, 0, 0, 0, 0, 1, 0]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+        },
+        "ServiceRef": "M6_MEGA"
+      });
+    });
+  });
+
+  it("copies vehicle journey references", async () => {
+    const stream = new TransXChangeStream();
+
+    stream.write(example);
+    stream.end();
+
+    return awaitStream(stream, ([row]: TransXChange[]) => {
+      chai.expect(row.VehicleJourneys[18]).to.deep.equal({
+        "DepartureTime": LocalTime.parse("01:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      });
+    });
+  });
+
+  xit("emits holiday only dates");
 });
 
 // tslint:disable

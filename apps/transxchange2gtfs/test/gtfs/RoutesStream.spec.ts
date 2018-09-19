@@ -11,8 +11,8 @@ describe("RoutesStream", () => {
     const stream = new RoutesStream();
 
     stream.write({
-      Services: [
-        {
+      Services: {
+        "M6_MEGA": {
           "Description": "Falmouth - Victoria,London",
           "Lines": {
             "l_M6_MEGA": "M6"
@@ -25,7 +25,7 @@ describe("RoutesStream", () => {
           "RegisteredOperatorRef": "OId_MEGA",
           "ServiceCode": "M6_MEGA"
         }
-      ]
+      }
     });
 
     stream.end();

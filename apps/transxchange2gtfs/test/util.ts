@@ -21,17 +21,19 @@ export function splitCSV(csv: string): string[] {
   while (i < csv.length) {
     if (csv.charAt(i) === "\"") {
       const endIndex = csv.indexOf("\"", i + 1);
-      const value = csv.substring(i + 1, endIndex);
+      const j = endIndex > 0 ? endIndex : csv.length;
+      const value = csv.substring(i + 1, j);
 
       row.push(value);
-      i = endIndex + 2;
+      i = j + 2;
     }
     else {
       const endIndex = csv.indexOf(",", i);
-      const value = csv.substring(i, endIndex);
+      const j = endIndex > 0 ? endIndex : csv.length;
+      const value = csv.substring(i, j);
 
       row.push(value);
-      i = endIndex + 1;
+      i = j + 1;
     }
   }
 

@@ -35,7 +35,7 @@ transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.z
 
 - All timezones are UTC
 - Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
-
+- TransXChange is a [bizarre and overly-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are no doubt edge cases that have not been covered.
 
 ## Contributing
 
