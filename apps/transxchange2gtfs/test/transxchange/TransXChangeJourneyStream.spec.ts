@@ -2,7 +2,11 @@ import * as chai from "chai";
 import {awaitStream} from "../util";
 import {Duration, LocalDate, LocalTime} from "js-joda";
 import {Holiday, StopActivity} from "../../src/transxchange/TransXChange";
-import {TransXChangeJourney, TransXChangeJourneyStream} from "../../src/transxchange/TransXChangeJourneyStream";
+import {
+  BankHolidays,
+  TransXChangeJourney,
+  TransXChangeJourneyStream
+} from "../../src/transxchange/TransXChangeJourneyStream";
 
 // tslint:disable
 
@@ -138,6 +142,23 @@ describe("TransXChangeJourneyStream", () => {
         },
         "ServiceRef": "M6_MEGA"
       },
+      {
+        "DepartureTime": LocalTime.parse("23:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": ["ChristmasDayHoliday", "BoxingDayHoliday"],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
     ],
     JourneySections: {
       "JPSection-51": [
@@ -175,7 +196,7 @@ describe("TransXChangeJourneyStream", () => {
   };
 
   it("emits a calendar", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();
@@ -189,7 +210,7 @@ describe("TransXChangeJourneyStream", () => {
   });
 
   it("merges days of the week", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();
@@ -201,7 +222,7 @@ describe("TransXChangeJourneyStream", () => {
   });
 
   it("shortens the calendar start and end for non operational date ranges at the beginning or end of the operation period", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();
@@ -215,7 +236,7 @@ describe("TransXChangeJourneyStream", () => {
   });
 
   it("adds exclude dates for non operational date ranges in the middle of the operation period", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();
@@ -228,7 +249,22 @@ describe("TransXChangeJourneyStream", () => {
 
   });
 
-  xit("adds excludes for bank holidays", async () => {
+  it("adds excludes for bank holidays", async () => {
+    const dates = {
+      ChristmasDayHoliday: [LocalDate.parse("2017-12-25"), LocalDate.parse("2018-12-25"), LocalDate.parse("2019-12-25")],
+      BoxingDayHoliday: [LocalDate.parse("2017-12-26"), LocalDate.parse("2018-12-26"), LocalDate.parse("2019-12-26")]
+    };
+    const stream = new TransXChangeJourneyStream(dates as BankHolidays);
+
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[6].calendar.excludes[0].toString()).to.equal("2018-12-25");
+      chai.expect(rows[6].calendar.excludes[1].toString()).to.equal("2019-12-25");
+      chai.expect(rows[6].calendar.excludes[2].toString()).to.equal("2018-12-26");
+      chai.expect(rows[6].calendar.excludes[3].toString()).to.equal("2019-12-26");
+    });
 
   });
 
@@ -237,7 +273,7 @@ describe("TransXChangeJourneyStream", () => {
   });
 
   it("calculates stops times", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();
@@ -258,7 +294,7 @@ describe("TransXChangeJourneyStream", () => {
   });
 
   it("includes wait time in departure times and subsequent arrival times", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();
@@ -280,7 +316,7 @@ describe("TransXChangeJourneyStream", () => {
   });
 
   it("rolls over midnight", async () => {
-    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
 
     stream.write(transxchange);
     stream.end();

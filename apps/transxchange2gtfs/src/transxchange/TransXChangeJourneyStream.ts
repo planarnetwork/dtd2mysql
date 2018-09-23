@@ -97,8 +97,8 @@ export class TransXChangeJourneyStream extends Transform {
     return from.isAfter(to) ? dates : this.dateRange(from.plusDays(1), to, [...dates, from]);
   }
 
-  private getHoliday(holiday: Holiday, after: LocalDate): LocalDate[] {
-    return (this.holidays[holiday] || []).find(dates => dates[0].isAfter(after)) || [];
+  private getHoliday(holiday: Holiday, startDate: LocalDate): LocalDate[] {
+    return (this.holidays[holiday] || []).filter(date => date.isAfter(startDate));
   }
 
   private getCalendarHash(days: DaysOfWeek,
@@ -150,7 +150,7 @@ export class TransXChangeJourneyStream extends Transform {
   }
 }
 
-export type BankHolidays = Record<Holiday, LocalDate[][]>;
+export type BankHolidays = Record<Holiday, LocalDate[]>;
 
 export interface TransXChangeJourney {
   calendar: JourneyCalendar
