@@ -159,6 +159,23 @@ describe("TransXChangeJourneyStream", () => {
         },
         "ServiceRef": "M6_MEGA"
       },
+      {
+        "DepartureTime": LocalTime.parse("01:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": ["ChristmasDay"]
+          },
+          "RegularDayType": "HolidaysOnly",
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
     ],
     JourneySections: {
       "JPSection-51": [
@@ -268,7 +285,23 @@ describe("TransXChangeJourneyStream", () => {
 
   });
 
-  xit("adds include days for bank holiday only services", async () => {
+  it("adds include days for bank holiday only services", async () => {
+    const dates = {
+      ChristmasDay: [LocalDate.parse("2017-12-25"), LocalDate.parse("2018-12-25"), LocalDate.parse("2019-12-25")]
+    };
+    const stream = new TransXChangeJourneyStream(dates as BankHolidays);
+
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[7].calendar.days.toString()).to.equal("0,0,0,0,0,0,0");
+      chai.expect(rows[7].calendar.startDate.toString()).to.equal("2018-06-24");
+      chai.expect(rows[7].calendar.endDate.toString()).to.equal("2099-12-31");
+      chai.expect(rows[7].calendar.includes[0].toString()).to.equal("2018-12-25");
+      chai.expect(rows[7].calendar.includes[1].toString()).to.equal("2019-12-25");
+    });
+
 
   });
 
