@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {awaitStream, splitCSV} from "../util";
+import {awaitStream} from "../util";
 import {Duration, LocalDate, LocalTime} from "js-joda";
 import {Holiday, StopActivity} from "../../src/transxchange/TransXChange";
 import {TransXChangeJourney, TransXChangeJourneyStream} from "../../src/transxchange/TransXChangeJourneyStream";
@@ -43,37 +43,131 @@ describe("TransXChangeJourneyStream", () => {
           }
         },
         "ServiceRef": "M6_MEGA"
-      }
+      },
+      {
+        "DepartureTime": LocalTime.parse("01:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 0, 1, 0, 0, 0, 0], [1, 1, 0, 0, 1, 0, 0]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
+      {
+        "DepartureTime": LocalTime.parse("01:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [{
+              "StartDate": LocalDate.parse("2018-06-24"),
+              "EndDate": LocalDate.parse("2018-07-31")
+            }],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
+      {
+        "DepartureTime": LocalTime.parse("01:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [{
+              "StartDate": LocalDate.parse("2018-07-24"),
+              "EndDate": LocalDate.parse("2099-12-31")
+            }],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
+      {
+        "DepartureTime": LocalTime.parse("01:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [{
+              "StartDate": LocalDate.parse("2018-07-24"),
+              "EndDate": LocalDate.parse("2018-07-25")
+            }],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
+      {
+        "DepartureTime": LocalTime.parse("23:00"),
+        "JourneyPatternRef": "JP384",
+        "LineRef": "l_M6_MEGA",
+        "OperatingProfile": {
+          "BankHolidayOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          },
+          "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
+          "SpecialDaysOperation": {
+            "DaysOfNonOperation": [],
+            "DaysOfOperation": []
+          }
+        },
+        "ServiceRef": "M6_MEGA"
+      },
     ],
     JourneySections: {
       "JPSection-51": [
         {
           From: { Activity: StopActivity.PickUp, StopPointRef: "118000037" },
-          To: { Activity: StopActivity.PickUp, StopActivity: "1180033077" },
+          To: { Activity: StopActivity.PickUp, StopPointRef: "1180033077" },
           RunTime: Duration.parse("PT5M")
         }
       ],
       "JPSection-77": [
         {
-          From: { Activity: StopActivity.PickUp, StopPointRef: "118000037" },
-          To: { Activity: StopActivity.PickUpAndSetDown, StopActivity: "1100DEC10183" },
+          From: { Activity: StopActivity.PickUp, StopPointRef: "1180033077" },
+          To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "1100DEC10183" },
           RunTime: Duration.parse("PT65M")
         }
       ],
       "JPSection-21": [
         {
           From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "1100DEC10183" },
-          To: { Activity: StopActivity.PickUpAndSetDown, StopActivity: "010000036", WaitTime: Duration.parse("PT5M") },
+          To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "010000036", WaitTime: Duration.parse("PT5M") },
           RunTime: Duration.parse("PT115M")
         },
         {
           From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "010000036" },
-          To: { Activity: StopActivity.PickUpAndSetDown, StopActivity: "0170SGA56570" },
+          To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "0170SGA56570" },
           RunTime: Duration.parse("PT15M")
         },
         {
           From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "0170SGA56570" },
-          To: { Activity: StopActivity.SetDown, StopActivity: "490016736W" },
+          To: { Activity: StopActivity.SetDown, StopPointRef: "490016736W" },
           RunTime: Duration.parse("PT155M")
         }
       ],
@@ -94,15 +188,43 @@ describe("TransXChangeJourneyStream", () => {
     });
   });
 
-  xit("merges days of the week", async () => {
+  it("merges days of the week", async () => {
+    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
 
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[1].calendar.id).to.equal(2);
+      chai.expect(rows[1].calendar.days.toString()).to.equal("1,1,1,0,1,0,0");
+    });
   });
 
-  xit("shortens the calendar start and end for non operational date ranges at the beginning or end of the operation period", async () => {
+  it("shortens the calendar start and end for non operational date ranges at the beginning or end of the operation period", async () => {
+    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
 
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[2].calendar.startDate.toString()).to.equal("2018-08-01");
+      chai.expect(rows[2].calendar.endDate.toString()).to.equal("2099-12-31");
+      chai.expect(rows[3].calendar.startDate.toString()).to.equal("2018-06-24");
+      chai.expect(rows[3].calendar.endDate.toString()).to.equal("2018-07-23");
+    });
   });
 
-  xit("adds exclude dates for non operational date ranges in the middle of the operation period", async () => {
+  it("adds exclude dates for non operational date ranges in the middle of the operation period", async () => {
+    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[4].calendar.excludes[0].toString()).to.equal("2018-07-24");
+      chai.expect(rows[4].calendar.excludes[1].toString()).to.equal("2018-07-25");
+      chai.expect(rows[4].calendar.excludes.length).to.equal(2);
+    });
 
   });
 
@@ -114,11 +236,68 @@ describe("TransXChangeJourneyStream", () => {
 
   });
 
-  xit("calculates stops times", async () => {
+  it("calculates stops times", async () => {
+    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[0].stops[0].dropoff).to.equal(false);
+      chai.expect(rows[0].stops[0].pickup).to.equal(true);
+      chai.expect(rows[0].stops[0].stop).to.equal("118000037");
+      chai.expect(rows[0].stops[0].arrivalTime).to.equal("01:00");
+      chai.expect(rows[0].stops[0].departureTime).to.equal("01:00");
+
+      chai.expect(rows[0].stops[1].dropoff).to.equal(false);
+      chai.expect(rows[0].stops[1].pickup).to.equal(true);
+      chai.expect(rows[0].stops[1].stop).to.equal("1180033077");
+      chai.expect(rows[0].stops[1].arrivalTime).to.equal("01:05");
+      chai.expect(rows[0].stops[1].departureTime).to.equal("01:05");
+    });
+  });
+
+  it("includes wait time in departure times and subsequent arrival times", async () => {
+    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[0].stops[2].dropoff).to.equal(true);
+      chai.expect(rows[0].stops[2].pickup).to.equal(true);
+      chai.expect(rows[0].stops[2].stop).to.equal("1100DEC10183");
+      chai.expect(rows[0].stops[2].arrivalTime).to.equal("02:10");
+      chai.expect(rows[0].stops[2].departureTime).to.equal("02:10");
+
+      chai.expect(rows[0].stops[3].dropoff).to.equal(true);
+      chai.expect(rows[0].stops[3].pickup).to.equal(true);
+      chai.expect(rows[0].stops[3].stop).to.equal("010000036");
+      chai.expect(rows[0].stops[3].arrivalTime).to.equal("04:05");
+      chai.expect(rows[0].stops[3].departureTime).to.equal("04:10");
+    });
 
   });
 
-  xit("includes wait time in departure times and subsequent arrival times", async () => {
+  it("rolls over midnight", async () => {
+    const stream = new TransXChangeJourneyStream({} as Record<Holiday, LocalDate[][]>);
+
+    stream.write(transxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[5].stops[2].dropoff).to.equal(true);
+      chai.expect(rows[5].stops[2].pickup).to.equal(true);
+      chai.expect(rows[5].stops[2].stop).to.equal("1100DEC10183");
+      chai.expect(rows[5].stops[2].arrivalTime).to.equal("24:10");
+      chai.expect(rows[5].stops[2].departureTime).to.equal("24:10");
+
+      chai.expect(rows[5].stops[3].dropoff).to.equal(true);
+      chai.expect(rows[5].stops[3].pickup).to.equal(true);
+      chai.expect(rows[5].stops[3].stop).to.equal("010000036");
+      chai.expect(rows[5].stops[3].arrivalTime).to.equal("26:05");
+      chai.expect(rows[5].stops[3].departureTime).to.equal("26:10");
+    });
 
   });
 

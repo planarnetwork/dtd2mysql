@@ -9,9 +9,8 @@ import {
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
-import {LocalDate, LocalTime} from "js-joda";
+import {LocalDate, LocalTime, Duration} from "js-joda";
 import {ATCOCode} from "../reference/NaPTAN";
-
 
 /**
  * Transforms TransXChange objects into TransXChangeJourneys that are closer to GTFS calendars, calendar dates, trips
@@ -37,11 +36,11 @@ export class TransXChangeJourneyStream extends Transform {
       const service = schedule.Services[vehicle.ServiceRef];
       const sectionsRefs = service.StandardService[vehicle.JourneyPatternRef];
       const sections = sectionsRefs.reduce((acc, s) => acc.concat(schedule.JourneySections[s]), [] as TimingLink[]);
-      const stopTimes = this.getStopTimes(sections, vehicle.DepartureTime);
+      const stops = this.getStopTimes(sections, vehicle.DepartureTime);
       const trip = { id: this.tripId++, headsign: vehicle.VehicleJourneyCode };
       const route = vehicle.ServiceRef;
 
-      this.push({ calendar, stopTimes, trip, route });
+      this.push({ calendar, stops, trip, route });
     }
 
     callback();
@@ -95,11 +94,11 @@ export class TransXChangeJourneyStream extends Transform {
   }
 
   private dateRange(from: LocalDate, to: LocalDate, dates: LocalDate[] = []): LocalDate[] {
-    return from.isAfter(to) ? dates : this.dateRange(from.plusDays(1), to, [...dates, from.plusDays(1)]);
+    return from.isAfter(to) ? dates : this.dateRange(from.plusDays(1), to, [...dates, from]);
   }
 
   private getHoliday(holiday: Holiday, after: LocalDate): LocalDate[] {
-    return this.holidays[holiday].find(dates => dates[0].isAfter(after)) || [];
+    return (this.holidays[holiday] || []).find(dates => dates[0].isAfter(after)) || [];
   }
 
   private getCalendarHash(days: DaysOfWeek,
@@ -108,7 +107,7 @@ export class TransXChangeJourneyStream extends Transform {
                           includes: LocalDate[],
                           excludes: LocalDate[]): string {
     return [
-      days.join.toString(),
+      days.toString(),
       startDate.toString(),
       endDate.toString(),
       includes.map(d => d.toString()).join(),
@@ -119,28 +118,35 @@ export class TransXChangeJourneyStream extends Transform {
   private getStopTimes(links: TimingLink[], departureTime: LocalTime): StopTime[] {
     const stops = [{
       stop: links[0].From.StopPointRef,
-      arrivalTime: departureTime,
-      departureTime: departureTime,
+      arrivalTime: departureTime.toString(),
+      departureTime: departureTime.toString(),
       pickup: true,
       dropoff: false
     }];
 
-    let lastDepartureTime = departureTime;
+    let lastDepartureTime = Duration.between(LocalTime.parse("00:00"), departureTime);
 
     for (const link of links) {
-      const arrivalTime = lastDepartureTime.plus(link.RunTime);
-      lastDepartureTime = link.To.WaitTime ? arrivalTime.plus(link.To.WaitTime) : arrivalTime;
+      const arrivalTime = lastDepartureTime.plusDuration(link.RunTime);
+      lastDepartureTime = link.To.WaitTime ? arrivalTime.plusDuration(link.To.WaitTime) : arrivalTime;
 
       stops.push({
         stop: link.To.StopPointRef,
-        arrivalTime: lastDepartureTime.plus(link.RunTime),
-        departureTime: link.To.WaitTime ? arrivalTime.plus(link.To.WaitTime) : lastDepartureTime,
+        arrivalTime: this.getTime(arrivalTime),
+        departureTime: this.getTime(lastDepartureTime),
         pickup: link.To.Activity === StopActivity.PickUp || link.To.Activity === StopActivity.PickUpAndSetDown,
         dropoff: link.To.Activity === StopActivity.SetDown || link.To.Activity === StopActivity.PickUpAndSetDown
       });
     }
 
     return stops;
+  }
+
+  private getTime(time: Duration): string {
+    const hour = time.toHours().toString().padStart(2, "0");
+    const minute = (time.toMinutes() % 60).toString().padStart(2, "0");
+
+    return hour + ":" + minute;
   }
 }
 
@@ -167,8 +173,8 @@ export interface JourneyCalendar {
 
 export interface StopTime {
   stop: ATCOCode,
-  arrivalTime: LocalTime,
-  departureTime: LocalTime,
+  arrivalTime: string,
+  departureTime: string,
   pickup: boolean,
   dropoff: boolean
 }
