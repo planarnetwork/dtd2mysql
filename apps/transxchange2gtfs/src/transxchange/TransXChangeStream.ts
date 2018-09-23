@@ -94,7 +94,7 @@ export class TransXChangeStream extends Transform {
   }
 
   private getJourneyPattern(patterns: Record<JourneyPatternID, JourneyPatternSectionID[]>, pattern: any) {
-    patterns[pattern.$.id] = pattern.JourneyPatternSectionRefs.map((jpsr: any) => jpsr[0]);
+    patterns[pattern.$.id] = pattern.JourneyPatternSectionRefs;
 
     return patterns;
   }
