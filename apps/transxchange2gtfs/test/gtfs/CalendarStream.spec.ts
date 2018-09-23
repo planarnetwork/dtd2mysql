@@ -2,50 +2,23 @@ import * as chai from "chai";
 import {awaitStream, splitCSV} from "../util";
 import {LocalDate, LocalTime} from "js-joda";
 import {CalendarStream} from "../../src/gtfs/CalendarStream";
-import {Holiday} from "../../src/transxchange/TransXChange";
 
 // tslint:disable
 
 describe("CalendarStream", () => {
 
   it("emits calendars", async () => {
-    const stream = new CalendarStream({} as Record<Holiday, LocalDate[][]>);
+    const stream = new CalendarStream();
 
     stream.write({
-      Services: {
-        "M6_MEGA": {
-          "Description": "Falmouth - Victoria,London",
-          "Lines": {
-            "l_M6_MEGA": "M6"
-          },
-          "Mode": "coach",
-          "OperatingPeriod": {
-            "EndDate": LocalDate.parse("2099-12-31"),
-            "StartDate": LocalDate.parse("2018-06-24")
-          },
-          "RegisteredOperatorRef": "OId_MEGA",
-          "ServiceCode": "M6_MEGA"
-        }
-      },
-      VehicleJourneys: [
-        {
-          "DepartureTime": LocalTime.parse("01:00"),
-          "JourneyPatternRef": "JP384",
-          "LineRef": "l_M6_MEGA",
-          "OperatingProfile": {
-            "BankHolidayOperation": {
-              "DaysOfNonOperation": [],
-              "DaysOfOperation": []
-            },
-            "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
-            "SpecialDaysOperation": {
-              "DaysOfNonOperation": [],
-              "DaysOfOperation": []
-            }
-          },
-          "ServiceRef": "M6_MEGA"
-        }
-      ]
+      calendar: {
+        id: 1,
+        startDate: LocalDate.parse("2018-06-24"),
+        endDate: LocalDate.parse("2099-12-31"),
+        days: [1, 1, 1, 1, 1, 1, 1],
+        includes: [],
+        excludes: []
+      }
     });
 
     stream.end();
@@ -63,6 +36,38 @@ describe("CalendarStream", () => {
       chai.expect(sunday).to.equal("1");
       chai.expect(start_date).to.equal("2018-06-24");
       chai.expect(end_date).to.equal("2099-12-31");
+    });
+  });
+
+  it("doesn't emit the same calendar twice", async () => {
+    const stream = new CalendarStream();
+
+    stream.write({
+      calendar: {
+        id: 1,
+        startDate: LocalDate.parse("2018-06-24"),
+        endDate: LocalDate.parse("2099-12-31"),
+        days: [1, 1, 1, 1, 1, 1, 1],
+        includes: [],
+        excludes: []
+      }
+    });
+
+    stream.write({
+      calendar: {
+        id: 1,
+        startDate: LocalDate.parse("2018-06-24"),
+        endDate: LocalDate.parse("2099-12-31"),
+        days: [1, 1, 1, 1, 1, 1, 1],
+        includes: [],
+        excludes: []
+      }
+    });
+
+    stream.end();
+
+    return awaitStream(stream, (rows: string[]) => {
+      chai.expect(rows.length).to.equal(2);
     });
   });
 

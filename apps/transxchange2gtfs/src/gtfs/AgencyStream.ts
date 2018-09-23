@@ -4,7 +4,7 @@ import {TransXChange} from "../transxchange/TransXChange";
 /**
  * Extract the agencies from the TransXChange objects
  */
-export class AgencyStream extends GTFSFileStream {
+export class AgencyStream extends GTFSFileStream<TransXChange> {
   private agenciesSeen: Record<string, boolean> = {};
   protected header = "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url";
 

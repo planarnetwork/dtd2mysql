@@ -2,7 +2,7 @@ import {TransXChange, StopPoint} from "../transxchange/TransXChange";
 import {ATCOCode, NaPTANIndex} from "../reference/NaPTAN";
 import {GTFSFileStream} from "./GTFSFileStream";
 
-export class StopsStream extends GTFSFileStream {
+export class StopsStream extends GTFSFileStream<TransXChange> {
   protected header = "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station";
   private static readonly STREET_BLACKLIST = ["Road", "Street", "Lane", "Avenue"];
   private readonly seenStops: Record<ATCOCode, boolean> = {};

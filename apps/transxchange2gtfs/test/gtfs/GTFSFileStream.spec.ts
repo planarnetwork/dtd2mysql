@@ -1,7 +1,7 @@
 import * as chai from "chai";
-import {Transform, TransformCallback} from "stream";
 import {GTFSFileStream} from "../../src/gtfs/GTFSFileStream";
 import {awaitStream} from "../util";
+import {TransXChange} from "../../src/transxchange/TransXChange";
 
 describe("GTFSFileStream", () => {
 
@@ -20,7 +20,7 @@ describe("GTFSFileStream", () => {
   });
 });
 
-class MockStream extends GTFSFileStream {
+class MockStream extends GTFSFileStream<TransXChange> {
   protected header = "header";
   protected transform = () => this.push("data");
 }

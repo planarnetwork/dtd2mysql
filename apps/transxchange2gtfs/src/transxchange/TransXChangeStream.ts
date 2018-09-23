@@ -1,15 +1,18 @@
 import {
-  DateRange, DaysOfWeek,
+  DateRange,
+  DaysOfWeek,
   JourneyPatternSections,
   JourneyStop,
   Lines,
-  Operators, Service,
+  Operators,
   StopPoint,
-  TransXChange, VehicleJourney, Services
+  TransXChange,
+  VehicleJourney,
+  Services, JourneyPatternID, JourneyPatternSectionID
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
-import {LocalDate, LocalTime} from "js-joda";
+import {Duration, LocalDate, LocalTime} from "js-joda";
 
 /**
  * Transforms JSON objects into a TransXChange objects
@@ -52,7 +55,7 @@ export class TransXChangeStream extends Transform {
     index[section.$.id] = section.JourneyPatternTimingLink.map((l: any) => ({
       From: this.getJourneyStop(l.From[0]),
       To: this.getJourneyStop(l.To[0]),
-      RunTime: l.RunTime[0]
+      RunTime: Duration.parse(l.RunTime[0])
     }));
 
     return index;
@@ -62,7 +65,7 @@ export class TransXChangeStream extends Transform {
     return {
       Activity: stop.Activity[0],
       StopPointRef: stop.StopPointRef[0],
-      WaitTime: stop.WaitTime && stop.WaitTime[0]
+      WaitTime: stop.WaitTime && Duration.parse(stop.WaitTime[0])
     };
   }
 
@@ -83,10 +86,17 @@ export class TransXChangeStream extends Transform {
       OperatingPeriod: this.getDateRange(service.OperatingPeriod[0]),
       RegisteredOperatorRef: service.RegisteredOperatorRef[0],
       Description: service.Description[0],
-      Mode: service.Mode[0]
+      Mode: service.Mode[0],
+      StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {})
     };
 
     return index;
+  }
+
+  private getJourneyPattern(patterns: Record<JourneyPatternID, JourneyPatternSectionID[]>, pattern: any) {
+    patterns[pattern.$.id] = pattern.JourneyPatternSectionRefs.map((jpsr: any) => jpsr[0]);
+
+    return patterns;
   }
 
   private getLines(index: Lines, line: any): Lines {
@@ -106,6 +116,7 @@ export class TransXChangeStream extends Transform {
     return {
       LineRef: vehicle.LineRef[0],
       ServiceRef: vehicle.ServiceRef[0],
+      VehicleJourneyCode: vehicle.VehicleJourneyCode[0],
       JourneyPatternRef: vehicle.JourneyPatternRef ? vehicle.JourneyPatternRef[0] : index[vehicle.VehicleJourneyRef[0]],
       DepartureTime: LocalTime.parse(vehicle.DepartureTime[0]),
       OperatingProfile: {

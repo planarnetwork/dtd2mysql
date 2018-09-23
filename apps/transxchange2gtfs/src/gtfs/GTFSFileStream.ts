@@ -4,7 +4,7 @@ import {TransXChange} from "../transxchange/TransXChange";
 /**
  * Transform TransXChange objects into GTFS CSV lines
  */
-export abstract class GTFSFileStream extends Transform {
+export abstract class GTFSFileStream<T> extends Transform {
   private headerSent = false;
   protected abstract header: string;
 
@@ -15,7 +15,7 @@ export abstract class GTFSFileStream extends Transform {
   /**
    * Emit the header if necessary then pass the chunk to the transform method
    */
-  public _transform(chunk: TransXChange, encoding: string, callback: TransformCallback): void {
+  public _transform(chunk: T, encoding: string, callback: TransformCallback): void {
     if (!this.headerSent) {
       this.push(this.header);
       this.headerSent = true;
@@ -29,6 +29,6 @@ export abstract class GTFSFileStream extends Transform {
   /**
    * Extract the records from the TransXChange object
    */
-  protected abstract transform(data: TransXChange): void;
+  protected abstract transform(data: T): void;
 
 }

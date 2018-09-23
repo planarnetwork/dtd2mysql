@@ -4,7 +4,7 @@ import {Mode, Service, TransXChange} from "../transxchange/TransXChange";
 /**
  * Extract the routes from the TransXChange objects
  */
-export class RoutesStream extends GTFSFileStream {
+export class RoutesStream extends GTFSFileStream<TransXChange> {
   protected header = "route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,route_url,route_desc";
 
   private routesSeen: Record<string, boolean> = {};
