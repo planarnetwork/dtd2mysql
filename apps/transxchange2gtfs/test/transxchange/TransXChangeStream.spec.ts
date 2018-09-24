@@ -282,7 +282,10 @@ describe("TransXChangeStream", () => {
           },
           "RegularDayType": [[1, 1, 1, 1, 1, 1, 1]],
           "SpecialDaysOperation": {
-            "DaysOfNonOperation": [],
+            "DaysOfNonOperation": [{
+              StartDate: LocalDate.parse("2018-08-08"),
+              EndDate: LocalDate.parse("2099-12-31")
+            }],
             "DaysOfOperation": []
           }
         },
