@@ -47,20 +47,27 @@ export class TransXChangeJourneyStream extends Transform {
   }
 
   private getCalendar(operatingProfile: OperatingProfile, service: Service): JourneyCalendar {
+    const days: DaysOfWeek = operatingProfile.RegularDayType === "HolidaysOnly"
+      ? [0, 0, 0, 0, 0, 0, 0]
+      : this.mergeDays(operatingProfile.RegularDayType);
+
     let startDate = service.OperatingPeriod.StartDate;
     let endDate = service.OperatingPeriod.EndDate;
     let excludes = [];
     let includes = [];
 
     for (const dates of operatingProfile.SpecialDaysOperation.DaysOfNonOperation) {
-      if (dates.StartDate.isEqual(startDate)) {
+      if (!dates.StartDate.isAfter(startDate)) {
         startDate = dates.EndDate.plusDays(1);
       }
-      else if (dates.EndDate.isEqual(endDate)) {
+      else if (!dates.EndDate.isBefore(endDate)) {
         endDate = dates.StartDate.minusDays(1);
       }
+      else if (dates.EndDate.toEpochDay() - dates.StartDate.toEpochDay() < 92) {
+        excludes.push(...this.dateRange(dates.StartDate, dates.EndDate, days));
+      }
       else {
-        excludes.push(...this.dateRange(dates.StartDate, dates.EndDate));
+        console.log("Warning: Ignored extra long break in service", dates, JSON.stringify(service));
       }
     }
 
@@ -71,10 +78,6 @@ export class TransXChangeJourneyStream extends Transform {
     for (const holiday of operatingProfile.BankHolidayOperation.DaysOfOperation) {
       includes.push(...this.getHoliday(holiday, startDate));
     }
-
-    const days: DaysOfWeek = operatingProfile.RegularDayType === "HolidaysOnly"
-      ? [0, 0, 0, 0, 0, 0, 0]
-      : this.mergeDays(operatingProfile.RegularDayType);
 
     const hash = this.getCalendarHash(days, startDate, endDate, includes, excludes);
 
@@ -93,8 +96,16 @@ export class TransXChangeJourneyStream extends Transform {
     );
   }
 
-  private dateRange(from: LocalDate, to: LocalDate, dates: LocalDate[] = []): LocalDate[] {
-    return from.isAfter(to) ? dates : this.dateRange(from.plusDays(1), to, [...dates, from]);
+  private dateRange(from: LocalDate, to: LocalDate, days: DaysOfWeek, dates: LocalDate[] = []): LocalDate[] {
+    if (from.isAfter(to)) {
+      return dates;
+    }
+    else if (days[from.dayOfWeek().value() - 1]) {
+      return this.dateRange(from.plusDays(1), to, days, [...dates, from]);
+    }
+    else {
+      return this.dateRange(from.plusDays(1), to, days, dates);
+    }
   }
 
   private getHoliday(holiday: Holiday, startDate: LocalDate): LocalDate[] {

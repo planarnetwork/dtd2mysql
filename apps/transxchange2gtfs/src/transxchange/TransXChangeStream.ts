@@ -30,15 +30,15 @@ export class TransXChangeStream extends Transform {
   public _transform(data: any, encoding: string, callback: TransformCallback): void {
     const tx = data.TransXChange;
     const patternIndex = tx.VehicleJourneys[0].VehicleJourney.reduce(this.getJourneyPatternIndex, {});
+    const services = tx.Services[0].Service.reduce(this.getServices, {});
 
     const result: TransXChange = {
       StopPoints: tx.StopPoints[0].AnnotatedStopPointRef.map(this.getStop),
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
       Operators: tx.Operators[0].Operator.reduce(this.getOperators, {}),
-      Services: tx.Services[0].Service.reduce(this.getService, {}),
+      Services: services,
       VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney
-        .filter((v: any) => v.OperatingProfile)
-        .map((v: any) => this.getVehicleJourney(v, patternIndex))
+        .map((v: any) => this.getVehicleJourney(v, patternIndex, services))
     };
 
     callback(undefined, result);
@@ -81,7 +81,7 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
-  private getService(index: Services, service: any): Services {
+  private getServices(index: Services, service: any): Services {
     index[service.ServiceCode[0]] = {
       ServiceCode: service.ServiceCode[0],
       Lines: service.Lines[0].Line.reduce(this.getLines, {}),
@@ -89,7 +89,10 @@ export class TransXChangeStream extends Transform {
       RegisteredOperatorRef: service.RegisteredOperatorRef[0],
       Description: service.Description[0],
       Mode: service.Mode ? service.Mode[0] : Mode.Bus,
-      StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {})
+      StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {}),
+      OperatingProfile: service.OperatingProfile
+        ? this.getOperatingProfile(service.OperatingProfile[0])
+        : undefined
     };
 
     return index;
@@ -114,14 +117,16 @@ export class TransXChangeStream extends Transform {
     };
   }
 
-  private getVehicleJourney(vehicle: any, index: JourneyPatternIndex): VehicleJourney {
+  private getVehicleJourney(vehicle: any, index: JourneyPatternIndex, services: Services): VehicleJourney {
     return {
       LineRef: vehicle.LineRef[0],
       ServiceRef: vehicle.ServiceRef[0],
       VehicleJourneyCode: vehicle.VehicleJourneyCode[0],
       JourneyPatternRef: vehicle.JourneyPatternRef ? vehicle.JourneyPatternRef[0] : index[vehicle.VehicleJourneyRef[0]],
       DepartureTime: LocalTime.parse(vehicle.DepartureTime[0]),
-      OperatingProfile: this.getOperatingProfile(vehicle.OperatingProfile[0])
+      OperatingProfile: vehicle.OperatingProfile
+        ? this.getOperatingProfile(vehicle.OperatingProfile[0])
+        : services[vehicle.ServiceRef[0]].OperatingProfile!
     };
   }
 

@@ -99,7 +99,8 @@ export interface Service {
   RegisteredOperatorRef: OperatorID,
   Description: string,
   Mode: Mode,
-  StandardService: Record<JourneyPatternID, JourneyPatternSectionID[]>
+  StandardService: Record<JourneyPatternID, JourneyPatternSectionID[]>,
+  OperatingProfile: OperatingProfile | undefined
 }
 
 /**

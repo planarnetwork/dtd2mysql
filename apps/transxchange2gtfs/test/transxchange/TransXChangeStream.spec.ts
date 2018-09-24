@@ -192,6 +192,7 @@ describe("TransXChangeStream", () => {
             "EndDate": LocalDate.parse("2099-12-31"),
             "StartDate": LocalDate.parse("2018-06-24")
           },
+          "OperatingProfile": undefined,
           "RegisteredOperatorRef": "OId_MEGA",
           "ServiceCode": "M6_MEGA",
           "StandardService": {
