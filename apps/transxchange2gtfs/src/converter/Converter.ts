@@ -1,10 +1,10 @@
-import {XMLStream} from "../xml/XMLStream";
 import * as AdmZip from "adm-zip";
-import {TransXChangeStream} from "../transxchange/TransXChangeStream";
 import {GTFSFileStream} from "../gtfs/GTFSFileStream";
 import {FileStream} from "./FileStream";
 import autobind from "autobind-decorator";
 import {Readable} from "stream";
+import {TransXChangeJourney} from "../transxchange/TransXChangeJourneyStream";
+import {TransXChange} from "../transxchange/TransXChange";
 
 /**
  * Converts the TransXChange input stream to a GTFS zip output stream
@@ -14,8 +14,6 @@ export class Converter {
 
   constructor(
     private readonly fileStream: FileStream,
-    private readonly xmlStream: XMLStream,
-    private readonly transXChangeStream: TransXChangeStream,
     private readonly gtfsFiles: GTFSFiles,
     private readonly archive: AdmZip
   ) {}
@@ -30,8 +28,6 @@ export class Converter {
     }
 
     this.pushInputFiles(input);
-    this.fileStream.pipe(this.xmlStream);
-    this.xmlStream.pipe(this.transXChangeStream);
 
     // wait for all the zip files to finish
     await Promise.all(Object.entries(this.gtfsFiles).map(this.addFile));
@@ -49,9 +45,7 @@ export class Converter {
     this.fileStream.end();
   }
 
-  private async addFile([filename, stream]: [string, GTFSFileStream]): Promise<void> {
-    this.transXChangeStream.pipe(stream);
-
+  private async addFile([filename, stream]: [string, Readable]): Promise<void> {
     const text = await streamToString(stream);
 
     this.archive.addFile(filename, Buffer.from(text));
@@ -75,4 +69,4 @@ function streamToString(stream: Readable): Promise<string> {
 /**
  * GTFSFileStreams indexed by filename e.g. stops.txt => Stops
  */
-export type GTFSFiles = Record<string, GTFSFileStream>;
+export type GTFSFiles = Record<string, GTFSFileStream<TransXChange | TransXChangeJourney>>;

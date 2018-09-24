@@ -2,7 +2,7 @@ import {GTFSFileStream} from "./GTFSFileStream";
 import {TransXChangeJourney} from "../transxchange/TransXChangeJourneyStream";
 
 /**
- * Extract the calendars from the TransXChange services
+ * Extract the calendars from the TransXChange journeys
  */
 export class CalendarStream extends GTFSFileStream<TransXChangeJourney> {
   private datesSeen: Record<string, boolean> = {};

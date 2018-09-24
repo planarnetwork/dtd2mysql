@@ -14,6 +14,9 @@ import {CalendarStream} from "./gtfs/CalendarStream";
 import {LocalDate} from "js-joda";
 import {Holiday} from "./transxchange/TransXChange";
 import {BankHolidays, TransXChangeJourneyStream} from "./transxchange/TransXChangeJourneyStream";
+import {CalendarDatesStream} from "./gtfs/CalendarDatesStream";
+import {TripsStream} from "./gtfs/TripsStream";
+import {StopTimesStream} from "./gtfs/StopTimesStream";
 
 /**
  * Dependency container
@@ -21,18 +24,23 @@ import {BankHolidays, TransXChangeJourneyStream} from "./transxchange/TransXChan
 export class Container {
 
   public async getConverter(): Promise<Converter> {
-    const stopsStream = await this.getStopsStream();
+    const files = new FileStream();
+    const xml = new XMLStream(this.getParseXML());
+    const transxchange = new TransXChangeStream();
     const journeyStream = new TransXChangeJourneyStream(this.getBankHolidays());
 
+    files.pipe(xml).pipe(transxchange).pipe(journeyStream);
+
     return new Converter(
-      new FileStream(),
-      new XMLStream(this.getParseXML()),
-      new TransXChangeStream(),
+      files,
       {
-        "stops.txt": stopsStream,
-        "agency.txt": new AgencyStream(),
-        "routes.txt": new RoutesStream(),
-        "calendar.txt": new CalendarStream()
+        "stops.txt": transxchange.pipe(await this.getStopsStream()),
+        "agency.txt": transxchange.pipe(new AgencyStream()),
+        "routes.txt": transxchange.pipe(new RoutesStream()),
+        "calendar.txt": journeyStream.pipe(new CalendarStream()),
+        "calendar_dates.txt": journeyStream.pipe(new CalendarDatesStream()),
+        "trips.txt": journeyStream.pipe(new TripsStream()),
+        "stop_times": journeyStream.pipe(new StopTimesStream()),
       },
       new AdmZip()
     );

@@ -8,7 +8,7 @@ import {
   StopPoint,
   TransXChange,
   VehicleJourney,
-  Services, JourneyPatternID, JourneyPatternSectionID
+  Services, JourneyPatternID, JourneyPatternSectionID, OperatingProfile, Mode
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -36,7 +36,9 @@ export class TransXChangeStream extends Transform {
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
       Operators: tx.Operators[0].Operator.reduce(this.getOperators, {}),
       Services: tx.Services[0].Service.reduce(this.getService, {}),
-      VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney.map((v: any) => this.getVehicleJourney(v, patternIndex))
+      VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney
+        .filter((v: any) => v.OperatingProfile)
+        .map((v: any) => this.getVehicleJourney(v, patternIndex))
     };
 
     callback(undefined, result);
@@ -86,7 +88,7 @@ export class TransXChangeStream extends Transform {
       OperatingPeriod: this.getDateRange(service.OperatingPeriod[0]),
       RegisteredOperatorRef: service.RegisteredOperatorRef[0],
       Description: service.Description[0],
-      Mode: service.Mode[0],
+      Mode: service.Mode ? service.Mode[0] : Mode.Bus,
       StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {})
     };
 
@@ -119,20 +121,39 @@ export class TransXChangeStream extends Transform {
       VehicleJourneyCode: vehicle.VehicleJourneyCode[0],
       JourneyPatternRef: vehicle.JourneyPatternRef ? vehicle.JourneyPatternRef[0] : index[vehicle.VehicleJourneyRef[0]],
       DepartureTime: LocalTime.parse(vehicle.DepartureTime[0]),
-      OperatingProfile: {
-        RegularDayType: vehicle.OperatingProfile[0].RegularDayType[0].DaysOfWeek
-          ? vehicle.OperatingProfile[0].RegularDayType[0].DaysOfWeek.map(this.getDaysOfWeek)
-          : "HolidaysOnly",
-        BankHolidayOperation: {
-          DaysOfOperation: vehicle.BankHolidayOperation ? vehicle.BankHolidayOperation[0].map((bh: any) => bh[0]) : [],
-          DaysOfNonOperation: vehicle.BankHolidayOperation ? vehicle.BankHolidayOperation[0].map((bh: any) => bh[0]) : []
-        },
-        SpecialDaysOperation: {
-          DaysOfOperation: vehicle.SpecialDaysOperation ? vehicle.SpecialDaysOperation[0].map(this.getDateRange) : [],
-          DaysOfNonOperation: vehicle.SpecialDaysOperation ? vehicle.SpecialDaysOperation[0].map(this.getDateRange) : []
-        }
-      }
+      OperatingProfile: this.getOperatingProfile(vehicle.OperatingProfile[0])
     };
+  }
+
+  private getOperatingProfile(profile: any): OperatingProfile {
+    const result = {
+      BankHolidayOperation: {
+        DaysOfOperation: [],
+        DaysOfNonOperation: []
+      },
+      SpecialDaysOperation: {
+        DaysOfOperation: [],
+        DaysOfNonOperation: []
+      },
+      RegularDayType: profile.RegularDayType[0].DaysOfWeek
+        ? profile.RegularDayType[0].DaysOfWeek.map(this.getDaysOfWeek)
+        : "HolidaysOnly"
+    };
+
+    if (profile.BankHolidayOperation && profile.BankHolidayOperation[0].DaysOfOperation && profile.BankHolidayOperation[0].DaysOfOperation[0]) {
+      result.BankHolidayOperation.DaysOfOperation = profile.BankHolidayOperation[0].DaysOfOperation.map((bh: any) => Object.keys(bh)[0]);
+    }
+    if (profile.BankHolidayOperation && profile.BankHolidayOperation[0].DaysOfNonOperation && profile.BankHolidayOperation[0].DaysOfNonOperation[0]) {
+      result.BankHolidayOperation.DaysOfNonOperation = profile.BankHolidayOperation[0].DaysOfNonOperation.map((bh: any) => Object.keys(bh)[0]);
+    }
+    if (profile.SpecialDaysOperation && profile.SpecialDaysOperation[0].DaysOfOperation && profile.SpecialDaysOperation[0].DaysOfOperation[0]) {
+      result.SpecialDaysOperation.DaysOfOperation = profile.SpecialDaysOperation[0].DaysOfOperation[0].DateRange.map(this.getDateRange);
+    }
+    if (profile.SpecialDaysOperation && profile.SpecialDaysOperation[0].DaysOfNonOperation && profile.SpecialDaysOperation[0].DaysOfNonOperation[0]) {
+      result.SpecialDaysOperation.DaysOfNonOperation = profile.SpecialDaysOperation[0].DaysOfNonOperation[0].DateRange.map(this.getDateRange);
+    }
+
+    return result;
   }
 
   private getDaysOfWeek(days: any): DaysOfWeek {

@@ -291,7 +291,6 @@ describe("TransXChangeStream", () => {
     });
   });
 
-  xit("emits holiday only dates");
 });
 
 // tslint:disable
