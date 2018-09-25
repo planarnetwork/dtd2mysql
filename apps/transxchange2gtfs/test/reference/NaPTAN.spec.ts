@@ -5,7 +5,12 @@ import parse = require("csv-parse");
 describe("NaPTANFactory", () => {
 
   it("indexes NaPTAN rows by ATCO code", async () => {
-    const factory = new NaPTANFactory(mockZip() as any, parse());
+    const input = parse();
+    const factory = new NaPTANFactory(input);
+
+    input.write("stopA,nameA\nstopB,nameB");
+    input.end();
+
     const index = await factory.getIndex();
 
     chai.expect(index["stopA"]).to.deep.equal(["stopA", "nameA"]);
@@ -13,10 +18,4 @@ describe("NaPTANFactory", () => {
   });
 
 });
-
-function mockZip() {
-  return {
-    readAsText: () => "stopA,nameA\nstopB,nameB"
-  };
-}
 

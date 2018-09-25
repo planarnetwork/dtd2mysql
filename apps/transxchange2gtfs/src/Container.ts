@@ -5,7 +5,6 @@ import {Converter} from "./converter/Converter";
 import {StopsStream} from "./gtfs/StopsStream";
 import parse = require("csv-parse");
 import {NaPTANFactory} from "./reference/NaPTAN";
-import AdmZip = require("adm-zip");
 import {TransXChangeStream} from "./transxchange/TransXChangeStream";
 import {FileStream} from "./converter/FileStream";
 import {AgencyStream} from "./gtfs/AgencyStream";
@@ -17,6 +16,9 @@ import {BankHolidays, TransXChangeJourneyStream} from "./transxchange/TransXChan
 import {CalendarDatesStream} from "./gtfs/CalendarDatesStream";
 import {TripsStream} from "./gtfs/TripsStream";
 import {StopTimesStream} from "./gtfs/StopTimesStream";
+import * as fs from "fs";
+
+const exec = promisify(require("child_process").exec);
 
 /**
  * Dependency container
@@ -40,16 +42,19 @@ export class Container {
         "calendar.txt": journeyStream.pipe(new CalendarStream()),
         "calendar_dates.txt": journeyStream.pipe(new CalendarDatesStream()),
         "trips.txt": journeyStream.pipe(new TripsStream()),
-        "stop_times": journeyStream.pipe(new StopTimesStream()),
-      },
-      new AdmZip()
+        "stop_times.txt": journeyStream.pipe(new StopTimesStream()),
+      }
     );
   }
 
   public async getStopsStream(): Promise<StopsStream> {
+    const stopsZip = __dirname + "/../resource/Stops.zip";
+    const stopsCSV = "/tmp/transxchange2gtfs_stops/";
+
+    await exec("unzip -u " + stopsZip + " -d " + stopsCSV);
+
     const naptanFactory = new NaPTANFactory(
-      new AdmZip(__dirname + "/../resource/Stops.zip"),
-      parse()
+      fs.createReadStream(stopsCSV + "Stops.csv", "utf8").pipe(parse())
     );
 
     const naptanIndex = await naptanFactory.getIndex();

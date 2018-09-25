@@ -5,9 +5,15 @@ transxchange2gtfs
 
 transxchange2gtfs converts [TransXChange](http://naptan.dft.gov.uk/transxchange/index.htm) timetable data into a [GTFS](https://developers.google.com/transit/gtfs/) zip.
 
-## Current status
+## Comparison
 
-Non-functional, in development.
+There are other [similar projects](https://github.com/search?q=transxchange+gtfs), each with their own merits. This tool has some features not found in the others:
+
+- Smaller output - identical calendars are reused
+- Better handling of bank holidays
+- Built in NaPTAN data (stop names, longitude, latitude)
+- Ability to process multiple files, including zips
+- Relatively low memory usage
 
 ## Usage
 
@@ -33,7 +39,8 @@ transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.z
 
 ## Notes
 
-- All timezones are UTC
+- All stop times are left in the original timezones (assumed to be local time)
+- It is assumed that any stops in different TransXChange documents with the same ATCO are the same stop.
 - Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
 - TransXChange is a [bizarre and overly-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are no doubt edge cases that have not been covered.
 

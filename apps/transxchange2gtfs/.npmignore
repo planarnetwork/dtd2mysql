@@ -8,3 +8,5 @@ tsconfig.json
 .travis.yml
 gtfs.zip
 resource/
+*.txt
+dist/resource/Stops.csv

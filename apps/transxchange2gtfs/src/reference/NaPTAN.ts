@@ -1,4 +1,3 @@
-import * as AdmZip from "adm-zip";
 import {Parser} from "csv-parse";
 
 /**
@@ -17,7 +16,6 @@ export type NaPTANIndex = Record<ATCOCode, string[]>;
 export class NaPTANFactory {
 
   constructor(
-    private readonly zip: AdmZip,
     private csvStream: Parser,
   ) {}
 
@@ -26,11 +24,8 @@ export class NaPTANFactory {
    */
   public getIndex(): Promise<NaPTANIndex> {
     return new Promise((resolve, reject) => {
-      const csv = this.zip.readAsText("Stops.csv", "utf8");
       const index: NaPTANIndex = {};
 
-      this.csvStream.write(csv);
-      this.csvStream.end();
       this.csvStream.on("data", data => index[data[0]] = data);
       this.csvStream.on("end", () => resolve(index));
       this.csvStream.on("error", reject);

@@ -1,15 +1,18 @@
 import {Transform, TransformCallback} from "stream";
 import {promisify} from "util";
 import * as fs from "fs";
-import * as AdmZip from "adm-zip";
 import {parse} from "path";
+import {Converter} from "./Converter";
 
 const readFile = promisify(fs.readFile);
+const exec = promisify(require("child_process").exec);
+const glob = promisify(require("glob"));
 
 /**
  * Reads a set of XML or zip files and emits the contents downstream
  */
 export class FileStream extends Transform {
+  private zipIndex = 0;
 
   constructor() {
     super({ objectMode: true });
@@ -25,7 +28,7 @@ export class FileStream extends Transform {
       await this.readFile(file);
     }
     else if (extension  === ".zip") {
-      this.readZip(file);
+      await this.readZip(file);
     }
     else {
       this.destroy(Error("Unknown file type: " + file));
@@ -40,15 +43,15 @@ export class FileStream extends Transform {
     this.push(contents);
   }
 
-  private readZip(file: string): void {
-    const zip = new AdmZip(file);
+  private async readZip(file: string): Promise<any> {
+    const outputDir = Converter.TMP + this.zipIndex++ + "/";
 
-    for (const entry of zip.getEntries()) {
-      const extension = parse(entry.entryName).ext;
+    await exec("unzip -u " + file + " -d " + outputDir);
 
-      if (extension === ".xml") {
-        this.push(entry.getData().toString("utf8"));
-      }
+    const files: string[] = await glob(outputDir + "**/*.xml");
+
+    for (const f of files) {
+      await this.readFile(f);
     }
   }
 
