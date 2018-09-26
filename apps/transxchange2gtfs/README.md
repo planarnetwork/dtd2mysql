@@ -43,11 +43,11 @@ transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.z
 
 ## Notes
 
-- All stop times are left in the original timezones (assumed to be local time)
+- All stop times are left in the original timezones (assumed to be local time).
 - It is assumed that any stops in different TransXChange documents with the same ATCO are the same stop.
-- Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
+- Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help).
 - TransXChange is a [bizarre and over-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are probably edge cases that have not been covered.
-- Transfers between stations are given a rather generous walking time of 3 minutes per 0.1 miles.
+- A MySQL for the GTFS files is provided in the resource folder, along with an import script. 
  
 ## Contributing
 
