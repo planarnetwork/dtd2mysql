@@ -13,7 +13,7 @@ export class CalendarStream extends GTFSFileStream<TransXChangeJourney> {
     if (!this.datesSeen[journey.calendar.id]) {
       this.datesSeen[journey.calendar.id] = true;
 
-      this.push(`${journey.calendar.id},${journey.calendar.days},${journey.calendar.startDate},${journey.calendar.endDate}`);
+      this.pushLine(`${journey.calendar.id},${journey.calendar.days},${journey.calendar.startDate},${journey.calendar.endDate}`);
     }
   }
 

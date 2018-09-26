@@ -3,7 +3,7 @@ import {ATCOCode, NaPTANIndex} from "../reference/NaPTAN";
 import {GTFSFileStream} from "./GTFSFileStream";
 
 export class StopsStream extends GTFSFileStream<TransXChange> {
-  protected header = "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,stop_url,location_type,parent_station";
+  protected header = "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding";
   private static readonly STREET_BLACKLIST = ["Road", "Street", "Lane", "Avenue"];
   private readonly seenStops: Record<ATCOCode, boolean> = {};
 
@@ -14,7 +14,7 @@ export class StopsStream extends GTFSFileStream<TransXChange> {
   protected transform(data: TransXChange): void {
     for (const stop of data.StopPoints) {
       if (!this.seenStops[stop.StopPointRef]) {
-        this.push(this.getStop(stop));
+        this.pushLine(this.getStop(stop));
         this.seenStops[stop.StopPointRef] = true;
       }
     }
@@ -29,11 +29,11 @@ export class StopsStream extends GTFSFileStream<TransXChange> {
     const specificLocation = indicator !== "" ? " (" + indicator.replace("->", "") + ")" : "";
     const city = parent || locality;
 
-    return `${atcoCode},${naptanCode},"${name}${specificLocation}${specificStreet}, ${city}",${name},${lat},${lng},,,`;
+    return `${atcoCode},${naptanCode},"${name}${specificLocation}${specificStreet}, ${city}",${name},${lat},${lng},,,,,,0`;
   }
 
   private getFeedStop(stop: StopPoint): string {
-    return `${stop.StopPointRef},,"${stop.CommonName}, ${stop.LocalityQualifier}",,0.00,0.00,,,`;
+    return `${stop.StopPointRef},,"${stop.CommonName}, ${stop.LocalityQualifier}",,0.00,0.00,,,,,,0`;
   }
 
   /**

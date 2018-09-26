@@ -22,5 +22,5 @@ describe("GTFSFileStream", () => {
 
 class MockStream extends GTFSFileStream<TransXChange> {
   protected header = "header";
-  protected transform = () => this.push("data");
+  protected transform = () => this.pushLine("data");
 }

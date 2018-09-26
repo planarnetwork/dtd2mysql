@@ -4,7 +4,7 @@ import {parseString} from "xml2js";
 import {Converter} from "./converter/Converter";
 import {StopsStream} from "./gtfs/StopsStream";
 import parse = require("csv-parse");
-import {NaPTANFactory} from "./reference/NaPTAN";
+import {NaPTANFactory, NaPTANIndex} from "./reference/NaPTAN";
 import {TransXChangeStream} from "./transxchange/TransXChangeStream";
 import {FileStream} from "./converter/FileStream";
 import {AgencyStream} from "./gtfs/AgencyStream";
@@ -17,6 +17,7 @@ import {CalendarDatesStream} from "./gtfs/CalendarDatesStream";
 import {TripsStream} from "./gtfs/TripsStream";
 import {StopTimesStream} from "./gtfs/StopTimesStream";
 import * as fs from "fs";
+import {TransfersStream} from "./gtfs/TransfersStream";
 
 const exec = promisify(require("child_process").exec);
 
@@ -30,24 +31,26 @@ export class Container {
     const xml = new XMLStream(this.getParseXML());
     const transxchange = new TransXChangeStream();
     const journeyStream = new TransXChangeJourneyStream(this.getBankHolidays());
+    const naptanIndex = await this.getNaPTANIndex();
 
     files.pipe(xml).pipe(transxchange).pipe(journeyStream);
 
     return new Converter(
       files,
       {
-        "stops.txt": transxchange.pipe(await this.getStopsStream()),
+        "stops.txt": transxchange.pipe(new StopsStream(naptanIndex)),
         "agency.txt": transxchange.pipe(new AgencyStream()),
         "routes.txt": transxchange.pipe(new RoutesStream()),
         "calendar.txt": journeyStream.pipe(new CalendarStream()),
         "calendar_dates.txt": journeyStream.pipe(new CalendarDatesStream()),
         "trips.txt": journeyStream.pipe(new TripsStream()),
         "stop_times.txt": journeyStream.pipe(new StopTimesStream()),
+        "transfers.txt": transxchange.pipe(new TransfersStream(naptanIndex))
       }
     );
   }
 
-  public async getStopsStream(): Promise<StopsStream> {
+  public async getNaPTANIndex(): Promise<NaPTANIndex> {
     const stopsZip = __dirname + "/../resource/Stops.zip";
     const stopsCSV = "/tmp/transxchange2gtfs_stops/";
 
@@ -57,9 +60,7 @@ export class Container {
       fs.createReadStream(stopsCSV + "Stops.csv", "utf8").pipe(parse())
     );
 
-    const naptanIndex = await naptanFactory.getIndex();
-
-    return new StopsStream(naptanIndex);
+    return naptanFactory.getIndex();
   }
 
   public getParseXML(): ParseXML {

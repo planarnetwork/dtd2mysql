@@ -14,6 +14,7 @@ There are other [similar projects](https://github.com/search?q=transxchange+gtfs
 - Built in NaPTAN data (stop names, longitude, latitude)
 - Ability to process multiple files, including zips
 - Low memory usage - most large files use less than 1GB, processing the entire UK data set requires 4GB
+- Generates interchange time and transfers to nearby stops
 
 ## Installation
 
@@ -46,7 +47,8 @@ transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.z
 - It is assumed that any stops in different TransXChange documents with the same ATCO are the same stop.
 - Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
 - TransXChange is a [bizarre and over-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are probably edge cases that have not been covered.
-
+- Transfers between stations are given a rather generous walking time of 3 minutes per 0.1 miles.
+ 
 ## Contributing
 
 Issues and PRs are very welcome. To get the project set up run

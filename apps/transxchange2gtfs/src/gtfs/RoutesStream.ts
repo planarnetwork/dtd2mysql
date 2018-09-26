@@ -5,7 +5,7 @@ import {Mode, Service, TransXChange} from "../transxchange/TransXChange";
  * Extract the routes from the TransXChange objects
  */
 export class RoutesStream extends GTFSFileStream<TransXChange> {
-  protected header = "route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,route_url,route_desc";
+  protected header = "route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,route_color,route_url,route_desc";
 
   private routesSeen: Record<string, boolean> = {};
   private routeType = {
@@ -30,7 +30,7 @@ export class RoutesStream extends GTFSFileStream<TransXChange> {
     if (!this.routesSeen[routeId]) {
       this.routesSeen[routeId] = true;
 
-      this.push(`${routeId},${service.RegisteredOperatorRef},${routeId},"${service.Description}",${this.routeType[service.Mode]},,,"${service.Description}"`);
+      this.pushLine(`${routeId},${service.RegisteredOperatorRef},${routeId},"${service.Description}",${this.routeType[service.Mode]},,,,"${service.Description}"`);
     }
   }
 

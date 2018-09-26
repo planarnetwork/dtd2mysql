@@ -17,7 +17,7 @@ export abstract class GTFSFileStream<T> extends Transform {
    */
   public _transform(chunk: T, encoding: string, callback: TransformCallback): void {
     if (!this.headerSent) {
-      this.push(this.header);
+      this.pushLine(this.header);
       this.headerSent = true;
     }
 
@@ -30,5 +30,12 @@ export abstract class GTFSFileStream<T> extends Transform {
    * Extract the records from the TransXChange object
    */
   protected abstract transform(data: T): void;
+
+  /**
+   * Add a new line to whatever is being pushed
+   */
+  public pushLine(data: string | null, encoding?: string): boolean {
+    return this.push(data + "\n", encoding);
+  }
 
 }

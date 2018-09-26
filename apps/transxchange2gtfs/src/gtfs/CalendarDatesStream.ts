@@ -21,7 +21,7 @@ export class CalendarDatesStream extends GTFSFileStream<TransXChangeJourney> {
 
   private pushDates(dates: LocalDate[], type: Day, serviceId: number): void {
     for (const date of dates) {
-      this.push(`${serviceId},${date},${type}`);
+      this.pushLine(`${serviceId},${date},${type}`);
     }
   }
 

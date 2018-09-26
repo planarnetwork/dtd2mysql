@@ -13,7 +13,7 @@ export class AgencyStream extends GTFSFileStream<TransXChange> {
       if (!this.agenciesSeen[operatorId]) {
         const operator = data.Operators[operatorId];
 
-        this.push(`${operatorId},${operator.OperatorShortName},http://agency.com,Europe/London,en,,`);
+        this.pushLine(`${operatorId},${operator.OperatorShortName},http://agency.com,Europe/London,en,,`);
 
         this.agenciesSeen[operatorId] = true;
       }
