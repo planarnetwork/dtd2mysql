@@ -8,7 +8,7 @@
     "transxchange2gtfs": "bin/transxchange2gtfs.sh"
   },
   "scripts": {
-    "start": "NODE_OPTIONS='--max-old-space-size=2000' ts-node src/cli.ts",
+    "start": "NODE_OPTIONS='--max-old-space-size=4000' ts-node src/cli.ts",
     "prepublishOnly": "rm -r dist;tsc -p ./ --outDir dist/; cp -r ./resource ./dist/",
     "test": "npm run lint && mocha --require ts-node/register 'test/**/*.spec.ts'",
     "lint-raw": "tslint --project tsconfig.json",

@@ -21,8 +21,10 @@ export class FileStream extends Transform {
   /**
    * Pop the next file off the list and emit it. If we've got no more files, close the stream
    */
-  async _transform(file: string, encoding: string, callback: TransformCallback): Promise<void> {
+  public async _transform(file: string, encoding: string, callback: TransformCallback): Promise<void> {
     const extension = parse(file).ext.toLowerCase();
+
+    console.log("Processing " + file);
 
     if (extension  === ".xml") {
       await this.readFile(file);

@@ -68,7 +68,7 @@ export class Container {
 
   private getBankHolidays(): BankHolidays {
     const years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"];
-    const dates = {
+    const dates: Record<Holiday, string[]> = {
       ChristmasEve: years.map(year => year + "-12-24"),
       ChristmasDay: years.map(year => year + "-12-25"),
       BoxingDay: years.map(year => year + "-12-26"),
@@ -85,7 +85,19 @@ export class Container {
       AugustBankHolidayScotland: ["2019-08-26", "2020-08-31", "2021-08-30", "2022-08-29", "2023-08-28", "2024-08-26", "2025-08-25"],
       ChristmasDayHoliday: ["2018-12-25", "2019-12-25", "2020-12-25", "2021-12-27", "2022-12-26", "2023-12-25", "2024-12-25", "2025-12-25"],
       BoxingDayHoliday: ["2018-12-26", "2019-12-26", "2020-12-28", "2021-12-28", "2022-12-27", "2023-12-26", "2024-12-26", "2025-12-26"],
+      AllBankHolidays: []
     };
+
+    dates[Holiday.AllBankHolidays] = [
+      ...dates.NewYearsDayHoliday,
+      ...dates.GoodFriday,
+      ...dates.EasterMonday,
+      ...dates.SpringBank,
+      ...dates.MayDay,
+      ...dates.LateSummerBankHolidayNotScotland,
+      ...dates.ChristmasDayHoliday,
+      ...dates.BoxingDayHoliday
+    ];
 
     return Object.entries(dates).reduce(
       (index, [key, dateStrings]) => {

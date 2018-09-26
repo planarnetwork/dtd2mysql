@@ -177,7 +177,8 @@ export enum Holiday {
   EasterMonday = "EasterMonday",
   SpringBank = "SpringBank",
   AugustBankHolidayScotland = "AugustBankHolidayScotland",
-  GoodFriday = "GoodFriday"
+  GoodFriday = "GoodFriday",
+  AllBankHolidays = "AllBankHolidays"
 }
 
 /**

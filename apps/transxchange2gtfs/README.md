@@ -13,17 +13,20 @@ There are other [similar projects](https://github.com/search?q=transxchange+gtfs
 - Better handling of bank holidays
 - Built in NaPTAN data (stop names, longitude, latitude)
 - Ability to process multiple files, including zips
-- Relatively low memory usage
+- Low memory usage - most large files use less than 1GB, processing the entire UK data set requires 4GB
 
-## Usage
+## Installation
 
-**please note that [node 10.x](https://nodejs.org) or above is required**
+Please note that zip/unzip and [node 10.x](https://nodejs.org) or above are required.
 
 transxchange2gtfs is a CLI tool that can be installed via NPM:
 
 ```
+sudo apt-get install nodejs zip
 npm install -g transxchange2gtfs
 ```
+
+## Usage
 
 It can be run by specifying the input and output files as CLI arguments:
 
@@ -42,7 +45,7 @@ transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.z
 - All stop times are left in the original timezones (assumed to be local time)
 - It is assumed that any stops in different TransXChange documents with the same ATCO are the same stop.
 - Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help)
-- TransXChange is a [bizarre and overly-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are no doubt edge cases that have not been covered.
+- TransXChange is a [bizarre and over-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are probably edge cases that have not been covered.
 
 ## Contributing
 

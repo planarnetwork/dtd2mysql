@@ -57,10 +57,12 @@ export class TransXChangeJourneyStream extends Transform {
     let includes = [];
 
     for (const dates of operatingProfile.SpecialDaysOperation.DaysOfNonOperation) {
+      // if the start date of the non-operation is on or before the start of the service date, change the calendar start date
       if (!dates.StartDate.isAfter(startDate)) {
         startDate = dates.EndDate.plusDays(1);
       }
-      else if (!dates.EndDate.isBefore(endDate)) {
+      // if the end date of the non-operation is on or after the end of the service date, change the calendar end date
+      else if (!dates.EndDate.isBefore(endDate) || dates.EndDate.year() >= 2037) {
         endDate = dates.StartDate.minusDays(1);
       }
       else if (dates.EndDate.toEpochDay() - dates.StartDate.toEpochDay() < 92) {
@@ -91,7 +93,7 @@ export class TransXChangeJourneyStream extends Transform {
 
   private mergeDays(daysOfOperation: DaysOfWeek[]): DaysOfWeek {
     return daysOfOperation.reduce(
-      (result: DaysOfWeek, days: DaysOfWeek) => result.map((d: IntBool, i: number) => d || days[i]) as DaysOfWeek,
+      (result: DaysOfWeek, days: DaysOfWeek) => result.map((d, i) => d || days[i]) as DaysOfWeek,
       [0, 0, 0, 0, 0, 0, 0]
     );
   }

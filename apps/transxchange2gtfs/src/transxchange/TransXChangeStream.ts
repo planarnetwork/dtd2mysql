@@ -1,14 +1,19 @@
 import {
   DateRange,
   DaysOfWeek,
+  JourneyPatternID,
+  JourneyPatternSectionID,
   JourneyPatternSections,
   JourneyStop,
   Lines,
+  Mode,
+  OperatingProfile,
   Operators,
+  Services,
+  StopActivity,
   StopPoint,
   TransXChange,
-  VehicleJourney,
-  Services, JourneyPatternID, JourneyPatternSectionID, OperatingProfile, Mode
+  VehicleJourney
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -48,8 +53,8 @@ export class TransXChangeStream extends Transform {
     return {
       StopPointRef: stop.StopPointRef[0],
       CommonName: stop.CommonName[0],
-      LocalityName: stop.LocalityName[0],
-      LocalityQualifier: stop.LocalityQualifier[0]
+      LocalityName: stop.LocalityName ? stop.LocalityName[0] : "",
+      LocalityQualifier: stop.LocalityQualifier ? stop.LocalityQualifier[0] : ""
     };
   }
 
@@ -65,7 +70,7 @@ export class TransXChangeStream extends Transform {
 
   private getJourneyStop(stop: any): JourneyStop {
     return {
-      Activity: stop.Activity[0],
+      Activity: stop.Activity ? stop.Activity[0] : StopActivity.PickUpAndSetDown,
       StopPointRef: stop.StopPointRef[0],
       WaitTime: stop.WaitTime && Duration.parse(stop.WaitTime[0])
     };
@@ -87,7 +92,7 @@ export class TransXChangeStream extends Transform {
       Lines: service.Lines[0].Line.reduce(this.getLines, {}),
       OperatingPeriod: this.getDateRange(service.OperatingPeriod[0]),
       RegisteredOperatorRef: service.RegisteredOperatorRef[0],
-      Description: service.Description[0],
+      Description: service.Description ? service.Description[0].replace(/[\r\n\t]/g, "") : "",
       Mode: service.Mode ? service.Mode[0] : Mode.Bus,
       StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {}),
       OperatingProfile: service.OperatingProfile
@@ -113,7 +118,7 @@ export class TransXChangeStream extends Transform {
   private getDateRange(dates: any): DateRange {
     return {
       StartDate: LocalDate.parse(dates.StartDate[0]),
-      EndDate: dates.EndDate[0] ? LocalDate.parse(dates.EndDate[0]) : LocalDate.parse("2099-12-31"),
+      EndDate: dates.EndDate && dates.EndDate[0] ? LocalDate.parse(dates.EndDate[0]) : LocalDate.parse("2099-12-31"),
     };
   }
 
@@ -162,7 +167,7 @@ export class TransXChangeStream extends Transform {
   }
 
   private getDaysOfWeek(days: any): DaysOfWeek {
-    return daysOfWeekIndex[Object.keys(days)[0]];
+    return daysOfWeekIndex[Object.keys(days)[0]] || [0, 0, 0, 0, 0, 0, 0];
   }
 
   private getJourneyPatternIndex(index: JourneyPatternIndex, vehicle: any): JourneyPatternIndex {
@@ -182,6 +187,7 @@ export const daysOfWeekIndex: Record<string, DaysOfWeek> = {
   "MondayToSaturday": [1, 1, 1, 1, 1, 1, 0],
   "MondayToSunday": [1, 1, 1, 1, 1, 1, 1],
   "NotSaturday": [1, 1, 1, 1, 1, 0, 1],
+  "Weekend": [0, 0, 0, 0, 0, 1, 1],
   "Monday": [1, 0, 0, 0, 0, 0, 0],
   "Tuesday": [0, 1, 0, 0, 0, 0, 0],
   "Wednesday": [0, 0, 1, 0, 0, 0, 0],
