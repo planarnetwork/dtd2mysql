@@ -13,9 +13,9 @@ describe("GTFSFileStream", () => {
     stream.end();
 
     return awaitStream(stream, rows => {
-      chai.expect(rows[0]).to.equal("header");
-      chai.expect(rows[1]).to.equal("data");
-      chai.expect(rows[2]).to.equal("data");
+      chai.expect(rows[0]).to.equal("header\n");
+      chai.expect(rows[1]).to.equal("data\n");
+      chai.expect(rows[2]).to.equal("data\n");
     });
   });
 });

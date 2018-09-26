@@ -15,6 +15,7 @@ export function awaitStream<T>(stream: Transform, fn: StreamTest<T>) {
 export type StreamTest<T> = (data: T[]) => any;
 
 export function splitCSV(csv: string): string[] {
+  csv = csv.replace("\n", "");
   const row = [];
   let i = 0;
 

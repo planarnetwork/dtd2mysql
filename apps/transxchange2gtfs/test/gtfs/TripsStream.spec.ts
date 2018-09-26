@@ -29,7 +29,7 @@ describe("TripsStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: string[]) => {
-      const [route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, block_id, shape_id, wheelchair_accessible, bikes_allowed] = splitCSV(rows[1]);
+      const [route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, wheelchair_accessible, bikes_allowed] = splitCSV(rows[1]);
 
       chai.expect(route_id).to.equal("1");
       chai.expect(service_id).to.equal("3");
@@ -37,8 +37,6 @@ describe("TripsStream", () => {
       chai.expect(trip_headsign).to.equal("G153");
       chai.expect(trip_short_name).to.equal("G153");
       chai.expect(direction_id).to.equal("0");
-      chai.expect(block_id).to.equal("");
-      chai.expect(shape_id).to.equal("");
       chai.expect(wheelchair_accessible).to.equal("0");
       chai.expect(bikes_allowed).to.equal("0");
     });
