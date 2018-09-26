@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "6.2.3",
+  "version": "6.3.0",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,8 +13,8 @@
     "watch-test": "mocha -w --require ts-node/register 'test/**/*.spec.ts'",
     "start": "ts-node ./src/index.ts",
     "prepublishOnly": "tsc -p ./ --outDir dist/ && cp -r config/timetable/data dist/config/timetable/data",
-    "gtfs": "NODE_OPTIONS='--max-old-space-size=2000' ts-node ./src/index.ts --gtfs",
-    "gtfs-zip": "NODE_OPTIONS='--max-old-space-size=2000' ts-node ./src/index.ts --gtfs-zip"
+    "gtfs": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs",
+    "gtfs-zip": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs-zip"
   },
   "repository": {
     "type": "git",
@@ -50,13 +50,13 @@
     "node": "^10.0.0"
   },
   "devDependencies": {
-    "@types/chai": "^4.1.4",
+    "@types/chai": "^4.1.5",
     "@types/fs-extra": "^5.0.4",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^9.6.31",
+    "@types/node": "^10.11.0",
     "@types/ssh2": "^0.5.35",
     "@types/ssh2-streams": "^0.1.2",
-    "chai": "^4.1.2",
+    "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "ts-node": "^7.0.1",
     "typescript": "^3.0.3"

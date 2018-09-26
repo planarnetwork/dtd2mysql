@@ -1,7 +1,7 @@
 export const schema = `
 DROP TABLE IF EXISTS \`agency\`;
 CREATE TABLE \`agency\` (
-  \`agency_id\` char(2) NOT NULL,
+  \`agency_id\` varchar(255) NOT NULL,
   \`agency_name\` varchar(255) NOT NULL,
   \`agency_url\` varchar(255) NOT NULL,
   \`agency_timezone\` varchar(100) NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE \`fare_attributes\` (
 DROP TABLE IF EXISTS \`fare_rules\`;
 CREATE TABLE \`fare_rules\` (
   \`fare_id\` varchar(100) NOT NULL,
-  \`route_id\` mediumint(12) unsigned NOT NULL,
+  \`route_id\` varchar(255) NOT NULL,
   \`origin_id\` varchar(100) DEFAULT NULL,
   \`destination_id\` varchar(100) DEFAULT NULL,
   \`contains_id\` varchar(100) DEFAULT NULL,
@@ -90,8 +90,8 @@ CREATE TABLE \`frequencies\` (
 
 DROP TABLE IF EXISTS \`links\`;
 CREATE TABLE \`links\` (
-  \`from_stop_id\` char(3) NOT NULL,
-  \`to_stop_id\` char(3) NOT NULL,
+  \`from_stop_id\` varchar(255) NOT NULL,
+  \`to_stop_id\` varchar(255) NOT NULL,
   \`mode\` VARCHAR (15) NOT NULL,
   \`duration\` smallint(8) unsigned NOT NULL,
   \`start_time\` time NOT NULL,
@@ -109,11 +109,11 @@ CREATE TABLE \`links\` (
 
 DROP TABLE IF EXISTS \`routes\`;
 CREATE TABLE \`routes\` (
-  \`route_id\` mediumint(12) unsigned NOT NULL,
-  \`agency_id\` char(2) DEFAULT NULL,
+  \`route_id\` varchar(255) NOT NULL,
+  \`agency_id\` varchar(255) DEFAULT NULL,
   \`route_short_name\` varchar(50) NOT NULL,
   \`route_long_name\` varchar(255) NOT NULL,
-  \`route_type\` tinyint(2) unsigned NOT NULL,
+  \`route_type\` mediumint(12) unsigned NOT NULL,
   \`route_text_color\` varchar(255) DEFAULT NULL,
   \`route_color\` varchar(255) DEFAULT NULL,
   \`route_url\` varchar(255) DEFAULT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE \`stop_times\` (
   \`trip_id\` mediumint(12) unsigned NOT NULL,
   \`arrival_time\` time DEFAULT NULL,
   \`departure_time\` time DEFAULT NULL,
-  \`stop_id\` char(3) NOT NULL,
+  \`stop_id\` varchar(255) NOT NULL,
   \`stop_sequence\` tinyint(1) unsigned NOT NULL,
   \`stop_headsign\` varchar(50) DEFAULT NULL,
   \`pickup_type\` tinyint(1) unsigned DEFAULT NULL,
@@ -151,12 +151,12 @@ CREATE TABLE \`stop_times\` (
 
 DROP TABLE IF EXISTS \`stops\`;
 CREATE TABLE \`stops\` (
-  \`stop_id\` char(3) NOT NULL,
+  \`stop_id\` varchar(255) NOT NULL,
   \`stop_code\` varchar(50) DEFAULT NULL,
   \`stop_name\` varchar(255) NOT NULL,
   \`stop_desc\` varchar(255) DEFAULT NULL,
-  \`stop_lat\` decimal(10,8) DEFAULT NULL,
-  \`stop_lon\` decimal(11,8) DEFAULT NULL,
+  \`stop_lat\` double DEFAULT NULL,
+  \`stop_lon\` double DEFAULT NULL,
   \`zone_id\` varchar(255) DEFAULT NULL,
   \`stop_url\` varchar(255) DEFAULT NULL,
   \`location_type\` varchar(2) DEFAULT NULL,
@@ -168,8 +168,8 @@ CREATE TABLE \`stops\` (
 
 DROP TABLE IF EXISTS \`transfers\`;
 CREATE TABLE \`transfers\` (
-  \`from_stop_id\` char(3) NOT NULL,
-  \`to_stop_id\` char(3) NOT NULL,
+  \`from_stop_id\` varchar(255) NOT NULL,
+  \`to_stop_id\` varchar(255) NOT NULL,
   \`transfer_type\` tinyint(1) unsigned NOT NULL,
   \`min_transfer_time\` smallint(8) unsigned NOT NULL,
   PRIMARY KEY (\`from_stop_id\`, \`to_stop_id\`, \`transfer_type\`)
@@ -177,14 +177,12 @@ CREATE TABLE \`transfers\` (
 
 DROP TABLE IF EXISTS \`trips\`;
 CREATE TABLE \`trips\` (
-  \`route_id\` mediumint(12) unsigned NOT NULL,
+  \`route_id\` varchar(255) NOT NULL,
   \`service_id\` smallint(12) unsigned NOT NULL,
   \`trip_id\` mediumint(12) unsigned NOT NULL,
   \`trip_headsign\` varchar(50) DEFAULT NULL,
   \`trip_short_name\` varchar(50) DEFAULT NULL,
   \`direction_id\` tinyint(1) unsigned DEFAULT NULL,
-  \`block_id\` tinyint(3) unsigned DEFAULT NULL,
-  \`shape_id\` smallint(12) unsigned DEFAULT NULL,
   \`wheelchair_accessible\` tinyint(1) unsigned DEFAULT NULL,
   \`bikes_allowed\` tinyint(1) unsigned DEFAULT NULL,
   PRIMARY KEY (\`trip_id\`),

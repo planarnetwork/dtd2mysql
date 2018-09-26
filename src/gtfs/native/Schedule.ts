@@ -67,8 +67,6 @@ export class Schedule implements OverlayRecord {
       trip_headsign: this.tuid,
       trip_short_name: this.rsid,
       direction_id: 0,
-      block_id: "0",
-      shape_id: "0",
       wheelchair_accessible: 0,
       bikes_allowed: 0
     };
