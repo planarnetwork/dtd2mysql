@@ -11,7 +11,7 @@ describe("NaPTANFactory", () => {
     input.write("stopA,nameA\nstopB,nameB");
     input.end();
 
-    const index = await factory.getIndex();
+    const [index] = await factory.getIndexes();
 
     chai.expect(index["stopA"]).to.deep.equal(["stopA", "nameA"]);
     chai.expect(index["stopB"]).to.deep.equal(["stopB", "nameB"]);

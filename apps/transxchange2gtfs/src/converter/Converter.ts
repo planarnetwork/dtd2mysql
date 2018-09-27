@@ -1,11 +1,8 @@
-import {GTFSFileStream} from "../gtfs/GTFSFileStream";
 import {FileStream} from "./FileStream";
 import autobind from "autobind-decorator";
-import {TransXChangeJourney} from "../transxchange/TransXChangeJourneyStream";
-import {TransXChange} from "../transxchange/TransXChange";
-import * as fs from "fs";
 import {promisify} from "util";
-import {sync as rimraf} from "rimraf";
+import {Writable} from "stream";
+import {Container} from "../Container";
 
 const exec = promisify(require("child_process").exec);
 
@@ -14,11 +11,10 @@ const exec = promisify(require("child_process").exec);
  */
 @autobind
 export class Converter {
-  public static readonly TMP = "/tmp/transxchange2gtfs/";
 
   constructor(
-    private readonly fileStream: FileStream,
-    private readonly gtfsFiles: GTFSFiles,
+    private readonly inputStream: FileStream,
+    private readonly outputStreams: Writable[],
   ) {}
 
   /**
@@ -30,46 +26,28 @@ export class Converter {
       throw Error("Invalid number of arguments");
     }
 
-    this.setupTmp();
-
-    for (const filename in this.gtfsFiles) {
-      this.gtfsFiles[filename].pipe(fs.createWriteStream(Converter.TMP + filename));
-    }
-
     this.pushInputFiles(input);
 
     await this.streamsFinished();
-    await exec(`zip -j ${output} ${Converter.TMP}*.txt`);
+    await exec(`zip -j ${output} ${Container.TMP}*.txt`);
 
     console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
   }
 
-  private setupTmp(): void {
-    if (fs.existsSync(Converter.TMP)) {
-      rimraf(Converter.TMP);
-    }
-
-    fs.mkdirSync(Converter.TMP);
-  }
-
   private pushInputFiles(input: string[]) {
     for (const file of input) {
-      this.fileStream.write(file);
+      this.inputStream.write(file);
     }
 
-    this.fileStream.end();
+    this.inputStream.end();
   }
 
   private streamsFinished(): Promise<any> {
-    const streams = Object.values(this.gtfsFiles);
-    const promises = streams.map(s => new Promise(resolve => s.on("end", resolve)));
+    const streams = Object.values(this.outputStreams);
+    const promises = streams.map(s => new Promise(resolve => s.on("finish", resolve)));
 
     return Promise.all(promises);
   }
 
 }
 
-/**
- * GTFSFileStreams indexed by filename e.g. stops.txt => Stops
- */
-export type GTFSFiles = Record<string, GTFSFileStream<TransXChange | TransXChangeJourney>>;

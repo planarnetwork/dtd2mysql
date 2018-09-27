@@ -5,6 +5,7 @@ const output = process.argv[process.argv.length - 1];
 
 const container = new Container();
 
+container.init();
 container.getConverter()
   .then(c => c.process(input, output))
   .catch(err => console.error(err));

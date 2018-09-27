@@ -3,6 +3,7 @@ import {promisify} from "util";
 import * as fs from "fs";
 import {parse} from "path";
 import {Converter} from "./Converter";
+import {Container} from "../Container";
 
 const readFile = promisify(fs.readFile);
 const exec = promisify(require("child_process").exec);
@@ -46,7 +47,7 @@ export class FileStream extends Transform {
   }
 
   private async readZip(file: string): Promise<any> {
-    const outputDir = Converter.TMP + this.zipIndex++ + "/";
+    const outputDir = Container.TMP + this.zipIndex++ + "/";
 
     await exec("unzip -u " + file + " -d " + outputDir);
 
