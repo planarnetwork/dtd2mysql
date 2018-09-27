@@ -33,9 +33,10 @@ export class TransfersStream extends GTFSFileStream<TransXChange> {
   private addNearbyStops(stop: ATCOCode): void {
     const aLon = Number(this.naptan[stop][7]);
     const aLat = Number(this.naptan[stop][8]);
+    const locality = this.naptan[stop][5];
 
     for (const j in this.stopsSeen) {
-      if (this.naptan[j]) {
+      if (this.naptan[j] && this.naptan[j][5] === locality) {
         const distance = this.getDistance(aLon, aLat, Number(this.naptan[j][7]), Number(this.naptan[j][8]));
 
         if (distance < 0.006) {
