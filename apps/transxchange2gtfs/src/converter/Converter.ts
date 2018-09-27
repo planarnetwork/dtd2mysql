@@ -3,6 +3,8 @@ import autobind from "autobind-decorator";
 import {promisify} from "util";
 import {Writable} from "stream";
 import {Container} from "../Container";
+import * as fs from "fs";
+import {sync as rimraf} from "rimraf";
 
 const exec = promisify(require("child_process").exec);
 
@@ -14,7 +16,7 @@ export class Converter {
 
   constructor(
     private readonly inputStream: FileStream,
-    private readonly outputStreams: Writable[],
+    private readonly gtfsFiles: Record<string, Writable>,
   ) {}
 
   /**
@@ -26,12 +28,25 @@ export class Converter {
       throw Error("Invalid number of arguments");
     }
 
+    this.init();
     this.pushInputFiles(input);
 
-    await this.streamsFinished();
+    const streams = Object
+      .keys(this.gtfsFiles)
+      .map(file => this.gtfsFiles[file].pipe(fs.createWriteStream(Container.TMP + file)));
+
+    await this.streamsFinished(streams);
     await exec(`zip -j ${output} ${Container.TMP}*.txt`);
 
     console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
+  }
+
+  public init() {
+    if (fs.existsSync(Container.TMP)) {
+      rimraf(Container.TMP);
+    }
+
+    fs.mkdirSync(Container.TMP);
   }
 
   private pushInputFiles(input: string[]) {
@@ -42,8 +57,7 @@ export class Converter {
     this.inputStream.end();
   }
 
-  private streamsFinished(): Promise<any> {
-    const streams = Object.values(this.outputStreams);
+  private streamsFinished(streams: Writable[]): Promise<any> {
     const promises = streams.map(s => new Promise(resolve => s.on("finish", resolve)));
 
     return Promise.all(promises);

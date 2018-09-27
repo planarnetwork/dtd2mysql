@@ -17,11 +17,7 @@ import {CalendarDatesStream} from "./gtfs/CalendarDatesStream";
 import {TripsStream} from "./gtfs/TripsStream";
 import {StopTimesStream} from "./gtfs/StopTimesStream";
 import * as fs from "fs";
-import {ProcessStream} from "./converter/ProcessStream";
-import {sync as rimraf} from "rimraf";
-import {PassThrough} from "stream";
 import {TransfersStream} from "./gtfs/TransfersStream";
-import {WorkerStream} from "./converter/WorkerStream";
 
 const exec = promisify(require("child_process").exec);
 
@@ -31,47 +27,28 @@ const exec = promisify(require("child_process").exec);
 export class Container {
   public static readonly TMP = "/tmp/transxchange2gtfs/";
 
-  public init() {
-    if (fs.existsSync(Container.TMP)) {
-      rimraf(Container.TMP);
-    }
-
-    fs.mkdirSync(Container.TMP);
-  }
-
   public async getConverter(): Promise<Converter> {
     const files = new FileStream();
     const xml = new XMLStream(this.getParseXML());
     const transxchange = new TransXChangeStream();
     const journeyStream = new TransXChangeJourneyStream(this.getBankHolidays());
-    const stopsProcess = new ProcessStream(__dirname + "/worker");
-
-    await stopsProcess.fork();
+    const [naptanIndex, locationIndex] = await this.getNaPTANIndexes();
 
     files.pipe(xml).pipe(transxchange).pipe(journeyStream);
 
     return new Converter(
       files,
-      [
-        journeyStream.pipe(new CalendarStream()).pipe(fs.createWriteStream(Container.TMP + "calendar.txt")),
-        journeyStream.pipe(new CalendarDatesStream()).pipe(fs.createWriteStream(Container.TMP + "calendar_dates.txt")),
-        journeyStream.pipe(new TripsStream()).pipe(fs.createWriteStream(Container.TMP + "trips.txt")),
-        journeyStream.pipe(new StopTimesStream()).pipe(fs.createWriteStream(Container.TMP + "stop_times.txt")),
-        transxchange.pipe(stopsProcess)
-      ]
+      {
+        "calendar.txt": journeyStream.pipe(new CalendarStream()),
+        "calendar_dates.txt": journeyStream.pipe(new CalendarDatesStream()),
+        "trips.txt": journeyStream.pipe(new TripsStream()),
+        "stop_times.txt": journeyStream.pipe(new StopTimesStream()),
+        "agency.txt": transxchange.pipe(new AgencyStream()),
+        "routes.txt": transxchange.pipe(new RoutesStream()),
+        "transfers.txt": transxchange.pipe(new TransfersStream(naptanIndex, locationIndex)),
+        "stops.txt": transxchange.pipe(new StopsStream(naptanIndex))
+      }
     );
-  }
-
-  public async getWorker() {
-    const [naptanIndex, locationIndex] = await this.getNaPTANIndexes();
-    const transxchange = new PassThrough({ objectMode: true });
-
-    transxchange.pipe(new AgencyStream()).pipe(fs.createWriteStream(Container.TMP + "agency.txt"));
-    transxchange.pipe(new RoutesStream()).pipe(fs.createWriteStream(Container.TMP + "routes.txt"));
-    transxchange.pipe(new TransfersStream(naptanIndex, locationIndex)).pipe(fs.createWriteStream(Container.TMP + "transfers.txt"));
-    transxchange.pipe(new StopsStream(naptanIndex)).pipe(fs.createWriteStream(Container.TMP + "stops.txt"));
-
-    return new WorkerStream(transxchange);
   }
 
   public async getNaPTANIndexes(): Promise<[NaPTANIndex, StopLocationIndex]> {
