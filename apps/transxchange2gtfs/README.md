@@ -38,7 +38,7 @@ transxchange2gtfs transxchange1.xml transxchange2.xml gtfs-output.zip
 Or using zip files:
 
 ```
-transxchange2gtfs multiple-transxchange-files.zip another-transxchange-package.zip single-transxchange.xml gtfs-output.zip
+transxchange2gtfs multiple-transxchange-files.zip /path/*.zip single-transxchange.xml gtfs-output.zip
 ```
 
 ## Notes
