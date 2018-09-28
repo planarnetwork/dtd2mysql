@@ -36,7 +36,9 @@ export class Converter {
       .map(file => this.gtfsFiles[file].pipe(fs.createWriteStream(Container.TMP + file)));
 
     await this.streamsFinished(streams);
+    console.log("Zipping...");
     await exec(`zip -j ${output} ${Container.TMP}*.txt`);
+    console.log("Complete.");
 
     console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
   }
