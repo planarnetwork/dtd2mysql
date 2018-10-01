@@ -68,14 +68,8 @@ export class CIFRepository {
   /**
    * Return the schedules and z trains. These queries probably require some explanation:
    *
-   * The first query selects the stop times for all passenger services between now and + 3 months. The noise in the
-   * query is to map the tiploc codes in the stop times to valid crs codes. Unfortunately many tiplocs map to the same
-   * tiploc codes, in most cases this is valid but in some cases (GLC, BRI) the tiplocs are nothing to do with those
-   * stations. This leads to multiple stops at the same station. To avoid this the stop time selection criteria states
-   * that the stop must have a CRS code and either a public time or an interchange status of < 9. In all cases I've
-   * found the incorrectly mapped tiploc codes have a status of 9. Just looking for things with a public time is not
-   * enough as there are some publicly timed stops at places without a CRS code. Parsing the stop activity in SQL is
-   * probably not a sane thing to do.
+   * The first query selects the stop times for all passenger services between now and + 3 months. It's important that
+   * the stop time location is mapped to physical stations to avoid getting fake CRS codes from the tiploc data.
    *
    * The second query selects all the z-trains (usually replacement buses) within three months. They already use CRS
    * codes as the location so avoid the disaster above.
@@ -89,8 +83,7 @@ export class CIFRepository {
         SELECT
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          stp_indicator, IFNULL(ps.crs_code, tiploc.crs_code) as crs_code, train_category,
-          public_arrival_time, public_departure_time, 
+          crs_code, stp_indicator, train_category, public_arrival_time, public_departure_time, 
           IFNULL(scheduled_arrival_time, scheduled_pass_time) AS scheduled_arrival_time, 
           IFNULL(scheduled_departure_time, scheduled_pass_time) AS scheduled_departure_time,
           platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
@@ -98,16 +91,9 @@ export class CIFRepository {
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
         LEFT JOIN physical_station ps ON location = ps.tiploc_code
-        LEFT JOIN tiploc ON location = tiploc.tiploc_code
         WHERE
         (
-          stop_time.id IS NULL OR (
-            IFNULL(ps.crs_code, tiploc.crs_code) IS NOT NULL AND (
-              public_departure_time IS NOT NULL OR
-              public_arrival_time IS NOT NULL OR
-              cate_interchange_status != 9
-            )
-          )
+          stop_time.id IS NULL OR crs_code IS NOT NULL
         )
         AND runs_from < CURDATE() + INTERVAL 3 MONTH
         AND runs_to >= CURDATE()

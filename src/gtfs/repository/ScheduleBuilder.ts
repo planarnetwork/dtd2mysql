@@ -35,7 +35,16 @@ export class ScheduleBuilder {
         }
 
         if (row.stp_indicator !== STP.Cancellation) {
-          stops.push(this.createStop(row, stops.length + 1, departureHour));
+          const stop = this.createStop(row, stops.length + 1, departureHour);
+
+          if (prevRow && prevRow.id === row.id && row.crs_code === prevRow.crs_code) {
+            if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
+              stops[stops.length - 1] = Object.assign(stop, { stop_sequence: stops.length });
+            }
+          }
+          else {
+            stops.push(stop);
+          }
         }
 
         prevRow = row;
