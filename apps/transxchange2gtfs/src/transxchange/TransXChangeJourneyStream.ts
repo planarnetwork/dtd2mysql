@@ -131,8 +131,8 @@ export class TransXChangeJourneyStream extends Transform {
   private getStopTimes(links: TimingLink[], departureTime: LocalTime): StopTime[] {
     const stops = [{
       stop: links[0].From.StopPointRef,
-      arrivalTime: departureTime.toString(),
-      departureTime: departureTime.toString(),
+      arrivalTime: departureTime.format(DateTimeFormatter.ofPattern('hh:mm:ss')),
+      departureTime: departureTime.format(DateTimeFormatter.ofPattern('hh:mm:ss')),
       pickup: true,
       dropoff: false
     }];
