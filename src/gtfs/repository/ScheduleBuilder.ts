@@ -82,7 +82,7 @@ export class ScheduleBuilder {
           6: row.saturday
         }
       ),
-      RouteTypeIndex[row.train_category] || RouteType.Rail,
+      routeTypeIndex.hasOwnProperty(row.train_category) ? routeTypeIndex[row.train_category] : RouteType.Rail,
       row.atoc_code,
       row.stp_indicator,
       row.train_class !== "S",
@@ -156,7 +156,7 @@ export interface ScheduleResults {
   idGenerator: IdGenerator
 }
 
-const RouteTypeIndex = {
+const routeTypeIndex: object = {
   "OO": RouteType.Rail,
   "XX": RouteType.Rail,
   "XZ": RouteType.Rail,
