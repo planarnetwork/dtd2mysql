@@ -315,14 +315,14 @@ describe("TransXChangeJourneyStream", () => {
       chai.expect(rows[0].stops[0].dropoff).to.equal(false);
       chai.expect(rows[0].stops[0].pickup).to.equal(true);
       chai.expect(rows[0].stops[0].stop).to.equal("118000037");
-      chai.expect(rows[0].stops[0].arrivalTime).to.equal("01:00");
-      chai.expect(rows[0].stops[0].departureTime).to.equal("01:00");
+      chai.expect(rows[0].stops[0].arrivalTime).to.equal("01:00:00");
+      chai.expect(rows[0].stops[0].departureTime).to.equal("01:00:00");
 
       chai.expect(rows[0].stops[1].dropoff).to.equal(false);
       chai.expect(rows[0].stops[1].pickup).to.equal(true);
       chai.expect(rows[0].stops[1].stop).to.equal("1180033077");
-      chai.expect(rows[0].stops[1].arrivalTime).to.equal("01:05");
-      chai.expect(rows[0].stops[1].departureTime).to.equal("01:05");
+      chai.expect(rows[0].stops[1].arrivalTime).to.equal("01:05:00");
+      chai.expect(rows[0].stops[1].departureTime).to.equal("01:05:00");
     });
   });
 
@@ -336,14 +336,14 @@ describe("TransXChangeJourneyStream", () => {
       chai.expect(rows[0].stops[2].dropoff).to.equal(true);
       chai.expect(rows[0].stops[2].pickup).to.equal(true);
       chai.expect(rows[0].stops[2].stop).to.equal("1100DEC10183");
-      chai.expect(rows[0].stops[2].arrivalTime).to.equal("02:10");
-      chai.expect(rows[0].stops[2].departureTime).to.equal("02:10");
+      chai.expect(rows[0].stops[2].arrivalTime).to.equal("02:10:00");
+      chai.expect(rows[0].stops[2].departureTime).to.equal("02:10:00");
 
       chai.expect(rows[0].stops[3].dropoff).to.equal(true);
       chai.expect(rows[0].stops[3].pickup).to.equal(true);
       chai.expect(rows[0].stops[3].stop).to.equal("010000036");
-      chai.expect(rows[0].stops[3].arrivalTime).to.equal("04:05");
-      chai.expect(rows[0].stops[3].departureTime).to.equal("04:10");
+      chai.expect(rows[0].stops[3].arrivalTime).to.equal("04:05:00");
+      chai.expect(rows[0].stops[3].departureTime).to.equal("04:10:00");
     });
 
   });
@@ -358,14 +358,14 @@ describe("TransXChangeJourneyStream", () => {
       chai.expect(rows[5].stops[2].dropoff).to.equal(true);
       chai.expect(rows[5].stops[2].pickup).to.equal(true);
       chai.expect(rows[5].stops[2].stop).to.equal("1100DEC10183");
-      chai.expect(rows[5].stops[2].arrivalTime).to.equal("24:10");
-      chai.expect(rows[5].stops[2].departureTime).to.equal("24:10");
+      chai.expect(rows[5].stops[2].arrivalTime).to.equal("24:10:00");
+      chai.expect(rows[5].stops[2].departureTime).to.equal("24:10:00");
 
       chai.expect(rows[5].stops[3].dropoff).to.equal(true);
       chai.expect(rows[5].stops[3].pickup).to.equal(true);
       chai.expect(rows[5].stops[3].stop).to.equal("010000036");
-      chai.expect(rows[5].stops[3].arrivalTime).to.equal("26:05");
-      chai.expect(rows[5].stops[3].departureTime).to.equal("26:10");
+      chai.expect(rows[5].stops[3].arrivalTime).to.equal("26:05:00");
+      chai.expect(rows[5].stops[3].departureTime).to.equal("26:10:00");
     });
 
   });

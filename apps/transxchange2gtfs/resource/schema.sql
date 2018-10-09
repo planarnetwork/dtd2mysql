@@ -42,70 +42,6 @@ CREATE TABLE `calendar_dates` (
   PRIMARY KEY (`service_id`, `date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `fare_attributes`;
-CREATE TABLE `fare_attributes` (
-  `fare_id` varchar(100) NOT NULL,
-  `price` varchar(50) NOT NULL,
-  `currency_type` varchar(50) NOT NULL,
-  `payment_method` tinyint(1) unsigned NOT NULL,
-  `transfers` tinyint(1) unsigned NOT NULL,
-  `transfer_duration` varchar(10) DEFAULT NULL,
-  `exception_type` tinyint(2) unsigned NOT NULL,
-  `agency_id` int(12) unsigned DEFAULT NULL,
-  PRIMARY KEY (`fare_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-DROP TABLE IF EXISTS `fare_rules`;
-CREATE TABLE `fare_rules` (
-  `fare_id` varchar(100) NOT NULL,
-  `route_id` varchar(255) NOT NULL,
-  `origin_id` varchar(100) DEFAULT NULL,
-  `destination_id` varchar(100) DEFAULT NULL,
-  `contains_id` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`fare_id`, `route_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-DROP TABLE IF EXISTS `feed_info`;
-CREATE TABLE `feed_info` (
-  `feed_publisher_name` varchar(100) DEFAULT NULL,
-  `feed_publisher_url` varchar(255) NOT NULL,
-  `feed_lang` varchar(255) NOT NULL,
-  `feed_start_date` date NOT NULL,
-  `feed_end_date` date DEFAULT NULL,
-  `feed_version` varchar(10) NOT NULL,
-  PRIMARY KEY (`feed_version`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-DROP TABLE IF EXISTS `frequencies`;
-CREATE TABLE `frequencies` (
-  `trip_id` mediumint(12) unsigned NOT NULL,
-  `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
-  `headway_secs` smallint(5) NOT NULL,
-  `exact_times` tinyint(1) unsigned DEFAULT NULL,
-  PRIMARY KEY (`trip_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-DROP TABLE IF EXISTS `links`;
-CREATE TABLE `links` (
-  `from_stop_id` varchar(255) NOT NULL,
-  `to_stop_id` varchar(255) NOT NULL,
-  `mode` VARCHAR (15) NOT NULL,
-  `duration` smallint(8) unsigned NOT NULL,
-  `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
-  `start_date` date NOT NULL,
-  `end_date` date NOT NULL,
-  `monday` tinyint(1) unsigned NOT NULL,
-  `tuesday` tinyint(1) unsigned NOT NULL,
-  `wednesday` tinyint(1) unsigned NOT NULL,
-  `thursday` tinyint(1) unsigned NOT NULL,
-  `friday` tinyint(1) unsigned NOT NULL,
-  `saturday` tinyint(1) unsigned NOT NULL,
-  `sunday` tinyint(1) unsigned NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 DROP TABLE IF EXISTS `routes`;
 CREATE TABLE `routes` (
   `route_id` varchar(255) NOT NULL,
@@ -118,16 +54,6 @@ CREATE TABLE `routes` (
   `route_url` varchar(255) DEFAULT NULL,
   `route_desc` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`route_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-DROP TABLE IF EXISTS `shapes`;
-CREATE TABLE `shapes` (
-  `shape_id` smallint(12) unsigned NOT NULL,
-  `shape_pt_lat` decimal(8,6) NOT NULL,
-  `shape_pt_lon` decimal(8,6) NOT NULL,
-  `shape_pt_sequence` tinyint(3) NOT NULL,
-  `shape_dist_traveled` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`shape_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `stop_times`;

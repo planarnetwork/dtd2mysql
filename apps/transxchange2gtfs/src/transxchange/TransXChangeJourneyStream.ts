@@ -1,7 +1,6 @@
 import {
   DaysOfWeek,
   Holiday,
-  IntBool,
   OperatingProfile,
   Service, StopActivity,
   TimingLink,
@@ -9,7 +8,7 @@ import {
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
-import {LocalDate, LocalTime, Duration} from "js-joda";
+import {LocalDate, LocalTime, Duration, DateTimeFormatter} from "js-joda";
 import {ATCOCode} from "../reference/NaPTAN";
 
 /**
@@ -159,7 +158,7 @@ export class TransXChangeJourneyStream extends Transform {
     const hour = time.toHours().toString().padStart(2, "0");
     const minute = (time.toMinutes() % 60).toString().padStart(2, "0");
 
-    return hour + ":" + minute;
+    return hour + ":" + minute + ":00";
   }
 }
 
