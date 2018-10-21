@@ -6,8 +6,8 @@ import {LocalDate, DateTimeFormatter} from "js-joda";
  * Extract the calendars dates from the TransXChange journeys
  */
 export class CalendarDatesStream extends GTFSFileStream<TransXChangeJourney> {
-  private datesSeen: Record<string, boolean> = {};
-  private dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+  private readonly datesSeen: Record<string, boolean> = {};
+  private readonly dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   protected header = "service_id,date,exception_type";
 

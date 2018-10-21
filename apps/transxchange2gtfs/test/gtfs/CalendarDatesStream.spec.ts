@@ -29,10 +29,10 @@ describe("CalendarDatesStream", () => {
       const include = splitCSV(rows[2]);
 
       chai.expect(exclude[0]).to.equal("1");
-      chai.expect(exclude[1]).to.equal("2018-12-25");
+      chai.expect(exclude[1]).to.equal("20181225");
       chai.expect(exclude[2]).to.equal("2");
       chai.expect(include[0]).to.equal("1");
-      chai.expect(include[1]).to.equal("2018-06-01");
+      chai.expect(include[1]).to.equal("20180601");
       chai.expect(include[2]).to.equal("1");
     });
   });

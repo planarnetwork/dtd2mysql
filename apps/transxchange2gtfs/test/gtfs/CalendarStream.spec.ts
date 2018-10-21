@@ -34,8 +34,8 @@ describe("CalendarStream", () => {
       chai.expect(friday).to.equal("1");
       chai.expect(saturday).to.equal("1");
       chai.expect(sunday).to.equal("1");
-      chai.expect(start_date).to.equal("2018-06-24");
-      chai.expect(end_date).to.equal("2099-12-31");
+      chai.expect(start_date).to.equal("20180624");
+      chai.expect(end_date).to.equal("20991231");
     });
   });
 
