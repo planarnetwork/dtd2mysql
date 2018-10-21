@@ -1,12 +1,13 @@
 import {GTFSFileStream} from "./GTFSFileStream";
 import {TransXChangeJourney} from "../transxchange/TransXChangeJourneyStream";
-import {LocalDate} from "js-joda";
+import {LocalDate, DateTimeFormatter} from "js-joda";
 
 /**
  * Extract the calendars dates from the TransXChange journeys
  */
 export class CalendarDatesStream extends GTFSFileStream<TransXChangeJourney> {
   private datesSeen: Record<string, boolean> = {};
+  private dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   protected header = "service_id,date,exception_type";
 
@@ -21,7 +22,7 @@ export class CalendarDatesStream extends GTFSFileStream<TransXChangeJourney> {
 
   private pushDates(dates: LocalDate[], type: Day, serviceId: number): void {
     for (const date of dates) {
-      this.pushLine(`${serviceId},${date},${type}`);
+      this.pushLine(`${serviceId},${date.format(this.dateFormatter)},${type}`);
     }
   }
 
