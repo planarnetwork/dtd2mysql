@@ -31,7 +31,7 @@ export class CIFRepository {
         crs_code AS from_stop_id, 
         crs_code AS to_stop_id, 
         2 AS transfer_type, 
-        minimum_change_time * 60 AS duration 
+        minimum_change_time * 60 AS min_transfer_time 
       FROM physical_station WHERE cate_interchange_status IS NOT NULL
       GROUP BY crs_code
     `);

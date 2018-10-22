@@ -8,7 +8,7 @@ export interface Transfer {
   from_stop_id: StopID,
   to_stop_id: StopID,
   transfer_type: TransferType,
-  duration: Duration
+  min_transfer_time: Duration
 }
 
 /**

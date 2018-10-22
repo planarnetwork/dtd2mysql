@@ -9,6 +9,7 @@ import {StopTime} from "../file/StopTime";
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
 const coordinatedActivity = ["R "];
+const notAdvertised = "N ";
 
 /**
  * This class takes a stream of results and builds a list of Schedules
@@ -105,9 +106,9 @@ export class ScheduleBuilder {
     }
 
     const activities = row.activity.match(/.{1,2}/g) || [];
-    const pickup = pickupActivities.find(a => activities.indexOf(a) !== -1) ? 0 : 1;
-    const coordinatedDropOff = coordinatedActivity.find(a => activities.indexOf(a) !== -1) ? 3 : 0;
-    const dropOff = dropOffActivities.find(a => activities.indexOf(a) !== -1) ? 0 : 1;
+    const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) ? 0 : 1;
+    const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
+    const dropOff = dropOffActivities.find(a => activities.includes(a)) ? 0 : 1;
 
     return {
       trip_id: row.id,
