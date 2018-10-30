@@ -11,14 +11,14 @@ describe("AddLateNightServices", () => {
   it("merges schedules where they are the same", () => {
     const baseSchedules = [
       schedule(1, "A", "2018-10-01", "2018-10-31", STP.Permanent, WEEK_DAYS, [
-        stop(1, "TON", "03:30"),
-        stop(2, "PDW", "03:40"),
-        stop(3, "ASH", "03:50")
+        stop(1, "TON", "01:30"),
+        stop(2, "PDW", "01:40"),
+        stop(3, "ASH", "01:50")
       ]),
       schedule(2, "B", "2018-10-01", "2018-10-31", STP.Permanent, WEEK_DAYS, [
-        stop(1, "TON", "04:30"),
-        stop(2, "PDW", "04:40"),
-        stop(3, "ASH", "04:50")
+        stop(1, "TON", "02:30"),
+        stop(2, "PDW", "02:40"),
+        stop(3, "ASH", "02:50")
       ]),
     ];
 

@@ -25,7 +25,7 @@ export class OutputGTFSZipCommand implements CLICommand {
     await this.command.run(argv);
 
     console.log("Writing " + filename);
-    execSync(`zip ${filename} ${argv[3]}/*.txt`);
+    execSync(`zip -j ${filename} ${argv[3]}/*.txt`);
   }
 
 }
