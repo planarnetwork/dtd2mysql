@@ -16,6 +16,10 @@ export class OutputGTFSZipCommand implements CLICommand {
   public async run(argv: string[]): Promise<void> {
     const filename = argv[3] || "./gtfs.zip";
 
+    if (fs.existsSync(filename)) {
+      fs.unlinkSync(filename);
+    }
+
     argv[3] = "/tmp/gtfs/";
 
     if (!fs.existsSync(argv[3])) {
@@ -24,8 +28,11 @@ export class OutputGTFSZipCommand implements CLICommand {
 
     await this.command.run(argv);
 
-    console.log("Writing " + filename);
-    execSync(`zip -j ${filename} ${argv[3]}/*.txt`);
+    // when node tells you it's finished writing a file, it's lying.
+    setTimeout(() => {
+      console.log("Writing " + filename);
+      execSync(`zip -j ${filename} ${argv[3]}/*.txt`);
+    }, 1000);
   }
 
 }
