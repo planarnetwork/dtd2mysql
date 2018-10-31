@@ -80,14 +80,13 @@ export class Container {
   }
 
   @memoize
-  private async getOutputGTFSCommandWithOutput(output: GTFSOutput): Promise<OutputGTFSCommand> {
-    const [promiseDb, streamDb] = await Promise.all([
-      this.getDatabaseConnection(),
-      this.getDatabaseStream()
-    ]);
-
+  private getOutputGTFSCommandWithOutput(output: GTFSOutput): OutputGTFSCommand {
     return new OutputGTFSCommand(
-      new CIFRepository(promiseDb, streamDb, stationCoordinates),
+      new CIFRepository(
+        this.getDatabaseConnection(),
+        this.getDatabaseStream(),
+        stationCoordinates
+      ),
       output
     );
   }
@@ -138,16 +137,16 @@ export class Container {
   }
 
   @memoize
-  public async getDatabaseConnection(): Promise<DatabaseConnection> {
-    return await require('mysql2/promise').createPool({
+  public getDatabaseConnection(): DatabaseConnection {
+    return require('mysql2/promise').createPool({
       ...this.databaseConfiguration,
       //debug: ['ComQueryPacket', 'RowDataPacket']
     });
   }
 
   @memoize
-  public async getDatabaseStream(): Promise<any> {
-    return await require('mysql2').createPool(this.databaseConfiguration);
+  public getDatabaseStream() {
+    return require('mysql2').createPool(this.databaseConfiguration);
 
   }
 
@@ -161,7 +160,7 @@ export class Container {
       user: process.env.DATABASE_USERNAME || "root",
       password: process.env.DATABASE_PASSWORD || null,
       database: <string>process.env.DATABASE_NAME,
-      connectionLimit: 3,
+      connectionLimit: 20,
       multipleStatements: true
     };
   }

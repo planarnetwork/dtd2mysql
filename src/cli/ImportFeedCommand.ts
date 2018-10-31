@@ -120,13 +120,13 @@ export class ImportFeedCommand implements CLICommand {
    * Process the records inside the given file
    */
   private async processFile(filename: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const file = this.getFeedFile(filename);
-      const tables = this.tables(file);
-      const readStream = readFile(this.tmpFolder + filename);
+    const file = this.getFeedFile(filename);
+    const tables = await this.tables(file);
+    const readStream = readFile(this.tmpFolder + filename);
 
+    return new Promise((resolve, reject) => {
       readStream.on("line", line => {
-        if (line === '' || line.charAt(0) === '/') return;
+        if (line === "" || line.charAt(0) === "/") return;
 
         const record = file.getRecord(line);
 
@@ -140,8 +140,8 @@ export class ImportFeedCommand implements CLICommand {
         }
       });
 
-      readStream.on('SIGINT', reject);
-      readStream.on('close', () => {
+      readStream.on("SIGINT", reject);
+      readStream.on("close", () => {
         console.log(`Finished ${filename}`);
 
         Promise
@@ -163,12 +163,14 @@ export class ImportFeedCommand implements CLICommand {
   }
 
   @memoize
-  private tables(file: FeedFile): TableIndex {
-    return file.recordTypes.reduce((records, record) => {
-      records[record.name] = new MySQLTable(this.db, record.name);
+  async tables(file: FeedFile): Promise<TableIndex> {
+    const index = {};
 
-      return records;
-    }, {});
+    for (const record of file.recordTypes) {
+      index[record.name] = new MySQLTable(await this.db.getConnection(), record.name);
+    }
+
+    return index;
   }
 
   /**

@@ -32,7 +32,9 @@ export class ScheduleBuilder {
           this.schedules.push(this.createSchedule(prevRow, stops));
           stops = [];
 
-          departureHour = row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
+          departureHour = row.public_arrival_time
+            ? parseInt(row.public_arrival_time.substr(0, 2), 10)
+            : row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
         }
 
         if (row.stp_indicator !== STP.Cancellation) {

@@ -17,7 +17,7 @@ export class MySQLTable {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly tableName: string,
-    private readonly flushLimit: number = 5000
+    private readonly flushLimit: number = 10000
   ) {}
 
   /**
@@ -48,12 +48,13 @@ export class MySQLTable {
   /**
    * Flush and return all promises
    */
-  public close(): Promise<any> {
+  public async close(): Promise<any> {
     this.flush(RecordAction.Delete);
     this.flush(RecordAction.Update);
     this.flush(RecordAction.Insert);
 
-    return Promise.all(this.promiseBuffer);
+    await Promise.all(this.promiseBuffer);
+    await this.db.release();
   }
 
   /**
