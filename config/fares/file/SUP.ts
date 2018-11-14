@@ -17,7 +17,7 @@ const supplement = new FixedWidthRecord(
     "description": new TextField(29, 20),
     "short_desc": new TextField(49, 12),
     "suppl_type": new TextField(61, 3),
-    "price": new IntField(64, 5),
+    "price": new IntField(64, 5, false, [" ", "*"]),
     "cpf_ticket_type": new TextField(69, 5, true),
     "min_group_size": new IntField(74, 1),
     "max_group_size": new IntField(75, 1),
