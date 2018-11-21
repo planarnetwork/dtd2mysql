@@ -8,33 +8,42 @@ import {ParsedRecord, RecordAction} from "../feed/record/Record";
 export class MySQLTable {
   private readonly promiseBuffer: Promise<any>[] = [];
 
-  private readonly buffer = {
+  protected readonly buffer = {
     [RecordAction.Insert]: [] as ParsedRecord[],
     [RecordAction.Update]: [] as ParsedRecord[],
     [RecordAction.Delete]: [] as ParsedRecord[],
   };
 
   constructor(
-    private readonly db: DatabaseConnection,
-    private readonly tableName: string,
-    private readonly flushLimit: number = 10000
+    protected readonly db: DatabaseConnection,
+    protected readonly tableName: string,
+    protected readonly flushLimit: number = 20000
   ) {}
 
   /**
    * Insert the given row to the table
    */
-  public apply(row: ParsedRecord): void {
+  public async apply(row: ParsedRecord): Promise<void> {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      this.flush(row.action);
+      await this.flush2(row.action);
     }
+  }
+
+  private async flush2(type: RecordAction): Promise<void> {
+    if (this.buffer[type].length === 0) {
+      return;
+    }
+
+    await this.queryWithRetry(type, this.buffer[type]);
+    this.buffer[type] = [];
   }
 
   /**
    * Flush the table
    */
-  private flush(type: RecordAction): void {
+  protected flush(type: RecordAction): void {
     if (this.buffer[type].length === 0) {
       return;
     }
@@ -60,7 +69,7 @@ export class MySQLTable {
   /**
    * Query with retry. Sometimes locking errors occur
    */
-  private async queryWithRetry(type: RecordAction, rows: ParsedRecord[], numRetries: number = 3): Promise<void> {
+  protected async queryWithRetry(type: RecordAction, rows: ParsedRecord[], numRetries: number = 3): Promise<void> {
     try {
       await this.query(type, rows);
     }
@@ -74,7 +83,7 @@ export class MySQLTable {
     }
   }
 
-  private query(type: RecordAction, rows: ParsedRecord[]): Promise<void> {
+  protected query(type: RecordAction, rows: ParsedRecord[]): Promise<void> {
     const rowValues = rows.map(r => Object.values(r.values));
 
     switch (type) {

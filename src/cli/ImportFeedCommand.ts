@@ -1,19 +1,22 @@
 import AdmZip = require("adm-zip");
-import {CLICommand} from "./CLICommand";
-import {FeedConfig} from "../../config";
-import {FeedFile} from "../feed/file/FeedFile";
-import {MySQLSchema} from "../database/MySQLSchema";
-import {DatabaseConnection} from "../database/DatabaseConnection";
+import { CLICommand } from "./CLICommand";
+import { FeedConfig } from "../../config";
+import { FeedFile } from "../feed/file/FeedFile";
+import { MySQLSchema } from "../database/MySQLSchema";
+import { DatabaseConnection } from "../database/DatabaseConnection";
 import * as path from "path";
-import * as readline from "readline";
-import {MySQLTable} from "../database/MySQLTable";
+import { AsyncMySQLTable } from "../database/AsyncMySQLTable";
+import { MySQLTable } from "../database/MySQLTable";
 import * as memoize from "memoized-class-decorator";
 import fs = require("fs-extra");
-import {MultiRecordFile} from "../feed/file/MultiRecordFile";
-import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
+import { MultiRecordFile } from "../feed/file/MultiRecordFile";
+import { RecordWithManualIdentifier } from "../feed/record/FixedWidthRecord";
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
-const readFile = filename => readline.createInterface({ input: fs.createReadStream(filename) });
+const readFile = (filename) => fs.createReadStream(filename, {
+  encoding: 'utf8',
+  highWaterMark: 1024
+});
 
 /**
  * Imports one of the feeds
@@ -24,7 +27,8 @@ export class ImportFeedCommand implements CLICommand {
     private readonly db: DatabaseConnection,
     private readonly files: FeedConfig,
     private readonly tmpFolder: string
-  ) { }
+  ) {
+  }
 
   private get fileArray(): FeedFile[] {
     return Object.values(this.files);
@@ -119,37 +123,51 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Process the records inside the given file
    */
-  private async processFile(filename: string): Promise<any> {
+  private async processFile(filename: string): Promise<void> {
     const file = this.getFeedFile(filename);
     const tables = await this.tables(file);
+
     const readStream = readFile(this.tmpFolder + filename);
 
-    return new Promise((resolve, reject) => {
-      readStream.on("line", line => {
-        if (line === "" || line.charAt(0) === "/") return;
+    for await (const line of (this.chunksToLines(readStream))) {
+      if (line === "" || line.charAt(0) === "/") continue;
 
-        const record = file.getRecord(line);
+      const record = file.getRecord(line);
 
-        if (record) {
-          try {
-            tables[record.name].apply(record.extractValues(line));
-          }
-          catch (err) {
-            reject(`Error processing ${filename} with data ${line}` + err.stack);
-          }
+      if (record) {
+        try {
+          await tables[record.name].apply(record.extractValues(line));
         }
-      });
+        catch (err) {
+          new Error(`Error processing ${filename} with data ${line}` + err.stack);
+        }
+      }
+    }
+    console.log("finished " + filename);
+  }
 
-      readStream.on("SIGINT", reject);
-      readStream.on("close", () => {
-        console.log(`Finished ${filename}`);
-
-        Promise
-          .all(Object.values(tables).map(t => t.close()))
-          .then(resolve)
-          .catch(reject);
-      });
-    });
+  /**
+   * Need explanation?
+   * http://2ality.com/2018/04/async-iter-nodejs.html
+   * go and take it :)
+   *
+   * @param chunksAsync
+   */
+  async* chunksToLines(chunksAsync) {
+    let previous = '';
+    for await (const chunk of chunksAsync) {
+      previous += chunk;
+      let eolIndex;
+      while ((eolIndex = previous.indexOf('\n')) >= 0) {
+        // line includes the EOL
+        const line = previous.slice(0, eolIndex + 1);
+        yield line;
+        previous = previous.slice(eolIndex + 1);
+      }
+    }
+    if (previous.length > 0) {
+      yield previous;
+    }
   }
 
   @memoize
@@ -167,7 +185,7 @@ export class ImportFeedCommand implements CLICommand {
     const index = {};
 
     for (const record of file.recordTypes) {
-      index[record.name] = new MySQLTable(await this.db.getConnection(), record.name);
+      index[record.name] = new AsyncMySQLTable(await this.db.getConnection(), record.name);
     }
 
     return index;
