@@ -54,7 +54,6 @@ export class MySQLTable {
     this.flush(RecordAction.Insert);
 
     await Promise.all(this.promiseBuffer);
-    await this.db.release();
   }
 
   /**

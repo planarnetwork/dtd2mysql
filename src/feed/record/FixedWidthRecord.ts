@@ -12,7 +12,8 @@ export class FixedWidthRecord implements Record {
     public readonly fields: FieldMap,
     public readonly indexes: string[] = [],
     public readonly actionMap: ActionMap = {},
-    public readonly charPosition: number = 0
+    public readonly charPosition: number = 0,
+    public readonly orderedInserts: boolean = false
   ) {}
 
   /**

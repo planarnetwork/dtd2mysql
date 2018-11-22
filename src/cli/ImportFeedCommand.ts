@@ -102,8 +102,10 @@ export class ImportFeedCommand implements CLICommand {
   private async setLastScheduleId(): Promise<void> {
     const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
     const lastId = lastSchedule ? lastSchedule.id : 0;
+    const cfaFile = this.files["CFA"] as MultiRecordFile;
+    const bsRecord = cfaFile.records["BS"] as RecordWithManualIdentifier;
 
-    (<RecordWithManualIdentifier>(<MultiRecordFile>this.files["CFA"]).records["BS"]).lastId = lastId;
+    bsRecord.lastId = lastId;
   }
 
   private ensureALFExists(filename): void {
@@ -163,11 +165,13 @@ export class ImportFeedCommand implements CLICommand {
   }
 
   @memoize
-  async tables(file: FeedFile): Promise<TableIndex> {
+  private async tables(file: FeedFile): Promise<TableIndex> {
     const index = {};
 
     for (const record of file.recordTypes) {
-      index[record.name] = new MySQLTable(await this.db.getConnection(), record.name);
+      const db = record.orderedInserts ? await this.db.getConnection() : this.db;
+
+      index[record.name] = new MySQLTable(db, record.name);
     }
 
     return index;
