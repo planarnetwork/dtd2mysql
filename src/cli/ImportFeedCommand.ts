@@ -1,16 +1,16 @@
 import AdmZip = require("adm-zip");
-import {CLICommand} from "./CLICommand";
-import {FeedConfig} from "../../config";
-import {FeedFile} from "../feed/file/FeedFile";
-import {MySQLSchema} from "../database/MySQLSchema";
-import {DatabaseConnection} from "../database/DatabaseConnection";
+import { CLICommand } from "./CLICommand";
+import { FeedConfig } from "../../config";
+import { FeedFile } from "../feed/file/FeedFile";
+import { MySQLSchema } from "../database/MySQLSchema";
+import { DatabaseConnection } from "../database/DatabaseConnection";
 import * as path from "path";
-import {AsyncMySQLTable} from "../database/AsyncMySQLTable";
-import {MySQLTable} from "../database/MySQLTable";
+import { AsyncMySQLTable } from "../database/AsyncMySQLTable";
+import { MySQLTable } from "../database/MySQLTable";
 import * as memoize from "memoized-class-decorator";
 import fs = require("fs-extra");
-import {MultiRecordFile} from "../feed/file/MultiRecordFile";
-import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
+import { MultiRecordFile } from "../feed/file/MultiRecordFile";
+import { RecordWithManualIdentifier } from "../feed/record/FixedWidthRecord";
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
 const readFile = (filename) => fs.createReadStream(filename, {
@@ -129,8 +129,11 @@ export class ImportFeedCommand implements CLICommand {
 
     const readStream = readFile(this.tmpFolder + filename);
 
+    let counter = 0;
+    let counterTotal = 0;
     for await (const line of (this.chunksToLines(readStream))) {
       if (line === "" || line.charAt(0) === "/") continue;
+      counter++;
 
       const record = file.getRecord(line);
 
@@ -142,8 +145,16 @@ export class ImportFeedCommand implements CLICommand {
           new Error(`Error processing ${filename} with data ${line}` + err.stack);
         }
       }
+
+      if (counter >= 10000) {
+        counterTotal += counter;
+        console.log((new Date()).toISOString() + " precessed rows = " + counterTotal);
+        counter = 0;
+      }
     }
     console.log("finished " + filename);
+    readStream.close();
+    await Object.values(tables).map(async t => await t.close())
   }
 
   /**
@@ -185,7 +196,7 @@ export class ImportFeedCommand implements CLICommand {
     const index = {};
 
     for (const record of file.recordTypes) {
-      index[record.name] = new AsyncMySQLTable(await this.db.getConnection(), record.name);
+      index[record.name] = new AsyncMySQLTable(this.db, record.name);
     }
 
     return index;

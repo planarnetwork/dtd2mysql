@@ -7,10 +7,13 @@ import { MySQLTable } from './MySQLTable';
  */
 export class AsyncMySQLTable extends MySQLTable {
 
+  private runningFlushes = 0;
+
   constructor(
     db: DatabaseConnection,
     tableName: string,
-    flushLimit: number = 20000
+    flushLimit: number = 20000,
+    private readonly runningFlushesLimit: number = 20
   ) {
     super(db, tableName, flushLimit);
   }
@@ -22,17 +25,29 @@ export class AsyncMySQLTable extends MySQLTable {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      await this.flush(row.action);
+      console.log("running flushes = " + this.runningFlushes);
+      while (this.runningFlushes >= this.runningFlushesLimit) {
+        await this.sleep(100);
+      }
+      this.flush(row.action);
     }
   }
 
-  protected async flush(type: RecordAction): Promise<void> {
+  protected flush(type: RecordAction): void {
     if (this.buffer[type].length === 0) {
       return;
     }
+    this.queryWithRetry(type, this.buffer[type]).then(() => {
+      this.runningFlushes--;
+    });
+    this.runningFlushes++;
 
-    await this.queryWithRetry(type, this.buffer[type]);
     this.buffer[type] = [];
   }
-}
 
+  private sleep(ms) {
+    return new Promise(resolve => {
+      setTimeout(resolve, ms)
+    })
+  }
+}
