@@ -75,6 +75,8 @@ class ALFRecord implements Record {
     "sunday": new BooleanField(16)
   };
 
+  public readonly orderedInserts: boolean = false;
+
   /**
    * Split the CSV string and then split the values into key pairs.
    *
