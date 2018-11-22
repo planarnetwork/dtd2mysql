@@ -17,7 +17,7 @@ export class MySQLTable {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly tableName: string,
-    private readonly flushLimit: number = 10000
+    private readonly flushLimit: number = 5000
   ) {}
 
   /**
