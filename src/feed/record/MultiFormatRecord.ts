@@ -13,7 +13,8 @@ export class MultiFormatRecord implements Record {
     private readonly records: MultiRecordFieldMap,
     private readonly recordIdentifierStart: number,
     private readonly recordIdentifierLength: number,
-    public readonly indexes: string[] = []
+    public readonly indexes: string[] = [],
+    public readonly orderedInserts: boolean = false
   ) {}
 
   /**

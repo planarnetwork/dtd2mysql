@@ -172,7 +172,10 @@ const stop = new MultiFormatRecord(
   ["schedule", "location", "suffix",  "public_departure_time"],
   stopRecordTypes.LI,
   stopRecordTypes,
-  0, 2
+  0,
+  2,
+  [],
+  true
 );
 
 
