@@ -5,15 +5,17 @@ import {FeedFile} from "../feed/file/FeedFile";
 import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
-import * as readline from "readline";
 import {MySQLTable} from "../database/MySQLTable";
 import * as memoize from "memoized-class-decorator";
 import fs = require("fs-extra");
 import {MultiRecordFile} from "../feed/file/MultiRecordFile";
 import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
+import {MySQLStream, TableIndex} from "../database/MySQLStream";
+import byline = require("byline");
+import streamToPromise = require("stream-to-promise");
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
-const readFile = filename => readline.createInterface({ input: fs.createReadStream(filename) });
+const readFile = filename => byline(fs.createReadStream(filename, "utf8"));
 
 /**
  * Imports one of the feeds
@@ -66,11 +68,11 @@ export class ImportFeedCommand implements CLICommand {
       this.ensureALFExists(zipName.substring(0, zipName.length - 4));
     }
 
-    const files = fs.readdirSync(this.tmpFolder).filter(filename => this.getFeedFile(filename));
-
-    for (const filename of files) {
-      await this.processFile(filename);
-    }
+    await Promise.all(
+      fs.readdirSync(this.tmpFolder)
+        .filter(filename => this.getFeedFile(filename))
+        .map(filename => this.processFile(filename))
+    );
 
     await this.updateLastFile(zipName);
   }
@@ -124,34 +126,10 @@ export class ImportFeedCommand implements CLICommand {
   private async processFile(filename: string): Promise<any> {
     const file = this.getFeedFile(filename);
     const tables = await this.tables(file);
-    const readStream = readFile(this.tmpFolder + filename);
+    const tableStream = new MySQLStream(filename, file, tables);
+    const stream = readFile(this.tmpFolder + filename).pipe(tableStream);
 
-    return new Promise((resolve, reject) => {
-      readStream.on("line", line => {
-        if (line === "" || line.charAt(0) === "/") return;
-
-        const record = file.getRecord(line);
-
-        if (record) {
-          try {
-            tables[record.name].apply(record.extractValues(line));
-          }
-          catch (err) {
-            reject(`Error processing ${filename} with data ${line}` + err.stack);
-          }
-        }
-      });
-
-      readStream.on("SIGINT", reject);
-      readStream.on("close", () => {
-        console.log(`Finished ${filename}`);
-
-        Promise
-          .all(Object.values(tables).map(t => t.close()))
-          .then(resolve)
-          .catch(reject);
-      });
-    });
+    return streamToPromise(stream);
   }
 
   @memoize
@@ -184,8 +162,4 @@ export class ImportFeedCommand implements CLICommand {
     return this.db.end();
   }
 
-}
-
-type TableIndex = {
-  [tableName: string]: MySQLTable;
 }

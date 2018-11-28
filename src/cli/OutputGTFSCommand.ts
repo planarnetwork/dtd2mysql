@@ -10,8 +10,8 @@ import {createCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
 import {ScheduleResults} from "../gtfs/repository/ScheduleBuilder";
 import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import * as fs from "fs";
-import streamToPromise = require("stream-to-promise");
 import {addLateNightServices} from "../gtfs/command/AddLateNightServices";
+import streamToPromise = require("stream-to-promise");
 
 export class OutputGTFSCommand implements CLICommand {
   private baseDir: string;

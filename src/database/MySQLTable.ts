@@ -6,7 +6,6 @@ import {ParsedRecord, RecordAction} from "../feed/record/Record";
  * Stateful class that provides access to a MySQL table and acts as buffer for inserts.
  */
 export class MySQLTable {
-  private readonly promiseBuffer: Promise<any>[] = [];
 
   private readonly buffer = {
     [RecordAction.Insert]: [] as ParsedRecord[],
@@ -23,37 +22,38 @@ export class MySQLTable {
   /**
    * Insert the given row to the table
    */
-  public apply(row: ParsedRecord): void {
+  public async apply(row: ParsedRecord): Promise<void> {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      this.flush(row.action);
+      await this.flush(row.action);
     }
   }
 
   /**
    * Flush the table
    */
-  private flush(type: RecordAction): void {
+  private async flush(type: RecordAction): Promise<void> {
     if (this.buffer[type].length === 0) {
       return;
     }
 
     const promise = this.queryWithRetry(type, this.buffer[type]);
 
-    this.promiseBuffer.push(promise);
     this.buffer[type] = [];
+
+    return promise;
   }
 
   /**
    * Flush and return all promises
    */
   public async close(): Promise<any> {
-    this.flush(RecordAction.Delete);
-    this.flush(RecordAction.Update);
-    this.flush(RecordAction.Insert);
-
-    await Promise.all(this.promiseBuffer);
+    await Promise.all([
+      this.flush(RecordAction.Delete),
+      this.flush(RecordAction.Update),
+      this.flush(RecordAction.Insert)
+    ]);
   }
 
   /**
