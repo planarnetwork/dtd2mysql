@@ -44,7 +44,8 @@
     "mysql2": "^1.6.1",
     "ssh2": "^0.6.1",
     "ssh2-streams": "^0.2.1",
-    "stream-to-promise": "^2.2.0"
+    "stream-to-promise": "^2.2.0",
+    "line-by-line": "^0.1.6"
   },
   "engines": {
     "node": "^10.0.0"
@@ -56,6 +57,7 @@
     "@types/node": "^10.12.1",
     "@types/ssh2": "^0.5.36",
     "@types/ssh2-streams": "^0.1.2",
+    "@types/line-by-line": "^0.1.2",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "ts-node": "^7.0.1",

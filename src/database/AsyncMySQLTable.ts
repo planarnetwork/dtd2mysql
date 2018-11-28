@@ -18,36 +18,34 @@ export class AsyncMySQLTable extends MySQLTable {
     super(db, tableName, flushLimit);
   }
 
+  public isOverloaded(): boolean  {
+    return this.runningFlushes >= this.runningFlushesLimit;
+  }
+
   /**
    * Insert the given row to the table
    */
-  public async apply(row: ParsedRecord): Promise<void> {
+  public async apply(row: ParsedRecord, flushCallback?): Promise<void> {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
       console.log("running flushes = " + this.runningFlushes);
-      while (this.runningFlushes >= this.runningFlushesLimit) {
-        await this.sleep(100);
-      }
-      this.flush(row.action);
+      this.flush(row.action, flushCallback);
     }
   }
 
-  protected flush(type: RecordAction): void {
+  protected flush(type: RecordAction, flushCallback?): void {
     if (this.buffer[type].length === 0) {
       return;
     }
     this.queryWithRetry(type, this.buffer[type]).then(() => {
       this.runningFlushes--;
+      if(flushCallback) flushCallback();
+      console.log("flush done ");
     });
     this.runningFlushes++;
 
     this.buffer[type] = [];
   }
 
-  private sleep(ms) {
-    return new Promise(resolve => {
-      setTimeout(resolve, ms)
-    })
-  }
 }

@@ -27,17 +27,8 @@ export class MySQLTable {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      await this.flush2(row.action);
+      await this.flush(row.action);
     }
-  }
-
-  private async flush2(type: RecordAction): Promise<void> {
-    if (this.buffer[type].length === 0) {
-      return;
-    }
-
-    await this.queryWithRetry(type, this.buffer[type]);
-    this.buffer[type] = [];
   }
 
   /**
