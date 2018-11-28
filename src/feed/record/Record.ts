@@ -7,6 +7,7 @@ export interface Record {
   key: string[];
   fields: FieldMap;
   indexes: string[];
+  orderedInserts: boolean;
 
   /**
    * Turn the given line into a list of values
