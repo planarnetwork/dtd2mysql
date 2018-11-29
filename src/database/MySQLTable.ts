@@ -26,7 +26,7 @@ export class MySQLTable {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      await this.flush(row.action);
+      return this.flush(row.action);
     }
   }
 
@@ -34,22 +34,20 @@ export class MySQLTable {
    * Flush the table
    */
   private async flush(type: RecordAction): Promise<void> {
-    if (this.buffer[type].length === 0) {
-      return;
+    const rows = this.buffer[type];
+
+    if (rows.length > 0) {
+      this.buffer[type] = [];
+
+      return this.queryWithRetry(type, rows);
     }
-
-    const promise = this.queryWithRetry(type, this.buffer[type]);
-
-    this.buffer[type] = [];
-
-    return promise;
   }
 
   /**
    * Flush and return all promises
    */
-  public async close(): Promise<any> {
-    await Promise.all([
+  public close(): Promise<any> {
+    return Promise.all([
       this.flush(RecordAction.Delete),
       this.flush(RecordAction.Update),
       this.flush(RecordAction.Insert)

@@ -17,17 +17,17 @@ export class MySQLStream extends Writable {
       return callback();
     }
 
-    const record = this.file.getRecord(line);
+    try {
+      const record = this.file.getRecord(line);
 
-    if (record) {
-      try {
+      if (record) {
         await this.tables[record.name].apply(record.extractValues(line));
+      }
 
-        callback();
-      }
-      catch (err) {
-        callback(Error(`Error processing ${this.filename} with data ${line}` + err.stack));
-      }
+      callback();
+    }
+    catch (err) {
+      callback(Error(`Error processing ${this.filename} with data ${line}` + err.stack));
     }
   }
 

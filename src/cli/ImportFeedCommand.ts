@@ -15,7 +15,7 @@ import byline = require("byline");
 import streamToPromise = require("stream-to-promise");
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
-const readFile = filename => byline(fs.createReadStream(filename, "utf8"));
+const readFile = filename => byline.createStream(fs.createReadStream(filename, "utf8"));
 
 /**
  * Imports one of the feeds
@@ -129,7 +129,17 @@ export class ImportFeedCommand implements CLICommand {
     const tableStream = new MySQLStream(filename, file, tables);
     const stream = readFile(this.tmpFolder + filename).pipe(tableStream);
 
-    return streamToPromise(stream);
+    console.log(`Start processing ${filename}`);
+
+    try {
+      await streamToPromise(stream);
+
+      console.log(`Finished processing ${filename}`);
+    }
+    catch (err) {
+      console.error(`Error processing ${filename}`);
+      console.error(err);
+    }
   }
 
   @memoize
