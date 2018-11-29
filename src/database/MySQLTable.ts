@@ -23,11 +23,11 @@ export class MySQLTable {
   /**
    * Insert the given row to the table
    */
-  public async apply(row: ParsedRecord): Promise<void> {
+  public apply(row: ParsedRecord): void {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      await this.flush(row.action);
+      this.flush(row.action);
     }
   }
 

@@ -25,7 +25,7 @@ export class AsyncMySQLTable extends MySQLTable {
   /**
    * Insert the given row to the table
    */
-  public async apply(row: ParsedRecord, flushCallback?): Promise<void> {
+  public apply(row: ParsedRecord, flushCallback?): void {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
