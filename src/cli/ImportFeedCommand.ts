@@ -129,8 +129,6 @@ export class ImportFeedCommand implements CLICommand {
     const tableStream = new MySQLStream(filename, file, tables);
     const stream = readFile(this.tmpFolder + filename).pipe(tableStream);
 
-    console.log(`Start processing ${filename}`);
-
     try {
       await streamToPromise(stream);
 
