@@ -46,12 +46,16 @@ export class MySQLTable {
   /**
    * Flush and return all promises
    */
-  public close(): Promise<any> {
-    return Promise.all([
+  public async close(): Promise<any> {
+    await Promise.all([
       this.flush(RecordAction.Delete),
       this.flush(RecordAction.Update),
       this.flush(RecordAction.Insert)
     ]);
+
+    if (this.db.release) {
+      await this.db.release();
+    }
   }
 
   /**

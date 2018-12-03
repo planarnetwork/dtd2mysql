@@ -155,9 +155,11 @@ export class ImportFeedCommand implements CLICommand {
     const index = {};
 
     for (const record of file.recordTypes) {
-      const db = record.orderedInserts ? await this.db.getConnection() : this.db;
+      if (!index[record.name]) {
+        const db = record.orderedInserts ? await this.db.getConnection() : this.db;
 
-      index[record.name] = new MySQLTable(db, record.name);
+        index[record.name] = new MySQLTable(db, record.name);
+      }
     }
 
     return index;
