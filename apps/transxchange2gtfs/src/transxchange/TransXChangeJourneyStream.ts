@@ -22,7 +22,7 @@ export class TransXChangeJourneyStream extends Transform {
   private tripId: number = 1;
 
   constructor(private readonly holidays: BankHolidays) {
-    super({objectMode: true});
+    super({ objectMode: true });
   }
 
   /**

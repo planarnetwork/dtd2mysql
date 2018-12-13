@@ -55,7 +55,7 @@ export class Container {
     const stopsZip = __dirname + "/../resource/Stops.zip";
     const stopsCSV = "/tmp/transxchange2gtfs_stops/";
 
-    await exec("unzip -uo " + stopsZip + " -d " + stopsCSV);
+    await exec("unzip -uo " + stopsZip + " -d " + stopsCSV, { maxBuffer: Number.MAX_SAFE_INTEGER });
 
     const naptanFactory = new NaPTANFactory(
       fs.createReadStream(stopsCSV + "Stops.csv", "utf8").pipe(parse())

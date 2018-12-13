@@ -37,7 +37,7 @@ export class Converter {
 
     await this.streamsFinished(streams);
     console.log("Zipping...");
-    await exec(`zip -j ${output} ${Container.TMP}*.txt`);
+    await exec(`zip -j ${output} ${Container.TMP}*.txt`, { maxBuffer: Number.MAX_SAFE_INTEGER });
     console.log("Complete.");
 
     console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);

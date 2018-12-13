@@ -2,7 +2,6 @@ import {Transform, TransformCallback} from "stream";
 import {promisify} from "util";
 import * as fs from "fs";
 import {parse} from "path";
-import {Converter} from "./Converter";
 import {Container} from "../Container";
 
 const readFile = promisify(fs.readFile);
@@ -49,7 +48,7 @@ export class FileStream extends Transform {
   private async readZip(file: string): Promise<any> {
     const outputDir = Container.TMP + this.zipIndex++ + "/";
 
-    await exec("unzip -u " + file + " -d " + outputDir);
+    await exec("unzip -uo " + file + " -d " + outputDir, { maxBuffer: Number.MAX_SAFE_INTEGER });
 
     const files: string[] = await glob(outputDir + "**/*.xml");
 

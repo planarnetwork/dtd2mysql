@@ -1,5 +1,4 @@
 import {Transform, TransformCallback} from "stream";
-import {TransXChange} from "../transxchange/TransXChange";
 
 /**
  * Transform TransXChange objects into GTFS CSV lines
