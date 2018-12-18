@@ -3,7 +3,7 @@ import {AgencyID} from "./Agency";
 
 export interface Route {
   route_id: RouteID;
-  agency_id: AgencyID | null;
+  agency_id: AgencyID;
   route_short_name: string;
   route_long_name: string;
   route_type: RouteType;

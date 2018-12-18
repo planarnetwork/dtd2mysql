@@ -78,7 +78,7 @@ export class Schedule implements OverlayRecord {
   public toRoute(): Route {
     return {
       route_id: this.id,
-      agency_id: this.operator,
+      agency_id: this.operator || "ZZ",
       route_short_name: `${this.operator || "Z"}:${this.origin}->${this.destination}`,
       route_long_name: `${this.operator || "Z"} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
       route_type: this.mode,
