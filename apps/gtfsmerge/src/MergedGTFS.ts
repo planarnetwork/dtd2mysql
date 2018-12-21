@@ -1,6 +1,6 @@
 import {GTFSZip} from "./loadGTFS";
 import {GTFSFileStream} from "./GTFSFileStream";
-import {Calendar, CalendarDate, ServiceID, StopTime, Trip} from "./GTFS";
+import {Calendar, CalendarDate, ServiceID, Stop, StopTime, Transfer, Trip} from "./GTFS";
 
 /**
  * Merges multiple GTFS sets into a single stream for each GTFS file (stops.txt etc)
@@ -9,6 +9,8 @@ export class MergedGTFS {
   private calendarHashes = {};
   private currentServiceId = 1;
   private currentTripId = 1;
+  private stopLocations = {};
+  private additionalTransfers = {};
 
   constructor(
     private readonly calendarStream: GTFSFileStream,
@@ -29,10 +31,10 @@ export class MergedGTFS {
 
     this.writeCalendars(gtfs.calendars, gtfs.calendarDates, serviceIdMap);
     this.writeTrips(gtfs.trips, gtfs.stopTimes, serviceIdMap);
+    this.writeTransfers(this.transfersStream, gtfs.transfers);
+    this.writeStops(this.stopsStream, gtfs.stops);
     this.writeAll(this.routesStream, gtfs.routes);
     this.writeAll(this.agencyStream, gtfs.agencies);
-    this.writeAll(this.stopsStream, gtfs.stops);
-    this.writeAll(this.transfersStream, gtfs.transfers);
   }
 
   private writeCalendars(calendars: Calendar[], dateIndex: Record<ServiceID, CalendarDate[]>, serviceIdMap: {}) {
@@ -52,6 +54,9 @@ export class MergedGTFS {
         serviceIdMap[calendar.service_id] = serviceId;
         calendar.service_id = serviceId;
         this.calendarStream.write(calendar);
+      }
+      else {
+        serviceIdMap[calendar.service_id] = this.calendarHashes[hash];
       }
     }
   }
@@ -79,6 +84,84 @@ export class MergedGTFS {
     for (const item of items) {
       stream.write(item);
     }
+  }
+
+  private writeTransfers(stream: GTFSFileStream, transfers: Transfer[]): void {
+    for (const transfer of transfers) {
+      stream.write(transfer);
+
+      this.additionalTransfers[transfer.from_stop_id + "," + transfer.to_stop_id] = true;
+    }
+  }
+
+  private writeStops(stream: GTFSFileStream, stops: Stop[]): void {
+    for (const stop of stops) {
+      stream.write(stops);
+
+      if (!this.stopLocations[stop.stop_id]) {
+        this.addNearbyStops(stop);
+      }
+    }
+  }
+
+  /**
+   * Search any stops we've seen to see if we can walk there
+   */
+  private addNearbyStops(stop: Stop): void {
+    const aLon = Number(stop.stop_lon);
+    const aLat = Number(stop.stop_lat);
+
+    for (const stopId in this.stopLocations) {
+      const [bLon, bLat] = this.stopLocations[stopId];
+      const key = stop.stop_id + "," + stopId;
+      const reverseKey = stopId + "," + stop.stop_id;
+
+      if (bLat === 0.0 && bLon === 0.0) {
+        continue;
+      }
+
+      if (!this.additionalTransfers[key] || !this.additionalTransfers[reverseKey]) {
+        const distance = this.getDistance(aLon, aLat, bLon, bLat);
+
+        if (distance < 0.01) {
+          const t = Math.max(60, Math.round((distance / 0.0005) * 120));
+          const transfer = { from_stop_id: stop.stop_id, to_stop_id: stopId, transfer_type: 2, min_transfer_time: t };
+          const reverse = { from_stop_id: stopId, to_stop_id: stop.stop_id, transfer_type: 2, min_transfer_time: t };
+
+          this.additionalTransfers[key] = this.additionalTransfers[key] || transfer;
+          this.additionalTransfers[reverseKey] = this.additionalTransfers[reverseKey] || reverse;
+        }
+      }
+    }
+
+    this.stopLocations[stop.stop_id] = [aLon, aLat];
+  }
+
+  /**
+   * Note this method of calculating distances between stations is flawed and only used as a rough guide.
+   */
+  private getDistance(aLon: number, aLat: number, bLon: number, bLat: number) {
+    return Math.abs(bLat - aLat) + Math.abs(bLon - aLon);
+  }
+
+  public async end(): Promise<void> {
+
+    for (const transfer of Object.values(this.additionalTransfers)) {
+      if (transfer !== true) {
+        this.transfersStream.write(transfer);
+      }
+    }
+
+    await Promise.all([
+      this.calendarDatesStream.end(),
+      this.calendarStream.end(),
+      this.tripsStream.end(),
+      this.stopTimesStream.end(),
+      this.routesStream.end(),
+      this.agencyStream.end(),
+      this.stopsStream.end(),
+      this.transfersStream.end()
+    ]);
   }
 }
 

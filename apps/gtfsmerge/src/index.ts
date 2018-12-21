@@ -146,20 +146,8 @@ async function run(inputs: string[], output: string) {
     mergedGTFS.merge(gtfs);
   }
 
-  await Promise.all([
-    calendarDatesStream.end(),
-    calendarStream.end(),
-    tripsStream.end(),
-    stopTimesStream.end(),
-    routesStream.end(),
-    agencyStream.end(),
-    stopsStream.end(),
-    transfersStream.end()
-  ]);
-
-  console.log("Zipping...");
+  await mergedGTFS.end();
   await exec(`zip -j ${output} ${TMP}*.txt`, { maxBuffer: Number.MAX_SAFE_INTEGER });
-  console.log("Complete.");
 }
 
 run(
