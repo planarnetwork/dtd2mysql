@@ -1,5 +1,4 @@
-gtfsmerge
-=========================
+![gtfsmerge](logo.png)
 
 [![Travis](https://img.shields.io/travis/planarnetwork/gtfsmerge.svg?style=flat-square)](https://travis-ci.org/planarnetwork/gtfsmerge) ![npm](https://img.shields.io/npm/v/gtfsmerge.svg?style=flat-square) ![David](https://img.shields.io/david/planarnetwork/gtfsmerge.svg?style=flat-square)
 
