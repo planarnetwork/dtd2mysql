@@ -15,13 +15,6 @@ sudo apt-get install nodejs zip
 npm install -g gtfsmerge
 ```
 
-## Notes
-
-- Duplicate stops, agencies and routes are assumed to be the same stop and only output once. 
-- Calendars, calendar dates, trips and stop times are re-indexed. 
-- Identical calendars are merged into a single entry. 
-- This tool does not currently process any of the fares files. Please raise an issue if you would like this feature. 
-
 ## Usage
 
 It can be run by specifying the input and output files as CLI arguments:
@@ -29,6 +22,13 @@ It can be run by specifying the input and output files as CLI arguments:
 ```
 gtfsmerge input1.zip input2.zip output.zip
 ```
+
+## Notes
+
+- Duplicate stops, agencies and routes are assumed to be the same stop and only output once. 
+- Calendars, calendar dates, trips and stop times are re-indexed. 
+- Identical calendars are merged into a single entry. 
+- This tool does not currently process any of the fares files. Please raise an issue if you would like this feature. 
 
 ## Contributing
 
