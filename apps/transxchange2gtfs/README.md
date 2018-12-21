@@ -1,4 +1,4 @@
-transxchange2gtfs
+![transxchange2gtfs](logo.png)
 =========================
 
 [![Travis](https://img.shields.io/travis/planarnetwork/transxchange2gtfs.svg?style=flat-square)](https://travis-ci.org/planarnetwork/transxchange2gtfs) ![npm](https://img.shields.io/npm/v/transxchange2gtfs.svg?style=flat-square) ![David](https://img.shields.io/david/planarnetwork/transxchange2gtfs.svg?style=flat-square)
