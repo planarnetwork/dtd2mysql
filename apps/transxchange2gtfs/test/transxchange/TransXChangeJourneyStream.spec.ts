@@ -355,6 +355,12 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[5].stops[0].dropoff).to.equal(false);
+      chai.expect(rows[5].stops[0].pickup).to.equal(true);
+      chai.expect(rows[5].stops[0].stop).to.equal("118000037");
+      chai.expect(rows[5].stops[0].arrivalTime).to.equal("23:00:00");
+      chai.expect(rows[5].stops[0].departureTime).to.equal("23:00:00");
+
       chai.expect(rows[5].stops[2].dropoff).to.equal(true);
       chai.expect(rows[5].stops[2].pickup).to.equal(true);
       chai.expect(rows[5].stops[2].stop).to.equal("1100DEC10183");
