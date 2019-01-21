@@ -35,7 +35,7 @@ describe("RoutesStream", () => {
 
       chai.expect(route_id).to.equal("M6_MEGA");
       chai.expect(agency_id).to.equal("OId_MEGA");
-      chai.expect(route_short_name).to.equal("M6_MEGA");
+      chai.expect(route_short_name).to.equal("M6");
       chai.expect(route_long_name).to.equal("Falmouth - Victoria,London");
       chai.expect(route_type).to.equal("3");
     });
