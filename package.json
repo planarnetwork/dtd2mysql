@@ -1,5 +1,5 @@
 {
-  "name": "@assertis/dtd2mysql",
+  "name": "dtd2mysql",
   "version": "6.3.15",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
