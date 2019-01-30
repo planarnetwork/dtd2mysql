@@ -44,7 +44,7 @@
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.23.0",
     "mysql2": "^1.6.1",
-    "saxes": "^3.1.6",
+    "proxy-agent": "^3.0.3",
     "ssh2": "^0.6.1",
     "ssh2-streams": "^0.2.1",
     "stream-to-promise": "^2.2.0",

@@ -94,6 +94,28 @@ dtd2mysql --get-routeing
 dtd2mysql --get-nfm64
 ```
 
+## IDMS Fixed Links
+
+### Import
+```
+dtd2mysql --idms-fixed-links /path/to/FixedLinks_v1.0.xml
+```
+
+### To get around the IP restriction on the IDMS S3 bucket
+
+Start a tunnel to an S3 server that has access to the bucket.
+
+```
+ssh -D 12345 -C -N [your username]@app1.live.aws.assertis
+```
+
+Then add the following environment variables to the call:
+
+```
+S3_KEY="[your S3 key]" S3_SECRET="[your S3 secret]" S3_PROXY="socks5://127.0.0.1:12345" dtd2mysql --download-idms-fixed-links /tmp/FixedLinks_v1.0.xml
+```
+
+
 ## Notes
 ### null values
 

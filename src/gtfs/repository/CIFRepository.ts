@@ -7,7 +7,6 @@ import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";
 import {ScheduleBuilder, ScheduleResults} from "./ScheduleBuilder";
-import {RouteType} from "../file/Route";
 import {Duration} from "../native/Duration";
 import {FixedLink} from "../file/FixedLink";
 
@@ -168,8 +167,20 @@ export class CIFRepository {
         monday, tuesday, wednesday, thursday, friday, saturday, sunday
       FROM additional_fixed_link
       WHERE origin IN (SELECT crs_code FROM physical_station)
-      AND destination IN (SELECT crs_code FROM physical_station)
+        AND destination IN (SELECT crs_code FROM physical_station)
+      
       UNION
+      
+      SELECT
+        mode, duration * 60 as duration, origin, destination,
+        start_time, end_time, start_date, end_date,
+        monday, tuesday, wednesday, thursday, friday, saturday, sunday
+      FROM idms_fixed_link
+      WHERE origin IN (SELECT crs_code FROM physical_station)
+        AND destination IN (SELECT crs_code FROM physical_station)
+      
+      UNION
+      
       SELECT
         mode, duration * 60 as duration, origin, destination,
         "00:00:00", "23:59:59", "2017-01-01", "2038-01-19",
@@ -177,6 +188,8 @@ export class CIFRepository {
       FROM fixed_link
       WHERE CONCAT(origin, destination) NOT IN (
         SELECT CONCAT(origin, destination) FROM additional_fixed_link
+        UNION
+        SELECT CONCAT(origin, destination) FROM idms_fixed_link
       )
     `);
 

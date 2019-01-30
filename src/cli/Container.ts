@@ -18,6 +18,9 @@ import {nmf64DownloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
 import {ImportIdmsFixedLinksCommand} from "./ImportIdmsFixedLinksCommand";
+import * as AWS from 'aws-sdk';
+import * as proxy from "proxy-agent";
+import {DownloadFileFromS3Command} from "./DownloadFileFromS3Command";
 import {idmsFixedLinksDownloadUrl} from "../../config/idms";
 
 export class Container {
@@ -121,8 +124,41 @@ export class Container {
   }
 
   @memoize
-  private async getDownloadIdmsFixedLinksCommand(): Promise<DownloadFileCommand> {
-    return Promise.resolve(new DownloadFileCommand(idmsFixedLinksDownloadUrl, 'FixedLinks_v1.0.xml'));
+  private async getDownloadIdmsFixedLinksCommand(): Promise<DownloadFileFromS3Command | DownloadFileCommand> {
+    const command = process.env.S3_KEY
+        // Download via S3 API
+        ? new DownloadFileFromS3Command(await this.getS3(), 'idms', 'FixedLinks_v1.0.xml')
+        // Download via HTTPS
+        : new DownloadFileCommand(idmsFixedLinksDownloadUrl, 'FixedLinks_v1.0.xml');
+
+    return Promise.resolve(command);
+  }
+  
+  private async getS3(): Promise<AWS.S3> {
+    const key = process.env.S3_KEY;
+    const secret = process.env.S3_SECRET;
+    const region = process.env.S3_REGION || 'eu-west-1';
+    const proxyUrl = process.env.S3_PROXY;
+    const debug = process.env.DEBUG;
+    
+    if (!key || !secret) {
+      throw new Error('S3_KEY and S3_SECRET environment variables need to be set in order to download IDMS data');
+    }
+    
+    const config: AWS.S3.Types.ClientConfiguration = {
+      region: region,
+      credentials: new AWS.Credentials(key, secret),
+    };
+    
+    if (debug) {
+      config.logger = console;
+    }
+    
+    if (proxyUrl) {
+      config.httpOptions = { agent: proxy(proxyUrl)};
+    }
+
+    return new AWS.S3(config);
   }
 
   @memoize
