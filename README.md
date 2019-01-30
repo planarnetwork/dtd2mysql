@@ -112,7 +112,7 @@ ssh -D 12345 -C -N [your username]@app1.live.aws.assertis
 Then add the following environment variables to the call:
 
 ```
-S3_KEY="[your S3 key]" S3_SECRET="[your S3 secret]" S3_PROXY="socks5://127.0.0.1:12345" dtd2mysql --download-idms-fixed-links /tmp/FixedLinks_v1.0.xml
+S3_KEY="[your S3 key]" S3_SECRET="[your S3 secret]" S3_REGION="[your S3 region]" S3_PROXY="socks5://127.0.0.1:12345" dtd2mysql --download-idms-fixed-links /tmp/FixedLinks_v1.0.xml
 ```
 
 

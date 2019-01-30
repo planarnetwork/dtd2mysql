@@ -48,6 +48,7 @@ Downloading IDMS files from a non-allowed host (like a dev box) requires:
 
   S3_KEY                             your S3 key
   S3_SECRET                          your S3 secret
+  S3_REGION                          your S3 region
   S3_PROXY                           your proxy address
   
 See README.md for details.

@@ -6,7 +6,7 @@ import {isNullOrUndefined} from "util";
 /**
  * Short format DTD date (e.g. 31/05/2017)
  */
-export class ALFDate extends DateField {
+class ALFDate extends DateField {
 
   constructor(start: number, nullable: boolean = false) {
     super(start, nullable);

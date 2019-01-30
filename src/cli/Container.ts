@@ -14,7 +14,7 @@ import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 import {GTFSImportCommand} from "./GTFSImportCommand";
-import {nmf64DownloadUrl} from "../../config/nfm64";
+import {nfm64DownloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
 import {ImportIdmsFixedLinksCommand} from "./ImportIdmsFixedLinksCommand";
@@ -120,7 +120,7 @@ export class Container {
 
   @memoize
   private async getDownloadNFM64Command(): Promise<DownloadFileCommand> {
-    return Promise.resolve(new DownloadFileCommand(nmf64DownloadUrl, 'nfm64.zip'));
+    return Promise.resolve(new DownloadFileCommand(nfm64DownloadUrl, 'nfm64.zip'));
   }
 
   @memoize
@@ -218,7 +218,7 @@ export class Container {
       user: process.env.DATABASE_USERNAME || "root",
       password: process.env.DATABASE_PASSWORD || null,
       database: <string>process.env.DATABASE_NAME,
-      connectionLimit: 200,
+      connectionLimit: 20,
       multipleStatements: true
     };
   }
