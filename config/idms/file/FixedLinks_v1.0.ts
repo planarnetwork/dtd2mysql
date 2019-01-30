@@ -9,10 +9,7 @@ class FixedLinkRecord extends ALFRecord {
         if (typeof link.daysofweek === 'string') {
             link.daysofweek = [link.daysofweek];
         }
-        if (!link.daysofweek.filter) {
-            console.log(link);
-            process.exit(0);
-        }
+
         const values = {
             id: null,
             mode: link.transportmode,
@@ -35,8 +32,6 @@ class FixedLinkRecord extends ALFRecord {
 
         return {action: RecordAction.Insert, values};
     }
-
-    orderedInserts: false;
 }
 
 export interface IdmsFixedLinkRecord {
