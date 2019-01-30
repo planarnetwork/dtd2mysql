@@ -1,12 +1,11 @@
 
 import {CLICommand} from "./CLICommand";
-import {ImportFeedCommand} from "./ImportFeedCommand";
 
 export class DownloadAndProcessCommand implements CLICommand {
 
   constructor(
     private readonly download: FileProvider,
-    private readonly process: ImportFeedCommand
+    private readonly process: FileImporter
   ) {}
 
   /**
@@ -31,4 +30,9 @@ export class DownloadAndProcessCommand implements CLICommand {
 
 export interface FileProvider {
   run(args: any[]): Promise<string[]>;
+}
+
+export interface FileImporter {
+  doImport(filePath: string): Promise<void>;
+  end(): Promise<void>;
 }

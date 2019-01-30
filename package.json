@@ -37,15 +37,18 @@
   "homepage": "https://github.com/open-track/dtd2mysql#readme",
   "dependencies": {
     "adm-zip": "^0.4.11",
+    "aws-sdk": "^2.395.0",
     "byline": "^5.0.0",
     "csv-write-stream": "^2.0.0",
     "fs-extra": "^7.0.0",
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.23.0",
     "mysql2": "^1.6.1",
+    "saxes": "^3.1.6",
     "ssh2": "^0.6.1",
     "ssh2-streams": "^0.2.1",
-    "stream-to-promise": "^2.2.0"
+    "stream-to-promise": "^2.2.0",
+    "xml-flow": "^1.0.2"
   },
   "engines": {
     "node": "^10.0.0"

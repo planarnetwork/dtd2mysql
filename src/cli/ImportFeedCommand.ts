@@ -22,13 +22,15 @@ const readFile = filename => byline.createStream(fs.createReadStream(filename, "
  */
 export class ImportFeedCommand implements CLICommand {
 
+  private index: {[name: string]: MySQLTable} = {};
+  
   constructor(
-    private readonly db: DatabaseConnection,
-    private readonly files: FeedConfig,
-    private readonly tmpFolder: string
+    protected readonly db: DatabaseConnection,
+    protected readonly files: FeedConfig,
+    protected readonly tmpFolder: string
   ) { }
 
-  private get fileArray(): FeedFile[] {
+  protected get fileArray(): FeedFile[] {
     return Object.values(this.files);
   }
 
@@ -80,7 +82,7 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Drop and recreate the tables
    */
-  private async setupSchema(file: FeedFile): Promise<void> {
+  protected async setupSchema(file: FeedFile): Promise<void> {
     await Promise.all(this.schemas(file).map(schema => schema.dropSchema()));
     await Promise.all(this.schemas(file).map(schema => schema.createSchema()));
   }
@@ -151,24 +153,23 @@ export class ImportFeedCommand implements CLICommand {
   }
 
   @memoize
-  private async tables(file: FeedFile): Promise<TableIndex> {
-    const index = {};
-
+  protected async tables(file: FeedFile): Promise<TableIndex> {
     for (const record of file.recordTypes) {
-      if (!index[record.name]) {
+      if (!this.index[record.name]) {
         const db = record.orderedInserts ? await this.db.getConnection() : this.db;
 
-        index[record.name] = new MySQLTable(db, record.name);
+        this.index[record.name] = new MySQLTable(db, record.name);
       }
     }
 
-    return index;
+    return this.index;
   }
 
   /**
    * Close the underling database connection
    */
   public end(): Promise<void> {
+    Object.values(this.index).forEach(table => table.close());
     return this.db.end();
   }
 

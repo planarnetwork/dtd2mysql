@@ -1,12 +1,8 @@
 
 import {Field, FieldValue} from "../field/Field";
 
-export interface Record {
+export interface Record extends MysqlRecord{
 
-  name: string;
-  key: string[];
-  fields: FieldMap;
-  indexes: string[];
   orderedInserts: boolean;
 
   /**
@@ -14,6 +10,13 @@ export interface Record {
    */
   extractValues(line: string): ParsedRecord;
 
+}
+
+export interface MysqlRecord {
+  name: string;
+  key: string[];
+  fields: FieldMap;
+  indexes: string[];
 }
 
 export interface FieldMap {

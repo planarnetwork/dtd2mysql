@@ -26,7 +26,7 @@ export class MySQLTable {
     this.buffer[row.action].push(row);
 
     if (this.buffer[row.action].length >= this.flushLimit) {
-      return this.flush(row.action);
+      return await this.flush(row.action);
     }
   }
 

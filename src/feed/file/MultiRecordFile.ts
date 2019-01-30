@@ -20,7 +20,11 @@ export class MultiRecordFile implements FeedFile {
   /**
    * Look at the characters in the given line to determine which record type is relevant
    */
-  public getRecord(line: string): Record {
+  public getRecord(line: string): Record | null {
+    if (line === "" || line.charAt(0) === "/") {
+      return null;
+    }
+    
     return this.records[line.substr(this.typeStart, this.typeLength)];
   }
 }

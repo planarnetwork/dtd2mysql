@@ -14,9 +14,11 @@ import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 import {GTFSImportCommand} from "./GTFSImportCommand";
-import {downloadUrl} from "../../config/nfm64";
+import {nmf64DownloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
+import {ImportIdmsFixedLinksCommand} from "./ImportIdmsFixedLinksCommand";
+import {idmsFixedLinksDownloadUrl} from "../../config/idms";
 
 export class Container {
 
@@ -28,6 +30,7 @@ export class Container {
       case "--routeing": return this.getRouteingImportCommand();
       case "--timetable": return this.getTimetableImportCommand();
       case "--nfm64": return this.getNFM64ImportCommand();
+      case "--idms-fixed-links": return this.getIdmsFixedLinksImportCommand();
       case "--gtfs": return this.getOutputGTFSCommand();
       case "--gtfs-import": return this.getImportGTFSCommand();
       case "--gtfs-zip": return this.getOutputGTFSZipCommand();
@@ -35,10 +38,12 @@ export class Container {
       case "--download-timetable": return this.getDownloadCommand("/timetable/");
       case "--download-routeing": return this.getDownloadCommand("/routing_guide/");
       case "--download-nfm64": return this.getDownloadNFM64Command();
+      case "--download-idms-fixed-links": return this.getDownloadIdmsFixedLinksCommand();
       case "--get-fares": return this.getDownloadAndProcessCommand("/fares/", this.getFaresImportCommand());
       case "--get-timetable": return this.getDownloadAndProcessCommand("/timetable/", this.getTimetableImportCommand());
       case "--get-routeing": return this.getDownloadAndProcessCommand("/routing_guide/", this.getRouteingImportCommand());
       case "--get-nfm64": return this.getDownloadAndProcessNFM64Command();
+      case "--get-idms-fixed-links": return this.getDownloadAndProcessIdmsFixedLinksCommand();
       default: return this.getShowHelpCommand();
     }
   }
@@ -63,6 +68,10 @@ export class Container {
     return new ImportFeedCommand(await this.getDatabaseConnection(), config.nfm64, "/tmp/dtd/nfm64/");
   }
 
+  @memoize
+  public async getIdmsFixedLinksImportCommand(): Promise<ImportIdmsFixedLinksCommand> {
+    return new ImportIdmsFixedLinksCommand(await this.getDatabaseConnection(), config.idms, "/tmp/idms/fixed-links/");
+  }
 
   @memoize
   public async getCleanFaresCommand(): Promise<CLICommand> {
@@ -108,7 +117,12 @@ export class Container {
 
   @memoize
   private async getDownloadNFM64Command(): Promise<DownloadFileCommand> {
-    return Promise.resolve(new DownloadFileCommand(downloadUrl));
+    return Promise.resolve(new DownloadFileCommand(nmf64DownloadUrl, 'nfm64.zip'));
+  }
+
+  @memoize
+  private async getDownloadIdmsFixedLinksCommand(): Promise<DownloadFileCommand> {
+    return Promise.resolve(new DownloadFileCommand(idmsFixedLinksDownloadUrl, 'FixedLinks_v1.0.xml'));
   }
 
   @memoize
@@ -121,6 +135,14 @@ export class Container {
     return new DownloadAndProcessCommand(
       await this.getDownloadNFM64Command(),
       await this.getNFM64ImportCommand()
+    );
+  }
+
+  @memoize
+  private async getDownloadAndProcessIdmsFixedLinksCommand(): Promise<DownloadAndProcessCommand> {
+    return new DownloadAndProcessCommand(
+      await this.getDownloadIdmsFixedLinksCommand(),
+      await this.getIdmsFixedLinksImportCommand()
     );
   }
 
@@ -160,7 +182,7 @@ export class Container {
       user: process.env.DATABASE_USERNAME || "root",
       password: process.env.DATABASE_PASSWORD || null,
       database: <string>process.env.DATABASE_NAME,
-      connectionLimit: 20,
+      connectionLimit: 200,
       multipleStatements: true
     };
   }
