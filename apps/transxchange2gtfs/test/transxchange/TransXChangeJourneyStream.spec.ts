@@ -26,7 +26,10 @@ describe("TransXChangeJourneyStream", () => {
         "RegisteredOperatorRef": "OId_MEGA",
         "ServiceCode": "M6_MEGA",
         "StandardService": {
-          "JP384": ["JPSection-51", "JPSection-77", "JPSection-21"]
+          "JP384": {
+            "Direction": "outbound",
+            "Sections": ["JPSection-51", "JPSection-77", "JPSection-21"]
+          }
         }
       }
     },

@@ -1,8 +1,7 @@
 import {
   DateRange,
   DaysOfWeek,
-  JourneyPatternID,
-  JourneyPatternSectionID,
+  JourneyPatterns,
   JourneyPatternSections,
   JourneyStop,
   Lines,
@@ -95,6 +94,7 @@ export class TransXChangeStream extends Transform {
       Description: service.Description ? service.Description[0].replace(/[\r\n\t]/g, "") : "",
       Mode: service.Mode ? service.Mode[0] : Mode.Bus,
       StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {}),
+      ServiceDestination: service.StandardService[0].Destination[0],
       OperatingProfile: service.OperatingProfile
         ? this.getOperatingProfile(service.OperatingProfile[0])
         : undefined
@@ -103,8 +103,11 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
-  private getJourneyPattern(patterns: Record<JourneyPatternID, JourneyPatternSectionID[]>, pattern: any) {
-    patterns[pattern.$.id] = pattern.JourneyPatternSectionRefs;
+  private getJourneyPattern(patterns: JourneyPatterns, pattern: any): JourneyPatterns {
+    patterns[pattern.$.id] = {
+      Direction: pattern.Direction[0],
+      Sections: pattern.JourneyPatternSectionRefs
+    };
 
     return patterns;
   }

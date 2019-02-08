@@ -195,41 +195,273 @@ describe("TransXChangeStream", () => {
           "OperatingProfile": undefined,
           "RegisteredOperatorRef": "OId_MEGA",
           "ServiceCode": "M6_MEGA",
+          "ServiceDestination": "Victoria, London",
           "StandardService": {
-            JP366: [ "JPSection-45", "JPSection-66", "JPSection-17" ],
-            JP367: [ "JPSection-46", "JPSection-67", "JPSection-18" ],
-            JP368: [ "JPSection-15", "JPSection-68", "JPSection-13" ],
-            JP369: [ "JPSection-16", "JPSection-69", "JPSection-14" ],
-            JP370: [ "JPSection-70", "JPSection-23", "JPSection-71", "JPSection-3" ],
-            JP371: [ "JPSection-72", "JPSection-24", "JPSection-73", "JPSection-4" ],
-            JP372: [ "JPSection-49", "JPSection-74", "JPSection-47" ],
-            JP373: [ "JPSection-19" ],
-            JP375: [ "JPSection-75" ],
-            JP376: [ "JPSection-20" ],
-            JP378: [ "JPSection-50", "JPSection-76", "JPSection-48" ],
-            JP379: [ "JPSection-1" ],
-            JP380: [ "JPSection-5" ],
-            JP382: [ "JPSection-2" ],
-            JP383: [ "JPSection-6" ],
-            JP384: [ "JPSection-51", "JPSection-77", "JPSection-21" ],
-            JP385: [ "JPSection-52", "JPSection-78", "JPSection-9" ],
-            JP386: [ "JPSection-25", "JPSection-54", "JPSection-79" ],
-            JP387: [ "JPSection-7", "JPSection-56" ],
-            JP388: [ "JPSection-26", "JPSection-80" ],
-            JP389: [ "JPSection-53", "JPSection-81", "JPSection-36" ],
-            JP390: [ "JPSection-27", "JPSection-57" ],
-            JP391: [ "JPSection-28", "JPSection-39" ],
-            JP392: [ "JPSection-8", "JPSection-82" ],
-            JP393: [ "JPSection-43", "JPSection-41", "JPSection-83", "JPSection-34", "JPSection-84" ],
-            JP394: [ "JPSection-44", "JPSection-85", "JPSection-60", "JPSection-35", "JPSection-58" ],
-            JP395: [ "JPSection-11", "JPSection-61", "JPSection-33", "JPSection-59" ],
-            JP396: [ "JPSection-12", "JPSection-86", "JPSection-40" ],
-            JP397: [ "JPSection-29", "JPSection-87" ],
-            JP398: [ "JPSection-30", "JPSection-55", "JPSection-37" ],
-            JP399: [ "JPSection-31", "JPSection-88", "JPSection-38" ],
-            JP400: [ "JPSection-32", "JPSection-89" ],
-            JP402: [ "JPSection-90", "JPSection-64", "JPSection-42", "JPSection-91", "JPSection-62", "JPSection-92", "JPSection-22" ],
-            JP404: [ "JPSection-93", "JPSection-65", "JPSection-94", "JPSection-63", "JPSection-95", "JPSection-10" ]
+            "JP366": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-45",
+                "JPSection-66",
+                "JPSection-17"
+              ]
+            },
+            "JP367": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-46",
+                "JPSection-67",
+                "JPSection-18"
+              ]
+            },
+            "JP368": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-15",
+                "JPSection-68",
+                "JPSection-13"
+              ]
+            },
+            "JP369": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-16",
+                "JPSection-69",
+                "JPSection-14"
+              ]
+            },
+            "JP370": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-70",
+                "JPSection-23",
+                "JPSection-71",
+                "JPSection-3"
+              ]
+            },
+            "JP371": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-72",
+                "JPSection-24",
+                "JPSection-73",
+                "JPSection-4"
+              ]
+            },
+            "JP372": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-49",
+                "JPSection-74",
+                "JPSection-47"
+              ]
+            },
+            "JP373": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-19"
+              ]
+            },
+            "JP375": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-75"
+              ]
+            },
+            "JP376": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-20"
+              ]
+            },
+            "JP378": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-50",
+                "JPSection-76",
+                "JPSection-48"
+              ]
+            },
+            "JP379": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-1"
+              ]
+            },
+            "JP380": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-5"
+              ]
+            },
+            "JP382": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-2"
+              ]
+            },
+            "JP383": {
+              "Direction": "outbound",
+              "Sections": [
+                "JPSection-6"
+              ]
+            },
+            "JP384": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-51",
+                "JPSection-77",
+                "JPSection-21"
+              ]
+            },
+            "JP385": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-52",
+                "JPSection-78",
+                "JPSection-9"
+              ]
+            },
+            "JP386": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-25",
+                "JPSection-54",
+                "JPSection-79"
+              ]
+            },
+            "JP387": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-7",
+                "JPSection-56"
+              ]
+            },
+            "JP388": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-26",
+                "JPSection-80"
+              ]
+            },
+            "JP389": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-53",
+                "JPSection-81",
+                "JPSection-36"
+              ]
+            },
+            "JP390": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-27",
+                "JPSection-57"
+              ]
+            },
+            "JP391": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-28",
+                "JPSection-39"
+              ]
+            },
+            "JP392": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-8",
+                "JPSection-82"
+              ]
+            },
+            "JP393": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-43",
+                "JPSection-41",
+                "JPSection-83",
+                "JPSection-34",
+                "JPSection-84"
+              ]
+            },
+            "JP394": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-44",
+                "JPSection-85",
+                "JPSection-60",
+                "JPSection-35",
+                "JPSection-58"
+              ]
+            },
+            "JP395": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-11",
+                "JPSection-61",
+                "JPSection-33",
+                "JPSection-59"
+              ]
+            },
+            "JP396": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-12",
+                "JPSection-86",
+                "JPSection-40"
+              ]
+            },
+            "JP397": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-29",
+                "JPSection-87"
+              ]
+            },
+            "JP398": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-30",
+                "JPSection-55",
+                "JPSection-37"
+              ]
+            },
+            "JP399": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-31",
+                "JPSection-88",
+                "JPSection-38"
+              ]
+            },
+            "JP400": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-32",
+                "JPSection-89"
+              ]
+            },
+            "JP402": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-90",
+                "JPSection-64",
+                "JPSection-42",
+                "JPSection-91",
+                "JPSection-62",
+                "JPSection-92",
+                "JPSection-22"
+              ]
+            },
+            "JP404": {
+              "Direction": "inbound",
+              "Sections": [
+                "JPSection-93",
+                "JPSection-65",
+                "JPSection-94",
+                "JPSection-63",
+                "JPSection-95",
+                "JPSection-10"
+              ]
+            }
           }
         }
       );

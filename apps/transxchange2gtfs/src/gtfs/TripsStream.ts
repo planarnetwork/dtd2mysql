@@ -12,9 +12,9 @@ export class TripsStream extends GTFSFileStream<TransXChangeJourney> {
       journey.route,
       journey.calendar.id,
       journey.trip.id,
-      journey.trip.headsign,
-      journey.trip.headsign,
-      0,
+      "",
+      "\"" + journey.trip.shortName + "\"",
+      journey.trip.direction === "outbound" ? 0 : 1,
       0,
       0
     ].join());

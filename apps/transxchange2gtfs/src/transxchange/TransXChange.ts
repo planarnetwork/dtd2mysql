@@ -99,8 +99,22 @@ export interface Service {
   RegisteredOperatorRef: OperatorID,
   Description: string,
   Mode: Mode,
-  StandardService: Record<JourneyPatternID, JourneyPatternSectionID[]>,
+  ServiceDestination: string,
+  StandardService: JourneyPatterns,
   OperatingProfile: OperatingProfile | undefined
+}
+
+/**
+ * JourneyPatterns indexed by pattern ID
+ */
+export type JourneyPatterns = Record<JourneyPatternID, JourneyPattern>;
+
+/**
+ * From a JourneyPattern
+ */
+export interface JourneyPattern {
+  Direction: "inbound" | "outbound",
+  Sections: JourneyPatternSectionID[],
 }
 
 /**

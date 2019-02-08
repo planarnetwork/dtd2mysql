@@ -21,7 +21,8 @@ describe("TripsStream", () => {
       },
       trip: {
         id: 2,
-        headsign: "G153"
+        shortName: "Victoria, London",
+        direction: "inbound"
       },
       route: 1
     });
@@ -34,9 +35,9 @@ describe("TripsStream", () => {
       chai.expect(route_id).to.equal("1");
       chai.expect(service_id).to.equal("3");
       chai.expect(trip_id).to.equal("2");
-      chai.expect(trip_headsign).to.equal("G153");
-      chai.expect(trip_short_name).to.equal("G153");
-      chai.expect(direction_id).to.equal("0");
+      chai.expect(trip_headsign).to.equal("");
+      chai.expect(trip_short_name).to.equal('Victoria, London');
+      chai.expect(direction_id).to.equal("1");
       chai.expect(wheelchair_accessible).to.equal("0");
       chai.expect(bikes_allowed).to.equal("0");
     });
