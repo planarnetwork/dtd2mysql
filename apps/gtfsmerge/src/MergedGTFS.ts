@@ -69,7 +69,6 @@ export class MergedGTFS {
 
       trip.trip_id = tripIdMap[trip.trip_id];
       trip.service_id = serviceIdMap[trip.service_id];
-      trip.trip_short_name = quote(trip.trip_short_name);
 
       this.tripsStream.write(trip);
     }
@@ -97,9 +96,6 @@ export class MergedGTFS {
 
   private writeStops(stream: GTFSFileStream, stops: Stop[]): void {
     for (const stop of stops) {
-      stop.stop_name = quote(stop.stop_name);
-      stop.stop_desc = quote(stop.stop_desc);
-
       stream.write(stop);
 
       if (!this.stopLocations[stop.stop_id]) {
@@ -176,8 +172,3 @@ function getCalendarHash(calendar: Calendar, calendarDates: CalendarDate[]): str
 
   return fields.join();
 }
-
-function quote(text: string) {
-  return "\"" + text + "\"";
-}
-
