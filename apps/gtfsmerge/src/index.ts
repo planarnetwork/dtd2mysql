@@ -141,8 +141,10 @@ async function run(inputs: string[], output: string) {
   );
 
   for (const input of inputs) {
+    console.log("Loading " + input);
     const gtfs = await loadGTFS(input);
 
+    console.log("Processing " + input);
     mergedGTFS.merge(gtfs);
   }
 

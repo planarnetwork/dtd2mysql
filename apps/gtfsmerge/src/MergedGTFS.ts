@@ -96,7 +96,7 @@ export class MergedGTFS {
 
   private writeStops(stream: GTFSFileStream, stops: Stop[]): void {
     for (const stop of stops) {
-      stream.write(stops);
+      stream.write(stop);
 
       if (!this.stopLocations[stop.stop_id]) {
         this.addNearbyStops(stop);
