@@ -19,103 +19,171 @@ describe("TransXChangeStream", () => {
           "CommonName": "Cabot Circus",
           "LocalityName": "Cabot Circus",
           "LocalityQualifier": "Bristol",
-          "StopPointRef": "010000036"
+          "StopPointRef": "010000036",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "UWE Entrance North",
           "LocalityName": "Abbey Wood",
           "LocalityQualifier": "Bristol",
-          "StopPointRef": "0170SGA56570"
+          "StopPointRef": "0170SGA56570",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Argos",
           "LocalityName": "Falmouth",
           "LocalityQualifier": "Falmouth",
-          "StopPointRef": "0800COA15248"
+          "StopPointRef": "0800COA15248",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Bus Station",
           "LocalityName": "Newquay",
           "LocalityQualifier": "Newquay",
-          "StopPointRef": "0800COA15390"
+          "StopPointRef": "0800COA15390",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Penryn Campus Falmouth Univ",
           "LocalityName": "Tremough",
           "LocalityQualifier": "Tremough",
-          "StopPointRef": "0800COA15596"
+          "StopPointRef": "0800COA15596",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Cornwall Services",
           "LocalityName": "Victoria",
           "LocalityQualifier": "Victoria",
-          "StopPointRef": "0800COA15732"
+          "StopPointRef": "0800COA15732",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Railway Station",
           "LocalityName": "Redruth",
           "LocalityQualifier": "Redruth",
-          "StopPointRef": "0800COC30451"
+          "StopPointRef": "0800COC30451",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Railway Station",
           "LocalityName": "Redruth",
           "LocalityQualifier": "Redruth",
-          "StopPointRef": "0800COD41085"
+          "StopPointRef": "0800COD41085",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Sidwell Street",
           "LocalityName": "Exeter City Centre",
           "LocalityQualifier": "Exeter",
-          "StopPointRef": "1100DEC10183"
+          "StopPointRef": "1100DEC10183",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Penn Inn",
           "LocalityName": "Milber",
           "LocalityQualifier": "Newton Abbot",
-          "StopPointRef": "1100DEM55092"
+          "StopPointRef": "1100DEM55092",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Penn Inn",
           "LocalityName": "Milber",
           "LocalityQualifier": "Newton Abbot",
-          "StopPointRef": "1100DEM55093"
+          "StopPointRef": "1100DEM55093",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Plymouth Coach Station",
           "LocalityName": "Plymouth City Centre",
           "LocalityQualifier": "Plymouth",
-          "StopPointRef": "118000037"
+          "StopPointRef": "118000037",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "University",
           "LocalityName": "Plymouth",
           "LocalityQualifier": "Plymouth",
-          "StopPointRef": "1180033077"
+          "StopPointRef": "1180033077",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Coach Station",
           "LocalityName": "Torquay",
           "LocalityQualifier": "Torbay",
-          "StopPointRef": "1190TOA10663"
+          "StopPointRef": "1190TOA10663",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Bus Station",
           "LocalityName": "Paignton",
           "LocalityQualifier": "Torbay",
-          "StopPointRef": "1190TOZ00813"
+          "StopPointRef": "1190TOZ00813",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Victoria Coach Station",
           "LocalityName": "Belgravia",
           "LocalityQualifier": "Victoria",
-          "StopPointRef": "490014051VC"
+          "StopPointRef": "490014051VC",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         },
         {
           "CommonName": "Victoria Coach Station Arrivals",
           "LocalityName": "Victoria",
           "LocalityQualifier": "London",
-          "StopPointRef": "490016736W"
+          "StopPointRef": "490016736W",
+          "Location": {
+            "Latitude": 0.0,
+            "Longitude": 0.0
+          }
         }
       ]);
     });

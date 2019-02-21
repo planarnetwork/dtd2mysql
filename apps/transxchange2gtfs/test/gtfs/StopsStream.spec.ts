@@ -42,7 +42,11 @@ describe("StopsStream", () => {
         StopPointRef: "NotInIndex",
         CommonName: "name",
         LocalityName: "locality",
-        LocalityQualifier: "qualifier"
+        LocalityQualifier: "qualifier",
+        Location: {
+          Latitude: 0.123,
+          Longitude: -0.123,
+        }
       }]
     });
     stops.end();
@@ -54,8 +58,8 @@ describe("StopsStream", () => {
       chai.expect(stop_code).to.equal("");
       chai.expect(stop_name).to.equal("name, qualifier");
       chai.expect(stop_desc).to.equal("");
-      chai.expect(stop_lat).to.equal("0.00");
-      chai.expect(stop_lon).to.equal("0.00");
+      chai.expect(stop_lat).to.equal("0.123");
+      chai.expect(stop_lon).to.equal("-0.123");
     });
   });
 

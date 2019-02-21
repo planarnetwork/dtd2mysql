@@ -53,7 +53,11 @@ export class TransXChangeStream extends Transform {
       StopPointRef: stop.StopPointRef[0],
       CommonName: stop.CommonName[0],
       LocalityName: stop.LocalityName ? stop.LocalityName[0] : "",
-      LocalityQualifier: stop.LocalityQualifier ? stop.LocalityQualifier[0] : ""
+      LocalityQualifier: stop.LocalityQualifier ? stop.LocalityQualifier[0] : "",
+      Location:  {
+        Latitude: stop.Location && stop.Location[0].Latitude ? Number(stop.Location[0].Latitude[0]) : 0.0,
+        Longitude: stop.Location && stop.Location[0].Longitude ? Number(stop.Location[0].Longitude[0]) : 0.0
+      }
     };
   }
 

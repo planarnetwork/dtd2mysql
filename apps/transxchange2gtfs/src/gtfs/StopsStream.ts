@@ -33,7 +33,7 @@ export class StopsStream extends GTFSFileStream<TransXChange> {
   }
 
   private getFeedStop(stop: StopPoint): string {
-    return `${stop.StopPointRef},,"${stop.CommonName}, ${stop.LocalityQualifier}",,0.00,0.00,,,,,,0`;
+    return `${stop.StopPointRef},,"${stop.CommonName}, ${stop.LocalityQualifier}",,${stop.Location.Latitude},${stop.Location.Longitude},,,,,,0`;
   }
 
   /**
