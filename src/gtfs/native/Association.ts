@@ -131,6 +131,10 @@ export class Association implements OverlayRecord {
    * Take the arrival time of the first stop and the departure time of the second stop and put them into a new stop
    */
   public mergeAssociationStop(arrivalStop: StopTime, departureStop: StopTime): StopTime {
+
+    if(!arrivalStop) {
+      debugger;
+    }
     let arrivalTime = moment.duration(arrivalStop.arrival_time);
     let departureTime = moment.duration(departureStop.departure_time);
 
@@ -179,13 +183,13 @@ function cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocSt
 }
 
 export enum DateIndicator {
-  Same = "S",
-  Next = "N",
-  Previous = "P"
+  Same = "SAME_DAY",
+  Next = "NEXT_MIDNIGHT",
+  Previous = "PREV_MIDNIGHT"
 }
 
 export enum AssociationType {
-  Split = "VV",
-  Join = "JJ",
+  Split = "DIVIDE",
+  Join = "JOIN",
   NA = ""
 }

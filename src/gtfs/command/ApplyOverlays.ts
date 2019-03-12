@@ -7,7 +7,7 @@ import {OverlapType} from "../native/ScheduleCalendar";
  */
 export function applyOverlays(schedules: OverlayRecord[], idGenerator: IdGenerator = getDefaultIdGenerator()): OverlayIndex {
   const schedulesByTuid: OverlayIndex = {};
-
+  
   for (const schedule of schedules) {
     // for all cancellation or overlays (perms don't overlap)
     if (schedule.stp !== STP.Permanent) {

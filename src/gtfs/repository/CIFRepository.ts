@@ -3,7 +3,7 @@ import {DatabaseConnection} from "../../database/DatabaseConnection";
 import {Transfer} from "../file/Transfer";
 import {CRS, Stop} from "../file/Stop";
 import moment = require("moment");
-import {ScheduleCalendar} from "../native/ScheduleCalendar";
+import {ScheduleCalendar, Days} from "../native/ScheduleCalendar";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";
 import {ScheduleBuilder, ScheduleResults} from "./ScheduleBuilder";
@@ -27,13 +27,14 @@ export class CIFRepository {
    */
   public async getTransfers(): Promise<Transfer[]> {
     const [results] = await this.db.query<Transfer[]>(`
-      SELECT 
-        crs_code AS from_stop_id, 
-        crs_code AS to_stop_id, 
-        2 AS transfer_type, 
-        minimum_change_time * 60 AS min_transfer_time 
-      FROM physical_station WHERE cate_interchange_status IS NOT NULL
-      GROUP BY crs_code
+    SELECT 
+    crs_code AS from_stop_id, 
+    crs_code AS to_stop_id, 
+    2 AS transfer_type, 
+    loc.min_change_time * 60 AS min_transfer_time 
+  FROM master_location as loc WHERE loc.interchange_status != ""
+  AND loc.crs_code != ""
+  GROUP BY loc.crs_code
     `);
 
     return results;
@@ -44,25 +45,25 @@ export class CIFRepository {
    */
   public async getStops(): Promise<Stop[]> {
     const [results] = await this.db.query<Stop[]>(`
-      SELECT
-        crs_code AS stop_id, 
-        tiploc_code AS stop_code,
-        station_name AS stop_name,
-        cate_interchange_status AS stop_desc,
-        0 AS stop_lat,
-        0 AS stop_lon,
-        NULL AS zone_id,
-        NULL AS stop_url,
-        NULL AS location_type,
-        NULL AS parent_station,
-        IF(POSITION("(CIE" IN station_name), "Europe/Dublin", "Europe/London") AS stop_timezone,
-        0 AS wheelchair_boarding 
-      FROM physical_station WHERE crs_code IS NOT NULL
-      GROUP BY crs_code
+    SELECT
+    crs_code AS stop_id, 
+    tiploc AS stop_code,
+    station_name AS stop_name,
+    interchange_status AS stop_desc,
+    0 AS stop_lat,
+    0 AS stop_lon,
+    NULL AS zone_id,
+    NULL AS stop_url,
+    NULL AS location_type,
+    NULL AS parent_station,
+    IF(POSITION("(CIE" IN station_name), "Europe/Dublin", "Europe/London") AS stop_timezone,
+    0 AS wheelchair_boarding 
+  FROM master_location WHERE (crs_code IS NOT NULL AND crs_code != "")
+  GROUP BY crs_code
     `);
 
     // overlay the long and latitude values from configuration
-    return results.map(stop => Object.assign(stop, this.stationCoordinates[stop.stop_id]));
+    return results;
   }
 
   /**
@@ -76,45 +77,67 @@ export class CIFRepository {
    */
   public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
-    const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
-
-    await Promise.all([
+      await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
-        SELECT
-          schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
-          monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          crs_code, stp_indicator, public_arrival_time, public_departure_time,
-          IF(train_status="S", "SS", train_category) AS train_category, 
-          IFNULL(scheduled_arrival_time, scheduled_pass_time) AS scheduled_arrival_time, 
-          IFNULL(scheduled_departure_time, scheduled_pass_time) AS scheduled_departure_time,
-          platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
-        FROM schedule
-        LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
-        LEFT JOIN stop_time ON schedule.id = stop_time.schedule
-        LEFT JOIN physical_station ps ON location = ps.tiploc_code
-        WHERE
-        (
-          stop_time.id IS NULL OR crs_code IS NOT NULL
-        )
-        AND runs_from < CURDATE() + INTERVAL 3 MONTH
-        AND runs_to >= CURDATE()
-        ORDER BY stp_indicator DESC, id, stop_id
+      SELECT 
+ s.schedule_id as id,
+ s.train_uid, 
+ e.rsid as retail_train_id, 
+ greatest(s.wef_date, COALESCE(s.import_wef_date, s.wef_date)) as runs_from, 
+ least(s.weu_date, COALESCE(s.import_weu_date, s.weu_date)) as runs_to,
+
+
+SUBSTRING(s.valid_days, 1, 1 ) as monday,
+SUBSTRING(s.valid_days, 2, 1 ) as tuesday,
+SUBSTRING(s.valid_days, 3, 1 ) as wednesday,
+SUBSTRING(s.valid_days, 4, 1 ) as thursday,
+SUBSTRING(s.valid_days, 5, 1 ) as friday,
+SUBSTRING(s.valid_days, 6, 1 ) as saturday,
+SUBSTRING(s.valid_days, 7, 1 ) as sunday,
+
+loc.crs_code as crs_code, s.stp_indicator as stp_indicator,
+sloc.public_arrival_time, sloc.public_departure_time,
+IF(s.train_status="S", "SS", s.train_category) AS train_category, 
+IFNULL(sloc.scheduled_arrival_time, sloc.scheduled_pass_time) AS scheduled_arrival_time, 
+IFNULL(sloc.scheduled_departure_time, sloc.scheduled_pass_time) AS scheduled_departure_time,
+sloc.platform, e.atoc_code, sloc.schedule_location_id AS stop_id, 
+COALESCE(sloc.activity, "") as activity, s.reservations, s.train_class
+
+FROM cif_schedule as s 
+
+LEFT JOIN cif_schedule_extra as e
+	ON e.schedule_id = s.schedule_id
+LEFT JOIN cif_schedule_location as sloc
+	ON sloc.schedule_id = s.schedule_id
+LEFT JOIN master_location as loc
+	ON sloc.tiploc = loc.tiploc
+	
+WHERE 
+	(sloc.schedule_location_id IS NULL OR (loc.crs_code IS NOT NULL AND loc.crs_code != "") )
+	AND s.wef_date < DATE('2019-04-18')
+  AND s.weu_date >= DATE('2019-01-02') 
+  AND (s.import_weu_date IS NULL OR (s.import_weu_date > DATE('2019-01-02')) )
+  
+  HAVING runs_to >= runs_from
+ORDER BY stp_indicator DESC, s.schedule_id, sloc.location_order
+
+
       `)),
-      scheduleBuilder.loadSchedules(this.stream.query(`
-        SELECT
-          ${lastSchedule.id} + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
-          monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          stp_indicator, location AS crs_code, train_category,
-          public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
-          platform, NULL AS atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class 
-        FROM z_schedule
-        JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
-        WHERE runs_from < CURDATE() + INTERVAL 3 MONTH
-        AND runs_to >= CURDATE()
-        ORDER BY stop_id
-      `))
+      // scheduleBuilder.loadSchedules(this.stream.query(`
+      //   SELECT
+      //     ${lastSchedule.id} + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
+      //     monday, tuesday, wednesday, thursday, friday, saturday, sunday,
+      //     stp_indicator, location AS crs_code, train_category,
+      //     public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
+      //     platform, NULL AS atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class 
+      //   FROM z_schedule
+      //   JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
+      //   WHERE runs_from < CURDATE() + INTERVAL 1 MONTH
+      //   AND runs_to >= CURDATE() - INTERVAL 3 MONTH
+      //   ORDER BY stop_id
+      // `))
     ]);
-
+    console.log("Schedule size", scheduleBuilder.results.schedules.length);
     return scheduleBuilder.results;
   }
 
@@ -123,17 +146,32 @@ export class CIFRepository {
    */
   public async getAssociations(): Promise<Association[]> {
     const [results] = await this.db.query<AssociationRow[]>(`
-      SELECT 
-        a.id AS id, base_uid, assoc_uid, crs_code, assoc_date_ind, assoc_cat,
-        monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-        start_date, end_date, stp_indicator
-      FROM association a
-      JOIN tiploc ON assoc_location = tiploc_code
-      WHERE start_date < CURDATE() + INTERVAL 3 MONTH
-      AND end_date >= CURDATE()
-      ORDER BY stp_indicator DESC, id
+    SELECT a.association_id as id,
+    a.main_train_uid as base_uid,
+    a.associated_train_uid as assoc_uid,
+    loc.crs_code,
+   a.association_date_ind as assoc_date_ind,
+    a.association_category as assoc_cat,
+   SUBSTRING(a.valid_days, 1, 1 ) as monday,
+   SUBSTRING(a.valid_days, 2, 1 ) as tuesday,
+   SUBSTRING(a.valid_days, 3, 1 ) as wednesday,
+   SUBSTRING(a.valid_days, 4, 1 ) as thursday,
+   SUBSTRING(a.valid_days, 5, 1 ) as friday,
+   SUBSTRING(a.valid_days, 6, 1 ) as saturday,
+   SUBSTRING(a.valid_days, 7, 1 ) as sunday,
+   a.wef_date as start_date,
+   a.weu_date as end_date,
+   a.stp_indicator
+    FROM cif_association as a
+     
+     JOIN master_location as loc ON a.association_tiploc = loc.tiploc
+   
+     WHERE a.wef_date < DATE('2019-04-18')
+     AND a.weu_date >= DATE('2019-01-02') 
+     AND (loc.crs_code IS NOT NULL AND loc.crs_code != "")
+     ORDER BY a.stp_indicator DESC, a.association_id;
     `);
-
+    console.log("Assosiation size:" ,results.length)
     return results.map(row => new Association(
       row.id,
       row.base_uid,
@@ -143,14 +181,14 @@ export class CIFRepository {
       row.assoc_cat,
       new ScheduleCalendar(
         moment(row.start_date),
-        moment(row.end_date), {
-        0: row.sunday,
-        1: row.monday,
-        2: row.tuesday,
-        3: row.wednesday,
-        4: row.thursday,
-        5: row.friday,
-        6: row.saturday
+        moment(row.end_date), <Days>{
+        0: Number(row.sunday),
+        1: Number(row.monday),
+        2: Number(row.tuesday),
+        3: Number(row.wednesday),
+        4: Number(row.thursday),
+        5: Number(row.friday),
+        6: Number(row.saturday)
       }),
       row.stp_indicator
     ));
@@ -167,14 +205,14 @@ export class CIFRepository {
         start_time, end_time, start_date, end_date,
         monday, tuesday, wednesday, thursday, friday, saturday, sunday
       FROM additional_fixed_link
-      WHERE origin IN (SELECT crs_code FROM physical_station)
-      AND destination IN (SELECT crs_code FROM physical_station)
+      WHERE origin IN (SELECT crs_code FROM master_location)
+      AND destination IN (SELECT crs_code FROM master_location)
       UNION
       SELECT
-        mode, duration * 60 as duration, origin, destination,
+        link_mode, link_time * 60 as duration, origin, destination,
         "00:00:00", "23:59:59", "2017-01-01", "2038-01-19",
         1,1,1,1,1,1,1
-      FROM fixed_link
+      FROM ttis_fixed_link
       WHERE CONCAT(origin, destination) NOT IN (
         SELECT CONCAT(origin, destination) FROM additional_fixed_link
       )

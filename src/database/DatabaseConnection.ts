@@ -14,4 +14,5 @@ export interface DatabaseConfiguration {
   connectionLimit: number,
   multipleStatements: boolean,
   promise?: any
+  port?: string
 }

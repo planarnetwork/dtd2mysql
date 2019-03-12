@@ -159,6 +159,7 @@ export class Container {
       host: process.env.DATABASE_HOSTNAME || "localhost",
       user: process.env.DATABASE_USERNAME || "root",
       password: process.env.DATABASE_PASSWORD || null,
+      port: (process.env.DATABASE_PORT) || '31306', 
       database: <string>process.env.DATABASE_NAME,
       connectionLimit: 20,
       multipleStatements: true

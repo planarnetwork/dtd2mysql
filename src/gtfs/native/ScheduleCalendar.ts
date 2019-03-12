@@ -112,12 +112,12 @@ export class ScheduleCalendar {
     const days = this.removeDays(removeDays);
 
     // skip forward to the first day the schedule is operating
-    while (days[start.day()] === 0 || excludeDays[start.format("YYYYMMDD")] && start.isSameOrBefore(end)) {
+    while ((days[start.day()] === 0 || excludeDays[start.format("YYYYMMDD")]) && start.isSameOrBefore(end)) {
       start.add(1, "days");
     }
 
     // skip backward to the first day the schedule is operating
-    while (days[end.day()] === 0  || excludeDays[end.format("YYYYMMDD")] && end.isSameOrAfter(start)) {
+    while ((days[end.day()] === 0  || excludeDays[end.format("YYYYMMDD")]) && end.isSameOrAfter(start)) {
       end.subtract(1, "days");
     }
 

@@ -37,7 +37,7 @@ export class OutputGTFSCommand implements CLICommand {
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");
     const fixedLinksP = this.copy(this.repository.getFixedLinks(), "links.txt");
-
+    
     const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
     const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
 
@@ -108,9 +108,12 @@ export class OutputGTFSCommand implements CLICommand {
   }
 
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults): Schedule[] {
+    console.log("association overlays: ", associations.length);
     const processedAssociations = <AssociationIndex>applyOverlays(associations);
+    console.log("schedule overlays: ", scheduleResults.schedules.length);
     const processedSchedules = <ScheduleIndex>applyOverlays(scheduleResults.schedules, scheduleResults.idGenerator);
     const associatedSchedules = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
+    console.log("merge schedules", associatedSchedules.length)
     const mergedSchedules = <Schedule[]>mergeSchedules(associatedSchedules);
     const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
 

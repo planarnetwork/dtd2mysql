@@ -2,7 +2,7 @@ import {IdGenerator, STP} from "../native/OverlayRecord";
 import {Schedule} from "../native/Schedule";
 import {RouteType} from "../file/Route";
 import moment = require("moment");
-import {ScheduleCalendar} from "../native/ScheduleCalendar";
+import {ScheduleCalendar, Days} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
 
@@ -75,14 +75,14 @@ export class ScheduleBuilder {
       new ScheduleCalendar(
         moment(row.runs_from),
         moment(row.runs_to),
-        {
-          0: row.sunday,
-          1: row.monday,
-          2: row.tuesday,
-          3: row.wednesday,
-          4: row.thursday,
-          5: row.friday,
-          6: row.saturday
+        <Days>{
+          0: Number(row.sunday),
+          1: Number(row.monday),
+          2: Number(row.tuesday),
+          3: Number(row.wednesday),
+          4: Number(row.thursday),
+          5: Number(row.friday),
+          6: Number(row.saturday)
         }
       ),
       routeTypeIndex.hasOwnProperty(row.train_category) ? routeTypeIndex[row.train_category] : RouteType.Rail,
