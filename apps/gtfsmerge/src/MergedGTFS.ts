@@ -71,9 +71,6 @@ export class MergedGTFS {
     const hash = getCalendarHash(calendar, calendarDates);
 
     if (!this.calendarHashes[hash]) {
-      if (!calendar.service_id) {
-        console.log(calendar);
-      }
       const serviceId = this.currentServiceId++;
       this.calendarHashes[hash] = serviceId;
 
