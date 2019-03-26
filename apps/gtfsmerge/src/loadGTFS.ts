@@ -41,10 +41,21 @@ export function loadGTFS(filename: string): Promise<GTFSZip> {
   return new Promise(resolve => {
     fs.createReadStream(filename)
     .pipe(gtfs())
-    .on("data", entity => processor[entity.type](entity.data))
+    .on("data", entity => processor[entity.type](clean(entity.data)))
     .on("end", () => resolve(result));
   });
 
+}
+
+// See https://github.com/staeco/gtfs-stream/issues/2
+function clean(obj: {}): {} {
+  return Object
+    .entries(obj)
+    .reduce((acc, [key, val]) => Object.assign(acc, { [removeBom(key)]: val }), {});
+}
+
+function removeBom(key: string): string {
+  return key.charCodeAt(0) === 0xFEFF ? key.slice(1) : key;
 }
 
 export interface GTFSZip {

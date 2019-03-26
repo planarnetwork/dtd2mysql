@@ -11,6 +11,17 @@ export class MergedGTFS {
   private currentTripId = 1;
   private stopLocations = {};
   private additionalTransfers = {};
+  private dummyCalendar = {
+    monday: 0,
+    tuesday: 0,
+    wednesday: 0,
+    thursday: 0,
+    friday: 0,
+    saturday: 0,
+    sunday: 0,
+    start_date: "19700101",
+    end_date: "20991231",
+  };
 
   constructor(
     private readonly calendarStream: GTFSFileStream,
@@ -40,24 +51,43 @@ export class MergedGTFS {
   private writeCalendars(calendars: Calendar[], dateIndex: Record<ServiceID, CalendarDate[]>, serviceIdMap: {}) {
     for (const calendar of calendars) {
       const calendarDates = dateIndex[calendar.service_id] || [];
-      const hash = getCalendarHash(calendar, calendarDates);
 
-      if (!this.calendarHashes[hash]) {
-        const serviceId = this.currentServiceId++;
-        this.calendarHashes[hash] = serviceId;
+      this.writeCalendar(calendar, calendarDates, serviceIdMap);
+    }
 
-        for (const calendarDay of calendarDates) {
-          calendarDay.service_id = serviceId;
-          this.calendarDatesStream.write(calendarDay);
-        }
+    // check for any calendar dates that have no calendar entry
+    for (const serviceId of Object.keys(dateIndex)) {
+      if (!serviceIdMap[serviceId]) {
+        const calendarDates = dateIndex[serviceId];
+        const dummyCalendar = Object.assign({ service_id: serviceId }, this.dummyCalendar as Calendar);
 
-        serviceIdMap[calendar.service_id] = serviceId;
-        calendar.service_id = serviceId;
-        this.calendarStream.write(calendar);
+        this.writeCalendar(dummyCalendar, calendarDates, serviceIdMap);
       }
-      else {
-        serviceIdMap[calendar.service_id] = this.calendarHashes[hash];
+    }
+
+  }
+
+  private writeCalendar(calendar: Calendar, calendarDates: CalendarDate[], serviceIdMap: {}) {
+    const hash = getCalendarHash(calendar, calendarDates);
+
+    if (!this.calendarHashes[hash]) {
+      if (!calendar.service_id) {
+        console.log(calendar);
       }
+      const serviceId = this.currentServiceId++;
+      this.calendarHashes[hash] = serviceId;
+
+      for (const calendarDay of calendarDates) {
+        calendarDay.service_id = serviceId;
+        this.calendarDatesStream.write(calendarDay);
+      }
+
+      serviceIdMap[calendar.service_id] = serviceId;
+      calendar.service_id = serviceId;
+      this.calendarStream.write(calendar);
+    }
+    else {
+      serviceIdMap[calendar.service_id] = this.calendarHashes[hash];
     }
   }
 
