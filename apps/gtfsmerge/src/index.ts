@@ -4,8 +4,10 @@ import * as fs from "fs";
 import {MergedGTFS} from "./MergedGTFS";
 import {exec} from "child_process";
 import {sync as rimraf} from "rimraf";
+import * as yargs from "yargs";
+import { Arguments } from "yargs";
 
-async function run(inputs: string[], output: string) {
+async function run(inputs: string[], output: string, transferDistance: number) {
   const TMP = "/tmp/gtfsmerge/";
 
   if (fs.existsSync(TMP)) {
@@ -137,7 +139,8 @@ async function run(inputs: string[], output: string) {
     routesStream,
     agencyStream,
     stopsStream,
-    transfersStream
+    transfersStream,
+    transferDistance
   );
 
   for (const input of inputs) {
@@ -152,8 +155,11 @@ async function run(inputs: string[], output: string) {
   await exec(`zip -j ${output} ${TMP}*.txt`, { maxBuffer: Number.MAX_SAFE_INTEGER });
 }
 
+const args = yargs.argv as Arguments<{ "transfer-distance": number }>;
+
 run(
-  process.argv.slice(2, process.argv.length - 1),
-  process.argv[process.argv.length - 1]
+  args._.slice(2, process.argv.length - 1),
+  args._[process.argv.length - 1],
+  args["transfer-distance"] || 0.01,
 )
 .catch(e => console.error(e));

@@ -6,6 +6,7 @@ import {Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopTime, Transf
  * Returns trips, transfers, interchange time and calendars from a GTFS zip.
  */
 export function loadGTFS(filename: string): Promise<GTFSZip> {
+  const transfers = {};
   const result: GTFSZip = {
     trips: [],
     transfers: [],
@@ -20,7 +21,7 @@ export function loadGTFS(filename: string): Promise<GTFSZip> {
   const processor = {
     trip: row => result.trips.push(row),
     stop_time: row => result.stopTimes.push(row),
-    transfer: row => result.transfers.push(row),
+    transfer: addTransfer,
     route: row => result.routes.push(row),
     stop: row => result.stops.push(row),
     agency: row => result.agencies.push(row),
@@ -34,15 +35,26 @@ export function loadGTFS(filename: string): Promise<GTFSZip> {
       row.min_transfer_time = row.duration;
       row.transfer_type = 2;
 
-      result.transfers.push(row);
+      addTransfer(row);
     },
   };
 
+  function addTransfer(row: Transfer) {
+    const key = row.from_stop_id + "_" + row.to_stop_id;
+
+    if (!transfers[key] || transfers[key].min_transfer_time > row.min_transfer_time) {
+      transfers[key] = row;
+    }
+  }
+
   return new Promise(resolve => {
     fs.createReadStream(filename)
-    .pipe(gtfs())
-    .on("data", entity => processor[entity.type] && processor[entity.type](entity.data))
-    .on("end", () => resolve(result));
+      .pipe(gtfs())
+      .on("data", entity => processor[entity.type] && processor[entity.type](entity.data))
+      .on("end", () => resolve({
+        ...result,
+        transfers: Object.values(transfers)
+      }));
   });
 
 }

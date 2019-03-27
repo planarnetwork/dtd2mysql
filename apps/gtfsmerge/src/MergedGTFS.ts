@@ -31,7 +31,8 @@ export class MergedGTFS {
     private readonly routesStream: GTFSFileStream,
     private readonly agencyStream: GTFSFileStream,
     private readonly stopsStream: GTFSFileStream,
-    private readonly transfersStream: GTFSFileStream
+    private readonly transfersStream: GTFSFileStream,
+    private readonly transferDistance: number
   ) {}
 
   /**
@@ -150,7 +151,7 @@ export class MergedGTFS {
       if (!this.additionalTransfers[key] || !this.additionalTransfers[reverseKey]) {
         const distance = this.getDistance(aLon, aLat, bLon, bLat);
 
-        if (distance < 0.01) {
+        if (distance < this.transferDistance) {
           const t = Math.max(60, Math.round((distance / 0.0005) * 120));
           const transfer = { from_stop_id: stop.stop_id, to_stop_id: stopId, transfer_type: 2, min_transfer_time: t };
           const reverse = { from_stop_id: stopId, to_stop_id: stop.stop_id, transfer_type: 2, min_transfer_time: t };
