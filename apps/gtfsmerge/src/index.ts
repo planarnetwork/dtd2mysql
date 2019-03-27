@@ -158,8 +158,8 @@ async function run(inputs: string[], output: string, transferDistance: number) {
 const args = yargs.argv as Arguments<{ "transfer-distance": number }>;
 
 run(
-  args._.slice(2, process.argv.length - 1),
-  args._[process.argv.length - 1],
+  args._.slice(0, args._.length - 1),
+  args._[args._.length - 1],
   args["transfer-distance"] || 0.01,
 )
 .catch(e => console.error(e));
