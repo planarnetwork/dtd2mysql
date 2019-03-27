@@ -152,7 +152,7 @@ export class MergedGTFS {
         const distance = this.getDistance(aLon, aLat, bLon, bLat);
 
         if (distance < this.transferDistance) {
-          const t = Math.max(60, Math.round((distance / 0.0005) * 120));
+          const t = Math.max(60, Math.round(distance * 72000));
           const transfer = { from_stop_id: stop.stop_id, to_stop_id: stopId, transfer_type: 2, min_transfer_time: t };
           const reverse = { from_stop_id: stopId, to_stop_id: stop.stop_id, transfer_type: 2, min_transfer_time: t };
 
