@@ -1,6 +1,6 @@
 {
   "name": "gtfsmerge",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Merge GTFS data sets",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^11.11.8",
+    "@types/node": "^11.12.0",
     "@types/rimraf": "^2.0.2",
     "@types/yargs": "^12.0.10",
     "chai": "^4.2.0",

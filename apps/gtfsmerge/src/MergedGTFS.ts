@@ -10,6 +10,7 @@ export class MergedGTFS {
   private currentServiceId = 1;
   private currentTripId = 1;
   private stopLocations = {};
+  private parentStops = {};
   private additionalTransfers = {};
   private dummyCalendar = {
     monday: 0,
@@ -41,10 +42,10 @@ export class MergedGTFS {
   public merge(gtfs: GTFSZip): void {
     const serviceIdMap = {};
 
+    this.writeStops(this.stopsStream, gtfs.stops);
     this.writeCalendars(gtfs.calendars, gtfs.calendarDates, serviceIdMap);
     this.writeTrips(gtfs.trips, gtfs.stopTimes, serviceIdMap);
     this.writeTransfers(this.transfersStream, gtfs.transfers);
-    this.writeStops(this.stopsStream, gtfs.stops);
     this.writeAll(this.routesStream, gtfs.routes);
     this.writeAll(this.agencyStream, gtfs.agencies);
   }
@@ -65,7 +66,6 @@ export class MergedGTFS {
         this.writeCalendar(dummyCalendar, calendarDates, serviceIdMap);
       }
     }
-
   }
 
   private writeCalendar(calendar: Calendar, calendarDates: CalendarDate[], serviceIdMap: {}) {
@@ -103,6 +103,7 @@ export class MergedGTFS {
 
     for (const stopTime of stopTimes) {
       stopTime.trip_id = tripIdMap[stopTime.trip_id];
+      stopTime.stop_id = this.parentStops[stopTime.stop_id] || stopTime.stop_id;
 
       this.stopTimesStream.write(stopTime);
     }
@@ -124,10 +125,15 @@ export class MergedGTFS {
 
   private writeStops(stream: GTFSFileStream, stops: Stop[]): void {
     for (const stop of stops) {
-      stream.write(stop);
+      if (stop.parent_station) {
+        this.parentStops[stop.stop_id] = stop.parent_station;
+      }
+      else {
+        stream.write(stop);
 
-      if (!this.stopLocations[stop.stop_id]) {
-        this.addNearbyStops(stop);
+        if (!this.stopLocations[stop.stop_id]) {
+          this.addNearbyStops(stop);
+        }
       }
     }
   }
