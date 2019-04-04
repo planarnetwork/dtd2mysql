@@ -136,7 +136,8 @@ export class TransXChangeJourneyStream extends Transform {
       arrivalTime: departureTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
       departureTime: departureTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
       pickup: true,
-      dropoff: false
+      dropoff: false,
+      exactTime: links[0].From.TimingStatus === "PTP"
     }];
 
     let lastDepartureTime = Duration.between(LocalTime.parse("00:00"), departureTime);
@@ -150,7 +151,8 @@ export class TransXChangeJourneyStream extends Transform {
         arrivalTime: this.getTime(arrivalTime),
         departureTime: this.getTime(lastDepartureTime),
         pickup: link.To.Activity === StopActivity.PickUp || link.To.Activity === StopActivity.PickUpAndSetDown,
-        dropoff: link.To.Activity === StopActivity.SetDown || link.To.Activity === StopActivity.PickUpAndSetDown
+        dropoff: link.To.Activity === StopActivity.SetDown || link.To.Activity === StopActivity.PickUpAndSetDown,
+        exactTime: link.To.TimingStatus === "PTP"
       });
     }
 
@@ -192,5 +194,6 @@ export interface StopTime {
   arrivalTime: string,
   departureTime: string,
   pickup: boolean,
-  dropoff: boolean
+  dropoff: boolean,
+  exactTime: boolean
 }

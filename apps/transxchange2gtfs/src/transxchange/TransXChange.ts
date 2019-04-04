@@ -51,6 +51,7 @@ export interface TimingLink {
 export interface JourneyStop {
   Activity: StopActivity,
   StopPointRef: ATCOCode,
+  TimingStatus: string,
   WaitTime?: Duration
 }
 

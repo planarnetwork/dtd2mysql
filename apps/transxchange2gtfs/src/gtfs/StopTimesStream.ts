@@ -21,7 +21,7 @@ export class StopTimesStream extends GTFSFileStream<TransXChangeJourney> {
         stop.pickup ? 0 : 1,
         stop.dropoff ? 0 : 1,
         "",
-        "1"
+        stop.exactTime ? "1" : "0"
       ].join());
     }
   }
