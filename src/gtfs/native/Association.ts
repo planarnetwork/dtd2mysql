@@ -135,6 +135,9 @@ export class Association implements OverlayRecord {
     if(!arrivalStop) {
       debugger;
     }
+    if(!departureStop) {
+      debugger;
+    }
     let arrivalTime = moment.duration(arrivalStop.arrival_time);
     let departureTime = moment.duration(departureStop.departure_time);
 

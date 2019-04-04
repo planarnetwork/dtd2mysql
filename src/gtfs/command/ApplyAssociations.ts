@@ -33,8 +33,8 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
         // find the matching base record
         const baseSchedules = findSchedules(schedulesByTuid[association.baseTUID] || [], baseCalendar);
 
-        if (baseSchedules.length > 0) {
-          // TODO xander: This looks to be wrong
+        // We have to check that the association _actually_ goes through the association point
+        if (baseSchedules.length > 0 && assocSchedule.stopAt(association.assocLocation)) {
           const [replacement, ...associatedSchedules] = association.apply(baseSchedules[0], assocSchedule,idGenerator);
 
           // add the merged base and associated schedule to the TUID index
