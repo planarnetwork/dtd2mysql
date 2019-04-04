@@ -114,14 +114,14 @@ export class ScheduleBuilder {
     }
 
     if(row.public_departure_time == "00:00:00") {
-      departureTime = this.formatTime(row.public_departure_time, departHour);
+      departureTime = this.formatTime(row.scheduled_departure_time, departHour);
       unadvertisedDeparture = true;
     }
 
     const activities = row.activity.match(/.{1,2}/g) || [];
-    const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) || unadvertisedDeparture ? 0 : 1;
+    const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) && !unadvertisedDeparture ? 0 : 1;
     const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
-    const dropOff = dropOffActivities.find(a => activities.includes(a)) || unadvertisedArrival ? 0 : 1;
+    const dropOff = dropOffActivities.find(a => activities.includes(a)) && !unadvertisedArrival ? 0 : 1;
     
     return {
       trip_id: row.id,

@@ -114,9 +114,9 @@ LEFT JOIN master_location as loc
 	
 WHERE 
 	(sloc.schedule_location_id IS NULL OR (loc.crs_code IS NOT NULL AND loc.crs_code != "") )
-	AND s.wef_date < DATE('2019-04-18')
-  AND s.weu_date >= DATE('2019-01-02') 
-  AND (s.import_weu_date IS NULL OR (s.import_weu_date > DATE('2019-01-02')) )
+	AND s.wef_date < CURDATE() + INTERVAL 1 MONTH
+  AND s.weu_date >= CURDATE() - INTERVAL 3 MONTH
+  AND (s.import_weu_date IS NULL OR (s.import_weu_date > CURDATE() - INTERVAL 3 MONTH) )
   
   HAVING runs_to >= runs_from
 ORDER BY stp_indicator DESC, s.schedule_id, sloc.location_order
@@ -166,8 +166,8 @@ ORDER BY stp_indicator DESC, s.schedule_id, sloc.location_order
      
      JOIN master_location as loc ON a.association_tiploc = loc.tiploc
    
-     WHERE a.wef_date < DATE('2019-04-18')
-     AND a.weu_date >= DATE('2019-01-02') 
+     WHERE a.wef_date < CURDATE() + INTERVAL 1 MONTH
+     AND a.weu_date >= CURDATE() - INTERVAL 3 MONTH
      AND (loc.crs_code IS NOT NULL AND loc.crs_code != "")
      ORDER BY a.stp_indicator DESC, a.association_id;
     `);
