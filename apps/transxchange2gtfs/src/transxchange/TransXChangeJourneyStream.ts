@@ -95,7 +95,7 @@ export class TransXChangeJourneyStream extends Transform {
 
   private mergeDays(daysOfOperation: DaysOfWeek[]): DaysOfWeek {
     return daysOfOperation.reduce(
-      (result: DaysOfWeek, days: DaysOfWeek) => result.map((d, i) => d || days[i]) as DaysOfWeek,
+      (result, days) => result.map((day, index) => day || days[index]) as DaysOfWeek,
       [0, 0, 0, 0, 0, 0, 0]
     );
   }
