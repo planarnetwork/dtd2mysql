@@ -31,18 +31,21 @@ export class TransXChangeJourneyStream extends Transform {
   public _transform(schedule: TransXChange, encoding: string, callback: TransformCallback): void {
 
     for (const vehicle of schedule.VehicleJourneys) {
-      const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
       const service = schedule.Services[vehicle.ServiceRef];
       const journeyPattern = service.StandardService[vehicle.JourneyPatternRef];
       const sections = journeyPattern.Sections.reduce(
-        (acc, s) => acc.concat(schedule.JourneySections[s]),
-        [] as TimingLink[]
+          (acc, s) => acc.concat(schedule.JourneySections[s]),
+          [] as TimingLink[]
       );
-      const stops = this.getStopTimes(sections, vehicle.DepartureTime);
-      const trip = { id: this.tripId++, shortName: service.ServiceDestination, direction: journeyPattern.Direction };
-      const route = vehicle.ServiceRef;
 
-      this.push({ calendar, stops, trip, route });
+      if (sections.length > 0) {
+        const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
+        const stops = this.getStopTimes(sections, vehicle.DepartureTime);
+        const trip = {id: this.tripId++, shortName: service.ServiceDestination, direction: journeyPattern.Direction};
+        const route = vehicle.ServiceRef;
+
+        this.push({calendar, stops, trip, route});
+      }
     }
 
     callback();

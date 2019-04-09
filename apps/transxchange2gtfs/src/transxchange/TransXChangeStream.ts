@@ -10,7 +10,7 @@ import {
   Operators,
   Services,
   StopActivity,
-  StopPoint,
+  StopPoint, TimingLink,
   TransXChange,
   VehicleJourney
 } from "./TransXChange";
@@ -62,13 +62,17 @@ export class TransXChangeStream extends Transform {
   }
 
   private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
-    index[section.$.id] = section.JourneyPatternTimingLink.map((l: any) => ({
+    index[section.$.id] = section.JourneyPatternTimingLink ? section.JourneyPatternTimingLink.map(this.getLink) : [];
+
+    return index;
+  }
+
+  private getLink(l: any): TimingLink {
+    return {
       From: this.getJourneyStop(l.From[0]),
       To: this.getJourneyStop(l.To[0]),
       RunTime: Duration.parse(l.RunTime[0])
-    }));
-
-    return index;
+    };
   }
 
   private getJourneyStop(stop: any): JourneyStop {
