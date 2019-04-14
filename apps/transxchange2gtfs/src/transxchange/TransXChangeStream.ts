@@ -79,6 +79,7 @@ export class TransXChangeStream extends Transform {
     return {
       Activity: stop.Activity ? stop.Activity[0] : StopActivity.PickUpAndSetDown,
       StopPointRef: stop.StopPointRef[0],
+      TimingStatus: stop.TimingStatus[0],
       WaitTime: stop.WaitTime && Duration.parse(stop.WaitTime[0])
     };
   }
