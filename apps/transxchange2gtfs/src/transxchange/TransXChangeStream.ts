@@ -10,7 +10,7 @@ import {
   Operators,
   Services,
   StopActivity,
-  StopPoint,
+  StopPoint, TimingLink,
   TransXChange,
   VehicleJourney
 } from "./TransXChange";
@@ -62,13 +62,17 @@ export class TransXChangeStream extends Transform {
   }
 
   private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
-    index[section.$.id] = section.JourneyPatternTimingLink.map((l: any) => ({
+    index[section.$.id] = section.JourneyPatternTimingLink ? section.JourneyPatternTimingLink.map(this.getLink) : [];
+
+    return index;
+  }
+
+  private getLink(l: any): TimingLink {
+    return {
       From: this.getJourneyStop(l.From[0]),
       To: this.getJourneyStop(l.To[0]),
       RunTime: Duration.parse(l.RunTime[0])
-    }));
-
-    return index;
+    };
   }
 
   private getJourneyStop(stop: any): JourneyStop {
@@ -154,8 +158,8 @@ export class TransXChangeStream extends Transform {
         DaysOfNonOperation: []
       },
       RegularDayType: profile.RegularDayType[0].DaysOfWeek
-        ? profile.RegularDayType[0].DaysOfWeek.map(this.getDaysOfWeek)
-        : "HolidaysOnly"
+        ? this.getDaysOfWeek(profile.RegularDayType[0].DaysOfWeek[0])
+        : "HolidaysOnly" as "HolidaysOnly"
     };
 
     if (profile.BankHolidayOperation && profile.BankHolidayOperation[0].DaysOfOperation && profile.BankHolidayOperation[0].DaysOfOperation[0]) {
@@ -174,8 +178,10 @@ export class TransXChangeStream extends Transform {
     return result;
   }
 
-  private getDaysOfWeek(days: any): DaysOfWeek {
-    return daysOfWeekIndex[Object.keys(days)[0]] || [0, 0, 0, 0, 0, 0, 0];
+  private getDaysOfWeek(days: any): DaysOfWeek[] {
+    return Object.keys(days).length === 0
+      ? [[0, 0, 0, 0, 0, 0, 0]]
+      : Object.keys(days).map(d => daysOfWeekIndex[d] || [0, 0, 0, 0, 0, 0, 0]);
   }
 
   private getJourneyPatternIndex(index: JourneyPatternIndex, vehicle: any): JourneyPatternIndex {
