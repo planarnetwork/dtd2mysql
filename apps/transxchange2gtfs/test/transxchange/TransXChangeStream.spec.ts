@@ -217,26 +217,30 @@ describe("TransXChangeStream", () => {
         "From": {
           "Activity": "pickUp",
           "StopPointRef": "490014051VC",
-          "WaitTime": undefined
+          "WaitTime": undefined,
+          "TimingStatus": "PTP"
         },
         "RunTime": Duration.parse("PT130M"),
         "To": {
           "Activity": "pickUpAndSetDown",
           "StopPointRef": "0170SGA56570",
-          "WaitTime": undefined
+          "WaitTime": undefined,
+          "TimingStatus": "PTP"
         }
       });
       chai.expect(row.JourneySections["JPSection-1"][4]).to.deep.equal({
         "From": {
           "Activity": "pickUpAndSetDown",
           "StopPointRef": "1180033077",
-          "WaitTime": undefined
+          "WaitTime": undefined,
+          "TimingStatus": "PTP"
         },
         "RunTime": Duration.parse("PT10M"),
         "To": {
           "Activity": "pickUpAndSetDown",
           "StopPointRef": "118000037",
-          "WaitTime": Duration.parse("PT5M")
+          "WaitTime": Duration.parse("PT5M"),
+          "TimingStatus": "PTP"
         }
       });
     });
