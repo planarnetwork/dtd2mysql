@@ -24,6 +24,7 @@ Import a DTD feed into a MySQL compatible database
   --get-timetable [DIR]      download and process latest timetable refresh from DTD
   --get-routeing [DIR]       download and process latest routeing refresh from DTD
   --get-nfm64 [DIR]          download and process latest nfm64 file
+  --gtfs-server [Workdir] [Default S3 bucket]        runs an express server that uploads a GTFS file to an S3 bucket
   
 The following environment properties are expected to be set:
   

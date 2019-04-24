@@ -19,7 +19,9 @@ export class CIFRepository {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly stream,
-    private readonly stationCoordinates: StationCoordinates
+    private readonly stationCoordinates: StationCoordinates,
+    private readonly startRange,
+    private readonly endRange,
   ) {}
 
   /**
@@ -77,8 +79,7 @@ export class CIFRepository {
    */
   public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
-      await Promise.all([
-      scheduleBuilder.loadSchedules(this.stream.query(`
+    const query = this.stream.query(`
       SELECT 
  s.schedule_id as id,
  s.train_uid, 
@@ -114,15 +115,17 @@ LEFT JOIN master_location as loc
 	
 WHERE 
 	(sloc.schedule_location_id IS NULL OR (loc.crs_code IS NOT NULL AND loc.crs_code != "") )
-	AND s.wef_date < CURDATE() + INTERVAL 1 MONTH
-  AND s.weu_date >= CURDATE() - INTERVAL 3 MONTH
-  AND (s.import_weu_date IS NULL OR (s.import_weu_date > CURDATE() - INTERVAL 3 MONTH) )
+	AND s.wef_date < ?
+  AND s.weu_date >= ?
+  AND (s.import_weu_date IS NULL OR (s.import_weu_date > ?) )
   
   HAVING runs_to >= runs_from
 ORDER BY stp_indicator DESC, s.schedule_id, sloc.location_order
 
 
-      `)),
+      `, [this.endRange, this.startRange, this.startRange]);
+      await Promise.all([
+      scheduleBuilder.loadSchedules(query),
       // scheduleBuilder.loadSchedules(this.stream.query(`
       //   SELECT
       //     ${lastSchedule.id} + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
@@ -132,8 +135,8 @@ ORDER BY stp_indicator DESC, s.schedule_id, sloc.location_order
       //     platform, NULL AS atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class 
       //   FROM z_schedule
       //   JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
-      //   WHERE runs_from < CURDATE() + INTERVAL 1 MONTH
-      //   AND runs_to >= CURDATE() - INTERVAL 3 MONTH
+      //   WHERE runs_from < CURDATE()
+      //   AND runs_to >= CURDATE() - INTERVAL 1 DAY
       //   ORDER BY stop_id
       // `))
     ]);
@@ -166,11 +169,11 @@ ORDER BY stp_indicator DESC, s.schedule_id, sloc.location_order
      
      JOIN master_location as loc ON a.association_tiploc = loc.tiploc
    
-     WHERE a.wef_date < CURDATE() + INTERVAL 1 MONTH
-     AND a.weu_date >= CURDATE() - INTERVAL 3 MONTH
+     WHERE a.wef_date < ?
+     AND a.weu_date >= ?
      AND (loc.crs_code IS NOT NULL AND loc.crs_code != "")
      ORDER BY a.stp_indicator DESC, a.association_id;
-    `);
+    `, [this.endRange, this.startRange]);
     console.log("Assosiation size:" ,results.length)
     return results.map(row => new Association(
       row.id,

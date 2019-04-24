@@ -14,7 +14,7 @@ import {addLateNightServices} from "../gtfs/command/AddLateNightServices";
 import streamToPromise = require("stream-to-promise");
 
 export class OutputGTFSCommand implements CLICommand {
-  private baseDir: string;
+  public baseDir: string;
 
   public constructor(
     private readonly repository: CIFRepository,

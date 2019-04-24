@@ -1,7 +1,10 @@
 import * as memoize from "memoized-class-decorator";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
-import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseConnection";
+import {
+  DatabaseConfiguration,
+  DatabaseConnection
+} from "../database/DatabaseConnection";
 import config from "../../config";
 import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
@@ -17,52 +20,95 @@ import {GTFSImportCommand} from "./GTFSImportCommand";
 import {downloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
+import {WebServerCommand} from "./WebServerCommand";
 
 export class Container {
-
   @memoize
   public getCommand(type: string): Promise<CLICommand> {
     switch (type) {
-      case "--fares": return this.getFaresImportCommand();
-      case "--fares-clean": return this.getCleanFaresCommand();
-      case "--routeing": return this.getRouteingImportCommand();
-      case "--timetable": return this.getTimetableImportCommand();
-      case "--nfm64": return this.getNFM64ImportCommand();
-      case "--gtfs": return this.getOutputGTFSCommand();
-      case "--gtfs-import": return this.getImportGTFSCommand();
-      case "--gtfs-zip": return this.getOutputGTFSZipCommand();
-      case "--download-fares": return this.getDownloadCommand("/fares/");
-      case "--download-timetable": return this.getDownloadCommand("/timetable/");
-      case "--download-routeing": return this.getDownloadCommand("/routing_guide/");
-      case "--download-nfm64": return this.getDownloadNFM64Command();
-      case "--get-fares": return this.getDownloadAndProcessCommand("/fares/", this.getFaresImportCommand());
-      case "--get-timetable": return this.getDownloadAndProcessCommand("/timetable/", this.getTimetableImportCommand());
-      case "--get-routeing": return this.getDownloadAndProcessCommand("/routing_guide/", this.getRouteingImportCommand());
-      case "--get-nfm64": return this.getDownloadAndProcessNFM64Command();
-      default: return this.getShowHelpCommand();
+      case "--fares":
+        return this.getFaresImportCommand();
+      case "--fares-clean":
+        return this.getCleanFaresCommand();
+      case "--routeing":
+        return this.getRouteingImportCommand();
+      case "--timetable":
+        return this.getTimetableImportCommand();
+      case "--nfm64":
+        return this.getNFM64ImportCommand();
+      case "--gtfs":
+        return this.getOutputGTFSCommand();
+      case "--gtfs-import":
+        return this.getImportGTFSCommand();
+      case "--gtfs-zip":
+        return this.getOutputGTFSZipCommand();
+      case "--download-fares":
+        return this.getDownloadCommand("/fares/");
+      case "--download-timetable":
+        return this.getDownloadCommand("/timetable/");
+      case "--download-routeing":
+        return this.getDownloadCommand("/routing_guide/");
+      case "--download-nfm64":
+        return this.getDownloadNFM64Command();
+      case "--get-fares":
+        return this.getDownloadAndProcessCommand(
+          "/fares/",
+          this.getFaresImportCommand()
+        );
+      case "--get-timetable":
+        return this.getDownloadAndProcessCommand(
+          "/timetable/",
+          this.getTimetableImportCommand()
+        );
+      case "--get-routeing":
+        return this.getDownloadAndProcessCommand(
+          "/routing_guide/",
+          this.getRouteingImportCommand()
+        );
+      case "--get-nfm64":
+        return this.getDownloadAndProcessNFM64Command();
+      case "--gtfs-server":
+        return this.getGtfsServerCommand();
+      default:
+        return this.getShowHelpCommand();
     }
   }
 
   @memoize
   public async getFaresImportCommand(): Promise<ImportFeedCommand> {
-    return new ImportFeedCommand(await this.getDatabaseConnection(), config.fares, "/tmp/dtd/fares/");
+    return new ImportFeedCommand(
+      await this.getDatabaseConnection(),
+      config.fares,
+      "/tmp/dtd/fares/"
+    );
   }
 
   @memoize
   public async getRouteingImportCommand(): Promise<ImportFeedCommand> {
-    return new ImportFeedCommand(await this.getDatabaseConnection(), config.routeing, "/tmp/dtd/routeing/");
+    return new ImportFeedCommand(
+      await this.getDatabaseConnection(),
+      config.routeing,
+      "/tmp/dtd/routeing/"
+    );
   }
 
   @memoize
   public async getTimetableImportCommand(): Promise<ImportFeedCommand> {
-    return new ImportFeedCommand(await this.getDatabaseConnection(), config.timetable, "/tmp/dtd/timetable/");
+    return new ImportFeedCommand(
+      await this.getDatabaseConnection(),
+      config.timetable,
+      "/tmp/dtd/timetable/"
+    );
   }
 
   @memoize
   public async getNFM64ImportCommand(): Promise<ImportFeedCommand> {
-    return new ImportFeedCommand(await this.getDatabaseConnection(), config.nfm64, "/tmp/dtd/nfm64/");
+    return new ImportFeedCommand(
+      await this.getDatabaseConnection(),
+      config.nfm64,
+      "/tmp/dtd/nfm64/"
+    );
   }
-
 
   @memoize
   public async getCleanFaresCommand(): Promise<CLICommand> {
@@ -79,13 +125,18 @@ export class Container {
     return Promise.resolve(new GTFSImportCommand(this.databaseConfiguration));
   }
 
-  @memoize
-  private getOutputGTFSCommandWithOutput(output: GTFSOutput): OutputGTFSCommand {
+  private getOutputGTFSCommandWithOutput(
+    output: GTFSOutput,
+    startRange,
+    endRange
+  ): OutputGTFSCommand {
     return new OutputGTFSCommand(
       new CIFRepository(
         this.getDatabaseConnection(),
         this.getDatabaseStream(),
-        stationCoordinates
+        stationCoordinates,
+        startRange,
+        endRange
       ),
       output
     );
@@ -93,17 +144,34 @@ export class Container {
 
   @memoize
   private async getOutputGTFSCommand(): Promise<OutputGTFSCommand> {
-    return this.getOutputGTFSCommandWithOutput(new FileOutput());
+    return this.getOutputGTFSCommandWithOutput(
+      new FileOutput(),
+      new Date(new Date().setMonth(new Date().getMonth() - 3)),
+      new Date(new Date().setMonth(new Date().getMonth() + 1))
+    );
   }
 
   @memoize
   private async getOutputGTFSZipCommand(): Promise<OutputGTFSZipCommand> {
     return new OutputGTFSZipCommand(await this.getOutputGTFSCommand());
   }
+  async getGtfsServerCommand(): Promise<CLICommand> {
+    return new WebServerCommand((startRange, endRange) =>
+      this.getOutputGTFSCommandWithOutput(
+        new FileOutput(),
+        startRange,
+        endRange
+      )
+    );
+  }
 
   @memoize
   private async getDownloadCommand(path: string): Promise<DownloadCommand> {
-    return new DownloadCommand(await this.getDatabaseConnection(), await this.getSFTP(), path);
+    return new DownloadCommand(
+      await this.getDatabaseConnection(),
+      await this.getSFTP(),
+      path
+    );
   }
 
   @memoize
@@ -112,12 +180,20 @@ export class Container {
   }
 
   @memoize
-  private async getDownloadAndProcessCommand(path: string, process: Promise<ImportFeedCommand>): Promise<DownloadAndProcessCommand> {
-    return new DownloadAndProcessCommand(await this.getDownloadCommand(path), await process);
+  private async getDownloadAndProcessCommand(
+    path: string,
+    process: Promise<ImportFeedCommand>
+  ): Promise<DownloadAndProcessCommand> {
+    return new DownloadAndProcessCommand(
+      await this.getDownloadCommand(path),
+      await process
+    );
   }
 
   @memoize
-  private async getDownloadAndProcessNFM64Command(): Promise<DownloadAndProcessCommand> {
+  private async getDownloadAndProcessNFM64Command(): Promise<
+    DownloadAndProcessCommand
+  > {
     return new DownloadAndProcessCommand(
       await this.getDownloadNFM64Command(),
       await this.getNFM64ImportCommand()
@@ -131,23 +207,20 @@ export class Container {
       username: process.env.SFTP_USERNAME,
       password: process.env.SFTP_PASSWORD,
       algorithms: {
-        serverHostKey: ['ssh-dss']
+        serverHostKey: ["ssh-dss"]
       }
     });
   }
 
-  @memoize
   public getDatabaseConnection(): DatabaseConnection {
-    return require('mysql2/promise').createPool({
-      ...this.databaseConfiguration,
+    return require("mysql2/promise").createPool({
+      ...this.databaseConfiguration
       //debug: ['ComQueryPacket', 'RowDataPacket']
     });
   }
 
-  @memoize
   public getDatabaseStream() {
-    return require('mysql2').createPool(this.databaseConfiguration);
-
+    return require("mysql2").createPool(this.databaseConfiguration);
   }
 
   public get databaseConfiguration(): DatabaseConfiguration {
@@ -159,11 +232,11 @@ export class Container {
       host: process.env.DATABASE_HOSTNAME || "localhost",
       user: process.env.DATABASE_USERNAME || "root",
       password: process.env.DATABASE_PASSWORD || null,
-      port: (process.env.DATABASE_PORT) || '31306', 
+      port: process.env.DATABASE_PORT || "31306",
       database: <string>process.env.DATABASE_NAME,
       connectionLimit: 20,
       multipleStatements: true
+      
     };
   }
-
 }
