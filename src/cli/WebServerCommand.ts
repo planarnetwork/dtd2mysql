@@ -5,7 +5,7 @@ const archiver = require("archiver");
 const fs = require("fs");
 const stream = require("stream");
 const tmp = require("tmp");
-var AWS = require("aws-sdk");
+const AWS = require("aws-sdk");
 
 export class WebServerCommand implements CLICommand {
   constructor(
@@ -62,8 +62,10 @@ export class WebServerCommand implements CLICommand {
         };
 
         s3.upload(s3Params, (err, data) => {
+          inProgress = false;
           if (err) {
             console.log(err);
+            res.status(500).send(err);
           } else {
             res.status(200).send({
               data
@@ -72,17 +74,8 @@ export class WebServerCommand implements CLICommand {
           }
         });
 
-        new Promise((resolve, reject) => {
-          archive
-            .directory(baseDir, false)
-            .on("error", err => reject(err))
-            .pipe(passthrough);
-          archive.finalize();
-          passthrough.on("end", chunk => {
-            resolve();
-          });
-          inProgress = false;
-        });
+        archive.directory(baseDir, false).pipe(passthrough);
+        archive.finalize();
       } else {
         res.status(202).send("Already processing file: " + fileName);
       }
