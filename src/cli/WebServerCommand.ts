@@ -3,8 +3,8 @@ import {OutputGTFSCommand} from "./OutputGTFSCommand";
 const express = require("express");
 const archiver = require("archiver");
 const fs = require("fs");
+const path = require("path");
 const stream = require("stream");
-const tmp = require("tmp");
 const AWS = require("aws-sdk");
 
 export class WebServerCommand implements CLICommand {
@@ -24,7 +24,6 @@ export class WebServerCommand implements CLICommand {
     let inProgress = false;
     let s3 = new AWS.S3();
     let s3BucketName = argv[4];
-    tmp.setGracefulCleanup();
     let fileName: string;
 
     app.get("", async (req, res) => {
@@ -62,19 +61,28 @@ export class WebServerCommand implements CLICommand {
         };
 
         s3.upload(s3Params, (err, data) => {
-          inProgress = false;
+          
           if (err) {
             console.log(err);
             res.status(500).send(err);
           } else {
-            res.status(200).send({
-              data
-            });
+            res.status(200).send(data);
             console.log(`Uploaded gtfs file to ${s3BucketName}/${fileName}`);
           }
+          fs.readdir(baseDir, (err, files) => {
+            if (err) throw err;
+
+            for (const file of files) {
+              fs.unlink(path.join(baseDir, file), err => {
+                if (err) throw err;
+              });
+            }
+          });
+          inProgress = false;
         });
 
         archive.directory(baseDir, false).pipe(passthrough);
+        // finalize the archive (ie we are done appending files but streams have to finish yet)
         archive.finalize();
       } else {
         res.status(202).send("Already processing file: " + fileName);
