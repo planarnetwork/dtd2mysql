@@ -45,6 +45,9 @@ export class WebServerCommand implements CLICommand {
           `Processing with params, startRange:${startRange}, endRange: ${endRange}, filename: ${fileName}`
         );
         let gtfsCommand = this.gtfsCommandSupplier(startRange, endRange);
+        res.status(201).send({
+          filename: fileName
+        });
         await gtfsCommand.run(argv);
         let baseDir = gtfsCommand.baseDir;
         const archive = archiver("zip", {zlib: {level: 9}});
@@ -61,12 +64,10 @@ export class WebServerCommand implements CLICommand {
         };
 
         s3.upload(s3Params, (err, data) => {
-          
           if (err) {
             console.log(err);
             res.status(500).send(err);
           } else {
-            res.status(200).send(data);
             console.log(`Uploaded gtfs file to ${s3BucketName}/${fileName}`);
           }
           fs.readdir(baseDir, (err, files) => {
