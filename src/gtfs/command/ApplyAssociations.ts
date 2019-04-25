@@ -34,7 +34,7 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
         const baseSchedules = findSchedules(schedulesByTuid[association.baseTUID] || [], baseCalendar);
 
         // We have to check that the association _actually_ goes through the association point
-        if (baseSchedules.length > 0 && assocSchedule.stopAt(association.assocLocation)) {
+        if (baseSchedules.length > 0 && assocSchedule.stopAt(association.assocLocation) && baseSchedules[0].stopAt(association.assocLocation)) {
           const [replacement, ...associatedSchedules] = association.apply(baseSchedules[0], assocSchedule,idGenerator);
 
           // add the merged base and associated schedule to the TUID index
