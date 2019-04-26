@@ -1,6 +1,6 @@
 {
   "name": "gtfsmerge",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Merge GTFS data sets",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

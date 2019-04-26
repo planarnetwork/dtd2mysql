@@ -21,7 +21,7 @@ export function loadGTFS(filename: string): Promise<GTFSZip> {
   const processor = {
     trip: row => result.trips.push(row),
     stop_time: row => {
-      if (row.departure_time !== null && row.arrival_time !== null) {
+      if (row.departure_time !== "" && row.arrival_time !== "") {
         result.stopTimes.push(row);
       }
     },
