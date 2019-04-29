@@ -5,7 +5,7 @@ import {Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopTime, Transf
 /**
  * Returns trips, transfers, interchange time and calendars from a GTFS zip.
  */
-export function loadGTFS(filename: string): Promise<GTFSZip> {
+export function loadGTFS(filename: string, stopPrefix: string = ""): Promise<GTFSZip> {
   const transfers = {};
   const result: GTFSZip = {
     trips: [],
@@ -22,12 +22,17 @@ export function loadGTFS(filename: string): Promise<GTFSZip> {
     trip: row => result.trips.push(row),
     stop_time: row => {
       if (row.departure_time !== "" && row.arrival_time !== "") {
+        row.stop_id = stopPrefix + row.stop_id;
         result.stopTimes.push(row);
       }
     },
     transfer: addTransfer,
     route: row => result.routes.push(row),
-    stop: row => result.stops.push(row),
+    stop: row => {
+      row.stop_id = stopPrefix + row.stop_id;
+
+      result.stops.push(row);
+    },
     agency: row => result.agencies.push(row),
     calendar: row => result.calendars.push(row),
     calendar_date: row => {
@@ -44,6 +49,9 @@ export function loadGTFS(filename: string): Promise<GTFSZip> {
   };
 
   function addTransfer(row: Transfer) {
+    row.from_stop_id = stopPrefix + row.from_stop_id;
+    row.to_stop_id = stopPrefix + row.to_stop_id;
+
     const key = row.from_stop_id + "_" + row.to_stop_id;
 
     if (!transfers[key] || transfers[key].min_transfer_time > row.min_transfer_time) {

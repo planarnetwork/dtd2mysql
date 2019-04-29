@@ -7,7 +7,7 @@ import {sync as rimraf} from "rimraf";
 import * as yargs from "yargs";
 import { Arguments } from "yargs";
 
-async function run(inputs: string[], output: string, transferDistance: number) {
+async function run(inputs: string[], output: string, transferDistance: number, stopPrefix: string) {
   const TMP = "/tmp/gtfsmerge/";
 
   if (fs.existsSync(TMP)) {
@@ -145,7 +145,7 @@ async function run(inputs: string[], output: string, transferDistance: number) {
 
   for (const input of inputs) {
     console.log("Loading " + input);
-    const gtfs = await loadGTFS(input);
+    const gtfs = await loadGTFS(input, stopPrefix);
 
     console.log("Processing " + input);
     mergedGTFS.merge(gtfs);
@@ -155,11 +155,15 @@ async function run(inputs: string[], output: string, transferDistance: number) {
   await exec(`zip -j ${output} ${TMP}*.txt`, { maxBuffer: Number.MAX_SAFE_INTEGER });
 }
 
-const args = yargs.argv as Arguments<{ "transfer-distance": number }>;
+const args = yargs.argv as Arguments<{
+  "transfer-distance": number,
+  "stop-prefix": string
+}>;
 
 run(
   args._.slice(0, args._.length - 1),
   args._[args._.length - 1],
   args["transfer-distance"] || 0.02,
+  args["stop-prefix"] || ""
 )
 .catch(e => console.error(e));
