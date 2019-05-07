@@ -36,7 +36,8 @@ export class OutputGTFSCommand implements CLICommand {
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");
-    const fixedLinksP = this.copy(this.repository.getFixedLinks(), "links.txt");
+    // If excludeFixedLinks flag is set to true, we skip the get fixed links process here. 
+    const fixedLinksP = this.repository.excludeFixedLinks == true ? undefined : this.copy(this.repository.getFixedLinks(), "links.txt");
     
     const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
     const [calendars, calendarDates, serviceIds] = createCalendar(schedules);

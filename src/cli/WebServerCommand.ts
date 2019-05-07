@@ -9,7 +9,7 @@ const AWS = require("aws-sdk");
 
 export class WebServerCommand implements CLICommand {
   constructor(
-    private gtfsCommandSupplier: (startRange, endRange) => OutputGTFSCommand
+    private gtfsCommandSupplier: (startRange, endRange, excludeFixedLinks) => OutputGTFSCommand
   ) {}
 
   async run(argv: string[]) {
@@ -33,7 +33,7 @@ export class WebServerCommand implements CLICommand {
 
         let startRange = req.query["start"];
         let endRange = req.query["end"];
-
+        let excludeFixedLinks: boolean = req.query["excludeFixedLinks"] == "true"
         fileName =
           req.query["filename"] || `gtfs-${startRange}-${endRange}.zip`;
         if (!(startRange && endRange)) {
@@ -42,9 +42,9 @@ export class WebServerCommand implements CLICommand {
           return;
         }
         console.log(
-          `Processing with params, startRange:${startRange}, endRange: ${endRange}, filename: ${fileName}`
+          `Processing with params, startRange:${startRange}, endRange: ${endRange}, excludeFixedLinks: ${excludeFixedLinks}, filename: ${fileName}`
         );
-        let gtfsCommand = this.gtfsCommandSupplier(startRange, endRange);
+        let gtfsCommand = this.gtfsCommandSupplier(startRange, endRange, excludeFixedLinks);
         res.status(201).send({
           filename: fileName
         });

@@ -22,7 +22,12 @@ export class CIFRepository {
     private readonly stationCoordinates: StationCoordinates,
     private readonly startRange,
     private readonly endRange,
+    private readonly _excludeFixedLinks: boolean = false,
   ) {}
+
+  get excludeFixedLinks() {
+    return this._excludeFixedLinks;
+  }
 
   /**
    * Return the interchange time between each station

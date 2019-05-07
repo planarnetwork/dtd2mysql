@@ -1,0 +1,25 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "program": "${workspaceFolder}\\dist\\src\\index.js",
+      "preLaunchTask": "tsBuild",
+      "runtimeArgs": ["--max-old-space-size=8000"],
+      "args": ["--gtfs-server", "newExport/", "dev-bucket"],
+      "outFiles": ["${workspaceFolder}/**/*.js"],
+      "env": {
+        "DATABASE_NAME": "delay_repay",
+        "DATABASE_HOSTNAME": "delayrepay-rr.c64apgbtqod2.eu-west-1.rds.amazonaws.com",
+        "DATABASE_USERNAME": "readonlyQAT",
+        "DATABASE_PASSWORD": "0bl0ng",
+        "DATABASE_PORT": "3306",
+      }
+    }
+  ]
+}
