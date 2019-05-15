@@ -21,7 +21,7 @@ export function loadGTFS(filename: string, stopPrefix: string = ""): Promise<GTF
   const processor = {
     trip: row => result.trips.push(row),
     stop_time: row => {
-      if (row.departure_time !== "" && row.arrival_time !== "") {
+      if (row.departure_time && row.arrival_time) {
         row.stop_id = stopPrefix + row.stop_id;
         result.stopTimes.push(row);
       }
