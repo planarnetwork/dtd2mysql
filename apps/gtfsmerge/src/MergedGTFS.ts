@@ -1,6 +1,7 @@
 import {GTFSZip} from "./loadGTFS";
 import {GTFSFileStream} from "./GTFSFileStream";
 import {Calendar, CalendarDate, ServiceID, Stop, StopTime, Transfer, Trip} from "./GTFS";
+import {CalendarFactory} from "./calendar/CalendarFactory";
 
 /**
  * Merges multiple GTFS sets into a single stream for each GTFS file (stops.txt etc)
@@ -33,7 +34,8 @@ export class MergedGTFS {
     private readonly agencyStream: GTFSFileStream,
     private readonly stopsStream: GTFSFileStream,
     private readonly transfersStream: GTFSFileStream,
-    private readonly transferDistance: number
+    private readonly transferDistance: number,
+    private readonly calendarFactory: CalendarFactory
   ) {}
 
   /**
@@ -60,10 +62,9 @@ export class MergedGTFS {
     // check for any calendar dates that have no calendar entry
     for (const serviceId of Object.keys(dateIndex)) {
       if (!serviceIdMap[serviceId]) {
-        const calendarDates = dateIndex[serviceId];
-        const dummyCalendar = Object.assign({ service_id: serviceId }, this.dummyCalendar as Calendar);
+        const [calendar, calendarDates] = this.calendarFactory.create(serviceId, dateIndex[serviceId]);
 
-        this.writeCalendar(dummyCalendar, calendarDates, serviceIdMap);
+        this.writeCalendar(calendar, calendarDates, serviceIdMap);
       }
     }
   }
@@ -197,6 +198,7 @@ export class MergedGTFS {
       this.transfersStream.end()
     ]);
   }
+
 }
 
 function getCalendarHash(calendar: Calendar, calendarDates: CalendarDate[]): string {

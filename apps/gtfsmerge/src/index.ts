@@ -6,6 +6,7 @@ import {exec} from "child_process";
 import {sync as rimraf} from "rimraf";
 import * as yargs from "yargs";
 import { Arguments } from "yargs";
+import {CalendarFactory} from "./calendar/CalendarFactory";
 
 async function run(inputs: string[], output: string, transferDistance: number, stopPrefix: string) {
   const TMP = "/tmp/gtfsmerge/";
@@ -140,7 +141,8 @@ async function run(inputs: string[], output: string, transferDistance: number, s
     agencyStream,
     stopsStream,
     transfersStream,
-    transferDistance
+    transferDistance,
+    new CalendarFactory()
   );
 
   for (const input of inputs) {

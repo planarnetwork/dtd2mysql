@@ -7,11 +7,12 @@ gtfsmerge merges multiple GTFS zip files into a single zip, adding transfers bet
 - Duplicate stops, agencies and routes are assumed to be the same stop and only output once. 
 - Calendars, calendar dates, trips and stop times are re-indexed. 
 - Identical calendars are merged into a single entry. 
+- Any calendar dates without a calendar are converted to a calendar
 - This tool does not currently process any of the fares files. Please raise an issue if you would like this feature. 
 
 ## Installation
 
-Please note that zip/unzip and [node 10.x](https://nodejs.org) or above are required.
+Please note that zip/unzip and [node 11.x](https://nodejs.org) or above are required.
 
 gtfsmerge is a CLI tool that can be installed via NPM:
 

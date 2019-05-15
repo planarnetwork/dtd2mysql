@@ -61,7 +61,7 @@ export function loadGTFS(filename: string, stopPrefix: string = ""): Promise<GTF
 
   return new Promise(resolve => {
     fs.createReadStream(filename)
-      .pipe(gtfs())
+      .pipe(gtfs({ raw: true }))
       .on("data", entity => processor[entity.type] && processor[entity.type](entity.data))
       .on("end", () => resolve({
         ...result,
