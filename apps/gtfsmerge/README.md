@@ -7,6 +7,7 @@ gtfsmerge merges multiple GTFS zip files into a single zip, adding transfers bet
 - Duplicate stops, agencies and routes are assumed to be the same stop and only output once. 
 - Calendars, calendar dates, trips and stop times are re-indexed. 
 - Identical calendars are merged into a single entry. 
+- Any calendars or calendar dates in the past are removed along with their corresponding trips
 - Any calendar dates without a calendar are converted to a calendar
 - This tool does not currently process any of the fares files. Please raise an issue if you would like this feature. 
 

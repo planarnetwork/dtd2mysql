@@ -1,11 +1,13 @@
 import * as gtfs from "gtfs-stream";
 import * as fs from "fs";
 import {Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopTime, Transfer, Trip} from "./GTFS";
+import {toGTFSDate} from "./date/toGTFSDate";
 
 /**
  * Returns trips, transfers, interchange time and calendars from a GTFS zip.
  */
 export function loadGTFS(filename: string, stopPrefix: string = ""): Promise<GTFSZip> {
+  const today = toGTFSDate(new Date());
   const transfers = {};
   const result: GTFSZip = {
     trips: [],
@@ -34,11 +36,17 @@ export function loadGTFS(filename: string, stopPrefix: string = ""): Promise<GTF
       result.stops.push(row);
     },
     agency: row => result.agencies.push(row),
-    calendar: row => result.calendars.push(row),
+    calendar: row => {
+      if (row.end_date >= today) {
+        result.calendars.push(row);
+      }
+    },
     calendar_date: row => {
-      result.calendarDates[row.service_id] = result.calendarDates[row.service_id] || [];
+      if (row.date >= today) {
+        result.calendarDates[row.service_id] = result.calendarDates[row.service_id] || [];
 
-      result.calendarDates[row.service_id].push(row);
+        result.calendarDates[row.service_id].push(row);
+      }
     },
     link: row => {
       row.min_transfer_time = row.duration;

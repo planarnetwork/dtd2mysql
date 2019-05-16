@@ -1,4 +1,5 @@
 import {Calendar, CalendarDate} from "../GTFS";
+import {toGTFSDate} from "../date/toGTFSDate";
 
 /**
  * Creates calendars based on a set of calendar dates.
@@ -47,7 +48,7 @@ export class CalendarFactory {
       }
 
       date.setDate(date.getDate() + 1);
-      i = this.getGTFSDateString(date);
+      i = toGTFSDate(date);
     }
 
     return [daysRunning, daysNotRunning];
@@ -59,12 +60,6 @@ export class CalendarFactory {
 
       return index;
     }, {});
-  }
-
-  private getGTFSDateString(date: Date): string {
-    return date.getFullYear()
-      + (date.getMonth() + 1).toString().padStart(2, "0")
-      + date.getDate().toString().padStart(2, "0");
   }
 
   private getDateFromGTFSString(i: string): Date {

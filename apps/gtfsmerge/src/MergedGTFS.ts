@@ -13,17 +13,6 @@ export class MergedGTFS {
   private stopLocations = {};
   private parentStops = {};
   private additionalTransfers = {};
-  private dummyCalendar = {
-    monday: 0,
-    tuesday: 0,
-    wednesday: 0,
-    thursday: 0,
-    friday: 0,
-    saturday: 0,
-    sunday: 0,
-    start_date: "19700101",
-    end_date: "20991231",
-  };
 
   constructor(
     private readonly calendarStream: GTFSFileStream,
@@ -94,19 +83,23 @@ export class MergedGTFS {
     const tripIdMap = {};
 
     for (const trip of trips) {
-      tripIdMap[trip.trip_id] = this.currentTripId++;
+      if (serviceIdMap[trip.service_id]) {
+        tripIdMap[trip.trip_id] = this.currentTripId++;
 
-      trip.trip_id = tripIdMap[trip.trip_id];
-      trip.service_id = serviceIdMap[trip.service_id];
+        trip.trip_id = tripIdMap[trip.trip_id];
+        trip.service_id = serviceIdMap[trip.service_id];
 
-      this.tripsStream.write(trip);
+        this.tripsStream.write(trip);
+      }
     }
 
     for (const stopTime of stopTimes) {
-      stopTime.trip_id = tripIdMap[stopTime.trip_id];
-      stopTime.stop_id = this.parentStops[stopTime.stop_id] || stopTime.stop_id;
+      if (tripIdMap[stopTime.trip_id]) {
+        stopTime.trip_id = tripIdMap[stopTime.trip_id];
+        stopTime.stop_id = this.parentStops[stopTime.stop_id] || stopTime.stop_id;
 
-      this.stopTimesStream.write(stopTime);
+        this.stopTimesStream.write(stopTime);
+      }
     }
   }
 
