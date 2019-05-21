@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {CalendarFactory} from "../../src/calendar/CalendarFactory";
+import {CalendarFactory} from "./CalendarFactory";
 
 describe("CalendarFactory", () => {
   const factory = new CalendarFactory();

@@ -27,10 +27,14 @@ export class GTFSFileStream {
 
     if (!key || !this.seenKeys[key]) {
       this.seenKeys[key] = true;
-      const fields = this.fields.map(f => quote(data[f]));
+      const fields = this.fields.map(f => this.quote(data[f]));
 
       this.stream.write(fields.join() + "\n");
     }
+  }
+
+  private quote(text: string | number | undefined) {
+    return typeof text === "string" && text.includes(",") ? "\"" + text + "\"" : text;
   }
 
   /**
@@ -42,6 +46,3 @@ export class GTFSFileStream {
 
 }
 
-function quote(text: string | number | undefined) {
-  return typeof text === "string" && text.includes(",") ? "\"" + text + "\"" : text;
-}

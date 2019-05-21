@@ -1,4 +1,4 @@
-import {Calendar, CalendarDate} from "../GTFS";
+import {Calendar, CalendarDate} from "../gtfs/GTFS";
 import {toGTFSDate} from "../date/toGTFSDate";
 
 /**

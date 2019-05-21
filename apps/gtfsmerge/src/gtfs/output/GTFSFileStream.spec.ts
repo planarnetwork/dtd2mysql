@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {GTFSFileStream} from "../src/GTFSFileStream";
+import {GTFSFileStream} from "./GTFSFileStream";
 
 describe("GTFSFileStream", () => {
 

@@ -1,7 +1,7 @@
-import {GTFSZip} from "./loadGTFS";
-import {GTFSFileStream} from "./GTFSFileStream";
+import {GTFSZip} from "./input/loadGTFS";
+import {GTFSFileStream} from "./output/GTFSFileStream";
 import {Calendar, CalendarDate, ServiceID, Stop, StopTime, Transfer, Trip} from "./GTFS";
-import {CalendarFactory} from "./calendar/CalendarFactory";
+import {CalendarFactory} from "../calendar/CalendarFactory";
 
 /**
  * Merges multiple GTFS sets into a single stream for each GTFS file (stops.txt etc)
