@@ -1,25 +1,10 @@
-import {MergedGTFS} from "./gtfs/MergedGTFS";
-import * as fs from "fs";
-import {sync as rimraf} from "rimraf";
 import {GTFSFileStream} from "./gtfs/output/GTFSFileStream";
-import {CalendarFactory} from "./calendar/CalendarFactory";
 import {MergeCommand} from "./gtfs/command/MergeCommand";
 
 export class Container {
 
-  public getMergeCommand(transferDistance: number, tempFolder: string): MergeCommand {
-    return new MergeCommand(this.getMergedGTFS(transferDistance, tempFolder));
-  }
-
-  private getMergedGTFS(transferDistance: number, tempFolder: string): MergedGTFS {
-    if (fs.existsSync(tempFolder)) {
-      rimraf(tempFolder);
-    }
-
-    fs.mkdirSync(tempFolder);
-
+  public getMergeCommand(tempFolder: string): MergeCommand {
     const calendarStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "calendar.txt"),
       [
         "service_id",
         "monday",
@@ -36,7 +21,6 @@ export class Container {
     );
 
     const calendarDatesStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "calendar_dates.txt"),
       [
         "service_id",
         "date",
@@ -45,7 +29,6 @@ export class Container {
     );
 
     const tripsStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "trips.txt"),
       [
         "route_id",
         "service_id",
@@ -59,7 +42,6 @@ export class Container {
     );
 
     const stopTimesStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "stop_times.txt"),
       [
         "trip_id",
         "arrival_time",
@@ -75,7 +57,6 @@ export class Container {
     );
 
     const routesStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "routes.txt"),
       [
         "route_id",
         "agency_id",
@@ -91,7 +72,6 @@ export class Container {
     );
 
     const agencyStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "agency.txt"),
       [
         "agency_id",
         "agency_name",
@@ -105,7 +85,6 @@ export class Container {
     );
 
     const stopsStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "stops.txt"),
       [
         "stop_id",
         "stop_code",
@@ -124,7 +103,6 @@ export class Container {
     );
 
     const transfersStream = new GTFSFileStream(
-      fs.createWriteStream(tempFolder + "transfers.txt"),
       [
         "from_stop_id",
         "to_stop_id",
@@ -133,7 +111,8 @@ export class Container {
       ]
     );
 
-    return new MergedGTFS(
+
+    return new MergeCommand(
       calendarStream,
       calendarDatesStream,
       tripsStream,
@@ -142,8 +121,8 @@ export class Container {
       agencyStream,
       stopsStream,
       transfersStream,
-      transferDistance,
-      new CalendarFactory()
+      tempFolder
     );
   }
+
 }

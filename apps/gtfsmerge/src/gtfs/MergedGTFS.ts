@@ -30,22 +30,22 @@ export class MergedGTFS {
   /**
    * Merge in the given GTFS data set and push the new items to the file streams.
    */
-  public merge(gtfs: GTFSZip): void {
+  public async merge(gtfs: GTFSZip): Promise<void> {
     const serviceIdMap = {};
 
-    this.writeStops(this.stopsStream, gtfs.stops);
-    this.writeCalendars(gtfs.calendars, gtfs.calendarDates, serviceIdMap);
-    this.writeTrips(gtfs.trips, gtfs.stopTimes, serviceIdMap);
-    this.writeTransfers(this.transfersStream, gtfs.transfers);
-    this.writeAll(this.routesStream, gtfs.routes);
-    this.writeAll(this.agencyStream, gtfs.agencies);
+    await this.writeStops(this.stopsStream, gtfs.stops);
+    await this.writeCalendars(gtfs.calendars, gtfs.calendarDates, serviceIdMap);
+    await this.writeTrips(gtfs.trips, gtfs.stopTimes, serviceIdMap);
+    await this.writeTransfers(gtfs.transfers);
+    await this.writeAll(this.routesStream, gtfs.routes);
+    await this.writeAll(this.agencyStream, gtfs.agencies);
   }
 
-  private writeCalendars(calendars: Calendar[], dateIndex: Record<ServiceID, CalendarDate[]>, serviceIdMap: {}) {
+  private async writeCalendars(calendars: Calendar[], dateIndex: Record<ServiceID, CalendarDate[]>, serviceIdMap: {}): Promise<void> {
     for (const calendar of calendars) {
       const calendarDates = dateIndex[calendar.service_id] || [];
 
-      this.writeCalendar(calendar, calendarDates, serviceIdMap);
+      await this.writeCalendar(calendar, calendarDates, serviceIdMap);
     }
 
     // check for any calendar dates that have no calendar entry
@@ -53,12 +53,12 @@ export class MergedGTFS {
       if (!serviceIdMap[serviceId]) {
         const [calendar, calendarDates] = this.calendarFactory.create(serviceId, dateIndex[serviceId]);
 
-        this.writeCalendar(calendar, calendarDates, serviceIdMap);
+        await this.writeCalendar(calendar, calendarDates, serviceIdMap);
       }
     }
   }
 
-  private writeCalendar(calendar: Calendar, calendarDates: CalendarDate[], serviceIdMap: {}) {
+  private async writeCalendar(calendar: Calendar, calendarDates: CalendarDate[], serviceIdMap: {}): Promise<void> {
     const hash = getCalendarHash(calendar, calendarDates);
 
     if (!this.calendarHashes[hash]) {
@@ -67,19 +67,19 @@ export class MergedGTFS {
 
       for (const calendarDay of calendarDates) {
         calendarDay.service_id = serviceId;
-        this.calendarDatesStream.write(calendarDay);
+        await this.write(this.calendarDatesStream, calendarDay);
       }
 
       serviceIdMap[calendar.service_id] = serviceId;
       calendar.service_id = serviceId;
-      this.calendarStream.write(calendar);
+      await this.write(this.calendarStream, calendar);
     }
     else {
       serviceIdMap[calendar.service_id] = this.calendarHashes[hash];
     }
   }
 
-  private writeTrips(trips: Trip[], stopTimes: StopTime[], serviceIdMap: Record<string, string>): void {
+  private async writeTrips(trips: Trip[], stopTimes: StopTime[], serviceIdMap: Record<string, string>): Promise<void> {
     const tripIdMap = {};
 
     for (const trip of trips) {
@@ -89,7 +89,7 @@ export class MergedGTFS {
         trip.trip_id = tripIdMap[trip.trip_id];
         trip.service_id = serviceIdMap[trip.service_id];
 
-        this.tripsStream.write(trip);
+        await this.write(this.tripsStream, trip);
       }
     }
 
@@ -98,34 +98,34 @@ export class MergedGTFS {
         stopTime.trip_id = tripIdMap[stopTime.trip_id];
         stopTime.stop_id = this.parentStops[stopTime.stop_id] || stopTime.stop_id;
 
-        this.stopTimesStream.write(stopTime);
+        await this.write(this.stopTimesStream, stopTime);
       }
     }
   }
 
-  private writeAll(stream: GTFSFileStream, items: any[]): void {
+  private async writeAll(stream: GTFSFileStream, items: any[]): Promise<void> {
     for (const item of items) {
-      stream.write(item);
+      await this.write(stream, item);
     }
   }
 
-  private writeTransfers(stream: GTFSFileStream, transfers: Transfer[]): void {
+  private async writeTransfers(transfers: Transfer[]): Promise<void> {
     for (const transfer of transfers) {
-      stream.write(transfer);
+      await this.write(this.transfersStream, transfer);
 
       this.additionalTransfers[transfer.from_stop_id + "," + transfer.to_stop_id] = true;
     }
   }
 
-  private writeStops(stream: GTFSFileStream, stops: Stop[]): void {
+  private async writeStops(stream: GTFSFileStream, stops: Stop[]): Promise<void> {
     for (const stop of stops) {
       if (stop.parent_station) {
         this.parentStops[stop.stop_id] = stop.parent_station;
       }
       else {
-        stream.write(stop);
+        await this.write(stream, stop);
 
-        if (!this.stopLocations[stop.stop_id]) {
+        if (stop.stop_lon !== 0 && stop.stop_lat !== 0) {
           this.addNearbyStops(stop);
         }
       }
@@ -136,17 +136,13 @@ export class MergedGTFS {
    * Search any stops we've seen to see if we can walk there
    */
   private addNearbyStops(stop: Stop): void {
-    const aLon = Number(stop.stop_lon);
-    const aLat = Number(stop.stop_lat);
+    const aLon = stop.stop_lon;
+    const aLat = stop.stop_lat;
 
     for (const stopId in this.stopLocations) {
       const [bLon, bLat] = this.stopLocations[stopId];
       const key = stop.stop_id + "," + stopId;
       const reverseKey = stopId + "," + stop.stop_id;
-
-      if (bLat === 0.0 && bLon === 0.0) {
-        continue;
-      }
 
       if (!this.additionalTransfers[key] || !this.additionalTransfers[reverseKey]) {
         const distance = this.getDistance(aLon, aLat, bLon, bLat);
@@ -192,6 +188,13 @@ export class MergedGTFS {
     ]);
   }
 
+  private write(stream: GTFSFileStream, data: any): Promise<void> | void {
+    const writable = stream.write(data);
+
+    if (!writable) {
+      return new Promise(resolve => stream.once("drain", () => resolve()));
+    }
+  }
 }
 
 function getCalendarHash(calendar: Calendar, calendarDates: CalendarDate[]): string {

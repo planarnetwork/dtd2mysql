@@ -32,12 +32,17 @@ export function loadGTFS(filename: string, stopPrefix: string = ""): Promise<GTF
     route: row => result.routes.push(row),
     stop: row => {
       row.stop_id = stopPrefix + row.stop_id;
+      row.stop_lon = +row.stop_lon;
+      row.stop_lat = +row.stop_lat;
 
       result.stops.push(row);
     },
     agency: row => result.agencies.push(row),
     calendar: row => {
-      if (row.end_date >= today) {
+      const inPast = row.end_date < today;
+      const runs = row.monday || row.tuesday || row.wednesday || row.thursday || row.friday || row.saturday || row.sunday;
+
+      if (!inPast && runs) {
         result.calendars.push(row);
       }
     },

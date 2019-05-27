@@ -1,24 +1,25 @@
-import {Writable} from "stream";
+import {Transform, TransformCallback} from "stream";
 
 /**
  * Uses the underlying Writable stream to output GTFS data
  */
-export class GTFSFileStream {
+export class GTFSFileStream extends Transform {
   private headerSent = false;
   private seenKeys = {};
 
   constructor(
-    private readonly stream: Writable,
     private readonly fields: string[],
     private readonly key: string | null = null
-  ) { }
+  ) {
+    super({ encoding: "utf8", objectMode: true });
+  }
 
   /**
    * Write the given entity to the file stream
    */
-  public write(data: any): void {
+  public _transform(data: any, encoding: string, callback: TransformCallback): void {
     if (!this.headerSent) {
-      this.stream.write(this.fields.join() + "\n");
+      this.push(this.fields.join() + "\n");
 
       this.headerSent = true;
     }
@@ -29,19 +30,14 @@ export class GTFSFileStream {
       this.seenKeys[key] = true;
       const fields = this.fields.map(f => this.quote(data[f]));
 
-      this.stream.write(fields.join() + "\n");
+      this.push(fields.join() + "\n");
     }
+
+    callback();
   }
 
   private quote(text: string | number | undefined) {
     return typeof text === "string" && text.includes(",") ? "\"" + text + "\"" : text;
-  }
-
-  /**
-   * Close the stream
-   */
-  public end(): Promise<void> {
-    return new Promise(resolve => this.stream.end(resolve));
   }
 
 }

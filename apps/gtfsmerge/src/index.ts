@@ -16,6 +16,6 @@ const tempFolder = args["tmp"] || "/tmp/gtfsmerge/";
 const container = new Container();
 
 container
-  .getMergeCommand(transferDistance, tempFolder)
-  .run(inputs, output, tempFolder, stopPrefix)
+  .getMergeCommand(tempFolder)
+  .run(inputs, output, transferDistance, stopPrefix)
   .catch(e => console.error(e));
