@@ -1,4 +1,4 @@
-import {GTFSZip} from "./input/loadGTFS";
+import {GTFSZip} from "./input/GTFSLoader";
 import {GTFSFileStream} from "./output/GTFSFileStream";
 import {Calendar, CalendarDate, ServiceID, Stop, StopTime, Transfer, Trip} from "./GTFS";
 import {CalendarFactory} from "../calendar/CalendarFactory";

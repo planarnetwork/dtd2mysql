@@ -1,4 +1,4 @@
-import {loadGTFS} from "../input/loadGTFS";
+import {GTFSLoader} from "../input/GTFSLoader";
 import {exec} from "child_process";
 import {MergedGTFS} from "../MergedGTFS";
 import * as fs from "fs";
@@ -58,7 +58,7 @@ export class MergeCommand {
 
     for (const input of inputs) {
       console.log("Loading " + input);
-      const gtfs = await loadGTFS(input, stopPrefix);
+      const gtfs = await GTFSLoader(input, stopPrefix);
 
       console.log("Processing " + input);
       await mergedGTFS.merge(gtfs);
