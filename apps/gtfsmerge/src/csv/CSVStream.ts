@@ -3,7 +3,7 @@ import {Transform, TransformCallback} from "stream";
 /**
  * Uses the underlying Writable stream to output GTFS data
  */
-export class GTFSFileStream extends Transform {
+export class CSVStream extends Transform {
   private headerSent = false;
   private seenKeys = {};
 

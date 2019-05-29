@@ -1,11 +1,13 @@
 import * as chai from "chai";
-import {GTFSFileStream} from "./GTFSFileStream";
+import {CSVStream} from "./CSVStream";
+import { Writable } from "stream";
 
-describe("GTFSFileStream", () => {
+describe("CSVStream", () => {
 
-  it("Sends the header first", () => {
+  it("sends the header first", () => {
     const mock = new MockStream();
-    const stream = new GTFSFileStream(mock as any, ["field1", "field2"]);
+    const stream = new CSVStream(["field1", "field2"]);
+    stream.pipe(mock);
     const expected = "field1,field2\na,b\n";
 
     stream.write({ field1: "a", field2: "b" });
@@ -13,9 +15,10 @@ describe("GTFSFileStream", () => {
     chai.expect(mock.data).to.deep.equal(expected);
   });
 
-  it("Does not send duplicate items", () => {
+  it("does not send duplicate items", () => {
     const mock = new MockStream();
-    const stream = new GTFSFileStream(mock as any, ["field1", "field2"], "field1");
+    const stream = new CSVStream(["field1", "field2"], "field1");
+    stream.pipe(mock);
     const expected = "field1,field2\na,b\nb,c\n";
 
     stream.write({ field1: "a", field2: "b" });
@@ -27,10 +30,13 @@ describe("GTFSFileStream", () => {
 
 });
 
-class MockStream {
+class MockStream extends Writable {
   public data = "";
 
-  public write(chunk: any) {
+  public _write(chunk: any, encoding: string, callback: any) {
     this.data += chunk;
+
+    callback();
   }
+
 }

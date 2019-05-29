@@ -1,5 +1,5 @@
-import {Calendar, CalendarDate} from "../gtfs/GTFS";
-import {toGTFSDate} from "../date/toGTFSDate";
+import { Calendar, CalendarDate } from "../GTFS";
+import { toGTFSDate } from "./toGTFSDate";
 
 /**
  * Creates calendars based on a set of calendar dates.

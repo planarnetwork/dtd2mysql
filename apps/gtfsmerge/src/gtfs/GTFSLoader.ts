@@ -1,5 +1,4 @@
-import { Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopTime, Transfer, Trip } from "../GTFS";
-import { toGTFSDate } from "../../date/toGTFSDate";
+import { Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopTime, Transfer, Trip } from "./GTFS";
 import { Readable, Transform } from "stream";
 
 /**
