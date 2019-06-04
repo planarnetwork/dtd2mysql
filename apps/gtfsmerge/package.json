@@ -44,6 +44,7 @@
     "typescript": "^3.4.5"
   },
   "dependencies": {
+    "cheap-ruler": "^2.5.1",
     "gtfs-stream": "^2.0.8",
     "rimraf": "^2.6.3",
     "yargs": "^13.2.4"

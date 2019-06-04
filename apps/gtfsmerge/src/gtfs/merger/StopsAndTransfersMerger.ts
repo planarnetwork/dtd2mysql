@@ -1,5 +1,6 @@
 import { Stop, StopID, Transfer } from "../GTFS";
 import { Writable } from "stream";
+import { CheapRuler } from "cheap-ruler";
 
 export class StopsAndTransfersMerger {
   private readonly stopLocations = {};
@@ -7,6 +8,7 @@ export class StopsAndTransfersMerger {
   constructor(
     private readonly stops: Writable,
     private readonly transfers: Writable,
+    private readonly ruler: CheapRuler,
     private readonly transferDistance: number
   ) {}
 
@@ -26,7 +28,8 @@ export class StopsAndTransfersMerger {
     for (const transfer of transfers) {
       await this.push(this.transfers, transfer);
 
-      existingTransfers[transfer.from_stop_id + "," + transfer.to_stop_id] = true;
+      existingTransfers[transfer.from_stop_id] = existingTransfers[transfer.from_stop_id] || {};
+      existingTransfers[transfer.from_stop_id][transfer.to_stop_id] = true;
     }
 
     return existingTransfers;
@@ -55,45 +58,40 @@ export class StopsAndTransfersMerger {
    * Search any stops we've seen to see if we can walk there
    */
   private async addNearbyStops(stop: Stop, existingTransfers: ExistingTransfers): Promise<void> {
-    const aLon = stop.stop_lon;
-    const aLat = stop.stop_lat;
+    const aCoords = [stop.stop_lat, stop.stop_lon] as [number, number];
 
     for (const stopId in this.stopLocations) {
-      const [bLon, bLat] = this.stopLocations[stopId];
-      const key = stop.stop_id + "," + stopId;
-      const reverseKey = stopId + "," + stop.stop_id;
+      const exists = existingTransfers[stop.stop_id] && existingTransfers[stop.stop_id][stopId];
+      const reverseExists = existingTransfers[stopId] && existingTransfers[stopId][stop.stop_id];
 
-      if (!existingTransfers[key] || !existingTransfers[reverseKey]) {
-        const distance = this.getDistance(aLon, aLat, bLon, bLat);
+      if (!exists || !reverseExists) {
+        const distance = this.ruler.distance(aCoords, this.stopLocations[stopId]);
 
         if (distance < this.transferDistance) {
-          const t = Math.max(60, Math.round(distance * 72000));
-          const transfer = { from_stop_id: stop.stop_id, to_stop_id: stopId, transfer_type: 2, min_transfer_time: t };
-          const reverse = { from_stop_id: stopId, to_stop_id: stop.stop_id, transfer_type: 2, min_transfer_time: t };
-
-          await Promise.all([
-            this.push(this.transfers, transfer),
-            this.push(this.transfers, reverse),
-          ]);
+          await this.addTransfers(stop.stop_id, stopId, distance);
         }
       }
     }
 
-    this.stopLocations[stop.stop_id] = [aLon, aLat];
+    this.stopLocations[stop.stop_id] = aCoords;
   }
 
-  /**
-   * Note this method of calculating distances between stations is flawed and only used as a rough guide.
-   */
-  private getDistance(aLon: number, aLat: number, bLon: number, bLat: number) {
-    return Math.abs(bLat - aLat) + Math.abs(bLon - aLon);
+  private addTransfers(stopA: StopID, stopB: StopID, distance: number): Promise<void[]> {
+    const duration = Math.max(60, Math.round(distance * 720));
+    const transfer = { from_stop_id: stopA, to_stop_id: stopB, transfer_type: 2, min_transfer_time: duration };
+    const reverse = { from_stop_id: stopB, to_stop_id: stopA, transfer_type: 2, min_transfer_time: duration };
+
+    return Promise.all([
+      this.push(this.transfers, transfer),
+      this.push(this.transfers, reverse),
+    ]);
   }
 
   private push(stream: Writable, data: any): Promise<void> | void {
     const writable = stream.write(data);
 
     if (!writable) {
-      return new Promise(resolve => stream.once("drain", () => resolve()));
+      return new Promise(resolve => stream.once("drain", resolve));
     }
   }
 
@@ -106,8 +104,7 @@ export class StopsAndTransfersMerger {
       new Promise(resolve => this.transfers.end(resolve))
     ]);
   }
-
 }
 
-type ExistingTransfers = Record<string, true>;
+type ExistingTransfers = Record<StopID, Record<StopID, true>>;
 export type ParentStops = Record<StopID, StopID>;

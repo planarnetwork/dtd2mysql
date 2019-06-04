@@ -10,12 +10,14 @@ import { GenericMerger } from "./merger/GenericMerger";
 import { CalendarFactory } from "./calendar/CalendarFactory";
 import { CSVStream } from "../csv/CSVStream";
 import { Sequence } from "../sequence/Sequence";
+import { CheapRuler } from "cheap-ruler";
 
 export class GTFSOutputFactory {
 
   constructor(
     private readonly calendarFactory: CalendarFactory,
     private readonly tempFolder: string,
+    private readonly ruler: CheapRuler,
     private readonly transferDistance: number
   ) {}
 
@@ -143,7 +145,7 @@ export class GTFSOutputFactory {
 
     return new GTFSOutput(
       new CalendarMerger(calendarStream, calendarDatesStream, this.calendarFactory, new MemoizedSequence()),
-      new StopsAndTransfersMerger(stopsStream, transfersStream, this.transferDistance),
+      new StopsAndTransfersMerger(stopsStream, transfersStream, this.ruler, this.transferDistance),
       new StopTimesMerger(stopTimesStream),
       new TripsMerger(tripsStream, new Sequence()),
       new GenericMerger(agencyStream),
