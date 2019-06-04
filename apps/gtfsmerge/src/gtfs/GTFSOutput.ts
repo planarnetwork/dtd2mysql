@@ -23,14 +23,14 @@ export class GTFSOutput {
    * Merge in the given GTFS data set and push the new items to the file streams.
    */
   public async write(gtfs: GTFSZip): Promise<void> {
-    const [parentStops, tripIdMap] = await Promise.all([
-      this.stopsAndTransfers.write(gtfs.stops, gtfs.transfers),
-      this.writeCalendarsAndTrips(gtfs),
+    const tripIdMap = await this.writeCalendarsAndTrips(gtfs);
+    const usedStops = await this.stopTimes.write(gtfs.stopTimes, tripIdMap, gtfs.parentStops);
+
+    await Promise.all([
+      this.stopsAndTransfers.write(gtfs.stops, gtfs.transfers, gtfs.parentStops, usedStops),
       this.agencies.write(gtfs.agencies),
       this.routes.write(gtfs.routes)
     ]);
-
-    await this.stopTimes.write(gtfs.stopTimes, tripIdMap, parentStops);
   }
 
   private async writeCalendarsAndTrips(gtfs: GTFSZip): Promise<TripIDMap> {

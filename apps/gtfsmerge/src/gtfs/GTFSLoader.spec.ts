@@ -8,7 +8,7 @@ chai.use(spies);
 describe("GTFSLoader", () => {
 
   it("pipes data to gtfs-stream", async () => {
-    const stream = new MockGTFSStream() as any;
+    const stream = () => new MockGTFSStream() as any;
     const loader = new GTFSLoader(stream);
     const file = new MockFileStream([{}]);
     const spy = chai.spy.on(file, "pipe");
@@ -19,7 +19,7 @@ describe("GTFSLoader", () => {
   });
 
   it("removes calendars before a specified date", async () => {
-    const stream = new MockGTFSStream() as any;
+    const stream = () => new MockGTFSStream() as any;
     const loader = new GTFSLoader(stream);
     const file = new MockFileStream([
       { type: "calendar", data: { monday: 1, end_date: "20190528" } },
@@ -34,7 +34,7 @@ describe("GTFSLoader", () => {
   });
 
   it("removes calendar dates before a specified date", async () => {
-    const stream = new MockGTFSStream() as any;
+    const stream = () => new MockGTFSStream() as any;
     const loader = new GTFSLoader(stream);
     const file = new MockFileStream([
       { type: "calendar_date", data: { service_id: 1, date: "20190528" } },
@@ -51,7 +51,7 @@ describe("GTFSLoader", () => {
   });
 
   it("prefixes stops", async () => {
-    const stream = new MockGTFSStream() as any;
+    const stream = () => new MockGTFSStream() as any;
     const loader = new GTFSLoader(stream);
     const file = new MockFileStream([
       { type: "stop", data: { stop_id: "A", stop_code: "A", stop_lon: 1, stop_lat: 1 } },
@@ -67,7 +67,7 @@ describe("GTFSLoader", () => {
   });
 
   it("prefixes stops in stop_times", async () => {
-    const stream = new MockGTFSStream() as any;
+    const stream = () => new MockGTFSStream() as any;
     const loader = new GTFSLoader(stream);
     const file = new MockFileStream([
       { type: "stop_time", data: { stop_id: "A", departure_time: 1, arrival_time: 1 } },

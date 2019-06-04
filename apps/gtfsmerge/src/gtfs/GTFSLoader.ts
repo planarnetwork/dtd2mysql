@@ -1,5 +1,6 @@
-import { Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopTime, Transfer, Trip } from "./GTFS";
+import { Agency, Calendar, CalendarDate, Route, ServiceID, Stop, StopID, StopTime, Transfer, Trip } from "./GTFS";
 import { Readable, Transform } from "stream";
+import * as gtfs from "gtfs-stream";
 
 /**
  * Returns trips, transfers, interchange time and calendars from a GTFS zip.
@@ -7,7 +8,7 @@ import { Readable, Transform } from "stream";
 export class GTFSLoader {
 
   constructor(
-    private readonly gtfsStream: Transform
+    private readonly gtfsStream: () => Transform
   ) {}
 
   /**
@@ -17,7 +18,7 @@ export class GTFSLoader {
     return new Promise(resolve => {
       const handler = new MutableGTFSLoader(stopPrefix, filterBefore);
 
-      file.pipe(this.gtfsStream)
+      file.pipe(this.gtfsStream())
         .on("data", entity => handler.process(entity))
         .on("end", () => resolve(handler.getResults()));
     });
@@ -39,6 +40,7 @@ class MutableGTFSLoader {
     routes: [],
     agencies: [],
     stops: [],
+    parentStops: {}
   };
 
   constructor(
@@ -76,11 +78,16 @@ class MutableGTFSLoader {
   }
 
   private stop(row: Stop): void {
-    row.stop_id = this.stopPrefix + row.stop_id;
-    row.stop_lon = +row.stop_lon;
-    row.stop_lat = +row.stop_lat;
+    if (!row.parent_station) {
+      row.stop_id = this.stopPrefix + row.stop_id;
+      row.stop_lon = +row.stop_lon;
+      row.stop_lat = +row.stop_lat;
 
-    this.result.stops.push(row);
+      this.result.stops.push(row);
+    }
+    else {
+      this.result.parentStops[row.stop_id] = row.parent_station;
+    }
   }
 
   private agency(row: Agency): void {
@@ -138,4 +145,7 @@ export interface GTFSZip {
   routes: Route[],
   agencies: Agency[],
   stops: Stop[],
+  parentStops: Record<StopID, StopID>
 }
+
+export const gtfsStreamFactory = () => gtfs({ raw: true });

@@ -1,6 +1,7 @@
 import { Stop, StopID, Transfer } from "../GTFS";
 import { Writable } from "stream";
 import { CheapRuler } from "cheap-ruler";
+import { UsedStops } from "./StopTimesMerger";
 
 export class StopsAndTransfersMerger {
   private readonly stopLocations = {};
@@ -16,16 +17,25 @@ export class StopsAndTransfersMerger {
    * Write the transfers and return an index of all transfers, then write the stops
    * adding any missing transfers to stops that are within walking distance of each other
    */
-  public async write(stops: Stop[], transfers: Transfer[]): Promise<ParentStops> {
-    const existingTransfers = await this.writeTransfers(transfers);
+  public async write(
+    stops: Stop[],
+    transfers: Transfer[],
+    parentStops: ParentStops,
+    usedStops: UsedStops
+  ): Promise<void> {
 
-    return this.writeStops(stops, existingTransfers);
+    const existingTransfers = await this.writeTransfers(transfers, parentStops);
+
+    return this.writeStops(stops, existingTransfers, usedStops);
   }
 
-  private async writeTransfers(transfers: Transfer[]): Promise<ExistingTransfers> {
+  private async writeTransfers(transfers: Transfer[], parentStops: ParentStops): Promise<ExistingTransfers> {
     const existingTransfers = {};
 
     for (const transfer of transfers) {
+      transfer.from_stop_id = parentStops[transfer.from_stop_id] || transfer.from_stop_id;
+      transfer.to_stop_id = parentStops[transfer.to_stop_id] || transfer.to_stop_id;
+
       await this.push(this.transfers, transfer);
 
       existingTransfers[transfer.from_stop_id] = existingTransfers[transfer.from_stop_id] || {};
@@ -35,23 +45,21 @@ export class StopsAndTransfersMerger {
     return existingTransfers;
   }
 
-  private async writeStops(stops: Stop[], existingTransfers: ExistingTransfers): Promise<ParentStops> {
-    const parentStops = {};
+  private async writeStops(
+    stops: Stop[],
+    existingTransfers: ExistingTransfers,
+    usedStops: UsedStops
+  ): Promise<void> {
 
     for (const stop of stops) {
-      if (stop.parent_station) {
-        parentStops[stop.stop_id] = stop.parent_station;
-      }
-      else {
+      if (usedStops[stop.stop_id]) {
         await this.push(this.stops, stop);
 
-        if (this.transferDistance && stop.stop_lon !== 0 && stop.stop_lat !== 0) {
+        if (this.transferDistance && !this.stopLocations[stop.stop_id] && stop.stop_lon !== 0 && stop.stop_lat !== 0) {
           await this.addNearbyStops(stop, existingTransfers);
         }
       }
     }
-
-    return parentStops;
   }
 
   /**
@@ -77,7 +85,7 @@ export class StopsAndTransfersMerger {
   }
 
   private addTransfers(stopA: StopID, stopB: StopID, distance: number): Promise<void[]> {
-    const duration = Math.max(60, Math.round(distance * 720));
+    const duration = Math.max(60, Math.round(distance * 1000));
     const transfer = { from_stop_id: stopA, to_stop_id: stopB, transfer_type: 2, min_transfer_time: duration };
     const reverse = { from_stop_id: stopB, to_stop_id: stopA, transfer_type: 2, min_transfer_time: duration };
 

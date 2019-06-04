@@ -13,7 +13,7 @@ const args = yargs.argv as Arguments<{
 
 const inputs = args._.slice(0, args._.length - 1);
 const output = args._[args._.length - 1];
-const transferDistance = args["extra-transfers"] === false ? 0 : (args["transfer-distance"] || 1);
+const transferDistance = args["extra-transfers"] === false ? 0 : (args["transfer-distance"] || 1.6);
 const stopPrefix = args["stop-prefix"] || "";
 const tempFolder = args["tmp"] || "/tmp/gtfsmerge/";
 const filterBeforeDate = args["date-filter"] === false ? undefined : toGTFSDate(new Date());

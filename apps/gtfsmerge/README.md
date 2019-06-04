@@ -2,8 +2,9 @@
 
 [![Travis](https://img.shields.io/travis/planarnetwork/gtfsmerge.svg?style=flat-square)](https://travis-ci.org/planarnetwork/gtfsmerge) ![npm](https://img.shields.io/npm/v/gtfsmerge.svg?style=flat-square) ![David](https://img.shields.io/david/planarnetwork/gtfsmerge.svg?style=flat-square)
 
-gtfsmerge merges multiple GTFS zip files into a single zip, adding transfers between geographically close stops.
+gtfsmerge merges multiple GTFS zip files into a single zip.
 
+- Transfers are created for stops that are close to each other
 - Duplicate stops, agencies and routes are assumed to be the same stop and only output once. 
 - Calendars, calendar dates, trips and stop times are re-indexed. 
 - Identical calendars are merged into a single entry. 
@@ -33,7 +34,7 @@ gtfsmerge input1.zip input2.zip output.zip
 You can specify the distance that should be used add transfers for nearby stops:
 
 ```
-gtfsmerge --transfer-distance=0.06 input1.zip input2.zip output.zip
+gtfsmerge --transfer-distance=2 input1.zip input2.zip output.zip
 ```
  
 Stops with the same ID in different files are assumed to be the same stop but it is possible to add a prefix if this is not the case:
