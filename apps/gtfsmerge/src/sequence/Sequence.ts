@@ -1,28 +1,18 @@
 
 /**
- * Generates a sequence number for each unique hash
+ * Returns a sequence of numbers
  */
 export class Sequence {
-  private cache = {};
-  private current = 1;
+
+  constructor(
+    private currentId: number = 1
+  ) {}
 
   /**
-   * If the hash has already been seen return the ID that was given for it, if not
-   * return a the next number in the sequence.
+   * Return the current ID then increment it
    */
-  public get(hash: string): number {
-    if (!this.haveSeen(hash)) {
-      this.cache[hash] = this.current++;
-    }
-
-    return this.cache[hash];
-  }
-
-  /**
-   * Check whether we've seen the given hash
-   */
-  public haveSeen(hash: string): boolean {
-    return this.cache.hasOwnProperty(hash);
+  public next(): number {
+    return this.currentId++;
   }
 
 }

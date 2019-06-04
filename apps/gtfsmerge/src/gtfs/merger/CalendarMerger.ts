@@ -1,6 +1,6 @@
 import { CalendarFactory } from "../calendar/CalendarFactory";
 import { Calendar, CalendarDate, ServiceID } from "../GTFS";
-import { Sequence } from "../../sequence/Sequence";
+import { MemoizedSequence } from "../../sequence/MemoizedSequence";
 import { Writable } from "stream";
 
 export class CalendarMerger {
@@ -9,7 +9,7 @@ export class CalendarMerger {
     private readonly calendar: Writable,
     private readonly calendarDates: Writable,
     private readonly calendarFactory: CalendarFactory,
-    private readonly serviceIdSequence: Sequence
+    private readonly serviceIdSequence: MemoizedSequence
   ) {}
 
   public async write(calendars: Calendar[], dateIndex: Record<ServiceID, CalendarDate[]>): Promise<ServiceIDMap> {
@@ -38,6 +38,8 @@ export class CalendarMerger {
     const alreadySeenCalendar = this.serviceIdSequence.haveSeen(hash);
     const newServiceId = this.serviceIdSequence.get(hash);
 
+    serviceIdMap[calendar.service_id] = newServiceId;
+
     if (!alreadySeenCalendar) {
       calendar.service_id = newServiceId;
       await this.push(this.calendar, calendar);
@@ -47,8 +49,6 @@ export class CalendarMerger {
         await this.push(this.calendarDates, calendarDay);
       }
     }
-
-    serviceIdMap[calendar.service_id] = this.serviceIdSequence.get(hash);
   }
 
   private getCalendarHash(calendar: Calendar, calendarDates: CalendarDate[]): string {

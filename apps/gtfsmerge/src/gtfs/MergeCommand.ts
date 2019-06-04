@@ -31,6 +31,7 @@ export class MergeCommand {
       const file = fs.createReadStream(input);
       const gtfs = await this.gtfsLoader.load(file, stopPrefix, filterDatesBefore);
 
+      console.log("Processing " + input);
       await output.write(gtfs);
     }
 

@@ -2,13 +2,14 @@ import * as fs from "fs";
 import { sync as rimraf } from "rimraf";
 import { GTFSOutput } from "./GTFSOutput";
 import { CalendarMerger } from "./merger/CalendarMerger";
-import { Sequence } from "../sequence/Sequence";
+import { MemoizedSequence } from "../sequence/MemoizedSequence";
 import { StopsAndTransfersMerger } from "./merger/StopsAndTransfersMerger";
 import { StopTimesMerger } from "./merger/StopTimesMerger";
 import { TripsMerger } from "./merger/TripsMerger";
 import { GenericMerger } from "./merger/GenericMerger";
 import { CalendarFactory } from "./calendar/CalendarFactory";
 import { CSVStream } from "../csv/CSVStream";
+import { Sequence } from "../sequence/Sequence";
 
 export class GTFSOutputFactory {
 
@@ -141,10 +142,10 @@ export class GTFSOutputFactory {
     transfersStream.pipe(fs.createWriteStream(this.tempFolder + "transfers.txt"));
 
     return new GTFSOutput(
-      new CalendarMerger(calendarStream, calendarDatesStream, this.calendarFactory, new Sequence()),
+      new CalendarMerger(calendarStream, calendarDatesStream, this.calendarFactory, new MemoizedSequence()),
       new StopsAndTransfersMerger(stopsStream, transfersStream, this.transferDistance),
       new StopTimesMerger(stopTimesStream),
-      new TripsMerger(tripsStream),
+      new TripsMerger(tripsStream, new Sequence()),
       new GenericMerger(agencyStream),
       new GenericMerger(routesStream)
     );
