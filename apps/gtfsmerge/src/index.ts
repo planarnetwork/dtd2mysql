@@ -5,6 +5,7 @@ import { toGTFSDate } from "./gtfs/calendar/toGTFSDate";
 
 const args = yargs.argv as Arguments<{
   "transfer-distance": number,
+  "no-extra-transfers": boolean,
   "no-date-filter": boolean,
   "stop-prefix": string,
   "tmp": string
@@ -12,10 +13,10 @@ const args = yargs.argv as Arguments<{
 
 const inputs = args._.slice(0, args._.length - 1);
 const output = args._[args._.length - 1];
-const transferDistance = args["transfer-distance"] || 0.02;
+const transferDistance = args["extra-transfers"] === false ? 0 : (args["transfer-distance"] || 0.02);
 const stopPrefix = args["stop-prefix"] || "";
 const tempFolder = args["tmp"] || "/tmp/gtfsmerge/";
-const filterBeforeDate = args["no-date-filter"] ? undefined : toGTFSDate(new Date());
+const filterBeforeDate = args["date-filter"] === false ? undefined : toGTFSDate(new Date());
 const container = new Container();
 
 container

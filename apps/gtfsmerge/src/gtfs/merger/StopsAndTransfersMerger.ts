@@ -42,7 +42,7 @@ export class StopsAndTransfersMerger {
       else {
         await this.push(this.stops, stop);
 
-        if (stop.stop_lon !== 0 && stop.stop_lat !== 0) {
+        if (this.transferDistance && stop.stop_lon !== 0 && stop.stop_lat !== 0) {
           await this.addNearbyStops(stop, existingTransfers);
         }
       }
