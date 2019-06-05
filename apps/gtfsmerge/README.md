@@ -10,6 +10,8 @@ gtfsmerge merges multiple GTFS zip files into a single zip.
 - Identical calendars are merged into a single entry. 
 - Any calendars or calendar dates in the past are removed along with their corresponding trips
 - Any calendar dates without a calendar are converted to a calendar
+- Any unused stops are removed
+- Routes can be removed based on their type (Bus, Rail, etc)
 - This tool does not currently process any of the fares files. Please raise an issue if you would like this feature. 
 
 ## Installation
@@ -31,7 +33,7 @@ It can be run by specifying the input and output files as CLI arguments:
 gtfsmerge input1.zip input2.zip output.zip
 ```
 
-You can specify the distance that should be used add transfers for nearby stops:
+You can specify the distance (in kilometers) that should be used add transfers for nearby stops:
 
 ```
 gtfsmerge --transfer-distance=2 input1.zip input2.zip output.zip
@@ -41,9 +43,14 @@ Stops with the same ID in different files are assumed to be the same stop but it
 
 ```
 gtfsmerge --stop-prefix=input1_stop input1.zip modified-input1.zip
-gtfsmerge modified-input1 input2.zip output.zip
+gtfsmerge modified-input1.zip input2.zip output.zip
 ```
- 
+
+Routes can be removed based on their type:
+
+```
+gtfsmerge --remove-route-types=0,1,4 input1.zip input2.zip output.zip
+``` 
 
 ## Contributing
 

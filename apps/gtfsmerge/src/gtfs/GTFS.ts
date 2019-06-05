@@ -33,8 +33,8 @@ export interface CalendarDate {
 }
 
 export interface Trip {
-  route_id: number;
-  service_id: string;
+  route_id: RouteID;
+  service_id: ServiceID;
   trip_id: number;
   trip_headsign: string;
   trip_short_name: string;
@@ -43,7 +43,7 @@ export interface Trip {
   bikes_allowed: 0 | 1 | 2;
 }
 
-export type RouteID = number;
+export type RouteID = number | string;
 
 export interface Route {
   route_id: RouteID;

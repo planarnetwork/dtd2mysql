@@ -1,5 +1,5 @@
 
-import { Trip } from "../GTFS";
+import { RouteID, Trip } from "../GTFS";
 import { ServiceIDMap } from "./CalendarMerger";
 import { Writable } from "stream";
 import { Sequence } from "../../sequence/Sequence";
@@ -11,15 +11,21 @@ export class TripsMerger {
     private readonly sequence: Sequence
   ) {}
 
-  public async write(trips: Trip[], serviceIdMap: ServiceIDMap): Promise<TripIDMap> {
+  public async write(
+    trips: Trip[],
+    serviceIdMap: ServiceIDMap,
+    routeIdMap: Record<RouteID, RouteID>
+  ): Promise<TripIDMap> {
+
     const tripIdMap = {};
 
     for (const trip of trips) {
-      if (serviceIdMap[trip.service_id]) {
+      if (serviceIdMap[trip.service_id] && routeIdMap[trip.route_id]) {
         tripIdMap[trip.trip_id] = this.sequence.next();
 
         trip.trip_id = tripIdMap[trip.trip_id];
         trip.service_id = serviceIdMap[trip.service_id];
+        trip.route_id = routeIdMap[trip.route_id];
 
         await this.push(trip);
       }

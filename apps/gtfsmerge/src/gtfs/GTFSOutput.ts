@@ -4,6 +4,7 @@ import { StopsAndTransfersMerger } from "./merger/StopsAndTransfersMerger";
 import { StopTimesMerger } from "./merger/StopTimesMerger";
 import { TripIDMap, TripsMerger } from "./merger/TripsMerger";
 import { GenericMerger } from "./merger/GenericMerger";
+import { RouteMerger } from "./merger/RouteMerger";
 
 /**
  * Merges multiple GTFS sets into a single stream for each GTFS file (stops.txt etc)
@@ -16,27 +17,25 @@ export class GTFSOutput {
     private readonly stopTimes: StopTimesMerger,
     private readonly trips: TripsMerger,
     private readonly agencies: GenericMerger,
-    private readonly routes: GenericMerger
+    private readonly routes: RouteMerger
   ) {}
 
   /**
    * Merge in the given GTFS data set and push the new items to the file streams.
    */
   public async write(gtfs: GTFSZip): Promise<void> {
-    const tripIdMap = await this.writeCalendarsAndTrips(gtfs);
+    const [routeIdMap, serviceIdMap] = await Promise.all([
+      this.routes.write(gtfs.routes),
+      this.calendar.write(gtfs.calendars, gtfs.calendarDates)
+    ]);
+
+    const tripIdMap = await this.trips.write(gtfs.trips, serviceIdMap, routeIdMap);
     const usedStops = await this.stopTimes.write(gtfs.stopTimes, tripIdMap, gtfs.parentStops);
 
     await Promise.all([
       this.stopsAndTransfers.write(gtfs.stops, gtfs.transfers, gtfs.parentStops, usedStops),
-      this.agencies.write(gtfs.agencies),
-      this.routes.write(gtfs.routes)
+      this.agencies.write(gtfs.agencies)
     ]);
-  }
-
-  private async writeCalendarsAndTrips(gtfs: GTFSZip): Promise<TripIDMap> {
-    const serviceIdMap = await this.calendar.write(gtfs.calendars, gtfs.calendarDates);
-
-    return this.trips.write(gtfs.trips, serviceIdMap);
   }
 
   public async end(): Promise<void> {

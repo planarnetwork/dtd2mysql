@@ -11,6 +11,7 @@ import { CalendarFactory } from "./calendar/CalendarFactory";
 import { CSVStream } from "../csv/CSVStream";
 import { Sequence } from "../sequence/Sequence";
 import { CheapRuler } from "cheap-ruler";
+import { RouteMerger, RouteTypeIndex } from "./merger/RouteMerger";
 
 export class GTFSOutputFactory {
 
@@ -18,7 +19,8 @@ export class GTFSOutputFactory {
     private readonly calendarFactory: CalendarFactory,
     private readonly tempFolder: string,
     private readonly ruler: CheapRuler,
-    private readonly transferDistance: number
+    private readonly transferDistance: number,
+    private readonly removeRouteTypes: RouteTypeIndex
   ) {}
 
   public create(): GTFSOutput {
@@ -149,7 +151,7 @@ export class GTFSOutputFactory {
       new StopTimesMerger(stopTimesStream),
       new TripsMerger(tripsStream, new Sequence()),
       new GenericMerger(agencyStream),
-      new GenericMerger(routesStream)
+      new RouteMerger(routesStream, new Sequence(), this.removeRouteTypes)
     );
   }
 }
