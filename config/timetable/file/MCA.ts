@@ -17,7 +17,7 @@ const tiplocInsert = new FixedWidthRecord(
     "capitals": new TextField(9, 2),
     "nalco": new TextField(11, 6),
     "nlc_check_character": new TextField(17, 1),
-    "tps_description": new TextField(18, 26),
+    "tps_description": new TextField(18, 26, true),
     "stanox": new TextField(44, 5),
     "po_mcp_code": new IntField(49, 4),
     "crs_code": new TextField(53, 3, true),
