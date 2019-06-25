@@ -65,7 +65,6 @@ export class ImportFeedCommand implements CLICommand {
 
     if (this.files["CFA"] instanceof MultiRecordFile) {
       await this.setLastScheduleId();
-      this.ensureALFExists(zipName.substring(0, zipName.length - 4));
     }
 
     await Promise.all(
@@ -108,12 +107,6 @@ export class ImportFeedCommand implements CLICommand {
     const bsRecord = cfaFile.records["BS"] as RecordWithManualIdentifier;
 
     bsRecord.lastId = lastId;
-  }
-
-  private ensureALFExists(filename): void {
-    if (!fs.existsSync(this.tmpFolder + filename + ".alf")) {
-      fs.copyFileSync(__dirname + "/../../config/timetable/data/fixed.alf", this.tmpFolder + "fixed.alf");
-    }
   }
 
   private updateLastFile(filename: string): Promise<void> {

@@ -150,16 +150,8 @@ export class CleanFaresCommand implements CLICommand {
       JOIN fare USING (flow_id)
       LEFT JOIN station_cluster oc ON origin_code = oc.cluster_nlc
       LEFT JOIN station_cluster dc ON destination_code = dc.cluster_nlc
-      WHERE ticket_code IN ('CDR', 'CDS', 'ODT')
+      WHERE ticket_code IN ('CDR', 'CDS', 'ODT', 'SVR', 'SVS')
       AND restriction_code IS NOT NULL
-      AND (
-        origin_code IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW') OR 
-        oc.cluster_id IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW')
-      )
-      AND (
-        destination_code IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW') OR 
-        dc.cluster_id IN (SELECT SUBSTR(uic_code, 3, 4) AS nlc FROM location_railcard WHERE railcard_code = 'NEW')
-      )
       GROUP BY origin_code, destination_code, route_code
     `);
 

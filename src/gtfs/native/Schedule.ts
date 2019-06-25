@@ -117,7 +117,7 @@ export class Schedule implements OverlayRecord {
     return this.stopTimes.slice(this.stopTimes.findIndex(s => s.stop_id === location) + 1);
   }
 
-  public stopAt(location: CRS): StopTime {
+  public stopAt(location: CRS): StopTime | undefined {
     return <StopTime>this.stopTimes.find(s => s.stop_id === location);
   }
 

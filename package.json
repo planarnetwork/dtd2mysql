@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "6.3.16",
+  "version": "6.3.19",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,7 +12,7 @@
     "gtest": "mocha --require ts-node/register 'test/**/*.spec.ts' --grep",
     "watch-test": "mocha -w --require ts-node/register 'test/**/*.spec.ts'",
     "start": "ts-node ./src/index.ts",
-    "prepublishOnly": "tsc -p ./ --outDir dist/ && cp -r config/timetable/data dist/config/timetable/data",
+    "prepublishOnly": "tsc -p ./ --outDir dist/",
     "gtfs": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs",
     "gtfs-zip": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs-zip"
   },
@@ -36,15 +36,15 @@
   },
   "homepage": "https://github.com/open-track/dtd2mysql#readme",
   "dependencies": {
-    "adm-zip": "^0.4.11",
+    "adm-zip": "^0.4.13",
     "byline": "^5.0.0",
     "csv-write-stream": "^2.0.0",
-    "fs-extra": "^7.0.0",
+    "fs-extra": "^8.0.1",
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.24.0",
     "mysql2": "^1.6.5",
-    "ssh2": "^0.6.2",
-    "ssh2-streams": "^0.2.1",
+    "ssh2": "^0.8.4",
+    "ssh2-streams": "^0.4.4",
     "stream-to-promise": "^2.2.0"
   },
   "engines": {
@@ -53,15 +53,15 @@
   "devDependencies": {
     "@types/byline": "^4.2.31",
     "@types/chai": "^4.1.7",
-    "@types/fs-extra": "^5.1.0",
+    "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^10.14.10",
+    "@types/node": "^10.14.8",
     "@types/ssh2": "^0.5.38",
     "@types/ssh2-streams": "^0.1.6",
     "@types/stream-to-promise": "^2.2.0",
     "chai": "^4.2.0",
-    "mocha": "^5.2.0",
-    "ts-node": "^7.0.1",
-    "typescript": "^3.5.2"
+    "mocha": "^6.1.4",
+    "ts-node": "^8.2.0",
+    "typescript": "^3.5.1"
   }
 }
