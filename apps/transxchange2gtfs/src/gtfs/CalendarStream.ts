@@ -16,7 +16,7 @@ export class CalendarStream extends GTFSFileStream<TransXChangeJourney> {
       const from = journey.calendar.startDate.format(this.dateFormatter);
       const to = journey.calendar.endDate.format(this.dateFormatter);
 
-      this.pushLine(`${journey.calendar.id},${journey.calendar.days},${from},${to}`);
+      this.pushLine(journey.calendar.id, ...journey.calendar.days, from, to);
       this.datesSeen[journey.calendar.id] = true;
     }
   }

@@ -20,7 +20,7 @@ export class TransfersStream extends GTFSFileStream<TransXChange> {
   protected transform(data: TransXChange): void {
     for (const stop of data.StopPoints) {
       if (!this.stopsSeen[stop.StopPointRef]) {
-        this.pushLine(`${stop.StopPointRef},${stop.StopPointRef},2,180`);
+        this.pushLine(stop.StopPointRef, stop.StopPointRef, 2, 180);
 
         if (this.naptan[stop.StopPointRef]) {
           this.addNearbyStops(stop.StopPointRef);
@@ -45,8 +45,8 @@ export class TransfersStream extends GTFSFileStream<TransXChange> {
 
         if (distance < 0.01) {
           const time = Math.max(60, Math.round((distance / 0.0005) * 120));
-          this.pushLine(`${stop},${j},2,${time}`);
-          this.pushLine(`${j},${stop},2,${time}`);
+          this.pushLine(stop, j, 2, time);
+          this.pushLine(j, stop, 2, time);
         }
       }
     }

@@ -16,7 +16,7 @@ export abstract class GTFSFileStream<T> extends Transform {
    */
   public _transform(chunk: T, encoding: string, callback: TransformCallback): void {
     if (!this.headerSent) {
-      this.pushLine(this.header);
+      this.push(this.header + "\n");
       this.headerSent = true;
     }
 
@@ -33,8 +33,16 @@ export abstract class GTFSFileStream<T> extends Transform {
   /**
    * Add a new line to whatever is being pushed
    */
-  public pushLine(data: string | null, encoding?: string): boolean {
-    return this.push(data + "\n", encoding);
+  public pushLine(...data: Array<string | number>): boolean {
+    const line = data.map(this.quote).join(",");
+
+    return this.push(line + "\n");
+  }
+
+  private quote(value: string | number): string {
+    return typeof value === "string"
+        ? value.includes(",") ? "\"" + value + "\"" : value
+        : value + "";
   }
 
 }

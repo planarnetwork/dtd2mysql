@@ -32,7 +32,17 @@ export class RoutesStream extends GTFSFileStream<TransXChange> {
 
       const shortDescription = Object.values(service.Lines)[0];
 
-      this.pushLine(`${routeId},${service.RegisteredOperatorRef},${shortDescription},"${service.Description}",${this.routeType[service.Mode]},,,,"${service.Description}"`);
+      this.pushLine(
+        routeId,
+        service.RegisteredOperatorRef,
+        shortDescription,
+        service.Description,
+        this.routeType[service.Mode],
+        "",
+        "",
+        "",
+        service.Description
+      );
     }
   }
 

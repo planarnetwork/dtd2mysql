@@ -11,7 +11,7 @@ export class StopTimesStream extends GTFSFileStream<TransXChangeJourney> {
     let sequence = 1;
 
     for (const stop of journey.stops) {
-      this.pushLine([
+      this.pushLine(
         journey.trip.id,
         stop.arrivalTime,
         stop.departureTime,
@@ -22,7 +22,7 @@ export class StopTimesStream extends GTFSFileStream<TransXChangeJourney> {
         stop.dropoff ? 0 : 1,
         "",
         stop.exactTime ? "1" : "0"
-      ].join());
+      );
     }
   }
 

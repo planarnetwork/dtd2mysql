@@ -14,7 +14,7 @@ export class AgencyStream extends GTFSFileStream<TransXChange> {
         const operator = data.Operators[operatorId];
         const agencyName = operator.OperatorNameOnLicence || operator.OperatorShortName;
 
-        this.pushLine(`${operatorId},${agencyName},http://agency.com,Europe/London,en,,`);
+        this.pushLine(operatorId, agencyName, "http://agency.com", "Europe/London", "en", "", "");
 
         this.agenciesSeen[operatorId] = true;
       }
