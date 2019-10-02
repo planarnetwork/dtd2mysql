@@ -11,6 +11,7 @@ export class MySQLTable {
     [RecordAction.Insert]: [] as ParsedRecord[],
     [RecordAction.Update]: [] as ParsedRecord[],
     [RecordAction.Delete]: [] as ParsedRecord[],
+    [RecordAction.DelayedInsert]: [] as ParsedRecord[],
   };
 
   constructor(
@@ -25,7 +26,15 @@ export class MySQLTable {
   public async apply(row: ParsedRecord): Promise<void> {
     this.buffer[row.action].push(row);
 
-    if (this.buffer[row.action].length >= this.flushLimit) {
+    if (row.action === RecordAction.DelayedInsert) {
+      const values = Object
+        .entries(row.values)
+        .filter(kv => kv[0] !== "id" && kv[1] !== null)
+        .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {});
+
+      this.buffer[RecordAction.Delete].push({ action: RecordAction.Delete, values });
+    }
+    else if (this.buffer[row.action].length >= this.flushLimit) {
       return this.flush(row.action);
     }
   }
@@ -52,6 +61,8 @@ export class MySQLTable {
       this.flush(RecordAction.Update),
       this.flush(RecordAction.Insert)
     ]);
+
+    await this.flush(RecordAction.DelayedInsert);
 
     if (this.db.release) {
       await this.db.release();
@@ -80,6 +91,7 @@ export class MySQLTable {
 
     switch (type) {
       case RecordAction.Insert:
+      case RecordAction.DelayedInsert:
         return this.db.query(`INSERT IGNORE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);
       case RecordAction.Update:
         return this.db.query(`REPLACE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);

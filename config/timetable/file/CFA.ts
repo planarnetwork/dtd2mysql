@@ -93,7 +93,7 @@ const schedule = new RecordWithManualIdentifier(
   ["runs_from"],
   {
     "N": RecordAction.Insert,
-    "R": RecordAction.Update,
+    "R": RecordAction.DelayedInsert,
     "D": RecordAction.Delete
   },
   2
