@@ -10,7 +10,7 @@ import {TimeField} from "../../../src/feed/field/TimeField";
 import {MultiFormatRecord} from "../../../src/feed/record/MultiFormatRecord";
 import {RecordAction} from "../../../src/feed/record/Record";
 
-const tiplocInsert = new FixedWidthRecord(
+export const tiplocInsert = new FixedWidthRecord(
   "tiploc",
   ["tiploc_code"], {
     "tiploc_code": new TextField(2, 7),
@@ -26,7 +26,7 @@ const tiplocInsert = new FixedWidthRecord(
   ["crs_code"]
 );
 
-const association = new FixedWidthRecord(
+export const association = new FixedWidthRecord(
   "association",
   ["base_uid", "assoc_uid", "assoc_location", "start_date", "stp_indicator"], {
     "base_uid": new TextField(3, 6),
@@ -57,7 +57,7 @@ const association = new FixedWidthRecord(
   2
 );
 
-const schedule = new RecordWithManualIdentifier(
+export const schedule = new RecordWithManualIdentifier(
   "schedule",
   ["train_uid", "runs_from", "stp_indicator"], {
     "train_uid": new TextField(3, 6),
@@ -99,7 +99,7 @@ const schedule = new RecordWithManualIdentifier(
   2
 );
 
-const extraDetails = new FixedWidthRecord(
+export const extraDetails = new FixedWidthRecord(
   "schedule_extra",
   [], {
     "schedule": new ForeignKeyField(schedule),
@@ -113,7 +113,7 @@ const extraDetails = new FixedWidthRecord(
   ["schedule"]
 );
 
-const stopRecordTypes = {
+export const stopRecordTypes = {
   "LO": {
     "schedule": new ForeignKeyField(schedule),
     "location": new TextField(2, 7),
@@ -167,7 +167,7 @@ const stopRecordTypes = {
   }
 };
 
-const stop = new MultiFormatRecord(
+export const stop = new MultiFormatRecord(
   "stop_time",
   ["schedule", "location", "suffix",  "public_departure_time"],
   stopRecordTypes.LI,

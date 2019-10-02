@@ -27,12 +27,7 @@ export class MySQLTable {
     this.buffer[row.action].push(row);
 
     if (row.action === RecordAction.DelayedInsert) {
-      const values = Object
-        .entries(row.values)
-        .filter(kv => kv[0] !== "id" && kv[1] !== null)
-        .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {});
-
-      this.buffer[RecordAction.Delete].push({ action: RecordAction.Delete, values });
+      this.buffer[RecordAction.Delete].push({ action: RecordAction.Delete, ...row });
     }
     else if (this.buffer[row.action].length >= this.flushLimit) {
       return this.flush(row.action);
@@ -96,14 +91,14 @@ export class MySQLTable {
       case RecordAction.Update:
         return this.db.query(`REPLACE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);
       case RecordAction.Delete:
-        return this.db.query(`DELETE FROM \`${this.tableName}\` WHERE (${this.getDeleteSQL(rows)})`, [].concat.apply([], rowValues));
+        return this.db.query(`DELETE FROM \`${this.tableName}\` WHERE (${this.getDeleteSQL(rows)})`, rows.flatMap(row => Object.values(row.keysValues)));
       default:
         throw new Error("Unknown record action: " + type);
     }
   }
 
   private getDeleteSQL(rows: ParsedRecord[]): string {
-    return rows.map(row => Object.keys(row.values).map(k => `\`${k}\` = ?`).join(" AND ")).join(") OR (");
+    return rows.map(row => Object.keys(row.keysValues).map(k => `\`${k}\` = ?`).join(" AND ")).join(") OR (");
   }
 }
 

@@ -21,14 +21,19 @@ export class FixedWidthRecord implements Record {
    */
   public extractValues(line: string): ParsedRecord {
     const action = this.actionMap[line.charAt(this.charPosition)] || RecordAction.Insert;
-    const values = action === RecordAction.Delete ? {} : { id: null };
-    const fields = action === RecordAction.Delete ? this.key : Object.keys(this.fields);
+    const values = { id: null };
 
-    for (const key of fields) {
+    for (const key of Object.keys(this.fields)) {
       values[key] = this.fields[key].extract(line.substr(this.fields[key].position, this.fields[key].length));
     }
 
-    return { action, values } as ParsedRecord;
+    const keysValues = this.key.reduce((vals, key) => {
+      vals[key] = values[key];
+
+      return vals;
+    }, {});
+
+    return { action, values, keysValues } as ParsedRecord;
   }
 
 }
@@ -55,7 +60,13 @@ export class RecordWithManualIdentifier extends FixedWidthRecord {
       values[key] = this.fields[key].extract(line.substr(this.fields[key].position, this.fields[key].length));
     }
 
-    return { action, values } as ParsedRecord;
+    const keysValues = this.key.reduce((vals, key) => {
+      vals[key] = values[key];
+
+      return vals;
+    }, {});
+
+    return { action, values, keysValues } as ParsedRecord;
   }
 
 }

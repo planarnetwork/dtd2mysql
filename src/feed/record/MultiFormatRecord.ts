@@ -30,7 +30,7 @@ export class MultiFormatRecord implements Record {
       values[key] = record[key].extract(line.substr(record[key].position, record[key].length));
     }
 
-    return { action, values };
+    return { action, values, keysValues: values };
   }
 
 }

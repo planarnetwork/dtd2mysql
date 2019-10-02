@@ -37,7 +37,13 @@ export class CSVRecord implements Record {
       }
     }
 
-    return { action, values };
+    const keysValues = this.key.reduce((vals, key) => {
+      vals[key] = values[key];
+
+      return vals;
+    }, {});
+
+    return { action, values , keysValues};
   }
 
 }

@@ -32,4 +32,7 @@ export interface ParsedRecord {
   values: {
     [field: string]: FieldValue;
   };
+  keysValues: {
+    [keyField: string]: FieldValue;
+  }
 }

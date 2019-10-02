@@ -39,29 +39,29 @@
     "adm-zip": "^0.4.13",
     "byline": "^5.0.0",
     "csv-write-stream": "^2.0.0",
-    "fs-extra": "^8.0.1",
+    "fs-extra": "^8.1.0",
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.24.0",
-    "mysql2": "^1.6.5",
-    "ssh2": "^0.8.4",
-    "ssh2-streams": "^0.4.4",
+    "mysql2": "^1.7.0",
+    "ssh2": "^0.8.5",
+    "ssh2-streams": "^0.4.6",
     "stream-to-promise": "^2.2.0"
   },
   "engines": {
-    "node": "^10.0.0"
+    "node": "^11.0.0"
   },
   "devDependencies": {
     "@types/byline": "^4.2.31",
-    "@types/chai": "^4.1.7",
+    "@types/chai": "^4.2.3",
     "@types/fs-extra": "^7.0.0",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^10.14.8",
-    "@types/ssh2": "^0.5.38",
+    "@types/node": "^11.13.21",
+    "@types/ssh2": "^0.5.39",
     "@types/ssh2-streams": "^0.1.6",
     "@types/stream-to-promise": "^2.2.0",
     "chai": "^4.2.0",
-    "mocha": "^6.1.4",
-    "ts-node": "^8.2.0",
-    "typescript": "^3.5.1"
+    "mocha": "^6.2.1",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.3"
   }
 }
