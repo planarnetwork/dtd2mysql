@@ -32,6 +32,7 @@ export const agencies: Agency[] = [
 { agency_id: "TW", agency_name: "Nexus (Tyne & Wear Metro)",  agency_url: "https://www.nexus.org.uk/metro",          agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0191 20 20 747", agency_fare_url: null },
 { agency_id: "CS", agency_name: "Serco Caledonian Sleeper",   agency_url: "https://www.sleeper.scot/",               agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0330 060 0500",  agency_fare_url: null },
 { agency_id: "XR", agency_name: "Crossrail",                  agency_url: "https://www.nationalrail.co.uk/",         agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "08457 48 49 50", agency_fare_url: null },
+{ agency_id: "QC", agency_name: "Caledonian MacBrayne",       agency_url: "https://www.calmac.co.uk/",               agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "",               agency_fare_url: null },
 { agency_id: "QS", agency_name: "Stena Line",                 agency_url: "https://www.google.com",                  agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "",               agency_fare_url: null },
 { agency_id: "ZZ", agency_name: "Other operator",             agency_url: "https://www.google.com",                  agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "",               agency_fare_url: null },
 ];
