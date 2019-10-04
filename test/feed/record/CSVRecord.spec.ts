@@ -23,6 +23,7 @@ describe("CSVRecord", () => {
 
     chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
       action: RecordAction.Insert,
+      keysValues: {},
       values: {
         id: null,
         field: 10.12,
@@ -45,6 +46,7 @@ describe("CSVRecord", () => {
 
     chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
       action: RecordAction.Insert,
+      keysValues: {},
       values: {
         id: null,
         field: 10.12,

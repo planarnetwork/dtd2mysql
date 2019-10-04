@@ -11,6 +11,7 @@ export class MySQLTable {
     [RecordAction.Insert]: [] as ParsedRecord[],
     [RecordAction.Update]: [] as ParsedRecord[],
     [RecordAction.Delete]: [] as ParsedRecord[],
+    [RecordAction.DelayedInsert]: [] as ParsedRecord[],
   };
 
   constructor(
@@ -25,7 +26,12 @@ export class MySQLTable {
   public async apply(row: ParsedRecord): Promise<void> {
     this.buffer[row.action].push(row);
 
-    if (this.buffer[row.action].length >= this.flushLimit) {
+    // if it's a delayed insert, also add a delete entry
+    if (row.action === RecordAction.DelayedInsert) {
+      this.buffer[RecordAction.Delete].push({ action: RecordAction.Delete, ...row });
+    }
+    // only flush the buffer it its not a delayed insert (as they are flushed at the end)
+    else if (this.buffer[row.action].length >= this.flushLimit) {
       return this.flush(row.action);
     }
   }
@@ -52,6 +58,8 @@ export class MySQLTable {
       this.flush(RecordAction.Update),
       this.flush(RecordAction.Insert)
     ]);
+
+    await this.flush(RecordAction.DelayedInsert);
 
     if (this.db.release) {
       await this.db.release();
@@ -80,18 +88,19 @@ export class MySQLTable {
 
     switch (type) {
       case RecordAction.Insert:
+      case RecordAction.DelayedInsert:
         return this.db.query(`INSERT IGNORE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);
       case RecordAction.Update:
         return this.db.query(`REPLACE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);
       case RecordAction.Delete:
-        return this.db.query(`DELETE FROM \`${this.tableName}\` WHERE (${this.getDeleteSQL(rows)})`, [].concat.apply([], rowValues));
+        return this.db.query(`DELETE FROM \`${this.tableName}\` WHERE (${this.getDeleteSQL(rows)})`, rows.flatMap(row => Object.values(row.keysValues)));
       default:
         throw new Error("Unknown record action: " + type);
     }
   }
 
   private getDeleteSQL(rows: ParsedRecord[]): string {
-    return rows.map(row => Object.keys(row.values).map(k => `\`${k}\` = ?`).join(" AND ")).join(") OR (");
+    return rows.map(row => Object.keys(row.keysValues).map(k => `\`${k}\` = ?`).join(" AND ")).join(") OR (");
   }
 }
 

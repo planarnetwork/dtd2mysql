@@ -73,6 +73,10 @@ export class ImportFeedCommand implements CLICommand {
         .map(filename => this.processFile(filename))
     );
 
+    if (this.files["CFA"] instanceof MultiRecordFile) {
+      await this.removeOrphanStopTimes();
+    }
+
     await this.updateLastFile(zipName);
   }
 
@@ -108,6 +112,14 @@ export class ImportFeedCommand implements CLICommand {
 
     bsRecord.lastId = lastId;
   }
+
+  private async removeOrphanStopTimes() {
+    return Promise.all([
+      this.db.query("DELETE FROM stop_time WHERE schedule NOT IN (SELECT id FROM schedule)"),
+      this.db.query("DELETE FROM schedule_extra WHERE schedule NOT IN (SELECT id FROM schedule)")
+    ]);
+  }
+
 
   private updateLastFile(filename: string): Promise<void> {
     return this.db.query("INSERT INTO log VALUES (null, ?, NOW())", [filename]);

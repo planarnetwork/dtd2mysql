@@ -11,7 +11,7 @@ describe("MySQLTable", () => {
     const action = RecordAction.Insert;
     const values = { some: "value" };
 
-    table.apply({ action, values });
+    table.apply({ action, values, keysValues: {} });
 
     chai.expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
   });
@@ -22,10 +22,10 @@ describe("MySQLTable", () => {
     const action = RecordAction.Insert;
     const values = { some: "value" };
 
-    table.apply({ action, values });
+    table.apply({ action, values, keysValues: {} });
     chai.expect(db.inserts.length).is.equal(0);
 
-    table.apply({ action, values });
+    table.apply({ action, values, keysValues: {} });
     chai.expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
   });
 
@@ -35,7 +35,7 @@ describe("MySQLTable", () => {
     const action = RecordAction.Insert;
     const values = { some: "value" };
 
-    table.apply({ action, values });
+    table.apply({ action, values, keysValues: {} });
     table.close();
 
     chai.expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
@@ -47,7 +47,7 @@ describe("MySQLTable", () => {
     const action = RecordAction.Update;
     const values = { some: "value" };
 
-    table.apply({ action, values });
+    table.apply({ action, values, keysValues: {} });
 
     chai.expect(db.inserts[0]).is.equal("REPLACE INTO \`my_table\` VALUES ?");
   });
@@ -58,11 +58,11 @@ describe("MySQLTable", () => {
     const action = RecordAction.Delete;
     const values = { some: "value", other: "value" };
 
-    table.apply({ action, values });
+    table.apply({ action, values, keysValues: values });
 
     const values2 = { diff: "col", other: "value" };
 
-    table.apply({ action, values: values2 });
+    table.apply({ action, values: values2, keysValues: values2 });
 
     chai.expect(db.inserts[0]).is.equal(
       "DELETE FROM \`my_table\` WHERE (`some` = ? AND `other` = ?) OR (`diff` = ? AND `other` = ?)"

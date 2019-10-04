@@ -23,7 +23,8 @@ export interface FieldMap {
 export enum RecordAction {
   Insert = "I",
   Update = "A",
-  Delete = "D"
+  Delete = "D",
+  DelayedInsert = "DI"
 }
 
 export interface ParsedRecord {
@@ -31,4 +32,7 @@ export interface ParsedRecord {
   values: {
     [field: string]: FieldValue;
   };
+  keysValues: {
+    [keyField: string]: FieldValue;
+  }
 }
