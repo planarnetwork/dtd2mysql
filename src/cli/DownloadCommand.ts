@@ -21,7 +21,7 @@ export class DownloadCommand implements CLICommand {
       this.getLastProcessedFile()
     ]);
 
-    const files = this.getFilesToProcess(remoteFiles, lastProcessedFile);
+    const files = this.getFilesToProcess(remoteFiles!, lastProcessedFile);
 
     if (files.length > 0) {
       console.log(`Downloading ${files.length} feed file(s)`);

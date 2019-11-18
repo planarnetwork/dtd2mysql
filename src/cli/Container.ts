@@ -147,7 +147,6 @@ export class Container {
   @memoize
   public getDatabaseStream() {
     return require('mysql2').createPool(this.databaseConfiguration);
-
   }
 
   public get databaseConfiguration(): DatabaseConfiguration {
