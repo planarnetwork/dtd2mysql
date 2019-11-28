@@ -1,6 +1,6 @@
 {
   "name": "transxchange2gtfs",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Converts transxchange data to GTFS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,24 +33,24 @@
   "homepage": "https://github.com/planarnetwork/transxchange2gtfs#readme",
   "devDependencies": {
     "@types/autobind-decorator": "^2.1.0",
-    "@types/chai": "^4.2.3",
+    "@types/chai": "^4.2.5",
     "@types/csv-parse": "^1.2.2",
     "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^11.13.21",
-    "@types/rimraf": "^2.0.2",
+    "@types/node": "^11.15.3",
+    "@types/rimraf": "^2.0.3",
     "@types/xml2js": "^0.4.5",
     "chai": "^4.2.0",
-    "mocha": "^6.2.0",
+    "mocha": "^6.2.2",
     "nyc": "^14.1.1",
-    "ts-node": "^8.4.1",
-    "tslint": "^5.20.0",
-    "typescript": "^3.6.3"
+    "ts-node": "^8.5.3",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.2"
   },
   "dependencies": {
     "autobind-decorator": "^2.4.0",
-    "csv-parse": "^4.4.6",
-    "glob": "^7.1.4",
+    "csv-parse": "^4.8.2",
+    "glob": "^7.1.6",
     "js-joda": "^1.11.0",
     "rimraf": "^2.7.1",
     "xml2js": "^0.4.22"

@@ -41,8 +41,14 @@ export class TransXChangeJourneyStream extends Transform {
       if (sections.length > 0) {
         const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
         const stops = this.getStopTimes(sections, vehicle.DepartureTime);
-        const trip = {id: this.tripId++, shortName: service.ServiceDestination, direction: journeyPattern.Direction};
         const route = vehicle.ServiceRef;
+        const trip = {
+          id: this.tripId++,
+          shortName: journeyPattern.Direction === "outbound"
+            ? service.ServiceDestination
+            : service.ServiceOrigin,
+          direction: journeyPattern.Direction
+        };
 
         this.push({calendar, stops, trip, route});
       }

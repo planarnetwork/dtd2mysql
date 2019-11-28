@@ -267,6 +267,7 @@ describe("TransXChangeStream", () => {
           "OperatingProfile": undefined,
           "RegisteredOperatorRef": "OId_MEGA",
           "ServiceCode": "M6_MEGA",
+          "ServiceOrigin": "Falmouth",
           "ServiceDestination": "Victoria, London",
           "StandardService": {
             "JP366": {

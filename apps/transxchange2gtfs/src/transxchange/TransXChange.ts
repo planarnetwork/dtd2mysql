@@ -105,6 +105,7 @@ export interface Service {
   Description: string,
   Mode: Mode,
   ServiceDestination: string,
+  ServiceOrigin: string,
   StandardService: JourneyPatterns,
   OperatingProfile: OperatingProfile | undefined
 }
