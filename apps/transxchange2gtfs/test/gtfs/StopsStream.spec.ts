@@ -25,6 +25,9 @@ describe("StopsStream", () => {
     stops.end();
 
     return awaitStream(stops, (rows: string[]) => {
+      // Expect header to have same number of columns as data rows do
+      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+
       const [stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon] = splitCSV(rows[1]);
       chai.expect(stop_id).to.equal("a");
       chai.expect(stop_code).to.equal("naptanA");
@@ -52,6 +55,9 @@ describe("StopsStream", () => {
     stops.end();
 
     return awaitStream(stops, (rows: string[]) => {
+      // Expect header to have same number of columns as data rows do
+      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+
       const [stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon] = splitCSV(rows[1]);
 
       chai.expect(stop_id).to.equal("NotInIndex");
@@ -76,6 +82,9 @@ describe("StopsStream", () => {
     stops.end();
 
     return awaitStream(stops, (rows: string[]) => {
+      // Expect header to have same number of columns as data rows do
+      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+
       const [stop_id, stop_code, stop_name] = splitCSV(rows[1]);
 
       chai.expect(stop_id).to.equal("b");
@@ -97,6 +106,9 @@ describe("StopsStream", () => {
     stops.end();
 
     return awaitStream(stops, (rows: string[]) => {
+      // Expect header to have same number of columns as data rows do
+      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+
       const [stop_id, stop_code, stop_name] = splitCSV(rows[1]);
 
       chai.expect(stop_id).to.equal("c");
@@ -118,6 +130,9 @@ describe("StopsStream", () => {
     stops.end();
 
     return awaitStream(stops, (rows: string[]) => {
+      // Expect header to have same number of columns as data rows do
+      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+
       const [stop_id, stop_code, stop_name] = splitCSV(rows[1]);
 
       chai.expect(stop_id).to.equal("d");
@@ -147,6 +162,9 @@ describe("StopsStream", () => {
     stops.end();
 
     return awaitStream(stops, (rows: string[]) => {
+      // Expect header to have same number of columns as data rows do
+      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+
       chai.expect(rows.length).to.equal(2);
     });
   });

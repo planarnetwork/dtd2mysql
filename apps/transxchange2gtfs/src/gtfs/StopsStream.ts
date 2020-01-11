@@ -41,7 +41,6 @@ export class StopsStream extends GTFSFileStream<TransXChange> {
       "",
       "",
       "",
-      "",
       0
     ];
   }
