@@ -8,10 +8,7 @@
     "strict": true,
     "declaration": true,
     "lib": [
-      "es2017.object",
-      "es2015",
-      "es2017",
-      "dom"
+      "es2018"
     ]
   },
   "exclude": [

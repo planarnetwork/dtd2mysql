@@ -24,8 +24,6 @@ export class FileStream extends Transform {
   public async _transform(file: string, encoding: string, callback: TransformCallback): Promise<void> {
     const extension = parse(file).ext.toLowerCase();
 
-    console.log("Processing " + file);
-
     if (extension  === ".xml") {
       await this.readFile(file);
     }
@@ -40,15 +38,17 @@ export class FileStream extends Transform {
   }
 
   private async readFile(file: string): Promise<void> {
+    console.log("Processing " + file);
     const contents = await readFile(file, "utf8");
-
     this.push(contents);
   }
 
   private async readZip(file: string): Promise<any> {
+    console.log("Extracting " + file);
     const outputDir = Container.TMP + this.zipIndex++ + "/";
+    const path = file.replace(/(\s+)/g, "\\$1");
 
-    await exec("unzip -uo " + file + " -d " + outputDir, { maxBuffer: Number.MAX_SAFE_INTEGER });
+    await exec("unzip -uo " + path + " -d " + outputDir, { maxBuffer: Number.MAX_SAFE_INTEGER });
 
     const files: string[] = await glob(outputDir + "**/*.xml");
 

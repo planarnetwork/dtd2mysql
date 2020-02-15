@@ -35,9 +35,12 @@ export class TransXChangeStream extends Transform {
     const tx = data.TransXChange;
     const patternIndex = tx.VehicleJourneys[0].VehicleJourney.reduce(this.getJourneyPatternIndex, {});
     const services = tx.Services[0].Service.reduce(this.getServices, {});
+    const stops = tx.StopPoints[0].AnnotatedStopPointRef
+        ? tx.StopPoints[0].AnnotatedStopPointRef.map(this.getStopFromAnnotatedStopPointRef)
+        : tx.StopPoints[0].StopPoint.map(this.getStopFromStopPoint);
 
     const result: TransXChange = {
-      StopPoints: tx.StopPoints[0].AnnotatedStopPointRef.map(this.getStop),
+      StopPoints: stops,
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
       Operators: tx.Operators[0].Operator.reduce(this.getOperators, {}),
       Services: services,
@@ -48,7 +51,7 @@ export class TransXChangeStream extends Transform {
     callback(undefined, result);
   }
 
-  private getStop(stop: any): StopPoint {
+  private getStopFromAnnotatedStopPointRef(stop: any): StopPoint {
     return {
       StopPointRef: stop.StopPointRef[0],
       CommonName: stop.CommonName[0],
@@ -57,6 +60,19 @@ export class TransXChangeStream extends Transform {
       Location:  {
         Latitude: stop.Location && stop.Location[0].Latitude ? Number(stop.Location[0].Latitude[0]) : 0.0,
         Longitude: stop.Location && stop.Location[0].Longitude ? Number(stop.Location[0].Longitude[0]) : 0.0
+      }
+    };
+  }
+
+  private getStopFromStopPoint(stop: any): StopPoint {
+    return {
+      StopPointRef: stop.AtcoCode[0],
+      CommonName: stop.Descriptor[0].CommonName[0],
+      LocalityName: "",
+      LocalityQualifier: "",
+      Location:  {
+        Latitude: 0.0,
+        Longitude: 0.0
       }
     };
   }
