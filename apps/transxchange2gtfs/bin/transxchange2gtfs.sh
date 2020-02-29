@@ -1,3 +1,3 @@
 #!/bin/sh
-":" //# comment; exec /usr/bin/env node --max_old_space_size=4000 "$0" "$@"
+":" //# comment; exec /usr/bin/env node "$0" "$@"
 require("../dist/src/cli.js");

@@ -40,6 +40,13 @@ Or using zip files:
 transxchange2gtfs multiple-transxchange-files.zip /path/*.zip single-transxchange.xml gtfs-output.zip
 ```
 
+On occasion, a large dataset will cause a `heap out of memory issue`. In this case, set the `NODE_OPTIONS` environment variable to increase the heap size.
+For example to set to 8GiB, in a linux shell:
+
+```
+NODE_OPTIONS=--max-old-space-size=8192 transxchange2gtfs transxchange.zip gtfs-output.zip
+```
+
 ## Notes
 
 - All stop times are left in the original timezones (assumed to be local time).
