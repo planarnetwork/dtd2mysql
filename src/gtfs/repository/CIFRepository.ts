@@ -269,7 +269,7 @@ interface AssociationRow {
   wednesday: 0 | 1;
   thursday: 0 | 1;
   friday: 0 | 1;
-  saturda: 0 | 1;
+  saturday: 0 | 1;
   stp_indicator: STP;
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "6.3.24",
+  "version": "6.3.25",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,12 +39,12 @@
     "adm-zip": "^0.4.14",
     "byline": "^5.0.0",
     "csv-write-stream": "^2.0.0",
-    "fs-extra": "^8.1.0",
+    "fs-extra": "^9.0.0",
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.24.0",
     "mysql2": "^2.1.0",
-    "ssh2": "^0.8.8",
-    "ssh2-streams": "^0.4.9",
+    "ssh2": "^0.8.9",
+    "ssh2-streams": "^0.4.10",
     "stream-to-promise": "^2.2.0"
   },
   "engines": {
@@ -52,16 +52,16 @@
   },
   "devDependencies": {
     "@types/byline": "^4.2.31",
-    "@types/chai": "^4.2.10",
+    "@types/chai": "^4.2.11",
     "@types/fs-extra": "^8.1.0",
-    "@types/mocha": "^7.0.1",
-    "@types/node": "^11.15.2",
-    "@types/ssh2": "^0.5.40",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^11.15.7",
+    "@types/ssh2": "^0.5.41",
     "@types/ssh2-streams": "^0.1.6",
     "@types/stream-to-promise": "^2.2.0",
     "chai": "^4.2.0",
-    "mocha": "^7.1.0",
-    "ts-node": "^8.6.2",
+    "mocha": "^7.1.1",
+    "ts-node": "^8.7.0",
     "typescript": "^3.8.3"
   }
 }

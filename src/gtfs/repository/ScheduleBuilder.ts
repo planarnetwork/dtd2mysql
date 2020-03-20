@@ -67,6 +67,8 @@ export class ScheduleBuilder {
   private createSchedule(row: ScheduleStopTimeRow, stops: StopTime[]): Schedule {
     this.maxId = Math.max(this.maxId, row.id);
 
+    const mode = routeTypeIndex.hasOwnProperty(row.train_category) ? routeTypeIndex[row.train_category] : RouteType.Rail;
+
     return new Schedule(
       row.id,
       stops,
@@ -85,10 +87,10 @@ export class ScheduleBuilder {
           6: row.saturday
         }
       ),
-      routeTypeIndex.hasOwnProperty(row.train_category) ? routeTypeIndex[row.train_category] : RouteType.Rail,
+      mode,
       row.atoc_code,
       row.stp_indicator,
-      row.train_class !== "S",
+      mode === RouteType.Rail && row.train_class !== "S",
       row.reservations !== null
     );
   }
