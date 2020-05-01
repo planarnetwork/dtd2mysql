@@ -1,5 +1,9 @@
 tasks:
   - init: npm install
-    command: npm run start
+    before: DATABASE_NAME=$DATABASE_NAME||dtdmysql mysql -u root -e "CREATE DATABASE IF NOT EXISTS $DATABASE_NAME"
+    command: npm run start -- --get-fares
+    command: npm run start -- --get-timetable
+    command: npm run start -- --get-routeing
+    command: npm run start -- --get-nfm64
 image:
   file: .gitpod.Dockerfile
