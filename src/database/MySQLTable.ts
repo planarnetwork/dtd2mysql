@@ -28,7 +28,7 @@ export class MySQLTable {
 
     // if it's a delayed insert, also add a delete entry
     if (row.action === RecordAction.DelayedInsert) {
-      this.buffer[RecordAction.Delete].push({ action: RecordAction.Delete, ...row });
+      this.buffer[RecordAction.Delete].push({ ...row, action: RecordAction.Delete });
     }
     // only flush the buffer it its not a delayed insert (as they are flushed at the end)
     else if (this.buffer[row.action].length >= this.flushLimit) {
