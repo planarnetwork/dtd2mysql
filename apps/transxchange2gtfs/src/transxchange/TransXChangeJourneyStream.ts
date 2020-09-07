@@ -33,6 +33,12 @@ export class TransXChangeJourneyStream extends Transform {
     for (const vehicle of schedule.VehicleJourneys) {
       const service = schedule.Services[vehicle.ServiceRef];
       const journeyPattern = service.StandardService[vehicle.JourneyPatternRef];
+
+      if (!journeyPattern) {
+        console.log(`Warning: missing ${vehicle.JourneyPatternRef} on ${vehicle.ServiceRef}`);
+        continue;
+      }
+
       const sections = journeyPattern.Sections.reduce(
           (acc, s) => acc.concat(schedule.JourneySections[s]),
           [] as TimingLink[]
