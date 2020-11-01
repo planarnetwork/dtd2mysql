@@ -42,7 +42,7 @@ export class TransXChangeStream extends Transform {
     const result: TransXChange = {
       StopPoints: stops,
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
-      Operators: tx.Operators[0].Operator.reduce(this.getOperators, {}),
+      Operators: (tx.Operators[0].Operator || []).concat(tx.Operators[0].LicensedOperator || []).reduce(this.getOperators, {}),
       Services: services,
       VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney
         .map((v: any) => this.getVehicleJourney(v, patternIndex, services))
@@ -104,7 +104,7 @@ export class TransXChangeStream extends Transform {
     index[operator.$.id] = {
       OperatorCode: operator.OperatorCode[0],
       OperatorShortName: operator.OperatorShortName[0],
-      OperatorNameOnLicence: operator.OperatorNameOnLicence && operator.OperatorNameOnLicence[0],
+      OperatorNameOnLicence: operator.OperatorNameOnLicence && (operator.OperatorNameOnLicence[0]._ || operator.OperatorNameOnLicence[0]),
     };
 
     return index;
