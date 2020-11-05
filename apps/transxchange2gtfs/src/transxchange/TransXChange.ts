@@ -163,7 +163,8 @@ export interface VehicleJourney {
   LineRef: string,
   JourneyPatternRef: string,
   DepartureTime: LocalTime,
-  VehicleJourneyCode: string
+  VehicleJourneyCode: string,
+  OperationalBlockNumber?: string
 }
 
 export interface OperatingProfile {

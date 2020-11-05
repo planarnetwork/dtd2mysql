@@ -160,7 +160,8 @@ export class TransXChangeStream extends Transform {
       DepartureTime: LocalTime.parse(vehicle.DepartureTime[0]),
       OperatingProfile: vehicle.OperatingProfile
         ? this.getOperatingProfile(vehicle.OperatingProfile[0])
-        : services[vehicle.ServiceRef[0]].OperatingProfile!
+        : services[vehicle.ServiceRef[0]].OperatingProfile!,
+      OperationalBlockNumber: vehicle.Operational?.[0]?.Block?.[0].BlockNumber?.[0]
     };
   }
 
