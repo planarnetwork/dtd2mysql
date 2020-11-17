@@ -47,6 +47,12 @@ For example to set to 8GiB, in a linux shell:
 NODE_OPTIONS=--max-old-space-size=8192 transxchange2gtfs transxchange.zip gtfs-output.zip
 ```
 
+It's possible to set the default agency URL, language and timezone:
+
+```
+AGENCY_URL=http://agency.com AGENCY_TIMEZONE=Europe/London AGENCY_LANG=en transxchange2gtfs transxchange.zip gtfs-output.zip
+```
+
 ## Notes
 
 - All stop times are left in the original timezones (assumed to be local time).

@@ -3,7 +3,6 @@ import { Transform, TransformCallback } from "stream";
 import parse = require("csv-parse");
 import stringify = require("csv-stringify");
 import * as fs from "fs";
-import {Container} from "./Container";
 
 const exec = promisify(require("child_process").exec);
 const input = process.argv[2];
