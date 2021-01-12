@@ -52,8 +52,8 @@ export class TransXChangeJourneyStream extends Transform {
         const trip = {
           id: this.tripId++,
           shortName: journeyPattern.Direction === "outbound"
-            ? service.ServiceDestination
-            : service.ServiceOrigin,
+            ? service.ServiceDestination || service.Description
+            : service.ServiceOrigin || service.Description,
           direction: journeyPattern.Direction,
         };
 

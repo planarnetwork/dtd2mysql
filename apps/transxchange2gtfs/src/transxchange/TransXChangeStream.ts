@@ -119,8 +119,8 @@ export class TransXChangeStream extends Transform {
       Description: service.Description ? service.Description[0].replace(/[\r\n\t]/g, "") : "",
       Mode: service.Mode ? service.Mode[0] : Mode.Bus,
       StandardService: service.StandardService[0].JourneyPattern.reduce(this.getJourneyPattern, {}),
-      ServiceOrigin: service.StandardService[0].Origin[0],
-      ServiceDestination: service.StandardService[0].Destination[0],
+      ServiceOrigin: service.StandardService[0].Origin?.[0],
+      ServiceDestination: service.StandardService[0].Destination?.[0],
       OperatingProfile: service.OperatingProfile
         ? this.getOperatingProfile(service.OperatingProfile[0])
         : undefined

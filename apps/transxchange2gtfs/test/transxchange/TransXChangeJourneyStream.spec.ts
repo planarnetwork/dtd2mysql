@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import {awaitStream} from "../util";
 import {Duration, LocalDate, LocalTime} from "js-joda";
-import {Holiday, StopActivity} from "../../src/transxchange/TransXChange";
+import {StopActivity} from "../../src/transxchange/TransXChange";
 import {
   BankHolidays,
   TransXChangeJourney,
@@ -375,6 +375,118 @@ describe("TransXChangeJourneyStream", () => {
       chai.expect(rows[5].stops[3].stop).to.equal("010000036");
       chai.expect(rows[5].stops[3].arrivalTime).to.equal("26:05:00");
       chai.expect(rows[5].stops[3].departureTime).to.equal("26:10:00");
+    });
+
+  });
+
+  it("creates a trip name for outward journeys", async () => {
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
+
+    const customTransxchange = Object.assign({}, transxchange, {
+      Services: {
+        "M6_MEGA": {
+          "ServiceOrigin": "Aberdeen",
+          "ServiceDestination": "Bungay",
+          "Description": "Falmouth - Victoria,London",
+          "Lines": {
+            "l_M6_MEGA": "M6"
+          },
+          "Mode": "coach",
+          "OperatingPeriod": {
+            "EndDate": LocalDate.parse("2099-12-31"),
+            "StartDate": LocalDate.parse("2018-06-24")
+          },
+          "RegisteredOperatorRef": "OId_MEGA",
+          "ServiceCode": "M6_MEGA",
+          "StandardService": {
+            "JP384": {
+              "Direction": "outbound",
+              "Sections": ["JPSection-51", "JPSection-77", "JPSection-21"]
+            }
+          }
+        }
+      },
+    })
+
+    stream.write(customTransxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[0].trip.shortName).to.equal("Bungay");
+    });
+
+  });
+
+  it("creates a trip name for return journeys", async () => {
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
+
+    const customTransxchange = Object.assign({}, transxchange, {
+      Services: {
+        "M6_MEGA": {
+          "ServiceOrigin": "Aberdeen",
+          "ServiceDestination": "Bungay",
+          "Description": "Falmouth - Victoria,London",
+          "Lines": {
+            "l_M6_MEGA": "M6"
+          },
+          "Mode": "coach",
+          "OperatingPeriod": {
+            "EndDate": LocalDate.parse("2099-12-31"),
+            "StartDate": LocalDate.parse("2018-06-24")
+          },
+          "RegisteredOperatorRef": "OId_MEGA",
+          "ServiceCode": "M6_MEGA",
+          "StandardService": {
+            "JP384": {
+              "Direction": "inbound",
+              "Sections": ["JPSection-51", "JPSection-77", "JPSection-21"]
+            }
+          }
+        }
+      },
+    })
+
+    stream.write(customTransxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[0].trip.shortName).to.equal("Aberdeen");
+    });
+
+  });
+
+  it("creates a trip name where there is no service origin or destination", async () => {
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
+
+    const customTransxchange = Object.assign({}, transxchange, {
+      Services: {
+        "M6_MEGA": {
+          "Description": "Falmouth - Victoria,London",
+          "Lines": {
+            "l_M6_MEGA": "M6"
+          },
+          "Mode": "coach",
+          "OperatingPeriod": {
+            "EndDate": LocalDate.parse("2099-12-31"),
+            "StartDate": LocalDate.parse("2018-06-24")
+          },
+          "RegisteredOperatorRef": "OId_MEGA",
+          "ServiceCode": "M6_MEGA",
+          "StandardService": {
+            "JP384": {
+              "Direction": "outbound",
+              "Sections": ["JPSection-51", "JPSection-77", "JPSection-21"]
+            }
+          }
+        }
+      },
+    })
+
+    stream.write(customTransxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      chai.expect(rows[0].trip.shortName).to.equal("Falmouth - Victoria,London");
     });
 
   });

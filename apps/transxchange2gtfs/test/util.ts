@@ -1,7 +1,7 @@
 import {Transform} from "stream";
 
 export function awaitStream<T>(stream: Transform, fn: StreamTest<T>) {
-  return new Promise(resolve => {
+  return new Promise<void>(resolve => {
     const data: T[] = [];
 
     stream.on("data", row => data.push(row));
