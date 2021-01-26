@@ -95,7 +95,7 @@ export class ImportFeedCommand implements CLICommand {
     return this.db.query(`
       CREATE TABLE IF NOT EXISTS log ( 
         id INT(11) unsigned not null primary key auto_increment, 
-        filename VARCHAR(12), 
+        filename VARCHAR(255), 
         processed DATETIME 
       )
     `);
