@@ -165,7 +165,7 @@ const routeTypeIndex: object = {
   "OO": RouteType.Rail,
   "XX": RouteType.Rail,
   "XZ": RouteType.Rail,
-  "BR": RouteType.Gondola,
+  "BR": RouteType.ReplacementBus,
   "BS": RouteType.Bus,
   "OL": RouteType.Subway,
   "XC": RouteType.Rail,

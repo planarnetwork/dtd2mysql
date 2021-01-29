@@ -95,7 +95,7 @@ export class Schedule implements OverlayRecord {
       case RouteType.Subway: return "Underground";
       case RouteType.Tram: return "Tram";
       case RouteType.Bus: return "Bus";
-      case RouteType.Gondola: return "Replacement bus";
+      case RouteType.ReplacementBus: return "Replacement bus";
       case RouteType.Ferry: return "Boat";
       default: return "Train";
     }
