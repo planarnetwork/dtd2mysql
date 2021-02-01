@@ -40,11 +40,17 @@ export class TransXChangeJourneyStream extends Transform {
       }
 
       const sections = journeyPattern.Sections.reduce(
-          (acc, s) => acc.concat(schedule.JourneySections[s]),
+          (acc, s) => {
+            if (schedule.JourneySections[s]) {
+              acc.push(...schedule.JourneySections[s]);
+            }
+
+            return acc;
+          },
           [] as TimingLink[]
       );
 
-      if (sections.length > 0) {
+      if (sections.length > 0 && sections) {
         const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
         const stops = this.getStopTimes(sections, vehicle.DepartureTime);
         const route = vehicle.ServiceRef;
