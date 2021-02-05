@@ -18,6 +18,8 @@ import {TripsStream} from "./gtfs/TripsStream";
 import {StopTimesStream} from "./gtfs/StopTimesStream";
 import * as fs from "fs";
 import {TransfersStream} from "./gtfs/TransfersStream";
+import { GetStopData } from "./converter/GetStopData";
+import { FileDownload } from "./http/FileDownload";
 
 const exec = promisify(require("child_process").exec);
 
@@ -27,7 +29,13 @@ const exec = promisify(require("child_process").exec);
 export class Container {
   public static readonly TMP = "/tmp/transxchange2gtfs/";
 
-  public async getConverter(): Promise<Converter> {
+  public async getConverter(refresh: boolean): Promise<Converter> {
+    if (!fs.existsSync("/tmp/Stops.csv") || refresh) {
+      console.log("Downloading latest from NAPTAN.");
+      await new GetStopData(new FileDownload()).update();
+      console.log("Done");
+    }
+
     const files = new FileStream();
     const xml = new XMLStream(this.getParseXML());
     const transxchange = new TransXChangeStream();
@@ -52,13 +60,8 @@ export class Container {
   }
 
   public async getNaPTANIndexes(): Promise<[NaPTANIndex, StopLocationIndex]> {
-    const stopsZip = __dirname + "/../resource/Stops.zip";
-    const stopsCSV = "/tmp/transxchange2gtfs_stops/";
-
-    await exec("unzip -uo " + stopsZip + " -d " + stopsCSV, { maxBuffer: Number.MAX_SAFE_INTEGER });
-
     const naptanFactory = new NaPTANFactory(
-      fs.createReadStream(stopsCSV + "Stops.csv", "utf8").pipe(parse())
+      fs.createReadStream("/tmp/Stops.csv", "utf8").pipe(parse())
     );
 
     return naptanFactory.getIndexes();

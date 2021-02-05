@@ -17,13 +17,18 @@ There are other [similar projects](https://github.com/search?q=transxchange+gtfs
 
 ## Installation
 
-Please note that zip/unzip and [node 10.x](https://nodejs.org) or above are required. As zip/unzip are required this program will not currently run on Windows.
+Please note that zip/unzip and [node 14.x](https://nodejs.org) or above are required. As zip/unzip are required this program will not currently run on Windows.
 
 transxchange2gtfs is a CLI tool that can be installed via NPM:
 
 ```
-sudo apt-get install nodejs zip
 npm install -g transxchange2gtfs
+```
+
+or used directly with npx:
+
+```
+npx transxchange2gtfs ...
 ```
 
 ## Usage
@@ -51,6 +56,12 @@ It's possible to set the default agency URL, language and timezone:
 
 ```
 AGENCY_URL=http://agency.com AGENCY_TIMEZONE=Europe/London AGENCY_LANG=en transxchange2gtfs transxchange.zip gtfs-output.zip
+```
+
+On first run transxchange2gtfs will download the latest Stop data from NaPTAN. If you would like to force a refresh of the data add `--update-stops`.
+
+```
+transxchange2gtfs --update-stops  transxchange.zip gtfs-output.zip
 ```
 
 ## Notes

@@ -1,18 +1,16 @@
-import {Transform, TransformCallback} from "stream";
-import {promisify} from "util";
+import { Transform, TransformCallback } from "stream";
+import { promisify } from "util";
 import * as fs from "fs";
-import {parse} from "path";
-import {Container} from "../Container";
+import { parse } from "path";
+import * as yauzl from "yauzl";
+import ReadableStream = NodeJS.ReadableStream;
 
 const readFile = promisify(fs.readFile);
-const exec = promisify(require("child_process").exec);
-const glob = promisify(require("glob"));
 
 /**
  * Reads a set of XML or zip files and emits the contents downstream
  */
 export class FileStream extends Transform {
-  private zipIndex = 0;
 
   constructor() {
     super({ objectMode: true });
@@ -43,18 +41,51 @@ export class FileStream extends Transform {
     this.push(contents);
   }
 
-  private async readZip(file: string): Promise<any> {
-    console.log("Extracting " + file);
-    const outputDir = Container.TMP + this.zipIndex++ + "/";
-    const path = file.replace(/(\s+)/g, "\\$1");
+  private async readZip(file: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log("Processing zip " + file);
 
-    await exec("unzip -uo " + path + " -d " + outputDir, { maxBuffer: Number.MAX_SAFE_INTEGER });
+      yauzl.open(file, { lazyEntries: true }, (err, zip) => {
+        if (err || !zip) {
+          return reject(err);
+        }
 
-    const files: string[] = await glob(outputDir + "**/*.xml");
+        zip.readEntry();
+        zip.on("close", resolve);
+        zip.on("entry", entry => {
+          if (entry.fileName.toLowerCase().endsWith(".xml")) {
+            console.log("Processing " + entry.fileName);
 
-    for (const f of files) {
-      await this.readFile(f);
-    }
+            zip.openReadStream(entry, async (error, stream) => {
+              if (error || !stream)  {
+                console.log(error);
+              } else {
+                try {
+                  this.push(await this.streamToString(stream));
+                } catch (e) {
+                  console.log(e);
+                }
+              }
+
+              zip.readEntry();
+            });
+          } else {
+            zip.readEntry();
+          }
+        });
+      });
+    });
   }
+
+  private streamToString(stream: ReadableStream): Promise<string> {
+    const chunks = [] as Uint8Array[];
+
+    return new Promise((resolve, reject) => {
+      stream.on("data", chunk => chunks.push(chunk));
+      stream.on("error", reject);
+      stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    });
+  }
+
 
 }

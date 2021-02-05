@@ -1,12 +1,12 @@
 import {FileStream} from "./FileStream";
 import autobind from "autobind-decorator";
-import {promisify} from "util";
 import {Writable} from "stream";
 import {Container} from "../Container";
 import * as fs from "fs";
 import {sync as rimraf} from "rimraf";
+import { ZipFile } from "yazl";
+import ReadableStream = NodeJS.ReadableStream;
 
-const exec = promisify(require("child_process").exec);
 
 /**
  * Converts the TransXChange input stream to a GTFS zip output stream
@@ -16,7 +16,7 @@ export class Converter {
 
   constructor(
     private readonly inputStream: FileStream,
-    private readonly gtfsFiles: Record<string, Writable>,
+    private readonly gtfsFiles: Record<string, ReadableStream>,
   ) {}
 
   /**
@@ -36,10 +36,18 @@ export class Converter {
       .map(file => this.gtfsFiles[file].pipe(fs.createWriteStream(Container.TMP + file)));
 
     await this.streamsFinished(streams);
-    console.log("Zipping...");
-    await exec(`zip -j ${output} ${Container.TMP}*.txt`, { maxBuffer: Number.MAX_SAFE_INTEGER });
-    console.log("Complete.");
 
+    const zipFile = new ZipFile();
+
+    for (const file in this.gtfsFiles) {
+      zipFile.addFile(Container.TMP + file, file);
+    }
+
+    zipFile.end();
+
+    await this.writeToFile(zipFile.outputStream, output);
+
+    console.log("Complete.");
     console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
   }
 
@@ -60,10 +68,21 @@ export class Converter {
   }
 
   private streamsFinished(streams: Writable[]): Promise<any> {
-    const promises = streams.map(s => new Promise(resolve => s.on("finish", resolve)));
+    const promises = streams.map(s => new Promise((resolve, reject) => {
+      s.on("finish", resolve);
+      s.on("error", reject);
+    }));
 
     return Promise.all(promises);
   }
 
+  private writeToFile(outputStream: ReadableStream, output: string): Promise<void> {
+    const stream = outputStream.pipe(fs.createWriteStream(output));
+
+    return new Promise((resolve, reject) => {
+      stream.on("close", resolve);
+      stream.on("error", reject);
+    });
+  }
 }
 

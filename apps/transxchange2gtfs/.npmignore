@@ -9,6 +9,5 @@ tsconfig.json
 gtfs.zip
 resource/
 *.txt
-dist/resource/Stops.csv
 .nyc_output/
 report*.json

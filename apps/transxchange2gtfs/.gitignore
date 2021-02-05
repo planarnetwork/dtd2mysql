@@ -5,6 +5,5 @@ npm-debug.log
 dist/
 gtfs.zip
 *.txt
-resource/Stops.csv
 .nyc_output/
 report*.json

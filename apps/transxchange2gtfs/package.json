@@ -1,6 +1,6 @@
 {
   "name": "transxchange2gtfs",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "Converts transxchange data to GTFS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,8 +8,7 @@
     "transxchange2gtfs": "bin/transxchange2gtfs.sh"
   },
   "scripts": {
-    "start": "NODE_OPTIONS='--max-old-space-size=4000' ts-node src/cli.ts",
-    "create-stops": "ts-node src/generate-stops-zip.ts",
+    "start": "ts-node src/cli.ts",
     "prepublishOnly": "rm -r dist;tsc -p ./ --outDir dist/; cp -r ./resource ./dist/",
     "test": "npm run lint && mocha --require ts-node/register **/*.spec.ts",
     "lint-raw": "tslint --project tsconfig.json",
@@ -42,6 +41,8 @@
     "@types/node": "^14.14.20",
     "@types/rimraf": "^3.0.0",
     "@types/xml2js": "^0.4.7",
+    "@types/yauzl": "^2.9.1",
+    "@types/yazl": "^2.4.2",
     "chai": "^4.2.0",
     "mocha": "^8.2.1",
     "nyc": "^15.1.0",
@@ -56,7 +57,9 @@
     "glob": "^7.1.6",
     "js-joda": "^1.11.0",
     "rimraf": "^3.0.2",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "yauzl": "^2.10.0",
+    "yazl": "^2.5.1"
   },
   "nyc": {
     "extends": "@istanbul/nyc-config-typescript",
