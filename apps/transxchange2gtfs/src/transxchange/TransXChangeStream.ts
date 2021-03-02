@@ -102,7 +102,7 @@ export class TransXChangeStream extends Transform {
 
   private getOperators(index: Operators, operator: any): Operators {
     index[operator.$.id] = {
-      OperatorCode: operator.OperatorCode[0],
+      OperatorCode: operator.OperatorCode ? operator.OperatorCode[0] : operator.NationalOperatorCode[0],
       OperatorShortName: operator.OperatorShortName[0],
       OperatorNameOnLicence: operator.OperatorNameOnLicence && (operator.OperatorNameOnLicence[0]._ || operator.OperatorNameOnLicence[0]),
     };
