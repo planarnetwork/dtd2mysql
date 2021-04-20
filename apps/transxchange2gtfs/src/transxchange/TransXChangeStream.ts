@@ -53,21 +53,21 @@ export class TransXChangeStream extends Transform {
 
   private getStopFromAnnotatedStopPointRef(stop: any): StopPoint {
     return {
-      StopPointRef: stop.StopPointRef[0],
-      CommonName: stop.CommonName[0],
-      LocalityName: stop.LocalityName ? stop.LocalityName[0] : "",
-      LocalityQualifier: stop.LocalityQualifier ? stop.LocalityQualifier[0] : "",
+      StopPointRef: stop?.StopPointRef?.[0] ?? "",
+      CommonName: stop?.CommonName?.[0] ?? "",
+      LocalityName: stop?.LocalityName?.[0] ? stop.LocalityName[0] : "",
+      LocalityQualifier: stop?.LocalityQualifier?.[0] ? stop.LocalityQualifier[0] : "",
       Location:  {
-        Latitude: stop.Location && stop.Location[0].Latitude ? Number(stop.Location[0].Latitude[0]) : 0.0,
-        Longitude: stop.Location && stop.Location[0].Longitude ? Number(stop.Location[0].Longitude[0]) : 0.0
+        Latitude: stop?.Location?.[0]?.Latitude ? Number(stop.Location[0].Latitude[0]) : 0.0,
+        Longitude: stop?.Location?.[0]?.Longitude ? Number(stop.Location[0].Longitude[0]) : 0.0
       }
     };
   }
 
   private getStopFromStopPoint(stop: any): StopPoint {
     return {
-      StopPointRef: stop.AtcoCode[0],
-      CommonName: stop.Descriptor[0].CommonName[0],
+      StopPointRef: stop?.AtcoCode?.[0] ?? "",
+      CommonName: stop?.Descriptor?.[0]?.CommonName?.[0] ?? "",
       LocalityName: "",
       LocalityQualifier: "",
       Location:  {
@@ -85,26 +85,26 @@ export class TransXChangeStream extends Transform {
 
   private getLink(l: any): TimingLink {
     return {
-      From: this.getJourneyStop(l.From[0]),
-      To: this.getJourneyStop(l.To[0]),
-      RunTime: Duration.parse(l.RunTime[0])
+      From: this.getJourneyStop(l?.From?.[0] ?? ""),
+      To: this.getJourneyStop(l?.To?.[0] ?? ""),
+      RunTime: Duration.parse(l?.RunTime?.[0] ?? "")
     };
   }
 
   private getJourneyStop(stop: any): JourneyStop {
     return {
-      Activity: stop.Activity ? stop.Activity[0] : StopActivity.PickUpAndSetDown,
-      StopPointRef: stop.StopPointRef[0],
-      TimingStatus: stop.TimingStatus[0],
-      WaitTime: stop.WaitTime && Duration.parse(stop.WaitTime[0])
+      Activity: stop?.Activity?.[0] ? stop.Activity[0] : StopActivity.PickUpAndSetDown,
+      StopPointRef: stop?.StopPointRef?.[0] ?? "",
+      TimingStatus: stop?.TimingStatus?.[0] ?? "",
+      WaitTime: stop?.WaitTime?.[0] && Duration.parse(stop.WaitTime[0])
     };
   }
 
   private getOperators(index: Operators, operator: any): Operators {
     index[operator.$.id] = {
-      OperatorCode: operator.OperatorCode ? operator.OperatorCode[0] : operator.NationalOperatorCode[0],
-      OperatorShortName: operator.OperatorShortName[0],
-      OperatorNameOnLicence: operator.OperatorNameOnLicence && (operator.OperatorNameOnLicence[0]._ || operator.OperatorNameOnLicence[0]),
+      OperatorCode: operator?.OperatorCode?.[0] ? operator.OperatorCode[0] : operator?.NationalOperatorCode?.[0] ?? "",
+      OperatorShortName: operator?.OperatorShortName?.[0] ?? "",
+      OperatorNameOnLicence: operator?.OperatorNameOnLicence?.[0] && (operator.OperatorNameOnLicence[0]?._ ?? operator.OperatorNameOnLicence[0] ?? ""),
     };
 
     return index;
