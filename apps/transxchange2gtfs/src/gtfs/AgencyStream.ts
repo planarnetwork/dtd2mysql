@@ -13,13 +13,14 @@ export class AgencyStream extends GTFSFileStream<TransXChange> {
 
   protected transform(data: TransXChange): void {
     for (const operatorId of Object.keys(data.Operators)) {
-      if (!this.agenciesSeen[operatorId]) {
+      const operatorKey = [operatorId, data.Operators[operatorId].OperatorCode].filter(s => s).join("_");
+      if (!this.agenciesSeen[operatorKey]) {
         const operator = data.Operators[operatorId];
         const agencyName = operator.OperatorNameOnLicence || operator.OperatorShortName;
 
-        this.pushLine(operatorId, agencyName, this.agencyUrl, this.agencyTimezone, this.agencyLang, "", "");
+        this.pushLine(operatorKey, agencyName, this.agencyUrl, this.agencyTimezone, this.agencyLang, "", "");
 
-        this.agenciesSeen[operatorId] = true;
+        this.agenciesSeen[operatorKey] = true;
       }
     }
   }

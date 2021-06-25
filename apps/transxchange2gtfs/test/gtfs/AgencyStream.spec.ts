@@ -24,7 +24,7 @@ describe("AgencyStream", () => {
     return awaitStream(stream, (rows: string[]) => {
       const [agency_id, agency_name, agency_url, agency_timezone, agency_lang] = splitCSV(rows[1]);
 
-      chai.expect(agency_id).to.equal("ID");
+      chai.expect(agency_id).to.equal("ID_Code");
       chai.expect(agency_name).to.equal("Name");
       chai.expect(agency_url).to.equal("http://agency.com");
       chai.expect(agency_timezone).to.equal("Europe/London");
@@ -54,7 +54,7 @@ describe("AgencyStream", () => {
     return awaitStream(stream, (rows: string[]) => {
       const [agency_id, agency_name, agency_url, agency_timezone, agency_lang] = splitCSV(rows[1]);
 
-      chai.expect(agency_id).to.equal("ID");
+      chai.expect(agency_id).to.equal("ID_Code");
       chai.expect(agency_name).to.equal("Name");
       chai.expect(agency_url).to.equal("http://example.org");
       chai.expect(agency_timezone).to.equal("Portugal/Lisbon");
