@@ -1,6 +1,6 @@
 import {
   DateRange,
-  DaysOfWeek,
+  DaysOfWeek, Holiday,
   JourneyPatterns,
   JourneyPatternSections,
   JourneyStop,
@@ -166,7 +166,7 @@ export class TransXChangeStream extends Transform {
   }
 
   private getOperatingProfile(profile: any): OperatingProfile {
-    const result = {
+    const result: OperatingProfile = {
       BankHolidayOperation: {
         DaysOfOperation: [],
         DaysOfNonOperation: []
@@ -180,20 +180,41 @@ export class TransXChangeStream extends Transform {
         : "HolidaysOnly" as "HolidaysOnly"
     };
 
-    if (profile.BankHolidayOperation && profile.BankHolidayOperation[0].DaysOfOperation && profile.BankHolidayOperation[0].DaysOfOperation[0]) {
-      result.BankHolidayOperation.DaysOfOperation = profile.BankHolidayOperation[0].DaysOfOperation.map((bh: any) => Object.keys(bh)[0]);
+    if (profile.BankHolidayOperation?.[0].DaysOfOperation?.[0]) {
+      result.BankHolidayOperation.DaysOfOperation = this.getHolidays(profile.BankHolidayOperation[0].DaysOfOperation[0]);
+
+      if (profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday) {
+        result.SpecialDaysOperation.DaysOfOperation.push(this.getHolidayDate(profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday[0].Date[0]));
+      }
     }
-    if (profile.BankHolidayOperation && profile.BankHolidayOperation[0].DaysOfNonOperation && profile.BankHolidayOperation[0].DaysOfNonOperation[0]) {
-      result.BankHolidayOperation.DaysOfNonOperation = profile.BankHolidayOperation[0].DaysOfNonOperation.map((bh: any) => Object.keys(bh)[0]);
+    if (profile.BankHolidayOperation?.[0].DaysOfNonOperation?.[0]) {
+      result.BankHolidayOperation.DaysOfNonOperation = this.getHolidays(profile.BankHolidayOperation[0].DaysOfNonOperation[0]);
+
+      if (profile.BankHolidayOperation[0].DaysOfNonOperation[0].OtherPublicHoliday) {
+        result.SpecialDaysOperation.DaysOfNonOperation.push(this.getHolidayDate(profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday[0].Date[0]));
+      }
     }
-    if (profile.SpecialDaysOperation && profile.SpecialDaysOperation[0].DaysOfOperation && profile.SpecialDaysOperation[0].DaysOfOperation[0]) {
+    if (profile.SpecialDaysOperation?.[0].DaysOfOperation?.[0]) {
       result.SpecialDaysOperation.DaysOfOperation = profile.SpecialDaysOperation[0].DaysOfOperation[0].DateRange.map(this.getDateRange);
     }
-    if (profile.SpecialDaysOperation && profile.SpecialDaysOperation[0].DaysOfNonOperation && profile.SpecialDaysOperation[0].DaysOfNonOperation[0]) {
+    if (profile.SpecialDaysOperation?.[0].DaysOfNonOperation?.[0]) {
       result.SpecialDaysOperation.DaysOfNonOperation = profile.SpecialDaysOperation[0].DaysOfNonOperation[0].DateRange.map(this.getDateRange);
     }
 
     return result;
+  }
+
+  private getHolidays(days: any): Holiday[] {
+    return Object
+      .keys(days)
+      .filter(k => k !== "OtherPublicHoliday") as Holiday[];
+  }
+
+  private getHolidayDate(date: any): DateRange {
+    const StartDate = LocalDate.parse(date);
+    const EndDate = StartDate;
+
+    return { StartDate, EndDate };
   }
 
   private getDaysOfWeek(days: any): DaysOfWeek[] {
