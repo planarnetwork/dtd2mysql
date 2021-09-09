@@ -35,7 +35,7 @@ export class Schedule implements OverlayRecord {
   }
 
   public get hash(): string {
-    return this.tuid + this.stopTimes.map(s => s.stop_id + s.departure_time + s.arrival_time).join("") + this.calendar.binaryDays;
+    return this.tuid + this.mode + this.stopTimes.map(s => s.stop_id + s.departure_time + s.arrival_time).join("") + this.calendar.binaryDays;
   }
 
   /**
