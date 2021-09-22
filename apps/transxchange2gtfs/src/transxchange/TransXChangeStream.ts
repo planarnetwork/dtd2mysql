@@ -184,14 +184,18 @@ export class TransXChangeStream extends Transform {
       result.BankHolidayOperation.DaysOfOperation = this.getHolidays(profile.BankHolidayOperation[0].DaysOfOperation[0]);
 
       if (profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday) {
-        result.SpecialDaysOperation.DaysOfOperation.push(this.getHolidayDate(profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday[0].Date[0]));
+        const operationDates = profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday
+          .map((d: any) => this.getHolidayDate(d.Date[0]));
+        result.SpecialDaysOperation.DaysOfOperation.push(...operationDates);
       }
     }
     if (profile.BankHolidayOperation?.[0].DaysOfNonOperation?.[0]) {
       result.BankHolidayOperation.DaysOfNonOperation = this.getHolidays(profile.BankHolidayOperation[0].DaysOfNonOperation[0]);
 
       if (profile.BankHolidayOperation[0].DaysOfNonOperation[0].OtherPublicHoliday) {
-        result.SpecialDaysOperation.DaysOfNonOperation.push(this.getHolidayDate(profile.BankHolidayOperation[0].DaysOfOperation[0].OtherPublicHoliday[0].Date[0]));
+        const nonOperationDates = profile.BankHolidayOperation[0].DaysOfNonOperation[0].OtherPublicHoliday
+          .map((d: any) => this.getHolidayDate(d.Date[0]));
+        result.SpecialDaysOperation.DaysOfNonOperation.push(...nonOperationDates);
       }
     }
     if (profile.SpecialDaysOperation?.[0].DaysOfOperation?.[0]) {
