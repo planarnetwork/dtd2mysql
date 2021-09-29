@@ -123,7 +123,9 @@ export class TransXChangeStream extends Transform {
       ServiceDestination: service.StandardService[0].Destination?.[0],
       OperatingProfile: service.OperatingProfile
         ? this.getOperatingProfile(service.OperatingProfile[0])
-        : undefined
+        : service.StandardService[0].JourneyPattern?.[0].OperatingProfile?.[0]
+          ? this.getOperatingProfile(service.StandardService[0].JourneyPattern?.[0].OperatingProfile[0])
+          : undefined
     };
 
     return index;
