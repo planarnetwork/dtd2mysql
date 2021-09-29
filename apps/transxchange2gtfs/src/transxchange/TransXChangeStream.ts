@@ -42,7 +42,7 @@ export class TransXChangeStream extends Transform {
     const result: TransXChange = {
       StopPoints: stops,
       JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
-      Operators: (tx.Operators[0].Operator || []).concat(tx.Operators[0].LicensedOperator || []).reduce(this.getOperators, {}),
+      Operators: (tx.Operators?.[0].Operator || []).concat(tx.Operators?.[0].LicensedOperator || []).reduce(this.getOperators, {}),
       Services: services,
       VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney
         .map((v: any) => this.getVehicleJourney(v, patternIndex, services))
