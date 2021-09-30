@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { parse } from "path";
 import * as yauzl from "yauzl";
 import ReadableStream = NodeJS.ReadableStream;
+import { ZipFile } from "yauzl";
 
 const readFile = promisify(fs.readFile);
 
@@ -47,43 +48,75 @@ export class FileStream extends Transform {
 
       yauzl.open(file, { lazyEntries: true }, (err, zip) => {
         if (err || !zip) {
-          return reject(err);
+          return reject(err!);
         }
 
-        zip.readEntry();
-        zip.on("close", resolve);
-        zip.on("entry", entry => {
-          if (entry.fileName.toLowerCase().endsWith(".xml")) {
-            console.log("Processing " + entry.fileName);
-
-            zip.openReadStream(entry, async (error, stream) => {
-              if (error || !stream)  {
-                console.log(error);
-              } else {
-                try {
-                  this.push(await this.streamToString(stream));
-                } catch (e) {
-                  console.log(e);
-                }
-              }
-
-              zip.readEntry();
-            });
-          } else {
-            zip.readEntry();
-          }
-        });
+        this.processZipFile(zip)
+          .then(resolve)
+          .catch(reject);
       });
     });
   }
 
-  private streamToString(stream: ReadableStream): Promise<string> {
+  private async readInlineZip(file: Buffer): Promise<void> {
+    return new Promise((resolve, reject) => {
+      yauzl.fromBuffer(file, { lazyEntries: true }, (err, zip) => {
+        if (err || !zip) {
+          return reject(err!);
+        }
+
+        this.processZipFile(zip)
+          .then(resolve)
+          .catch(reject);
+      });
+    });
+  }
+
+  private async processZipFile(zip: ZipFile): Promise<void> {
+    return new Promise<void>(resolve => {
+      zip.readEntry();
+      zip.on("end", resolve);
+      zip.on("entry", entry => {
+        const isXml = entry.fileName.toLowerCase().endsWith(".xml");
+        const isZip = entry.fileName.toLowerCase().endsWith(".zip");
+
+        if (isXml || isZip) {
+          console.log("Processing " + entry.fileName);
+
+          zip.openReadStream(entry, async (error, stream) => {
+            if (error || !stream)  {
+              console.log(error);
+            } else {
+              try {
+                const buffer = await this.streamToBuffer(stream);
+
+                if (isXml) {
+                  this.push(buffer.toString("utf8"));
+                } else {
+                  await this.readInlineZip(buffer);
+                }
+              } catch (e) {
+                console.log(e);
+              }
+            }
+
+            zip.readEntry();
+          });
+        } else {
+          console.log("Skipping " + entry.fileName);
+          zip.readEntry();
+        }
+      });
+    });
+  }
+
+  private streamToBuffer(stream: ReadableStream): Promise<Buffer> {
     const chunks = [] as Uint8Array[];
 
     return new Promise((resolve, reject) => {
       stream.on("data", chunk => chunks.push(chunk));
       stream.on("error", reject);
-      stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      stream.on("end", () => resolve(Buffer.concat(chunks)));
     });
   }
 

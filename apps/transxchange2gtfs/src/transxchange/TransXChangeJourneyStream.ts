@@ -4,7 +4,7 @@ import {
   OperatingProfile,
   Service, StopActivity,
   TimingLink,
-  TransXChange
+  TransXChange, VehicleJourney
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -31,43 +31,42 @@ export class TransXChangeJourneyStream extends Transform {
   public _transform(schedule: TransXChange, encoding: string, callback: TransformCallback): void {
 
     for (const vehicle of schedule.VehicleJourneys) {
-      const service = schedule.Services[vehicle.ServiceRef];
-      const journeyPattern = service.StandardService[vehicle.JourneyPatternRef];
-
-      if (!journeyPattern) {
-        console.log(`Warning: missing ${vehicle.JourneyPatternRef} on ${vehicle.ServiceRef}`);
-        continue;
-      }
-
-      const sections = journeyPattern.Sections.reduce(
-          (acc, s) => {
-            if (schedule.JourneySections[s]) {
-              acc.push(...schedule.JourneySections[s]);
-            }
-
-            return acc;
-          },
-          [] as TimingLink[]
-      );
-
-      if (sections.length > 0 && sections) {
-        const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
-        const stops = this.getStopTimes(sections, vehicle.DepartureTime);
-        const route = vehicle.ServiceRef;
-        const blockId = vehicle.OperationalBlockNumber;
-        const trip = {
-          id: this.tripId++,
-          shortName: journeyPattern.Direction === "outbound"
-            ? service.ServiceDestination || service.Description
-            : service.ServiceOrigin || service.Description,
-          direction: journeyPattern.Direction,
-        };
-
-        this.push({calendar, stops, trip, route, blockId});
+      try {
+        this.processVehicle(schedule, vehicle);
+      } catch (err) {
+        console.log(err);
       }
     }
 
     callback();
+  }
+
+  private processVehicle(schedule: TransXChange, vehicle: VehicleJourney) {
+    const service = schedule.Services[vehicle.ServiceRef];
+    const journeyPattern = service.StandardService[vehicle.JourneyPatternRef];
+
+    if (!journeyPattern) {
+      console.log(`Warning: missing ${vehicle.JourneyPatternRef} on ${vehicle.ServiceRef}`);
+      return;
+    }
+
+    const sections = journeyPattern.Sections.flatMap(s => schedule.JourneySections[s] || []);
+
+    if (sections.length > 0 && vehicle.OperatingProfile) {
+      const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
+      const stops = this.getStopTimes(sections, vehicle.DepartureTime);
+      const route = vehicle.ServiceRef;
+      const blockId = vehicle.OperationalBlockNumber;
+      const trip = {
+        id: this.tripId++,
+        shortName: journeyPattern.Direction === "outbound"
+          ? service.ServiceDestination || service.Description
+          : service.ServiceOrigin || service.Description,
+        direction: journeyPattern.Direction,
+      };
+
+      this.push({calendar, stops, trip, route, blockId});
+    }
   }
 
   private getCalendar(operatingProfile: OperatingProfile, service: Service): JourneyCalendar {

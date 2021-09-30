@@ -45,6 +45,8 @@ Or using zip files:
 transxchange2gtfs multiple-transxchange-files.zip /path/*.zip single-transxchange.xml gtfs-output.zip
 ```
 
+Prior to version 1.9.0 nested zip files we're ignored. They are now processed recursively.
+
 On occasion, a large dataset will cause a `heap out of memory issue`. In this case, set the `NODE_OPTIONS` environment variable to increase the heap size.
 For example to set to 8GiB, in a linux shell:
 
@@ -63,6 +65,10 @@ On first run transxchange2gtfs will download the latest Stop data from NaPTAN. I
 ```
 transxchange2gtfs --update-stops  transxchange.zip gtfs-output.zip
 ```
+
+## Requirements
+
+Node.js version >= 12 is required.
 
 ## Notes
 
