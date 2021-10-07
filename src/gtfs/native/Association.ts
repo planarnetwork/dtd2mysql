@@ -84,16 +84,14 @@ export class Association implements OverlayRecord {
     let assocStop: StopTime;
     let end: StopTime[];
 
-    if (this.assocType === AssociationType.Split) {
-      tuid = base.tuid + "_" + assoc.tuid;
+    tuid = base.tuid + "_" + assoc.tuid;
 
+    if (this.assocType === AssociationType.Split) {
       start = base.before(this.assocLocation);
       assocStop = this.mergeAssociationStop(base.stopAt(this.assocLocation), assoc.stopAt(this.assocLocation));
       end = assoc.after(this.assocLocation);
     }
     else {
-      tuid = assoc.tuid + "_" + base.tuid;
-
       start = assoc.before(this.assocLocation);
       assocStop = this.mergeAssociationStop(assoc.stopAt(this.assocLocation), base.stopAt(this.assocLocation));
       end = base.after(this.assocLocation)
