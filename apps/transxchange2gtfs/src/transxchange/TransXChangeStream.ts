@@ -33,21 +33,31 @@ export class TransXChangeStream extends Transform {
    */
   public _transform(data: any, encoding: string, callback: TransformCallback): void {
     const tx = data.TransXChange;
-    const patternIndex = tx.VehicleJourneys[0].VehicleJourney.reduce(this.getJourneyPatternIndex, {});
-    const services = tx.Services[0].Service.reduce(this.getServices, {});
-    const stops = tx.StopPoints[0].AnnotatedStopPointRef
+
+    if (!tx.VehicleJourneys[0].VehicleJourney) {
+      console.warn("Skipping invalid journey");
+      return callback();
+    }
+
+    let result: TransXChange | undefined;
+
+    try {
+      const patternIndex = tx.VehicleJourneys[0].VehicleJourney.reduce(this.getJourneyPatternIndex, {});
+      const services = tx.Services[0].Service.reduce(this.getServices, {});
+      const stops = tx.StopPoints[0].AnnotatedStopPointRef
         ? tx.StopPoints[0].AnnotatedStopPointRef.map(this.getStopFromAnnotatedStopPointRef)
         : tx.StopPoints[0].StopPoint.map(this.getStopFromStopPoint);
 
-    const result: TransXChange = {
-      StopPoints: stops,
-      JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
-      Operators: (tx.Operators?.[0].Operator || []).concat(tx.Operators?.[0].LicensedOperator || []).reduce(this.getOperators, {}),
-      Services: services,
-      VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney
-        .map((v: any) => this.getVehicleJourney(v, patternIndex, services))
-    };
-
+      result = {
+        StopPoints: stops,
+        JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
+        Operators: (tx.Operators?.[0].Operator || []).concat(tx.Operators?.[0].LicensedOperator || []).reduce(this.getOperators, {}),
+        Services: services,
+        VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney.map((v: any) => this.getVehicleJourney(v, patternIndex, services))
+      };
+    } catch (err) {
+      console.warn(err);
+    }
     callback(undefined, result);
   }
 
