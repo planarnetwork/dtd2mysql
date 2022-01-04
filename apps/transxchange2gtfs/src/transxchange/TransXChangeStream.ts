@@ -34,7 +34,7 @@ export class TransXChangeStream extends Transform {
   public _transform(data: any, encoding: string, callback: TransformCallback): void {
     const tx = data.TransXChange;
 
-    if (!tx.VehicleJourneys[0].VehicleJourney) {
+    if (!tx?.VehicleJourneys?.[0].VehicleJourney) {
       console.warn("Skipping invalid journey");
       return callback();
     }
