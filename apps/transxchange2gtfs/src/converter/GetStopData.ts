@@ -1,18 +1,15 @@
-import { Transform, TransformCallback } from "stream";
+import { pipeline, Transform, TransformCallback } from "stream";
 import * as fs from "fs";
-import { FileDownload } from "../http/FileDownload";
-import { Container } from "../Container";
-import parse = require("csv-parse");
-import stringify = require("csv-stringify");
-import * as yauzl from "yauzl";
-import ReadableStream = NodeJS.ReadableStream;
+import { promisify } from "util";
+import * as http from "http";
+import { https } from "follow-redirects";
+import { parse } from "csv-parse";
+import { stringify } from "csv-stringify";
+
+const asyncPipeline = promisify(pipeline);
 
 export class GetStopData {
-  private static readonly STOPS_URL = "https://naptan.app.dft.gov.uk/DataRequest/Naptan.ashx?format=csv";
-
-  constructor(
-    private readonly http: FileDownload
-  ) { }
+  private static readonly STOPS_URL = "https://beta-naptan.dft.gov.uk/Download/File/Stops.csv";
 
   public async update() {
     const transform = new Transform({
@@ -22,44 +19,15 @@ export class GetStopData {
       }
     });
 
-    await this.http.getFile(GetStopData.STOPS_URL, "/tmp/Stops.zip");
-    const stream = await this.getStopsCsvStream("/tmp/Stops.zip");
+    const response = await new Promise(resolve => https.get(GetStopData.STOPS_URL, req => resolve(req)));
 
-    return new Promise((resolve, reject) => {
-      stream
-        .pipe(parse()).on("error", reject)
-        .pipe(transform).on("error", reject)
-        .pipe(stringify()).on("error", reject)
-        .pipe(fs.createWriteStream("/tmp/Stops.csv")).on("error", reject)
-        .on("finish", resolve);
-    });
-
-  }
-
-  private async getStopsCsvStream(filename: string): Promise<ReadableStream> {
-    return new Promise((resolve, reject) => {
-      yauzl.open(filename, { lazyEntries : true}, (err, zip) => {
-        if (err || !zip) {
-          return reject(err);
-        }
-
-        zip.readEntry();
-        zip.on("entry", entry => {
-          if (entry.fileName === "Stops.csv") {
-            zip.openReadStream(entry, (error, readStream) => {
-              if (error || !readStream) {
-                return reject(error);
-              }
-
-              readStream.on("end", () => zip.readEntry());
-              resolve(readStream);
-            });
-          } else {
-            zip.readEntry();
-          }
-        });
-      });
-    });
+    await asyncPipeline(
+      response as http.IncomingMessage,
+      parse(),
+      transform,
+      stringify(),
+      fs.createWriteStream("/tmp/Stops.csv")
+    );
   }
 
 }

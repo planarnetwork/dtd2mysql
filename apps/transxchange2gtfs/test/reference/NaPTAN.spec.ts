@@ -1,6 +1,6 @@
 import * as chai from "chai";
 import {NaPTANFactory} from "../../src/reference/NaPTAN";
-import parse = require("csv-parse");
+import { parse } from "csv-parse";
 
 describe("NaPTANFactory", () => {
 

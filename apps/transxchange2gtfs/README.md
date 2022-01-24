@@ -60,7 +60,7 @@ It's possible to set the default agency URL, language and timezone:
 AGENCY_URL=http://agency.com AGENCY_TIMEZONE=Europe/London AGENCY_LANG=en transxchange2gtfs transxchange.zip gtfs-output.zip
 ```
 
-On first run transxchange2gtfs will download the latest Stop data from NaPTAN. If you would like to force a refresh of the data add `--update-stops`.
+On first run transxchange2gtfs will download the latest Stop data from NaPTAN. If you would like to force a refresh of the data add `--update-stops`. Alternatively you can skip downloading the stop data by adding `--skip-stops`.
 
 ```
 transxchange2gtfs --update-stops  transxchange.zip gtfs-output.zip
