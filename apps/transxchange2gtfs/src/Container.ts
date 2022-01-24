@@ -37,7 +37,7 @@ export class Container {
     const xml = new XMLStream(this.getParseXML());
     const transxchange = new TransXChangeStream();
     const journeyStream = new TransXChangeJourneyStream(this.getBankHolidays());
-    const [naptanIndex, locationIndex] = await this.getNaPTANIndexes();
+    const [naptanIndex, locationIndex] = skipStops ? [{}, {}] : await this.getNaPTANIndexes();
 
     files.pipe(xml).pipe(transxchange).pipe(journeyStream);
 
