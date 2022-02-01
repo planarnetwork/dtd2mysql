@@ -24,7 +24,7 @@ import { parse } from "csv-parse";
  * Dependency container
  */
 export class Container {
-  public static readonly TMP = "/tmp/transxchange2gtfs/";
+  public static readonly TMP = `/tmp/transxchange2gtfs_${process.pid}/`;
 
   public async getConverter(refresh: boolean, skipStops: boolean): Promise<Converter> {
     if (!skipStops && (!fs.existsSync("/tmp/Stops.csv") || refresh)) {
