@@ -47,6 +47,8 @@ export class Converter {
 
     await this.writeToFile(zipFile.outputStream, output);
 
+    rimraf(Container.TMP);
+
     console.log("Complete.");
     console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
   }
