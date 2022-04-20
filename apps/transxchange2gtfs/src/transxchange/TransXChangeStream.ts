@@ -206,6 +206,7 @@ export class TransXChangeStream extends Transform {
 
       if (profile.BankHolidayOperation[0].DaysOfNonOperation[0].OtherPublicHoliday) {
         const nonOperationDates = profile.BankHolidayOperation[0].DaysOfNonOperation[0].OtherPublicHoliday
+          .filter((d: any) => d.Date && d.Date[0])
           .map((d: any) => this.getHolidayDate(d.Date[0]));
         result.SpecialDaysOperation.DaysOfNonOperation.push(...nonOperationDates);
       }
