@@ -1,6 +1,6 @@
 {
   "name": "transxchange2gtfs",
-  "version": "1.10.3",
+  "version": "1.10.4",
   "description": "Converts transxchange data to GTFS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
