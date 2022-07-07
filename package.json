@@ -43,7 +43,7 @@
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.29.1",
     "mysql2": "^2.3.2",
-    "ssh2": "^0.8.9",
+    "ssh2": "^1.4.0",
     "ssh2-streams": "^0.4.10",
     "stream-to-promise": "^3.0.0"
   },
