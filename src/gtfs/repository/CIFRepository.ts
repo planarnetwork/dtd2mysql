@@ -46,23 +46,51 @@ export class CIFRepository {
     const [results] = await this.db.query<Stop[]>(`
       SELECT
         crs_code AS stop_id, 
-        tiploc_code AS stop_code,
-        station_name AS stop_name,
-        cate_interchange_status AS stop_desc,
+        crs_code AS stop_code,
+        MIN(station_name) AS stop_name,
+        MIN(cate_interchange_status) AS stop_desc,
         0 AS stop_lat,
         0 AS stop_lon,
         NULL AS zone_id,
         NULL AS stop_url,
-        NULL AS location_type,
+        1 AS location_type,
         NULL AS parent_station,
-        IF(POSITION("(CIE" IN station_name), "Europe/Dublin", "Europe/London") AS stop_timezone,
+        IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
         0 AS wheelchair_boarding 
       FROM physical_station WHERE crs_code IS NOT NULL
       GROUP BY crs_code
+      UNION SELECT
+        CONCAT(crs_code, '_', IFNULL(platform, '')) AS stop_id, 
+        crs_code AS stop_code,
+        IF(ISNULL(platform), MIN(station_name), CONCAT(MIN(station_name), ' platform ', platform)) AS stop_name,
+        MIN(cate_interchange_status) AS stop_desc,
+        0 AS stop_lat,
+        0 AS stop_lon,
+        NULL AS zone_id,
+        NULL AS stop_url,
+        0 AS location_type,
+        (SELECT tiploc_code FROM physical_station p WHERE crs_code = physical_station.crs_code AND cate_interchange_status <> 9) AS parent_station,
+        IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
+        0 AS wheelchair_boarding 
+      FROM physical_station
+        LEFT JOIN (
+          SELECT distinct location, platform FROM stop_time
+        ) platforms on physical_station.tiploc_code = platforms.location
+      WHERE crs_code IS NOT NULL AND cate_interchange_status <> 9
+      GROUP BY crs_code, platform
     `);
 
     // overlay the long and latitude values from configuration
-    return results.map(stop => Object.assign(stop, this.stationCoordinates[stop.stop_id]));
+    return results.map(stop => {
+      let result = Object.assign(stop, this.stationCoordinates[stop.stop_code]);
+      if (result.stop_id.includes('_') && this.stationCoordinates.hasOwnProperty(stop.stop_code)) {
+        const parts = result.stop_id.split('_');
+        if (parts[1] !== '') {
+          result.stop_name += ` platform ${parts[1]}`;
+        }
+      }
+      return result;
+    });
   }
 
   /**
