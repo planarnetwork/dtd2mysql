@@ -290,7 +290,7 @@ function stop(stopSequence: number, location: CRS, time: string, tripId: number 
     departure_time: time + ":30",
     stop_id: location,
     stop_sequence: stopSequence,
-    stop_headsign: "",
+    stop_headsign: null,
     pickup_type: 0,
     drop_off_type: 0,
     shape_dist_traveled: null,

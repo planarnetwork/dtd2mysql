@@ -1,7 +1,8 @@
+import {StopPlatform} from './StopTime';
 
 export interface Stop {
-  stop_id: CRS;
-  stop_code: TIPLOC;
+  stop_id: StopPlatform;
+  stop_code: CRS;
   stop_name: string;
   stop_desc: string;
   stop_lat: number;
@@ -15,4 +16,3 @@ export interface Stop {
 }
 
 export type CRS = string;
-export type TIPLOC = string;

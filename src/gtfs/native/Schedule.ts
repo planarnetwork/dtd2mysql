@@ -64,7 +64,7 @@ export class Schedule implements OverlayRecord {
       route_id: routeId,
       service_id: serviceId,
       trip_id: this.id,
-      trip_headsign: this.tuid,
+      trip_headsign: null,
       trip_short_name: this.rsid,
       direction_id: 0,
       wheelchair_accessible: 1,
@@ -118,7 +118,7 @@ export class Schedule implements OverlayRecord {
   }
 
   public stopAt(location: CRS): StopTime | undefined {
-    return <StopTime>this.stopTimes.find(s => s.stop_id === location);
+    return <StopTime>this.stopTimes.find(s => s.stop_id.substr(0, 3) === location);
   }
 
 }
