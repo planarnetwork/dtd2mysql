@@ -60,8 +60,8 @@ export class CIFRepository {
       FROM physical_station WHERE crs_code IS NOT NULL
       GROUP BY crs_code
       UNION SELECT
-        CONCAT(crs_code, '_', IFNULL(platform, '')) AS stop_id, 
-        crs_code AS stop_code,
+        CONCAT(crs_reference_code, '_', IFNULL(platform, '')) AS stop_id, 
+        crs_reference_code AS stop_code,
         IF(ISNULL(platform), MIN(station_name), CONCAT(MIN(station_name), ' platform ', platform)) AS stop_name,
         MIN(cate_interchange_status) AS stop_desc,
         0 AS stop_lat,
@@ -69,14 +69,14 @@ export class CIFRepository {
         NULL AS zone_id,
         NULL AS stop_url,
         0 AS location_type,
-        (SELECT tiploc_code FROM physical_station p WHERE crs_code = physical_station.crs_code AND cate_interchange_status <> 9) AS parent_station,
+        crs_code AS parent_station,
         IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
         0 AS wheelchair_boarding 
       FROM physical_station
-        LEFT JOIN (
+        INNER JOIN (
           SELECT distinct location, platform FROM stop_time
         ) platforms on physical_station.tiploc_code = platforms.location
-      WHERE crs_code IS NOT NULL AND cate_interchange_status <> 9
+      WHERE crs_code IS NOT NULL
       GROUP BY crs_code, platform
     `);
 
@@ -111,7 +111,7 @@ export class CIFRepository {
         SELECT
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
-          crs_code, stp_indicator, public_arrival_time, public_departure_time,
+          crs_reference_code as crs_code, stp_indicator, public_arrival_time, public_departure_time,
           IF(train_status="S", "SS", train_category) AS train_category,
           scheduled_arrival_time AS scheduled_arrival_time,
           scheduled_departure_time AS scheduled_departure_time,
