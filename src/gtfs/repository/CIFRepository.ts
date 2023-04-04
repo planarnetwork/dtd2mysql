@@ -43,7 +43,7 @@ export class CIFRepository {
    * Return all the stops with some configurable long/lat applied
    */
   public async getStops(): Promise<Stop[]> {
-    const [results] = await this.db.query<Stop[]>(`
+    const [results] : [Stop[]] = await this.db.query<Stop[]>(`
       SELECT
         crs_code AS stop_id, 
         crs_code AS stop_code,
@@ -131,7 +131,7 @@ export class CIFRepository {
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
-          ${lastSchedule.id} + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
+          ${lastSchedule.id} + z_schedule.id AS id, train_uid, null as retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, location AS crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,

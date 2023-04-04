@@ -1,5 +1,6 @@
 
 import {StopTime} from "../file/StopTime";
+import {CIFRepository} from '../repository/CIFRepository';
 import {OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../file/Trip";
 import {Route, RouteType} from "../file/Route";
@@ -17,7 +18,7 @@ export class Schedule implements OverlayRecord {
     public readonly id: number,
     public readonly stopTimes: StopTime[],
     public readonly tuid: TUID,
-    public readonly rsid: RSID,
+    public readonly rsid: RSID | null,
     public readonly calendar: ScheduleCalendar,
     public readonly mode: RouteType,
     public readonly operator: AgencyID | null,
@@ -27,11 +28,11 @@ export class Schedule implements OverlayRecord {
   ) {}
 
   public get origin(): CRS {
-    return this.stopTimes[0].stop_id;
+    return this.stopTimes[0].stop_id.substr(0, 3);
   }
 
   public get destination(): CRS {
-    return this.stopTimes[this.stopTimes.length - 1].stop_id;
+    return this.stopTimes[this.stopTimes.length - 1].stop_id.substr(0, 3);
   }
 
   public get hash(): string {
@@ -65,7 +66,7 @@ export class Schedule implements OverlayRecord {
       service_id: serviceId,
       trip_id: this.id,
       trip_headsign: null,
-      trip_short_name: this.rsid,
+      trip_short_name: this.rsid ?? this.tuid,
       direction_id: 0,
       wheelchair_accessible: 1,
       bikes_allowed: 0
@@ -75,17 +76,20 @@ export class Schedule implements OverlayRecord {
   /**
    * Convert to GTFS Route
    */
-  public toRoute(): Route {
+  public async toRoute(cifRepository : CIFRepository): Promise<Route> {
+    const stop_data = await cifRepository.getStops();
+    const origin = stop_data.find(stop => stop.stop_code === this.origin)?.stop_name ?? this.origin;
+    const destination = stop_data.find(stop => stop.stop_code === this.destination)?.stop_name ?? this.destination;
     return {
       route_id: this.id,
       agency_id: this.operator || "ZZ",
-      route_short_name: `${this.operator || "Z"}:${this.origin}->${this.destination}:${this.mode}`,
-      route_long_name: `${this.operator || "Z"} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
+      route_short_name: this.rsid?.substr(0, 6) ?? this.tuid,
+      route_long_name: `${origin} → ${destination}`,
       route_type: this.mode,
       route_text_color: null,
       route_color: null,
       route_url: null,
-      route_desc: [this.modeDescription, this.classDescription, this.reservationDescription].join(". ")
+      route_desc: `${this.modeDescription} service from ${origin} to ${destination}, ${this.classDescription}, ${this.reservationDescription}`,
     };
   }
 
