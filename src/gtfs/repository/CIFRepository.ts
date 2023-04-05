@@ -43,10 +43,37 @@ export class CIFRepository {
    * Return all the stops with some configurable long/lat applied
    */
   public async getStops(): Promise<Stop[]> {
+    return this.stops;
+  }
+
+  /*
+  Every passenger station in the National Rail network has a CRS code, however, some multi-part stations
+  may have additional minor CRS code specifying a part of it. For example,
+  STP (London St Pancras) has a minor code SPL representing the Thameslink platforms, while the main code represents the terminal platforms;
+  PAD (London Paddington) has a minor code PDX representing the Crossrail platforms, while the main code represents the terminal platforms.
+
+  In the database, such stations will have multiple entries, one for each TIPLOC code, where the one with cate_interchange_status <> 9 is the main entry
+  which the CRS code (crs_code) and the minor CRS code (crs_reference_code) are the same.
+
+  Using St Pancras as an example, there are 4 entries listed in the station database:
+  TIPLOC    CRS    minor CRS    main entry?   MCT       location
+  ------------------------------------------------------------------------------------
+  STPX      STP    STP          *             15        Midland Main Line platforms
+  STPADOM   STP    STP                        15        Domestic High Speed platforms
+  STPXBOX   STP    SPL                        15        Thameslink platforms
+  STPANCI   SPX    SPX          *             35        International platforms
+
+  In the National Rail systems, the international station is treated as a distinct station from the domestic one,
+  however the 3 remaining parts (Midland, Thameslink and High Speed Domestic) are the same station.
+
+  The stop list will return one entry for each station (not its constituent parts) as a GTFS station identified by its main CRS code,
+  and one entry for each platform as a GTFS stop identified by its minor CRS code and the platform number, associated to the station with the main CRS code.
+   */
+  private stops : Promise<Stop[]> = (async () => {
     const [results] : [Stop[]] = await this.db.query<Stop[]>(`
-      SELECT
-        crs_code AS stop_id, 
-        crs_code AS stop_code,
+      SELECT -- select all the physical stations
+        crs_code AS stop_id, -- using the main CRS code as both the id
+        crs_code AS stop_code, -- and the public facing code
         MIN(station_name) AS stop_name,
         MIN(cate_interchange_status) AS stop_desc,
         0 AS stop_lat,
@@ -57,11 +84,11 @@ export class CIFRepository {
         NULL AS parent_station,
         IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
         0 AS wheelchair_boarding 
-      FROM physical_station WHERE crs_code IS NOT NULL AND cate_interchange_status <> 9
+      FROM physical_station WHERE crs_code IS NOT NULL AND cate_interchange_status <> 9 -- from the main part of the station
       GROUP BY crs_code
-      UNION SELECT
-        CONCAT(crs_reference_code, '_', IFNULL(platform, '')) AS stop_id, 
-        crs_reference_code AS stop_code,
+      UNION SELECT -- and select all the platforms where scheduled services call at
+        CONCAT(crs_reference_code, '_', IFNULL(platform, '')) AS stop_id, -- using the minor CRS code and the platform number as the id
+        crs_reference_code AS stop_code, -- and the minor CRS code as the public facing code
         IF(ISNULL(platform), MIN(station_name), CONCAT(MIN(station_name), ' platform ', platform)) AS stop_name,
         MIN(cate_interchange_status) AS stop_desc,
         0 AS stop_lat,
@@ -91,7 +118,7 @@ export class CIFRepository {
       }
       return result;
     });
-  }
+  })();
 
   /**
    * Return the schedules and z trains. These queries probably require some explanation:
