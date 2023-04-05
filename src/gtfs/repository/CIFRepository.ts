@@ -57,7 +57,7 @@ export class CIFRepository {
         NULL AS parent_station,
         IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
         0 AS wheelchair_boarding 
-      FROM physical_station WHERE crs_code IS NOT NULL
+      FROM physical_station WHERE crs_code IS NOT NULL AND cate_interchange_status <> 9
       GROUP BY crs_code
       UNION SELECT
         CONCAT(crs_reference_code, '_', IFNULL(platform, '')) AS stop_id, 
