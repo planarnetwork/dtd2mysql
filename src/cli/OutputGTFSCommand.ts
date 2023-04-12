@@ -31,6 +31,11 @@ export class OutputGTFSCommand implements CLICommand {
       throw new Error(`Output path ${this.baseDir} does not exist.`);
     }
 
+    if (argv.length > 4) {
+      const json = JSON.parse(fs.readFileSync(argv[4], 'utf-8'));
+      this.repository.stationCoordinates = json;
+    }
+
     const associationsP = this.repository.getAssociations();
     const scheduleResultsP = this.repository.getSchedules();
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");

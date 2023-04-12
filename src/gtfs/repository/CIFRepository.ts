@@ -19,7 +19,7 @@ export class CIFRepository {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly stream,
-    private readonly stationCoordinates: StationCoordinates
+    public stationCoordinates: StationCoordinates
   ) {}
 
   /**
@@ -109,14 +109,31 @@ export class CIFRepository {
 
     // overlay the long and latitude values from configuration
     return results.map(stop => {
-      let result = Object.assign(stop, this.stationCoordinates[stop.stop_code]);
-      if (result.stop_id.includes('_') && this.stationCoordinates.hasOwnProperty(stop.stop_code)) {
-        const parts = result.stop_id.split('_');
+      const station_data = this.stationCoordinates[stop.stop_code] ?? this.stationCoordinates[stop.parent_station];
+      if (stop.stop_id.includes('_')) {
+        const parts = stop.stop_id.split('_');
         if (parts[1] !== '') {
-          result.stop_name += ` platform ${parts[1]}`;
+          const platform_data = (station_data?.platforms ?? [])[parts[1]];
+          if (platform_data !== undefined) {
+            // use platform data if available
+            return Object.assign(stop, platform_data);
+          }
         }
+        if (station_data !== undefined) {
+          // otherwise inherit station data
+          const result = Object.assign(stop, station_data);
+          delete result['platforms'];
+          result.stop_name += parts[1] === '' ? '' : ` platform ${parts[1]}`;
+          result.location_type = 0;
+          return result;
+        } else {
+          return stop;
+        }
+      } else {
+        const result = Object.assign(stop, this.stationCoordinates[stop.stop_code])
+        delete result['platforms'];
+        return result;
       }
-      return result;
     });
   })();
 
@@ -307,7 +324,9 @@ export type StationCoordinates = {
     stop_lat: number,
     stop_lon: number,
     stop_name: string,
-    wheelchair_boarding: 0 | 1 | 2
+    location_type?: number,
+    wheelchair_boarding: 0 | 1 | 2,
+    platforms?: {[key : string] : StationCoordinates}
   }
 };
 
