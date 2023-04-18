@@ -89,7 +89,7 @@ export class CIFRepository {
       UNION SELECT -- and select all the platforms where scheduled services call at
         CONCAT(crs_reference_code, '_', IFNULL(platform, '')) AS stop_id, -- using the minor CRS code and the platform number as the id
         crs_reference_code AS stop_code, -- and the minor CRS code as the public facing code
-        IF(ISNULL(platform), MIN(station_name), CONCAT(MIN(station_name), ' platform ', platform)) AS stop_name,
+        IF(ISNULL(platform), MIN(station_name), CONCAT(MIN(station_name), ' (platform ', platform, ')')) AS stop_name,
         MIN(cate_interchange_status) AS stop_desc,
         0 AS stop_lat,
         0 AS stop_lon,
@@ -123,7 +123,7 @@ export class CIFRepository {
           // otherwise inherit station data
           const result = Object.assign(stop, station_data);
           delete result['platforms'];
-          result.stop_name += parts[1] === '' ? '' : ` platform ${parts[1]}`;
+          result.stop_name += parts[1] === '' ? '' : ` (platform ${parts[1]})`;
           result.location_type = 0;
           return result;
         } else {
