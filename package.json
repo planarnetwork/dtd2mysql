@@ -13,8 +13,8 @@
     "watch-test": "mocha -w --require ts-node/register 'test/**/*.spec.ts'",
     "start": "ts-node ./src/index.ts",
     "prepublishOnly": "tsc -p ./ --outDir dist/",
-    "gtfs": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs",
-    "gtfs-zip": "NODE_OPTIONS='--max-old-space-size=3000' ts-node ./src/index.ts --gtfs-zip"
+    "gtfs": "NODE_OPTIONS='--max-old-space-size=16384' ts-node ./src/index.ts --gtfs",
+    "gtfs-zip": "NODE_OPTIONS='--max-old-space-size=16384' ts-node ./src/index.ts --gtfs-zip"
   },
   "repository": {
     "type": "git",
