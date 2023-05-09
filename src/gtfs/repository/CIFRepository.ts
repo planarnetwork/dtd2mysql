@@ -250,7 +250,8 @@ export type StationCoordinates = {
   [crs: string]: {
     stop_lat: number,
     stop_lon: number,
-    stop_name: string
+    stop_name: string,
+    wheelchair_boarding: 0 | 1 | 2
   }
 };
 
