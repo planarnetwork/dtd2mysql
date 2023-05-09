@@ -98,16 +98,8 @@ export class ScheduleBuilder {
   private createStop(row: ScheduleStopTimeRow, stopId: number, departHour: number): StopTime {
     let arrivalTime, departureTime;
 
-    // if either public time is set, use those
-    if (row.public_arrival_time || row.public_departure_time) {
-      arrivalTime = this.formatTime(row.public_arrival_time, departHour);
-      departureTime = this.formatTime(row.public_departure_time, departHour);
-    }
-    // if no public time at all (no set down or pick) use the scheduled time
-    else {
-      arrivalTime = this.formatTime(row.scheduled_arrival_time, departHour);
-      departureTime = this.formatTime(row.scheduled_departure_time, departHour);
-    }
+    arrivalTime = this.formatTime(row.public_arrival_time ?? row.scheduled_arrival_time, departHour);
+    departureTime = this.formatTime(row.public_departure_time ?? row.scheduled_departure_time, departHour);
 
     const activities = row.activity.match(/.{1,2}/g) || [];
     const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) ? 0 : 1;
