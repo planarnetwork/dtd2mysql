@@ -93,8 +93,8 @@ export class OutputGTFSCommand implements CLICommand {
       }
 
       const route = await schedule.toRoute(this.repository);
-      routes[route.route_short_name] = routes[route.route_short_name] || route;
-      const routeId = routes[route.route_short_name].route_id;
+      routes[route.route_id] = routes[route.route_id] || route;
+      const routeId = routes[route.route_id].route_id;
       const serviceId = serviceIds[schedule.calendar.id];
 
       trips.write(schedule.toTrip(serviceId, routeId));
