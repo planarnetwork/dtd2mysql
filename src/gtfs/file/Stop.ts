@@ -13,6 +13,7 @@ export interface Stop {
   parent_station: CRS;
   stop_timezone: string;
   wheelchair_boarding: 0 | 1 | 2;
+  platform_code: string;
 }
 
 export type CRS = string;

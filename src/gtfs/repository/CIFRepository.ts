@@ -83,7 +83,8 @@ export class CIFRepository {
         1 AS location_type,
         NULL AS parent_station,
         IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
-        0 AS wheelchair_boarding 
+        0 AS wheelchair_boarding,
+        null AS platform_code
       FROM physical_station WHERE crs_code IS NOT NULL AND cate_interchange_status <> 9 -- from the main part of the station
       GROUP BY crs_code
       UNION SELECT -- and select all the platforms where scheduled services call at
@@ -98,7 +99,8 @@ export class CIFRepository {
         0 AS location_type,
         crs_code AS parent_station,
         IF(POSITION('(CIE' IN MIN(station_name)), 'Europe/Dublin', 'Europe/London') AS stop_timezone,
-        0 AS wheelchair_boarding 
+        0 AS wheelchair_boarding,
+        platform AS platform_code
       FROM physical_station
         INNER JOIN (
           SELECT distinct location, platform FROM stop_time
