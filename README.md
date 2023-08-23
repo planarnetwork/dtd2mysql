@@ -53,8 +53,10 @@ Convert the DTD/TTIS version of the timetable (up to 3 months into the future) t
 ```
 dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip filename-of-gtfs.zip
+
 # use alternative source of station data
-dtd2mysql --gtfs-zip filename-of-gtfs.zip stations.json
+# the provided example contains station and platform coordinates extracted from OpenStreetMap
+dtd2mysql --gtfs-zip filename-of-gtfs.zip stations.example.json
 ```
 
 ## Routeing Guide
