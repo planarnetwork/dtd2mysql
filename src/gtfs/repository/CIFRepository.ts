@@ -84,9 +84,9 @@ export class CIFRepository {
           schedule.id AS id, train_uid, retail_train_id, runs_from, runs_to,
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           crs_code, stp_indicator, public_arrival_time, public_departure_time,
-          IF(train_status="S", "SS", train_category) AS train_category, 
-          IFNULL(scheduled_arrival_time, scheduled_pass_time) AS scheduled_arrival_time, 
-          IFNULL(scheduled_departure_time, scheduled_pass_time) AS scheduled_departure_time,
+          IF(train_status="S", "SS", train_category) AS train_category,
+          scheduled_arrival_time AS scheduled_arrival_time,
+          scheduled_departure_time AS scheduled_departure_time,
           platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
@@ -98,6 +98,7 @@ export class CIFRepository {
         )
         AND runs_from < CURDATE() + INTERVAL 3 MONTH
         AND runs_to >= CURDATE()
+        AND scheduled_pass_time is null
         ORDER BY stp_indicator DESC, id, stop_id
       `)),
       scheduleBuilder.loadSchedules(this.stream.query(`
