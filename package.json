@@ -42,9 +42,8 @@
     "fs-extra": "^10.0.0",
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.29.1",
-    "mysql2": "^2.3.2",
-    "ssh2": "^1.4.0",
-    "ssh2-streams": "^0.4.10",
+    "mysql2": "^3.6.1",
+    "ssh2": "^1.14.0",
     "stream-to-promise": "^3.0.0"
   },
   "engines": {
@@ -56,8 +55,7 @@
     "@types/fs-extra": "^9.0.13",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.6",
-    "@types/ssh2": "^0.5.48",
-    "@types/ssh2-streams": "^0.1.9",
+    "@types/ssh2": "^1.11.13",
     "@types/stream-to-promise": "^2.2.1",
     "chai": "^4.3.4",
     "mocha": "^9.1.3",
