@@ -1,7 +1,7 @@
 import * as yargs from "yargs";
 import { Arguments } from "yargs";
 import { Container } from "./Container";
-import { toGTFSDate } from "./gtfs/calendar/toGTFSDate";
+import { toGTFSDate } from "./gtfs/calendar/gtfsDateUtils";
 import { RouteType } from "./gtfs/GTFS";
 
 const args = yargs.argv as Arguments<{
