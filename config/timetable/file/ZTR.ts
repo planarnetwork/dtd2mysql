@@ -1,5 +1,5 @@
 
-import {RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
+import {FixedWidthRecord, RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
 import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
 import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
@@ -44,6 +44,17 @@ const schedule = new RecordWithManualIdentifier(
   },
   ["runs_from"]
 );
+
+export const extraDetails = new FixedWidthRecord(
+    "z_schedule_extra",
+    [], {
+        "schedule": new ForeignKeyField(schedule),
+        "atoc_code": new TextField(11, 2, true),
+    },
+    ["schedule"]
+);
+
+
 
 const stopRecordTypes = {
   "LO": {
@@ -110,6 +121,7 @@ const stop = new MultiFormatRecord(
 
 const ZTR = new MultiRecordFile({
   "BS": schedule,
+  "BX": extraDetails,
   "LO": stop,
   "LI": stop,
   "LT": stop
