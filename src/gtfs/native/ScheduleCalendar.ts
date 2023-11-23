@@ -60,7 +60,7 @@ export class ScheduleCalendar {
 
     const calendar = this.clone(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
 
-    return calendar.runsFrom.isSameOrBefore(calendar.runsTo) ? [calendar] : [];
+    return calendar !== null ? [calendar] : [];
   }
 
   /**
@@ -83,7 +83,7 @@ export class ScheduleCalendar {
    * Remove the given date range from this schedule and return one or two calendars
    */
   public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
-    const calendars: ScheduleCalendar[] = [
+    const calendars: (ScheduleCalendar|null)[] = [
       this.clone(this.runsFrom.clone(), calendar.runsFrom.clone().subtract(1, "days")),
       this.clone(calendar.runsTo.clone().add(1, "days"), this.runsTo.clone())
     ];
@@ -98,7 +98,7 @@ export class ScheduleCalendar {
       ));
     }
 
-    return calendars.filter(c => c.runsFrom.isSameOrBefore(c.runsTo));
+    return calendars.filter((c) : c is ScheduleCalendar => c !== null);
   }
 
   /**
@@ -107,9 +107,11 @@ export class ScheduleCalendar {
   public clone(start: Moment,
                end: Moment,
                removeDays: Days = NO_DAYS,
-               excludeDays: ExcludeDays = this.excludeDays): ScheduleCalendar {
+               excludeDays: ExcludeDays = this.excludeDays): ScheduleCalendar | null {
 
     const days = this.removeDays(removeDays);
+    start = start.clone();
+    end = end.clone();
 
     // skip forward to the first day the schedule is operating
     while (days[start.day()] === 0 || excludeDays[start.format("YYYYMMDD")] && start.isSameOrBefore(end)) {
@@ -126,7 +128,7 @@ export class ScheduleCalendar {
       .filter(d => d.isBetween(start, end, "days", "[]"))
       .reduce((days: ExcludeDays, day: Moment) => { days[day.format("YYYYMMDD")] = day; return days; }, {});
 
-    return new ScheduleCalendar(start, end, days, newExcludes);
+    return start.isSameOrBefore(end) ? new ScheduleCalendar(start, end, days, newExcludes) : null;
   }
 
   private removeDays(days: Days): Days {
