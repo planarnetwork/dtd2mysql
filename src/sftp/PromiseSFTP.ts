@@ -1,6 +1,5 @@
-import {Client, ConnectConfig, SFTPWrapper} from "ssh2";
-import {FileEntry} from "ssh2-streams";
-import {promisify} from "util";
+import { Client, ConnectConfig, FileEntry, SFTPWrapper, TransferOptions } from "ssh2";
+import { promisify } from "util";
 
 
 /**
@@ -39,12 +38,12 @@ export class PromiseSFTP {
   /**
    * Read the contents of the given directory. Promisified version of ssh2's readdir method.
    */
-  public readdir: (path: string | Buffer, cb?) => Promise<FileEntry[]>;
+  public readdir: (path: string | Buffer) => Promise<FileEntry[]>;
 
   /**
    * Copy file from source to destination. Promisified version of ssh2's fastGet
    */
-  public fastGet: (from: string, to: string, cb?) => Promise<FileEntry[]>;
+  public fastGet: (from: string, to: string, opts?: TransferOptions) => Promise<void>;
 
   /**
    * Close the underlying SFTP connection

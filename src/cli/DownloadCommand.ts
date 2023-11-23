@@ -1,7 +1,7 @@
 import {CLICommand} from "./CLICommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
-import {FileEntry} from "ssh2-streams";
 import {DatabaseConnection} from "../database/DatabaseConnection";
+import { FileEntry } from "ssh2";
 
 export class DownloadCommand implements CLICommand {
 
@@ -32,7 +32,7 @@ export class DownloadCommand implements CLICommand {
 
     try {
       await Promise.all(
-        files.map(f => this.sftp.fastGet(this.directory + f, outputDirectory + f))
+        files.map(f => this.sftp.fastGet(this.directory + f, outputDirectory + f, { concurrency: 1 }))
       );
     }
     catch (err) {
