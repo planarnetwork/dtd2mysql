@@ -5,5 +5,4 @@ const container = new Container();
 
 container
   .getCommand(process.argv[2])
-  .then(c => c.run(process.argv))
-  .catch(console.error);
+  .then(c => c.run(process.argv));
