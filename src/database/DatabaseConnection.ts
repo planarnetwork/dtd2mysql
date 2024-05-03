@@ -1,7 +1,7 @@
 
 export interface DatabaseConnection {
   getConnection(): Promise<DatabaseConnection>;
-  query<RowType = any>(sql: any, parameters?: any[]): Promise<[RowType[], any]>;
+  query<RowType = unknown>(sql: any, parameters?: any[]): Promise<[RowType[], any]>;
   end(): Promise<void>;
   release(): Promise<void>;
 }

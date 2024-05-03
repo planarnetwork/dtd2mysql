@@ -88,7 +88,7 @@ export class CIFRepository {
    */
   public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
-    const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+    const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
