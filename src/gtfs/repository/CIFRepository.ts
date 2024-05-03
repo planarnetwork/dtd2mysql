@@ -67,12 +67,9 @@ export class CIFRepository {
     `);
 
     // overlay the long and latitude values from configuration
-    return results.map(stop => {
-      const [stop_lon, stop_lat] = proj4('EPSG:27700', 'EPSG:4326', [(stop.easting - 10000) * 100, (stop.northing - 60000) * 100]);
-      stop.stop_lon = stop_lon;
-      stop.stop_lat = stop_lat;
-      delete stop.easting;
-      delete stop.northing;
+    return results.map(row => {
+      const [stop_lon, stop_lat] = proj4('EPSG:27700', 'EPSG:4326', [(row.easting - 10000) * 100, (row.northing - 60000) * 100]);
+      const {easting, northing, ...stop} = {...row, stop_lon, stop_lat};
       return Object.assign(stop, this.stationCoordinates[stop.stop_id]);
     });
   }
