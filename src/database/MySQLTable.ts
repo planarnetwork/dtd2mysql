@@ -83,20 +83,17 @@ export class MySQLTable {
     }
   }
 
-  private async query(type: RecordAction, rows: ParsedRecord[]): Promise<void> {
+  private query(type: RecordAction, rows: ParsedRecord[]): Promise<void> {
     const rowValues = rows.map(r => Object.values(r.values));
 
     switch (type) {
       case RecordAction.Insert:
       case RecordAction.DelayedInsert:
-        await this.db.query(`INSERT IGNORE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);
-        return;
+        return this.db.query(`INSERT IGNORE INTO \`${this.tableName}\` VALUES ?`, [rowValues]).then((_) => {});
       case RecordAction.Update:
-        await this.db.query(`REPLACE INTO \`${this.tableName}\` VALUES ?`, [rowValues]);
-        return;
+        return this.db.query(`REPLACE INTO \`${this.tableName}\` VALUES ?`, [rowValues]).then((_) => {});
       case RecordAction.Delete:
-        await this.db.query(`DELETE FROM \`${this.tableName}\` WHERE (${this.getDeleteSQL(rows)})`, rows.flatMap(row => Object.values(row.keysValues)));
-        return;
+        return this.db.query(`DELETE FROM \`${this.tableName}\` WHERE (${this.getDeleteSQL(rows)})`, rows.flatMap(row => Object.values(row.keysValues))).then((_) => {});
       default:
         throw new Error("Unknown record action: " + type);
     }

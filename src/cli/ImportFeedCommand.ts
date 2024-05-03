@@ -91,14 +91,14 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Create the last_file table (if it doesn't already exist)
    */
-  private async createLastProcessedSchema(): Promise<void> {
-    await this.db.query(`
+  private createLastProcessedSchema(): Promise<void> {
+    return this.db.query(`
       CREATE TABLE IF NOT EXISTS log ( 
         id INT(11) unsigned not null primary key auto_increment, 
         filename VARCHAR(255), 
         processed DATETIME 
       )
-    `);
+    `).then((_) => {});
   }
 
   /**
@@ -121,8 +121,8 @@ export class ImportFeedCommand implements CLICommand {
   }
 
 
-  private async updateLastFile(filename: string): Promise<void> {
-    await this.db.query("INSERT INTO log VALUES (null, ?, NOW())", [filename]);
+  private updateLastFile(filename: string): Promise<void> {
+    return this.db.query("INSERT INTO log VALUES (null, ?, NOW())", [filename]).then((_) => {});
   }
 
   /**
