@@ -75,7 +75,7 @@ export class CleanFaresCommand implements CLICommand {
   }
 
   private async applyRestrictionDates(): Promise<void> {
-    const [[current, future]] = await this.db.query<RestrictionDateRow[]>("SELECT * FROM restriction_date ORDER BY cf_mkr");
+    const [[current, future]] = await this.db.query<RestrictionDateRow>("SELECT * FROM restriction_date ORDER BY cf_mkr");
     current.start_date = new Date(current.start_date.getFullYear(), 0, 1);
 
     future.start_date = new Date(future.start_date.getFullYear(), 0, 1);
@@ -85,7 +85,7 @@ export class CleanFaresCommand implements CLICommand {
   }
 
   private async updateRestrictionDatesOnTable(tableName: string, current: RestrictionDateRow, future: RestrictionDateRow): Promise<any> {
-    const [records] = await this.db.query<RestrictionRow[]>(`SELECT * FROM ${tableName}`);
+    const [records] = await this.db.query<RestrictionRow>(`SELECT * FROM ${tableName}`);
     const promises = records.map(record => {
       const date = record.cf_mkr === 'C' ? current : future;
       const startDate = this.getFirstDateAfter(date.start_date, record.date_from);
