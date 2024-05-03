@@ -1,4 +1,5 @@
 
+import * as proj4 from 'proj4';
 import {DatabaseConnection} from "../../database/DatabaseConnection";
 import {Transfer} from "../file/Transfer";
 import {CRS, Stop} from "../file/Stop";
@@ -20,7 +21,9 @@ export class CIFRepository {
     private readonly db: DatabaseConnection,
     private readonly stream,
     private readonly stationCoordinates: StationCoordinates
-  ) {}
+  ) {
+    proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
+  }
 
   /**
    * Return the interchange time between each station
@@ -43,7 +46,7 @@ export class CIFRepository {
    * Return all the stops with some configurable long/lat applied
    */
   public async getStops(): Promise<Stop[]> {
-    const [results] = await this.db.query<Stop[]>(`
+    const [results] = await this.db.query<(Stop & {easting : number, northing : number})>(`
       SELECT
         crs_code AS stop_id, 
         tiploc_code AS stop_code,
@@ -56,13 +59,22 @@ export class CIFRepository {
         NULL AS location_type,
         NULL AS parent_station,
         IF(POSITION("(CIE" IN station_name), "Europe/Dublin", "Europe/London") AS stop_timezone,
-        0 AS wheelchair_boarding 
+        0 AS wheelchair_boarding,
+        easting,
+        northing
       FROM physical_station WHERE crs_code IS NOT NULL
       GROUP BY crs_code
     `);
 
     // overlay the long and latitude values from configuration
-    return results.map(stop => Object.assign(stop, this.stationCoordinates[stop.stop_id]));
+    return results.map(stop => {
+      const [stop_lon, stop_lat] = proj4('EPSG:27700', 'EPSG:4326', [(stop.easting - 10000) * 100, (stop.northing - 60000) * 100]);
+      stop.stop_lon = stop_lon;
+      stop.stop_lat = stop_lat;
+      delete stop.easting;
+      delete stop.northing;
+      return Object.assign(stop, this.stationCoordinates[stop.stop_id]);
+    });
   }
 
   /**
