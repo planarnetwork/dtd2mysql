@@ -3,6 +3,12 @@ import {PromiseSFTP} from "../sftp/PromiseSFTP";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import { FileEntry } from "ssh2";
 
+interface LogEntry {
+  id: number,
+  filename: string | null,
+  processed: string | null,
+}
+
 export class DownloadCommand implements CLICommand {
 
   constructor(
@@ -46,9 +52,9 @@ export class DownloadCommand implements CLICommand {
 
   private async getLastProcessedFile(): Promise<string | undefined> {
     try {
-      const [[log]] = await this.db.query("SELECT * FROM log ORDER BY id DESC LIMIT 1");
+      const [[log]] = await this.db.query<LogEntry>("SELECT * FROM log ORDER BY id DESC LIMIT 1");
 
-      return log ? log.filename : undefined;
+      return log.filename !== null ? log.filename : undefined;
     }
     catch (err) {
       return undefined;

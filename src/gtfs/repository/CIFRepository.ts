@@ -29,7 +29,7 @@ export class CIFRepository {
    * Return the interchange time between each station
    */
   public async getTransfers(): Promise<Transfer[]> {
-    const [results] = await this.db.query<Transfer[]>(`
+    const [results] = await this.db.query<Transfer>(`
       SELECT 
         crs_code AS from_stop_id, 
         crs_code AS to_stop_id, 
@@ -88,7 +88,7 @@ export class CIFRepository {
    */
   public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
-    const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+    const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -136,7 +136,7 @@ export class CIFRepository {
    * Get associations
    */
   public async getAssociations(): Promise<Association[]> {
-    const [results] = await this.db.query<AssociationRow[]>(`
+    const [results] = await this.db.query<AssociationRow>(`
       SELECT 
         a.id AS id, base_uid, assoc_uid, crs_code, assoc_date_ind, assoc_cat,
         monday, tuesday, wednesday, thursday, friday, saturday, sunday,

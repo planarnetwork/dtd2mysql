@@ -91,8 +91,8 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Create the last_file table (if it doesn't already exist)
    */
-  private createLastProcessedSchema(): Promise<void> {
-    return this.db.query(`
+  private async createLastProcessedSchema(): Promise<void> {
+    await this.db.query(`
       CREATE TABLE IF NOT EXISTS log ( 
         id INT(11) unsigned not null primary key auto_increment, 
         filename VARCHAR(255), 
@@ -105,7 +105,7 @@ export class ImportFeedCommand implements CLICommand {
    * Set the last schedule ID in the CFA record
    */
   private async setLastScheduleId(): Promise<void> {
-    const [[lastSchedule]] = await this.db.query("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+    const [[lastSchedule]] = await this.db.query<{id : number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
     const lastId = lastSchedule ? lastSchedule.id : 0;
     const cfaFile = this.files["CFA"] as MultiRecordFile;
     const bsRecord = cfaFile.records["BS"] as RecordWithManualIdentifier;
@@ -121,8 +121,8 @@ export class ImportFeedCommand implements CLICommand {
   }
 
 
-  private updateLastFile(filename: string): Promise<void> {
-    return this.db.query("INSERT INTO log VALUES (null, ?, NOW())", [filename]);
+  private async updateLastFile(filename: string): Promise<void> {
+    await this.db.query("INSERT INTO log VALUES (null, ?, NOW())", [filename]);
   }
 
   /**
