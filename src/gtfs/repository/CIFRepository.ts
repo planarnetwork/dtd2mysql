@@ -46,14 +46,12 @@ export class CIFRepository {
    * Return all the stops with some configurable long/lat applied
    */
   public async getStops(): Promise<Stop[]> {
-    const [results] = await this.db.query<(Stop & {easting : number, northing : number})>(`
+    const [results] = await this.db.query<Omit<Stop, 'stop_lat' | 'stop_lon'> & {easting : number, northing : number}>(`
       SELECT
         crs_code AS stop_id, 
         tiploc_code AS stop_code,
         station_name AS stop_name,
         cate_interchange_status AS stop_desc,
-        0 AS stop_lat,
-        0 AS stop_lon,
         NULL AS zone_id,
         NULL AS stop_url,
         NULL AS location_type,
