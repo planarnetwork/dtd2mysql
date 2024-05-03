@@ -36,6 +36,7 @@
   },
   "homepage": "https://github.com/open-track/dtd2mysql#readme",
   "dependencies": {
+    "@types/proj4": "^2.5.5",
     "adm-zip": "^0.5.10",
     "byline": "^5.0.0",
     "csv-write-stream": "^2.0.0",
@@ -43,6 +44,7 @@
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.29.4",
     "mysql2": "^3.6.1",
+    "proj4": "^2.11.0",
     "ssh2": "^1.14.0",
     "stream-to-promise": "^3.0.0"
   },
