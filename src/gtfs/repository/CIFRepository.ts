@@ -67,8 +67,9 @@ export class CIFRepository {
     // overlay the long and latitude values from configuration
     return results.map(row => {
       const [stop_lon, stop_lat] = proj4('EPSG:27700', 'EPSG:4326', [(row.easting - 10000) * 100, (row.northing - 60000) * 100]);
-      const {easting, northing, ...stop} = {...row, stop_lon, stop_lat};
-      return Object.assign(stop, this.stationCoordinates[stop.stop_id]);
+      // @ts-ignore We are overwriting the lon/lat from this.stationCoordinates
+      const {easting, northing, ...stop} = {...row, stop_lon, stop_lat, ...this.stationCoordinates[row.stop_id]};
+      return stop;
     });
   }
 
