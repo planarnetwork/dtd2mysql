@@ -5,6 +5,7 @@ import {FieldMap, ParsedRecord, Record, RecordAction} from "./Record";
  * Record that has multiple row types, used for LI, LO stop records
  */
 export class MultiFormatRecord implements Record {
+  public lastId = 0;
 
   constructor(
     public readonly name: string,
@@ -23,7 +24,7 @@ export class MultiFormatRecord implements Record {
   public extractValues(line: string): ParsedRecord {
     const type = line.substr(this.recordIdentifierStart, this.recordIdentifierLength);
     const record = this.records[type];
-    const values = { id: null };
+    const values = { id: ++this.lastId };
     const action = RecordAction.Insert;
 
     for (const key in record) {

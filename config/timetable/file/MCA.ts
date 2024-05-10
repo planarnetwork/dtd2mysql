@@ -178,6 +178,35 @@ export const stop = new MultiFormatRecord(
   true
 );
 
+export const change = new FixedWidthRecord(
+    "service_change",
+    [],
+    {
+        "stop" : new ForeignKeyField(stop, 1),
+        "location" : new TextField(2, 7),
+        "suffix" : new IntField(9, 1, true),
+        "train_category" : new TextField(10, 2, true),
+        "train_identity" : new TextField(12, 4, true),
+        "headcode" : new TextField(16, 4, true),
+        "course_indicator" : new TextField(20, 1),
+        "profit_center" : new TextField(21, 8, true),
+        "business_sector" : new TextField(29, 1, true),
+        "power_type" : new TextField(30, 3, true),
+        "timing_load" : new TextField(33, 4, true),
+        "speed" : new TextField(37, 3, true),
+        "operating_chars" : new TextField(40, 6, true),
+        "train_class" : new TextField(46, 1, true),
+        "sleepers" : new TextField(47, 1, true),
+        "reservations" : new TextField(48, 1, true),
+        "connect_indicator" : new TextField(49, 1, true),
+        "catering_code" : new TextField(50, 4, true),
+        "service_branding" : new TextField(54, 4, true),
+        "traction_class" : new TextField(58, 4, true),
+        "uic_code" : new TextField(62, 5, true),
+        "retail_train_id" : new TextField(67, 8, true),
+    },
+    ["stop"]
+);
 
 const MCA = new MultiRecordFile({
   "AA": association,
@@ -187,7 +216,8 @@ const MCA = new MultiRecordFile({
   "BX": extraDetails,
   "LO": stop,
   "LI": stop,
-  "LT": stop
+  "LT": stop,
+  "CR": change
 }, 0, 2);
 
 export default MCA;
