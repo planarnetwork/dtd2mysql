@@ -4,6 +4,10 @@
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist/src",
+    "dist/config"
+  ],
   "bin": {
     "dtd2mysql": "bin/dtd2mysql.sh"
   },
