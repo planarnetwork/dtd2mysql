@@ -5,6 +5,7 @@ import moment = require("moment");
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
+import { agencies } from "../../../config/gtfs/agency";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
@@ -88,7 +89,7 @@ export class ScheduleBuilder {
         }
       ),
       mode,
-      row.atoc_code,
+      agencies.some((a) => a.agency_id === row.atoc_code) ? row.atoc_code : "ZZ",
       row.stp_indicator,
       mode === RouteType.Rail && row.train_class !== "S",
       row.reservations !== null
