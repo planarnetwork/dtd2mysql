@@ -6,16 +6,29 @@ import {Duration, LocalDate, LocalTime} from "js-joda";
  */
 export interface TransXChange {
   StopPoints: StopPoint[],
+  RouteLinks: RouteLinks,
   JourneySections: JourneyPatternSections,
+  JPTimingLinks: JPTimingLinks,
   Operators: Operators,
   Services: Services,
   VehicleJourneys: VehicleJourney[]
 }
 
 /**
+ * RouteLinks indexed by ID
+ */
+export type RouteLinks = Record<string, RouteLink>;
+
+/**
  * JourneyPatternSections indexed by id
  */
-export type JourneyPatternSections = Record<JourneyPatternSectionID, TimingLink[]>;
+export type JourneyPatternSections = Record<JourneyPatternSectionID, JPTimingLink[]>;
+
+
+/**
+ * JourneyPatternTimingLinks indexed by ID
+ */
+export type JPTimingLinks = Record<string, JPTimingLink>;
 
 /**
  * E.g. JPSection-45
@@ -37,21 +50,55 @@ export interface StopPoint {
 }
 
 /**
+ * RouteLink
+ */
+export interface RouteLink {
+  From: ATCOCode,
+  To: ATCOCode,
+  Distance: number
+}
+
+/**
  * JourneyPatternTimingLink
  */
-export interface TimingLink {
-  From: JourneyStop,
-  To: JourneyStop,
+export interface JPTimingLink {
+  From: JPJourneyStop,
+  To: JPJourneyStop,
   RunTime: Duration;
+  RouteLinkRef: string;
+}
+
+/**
+ * VehicleJourneyTimingLink
+ */
+export interface VJTimingLink {
+  JPTimingLinkRef: string, // Values inherited from JPTimingLink
+  From?: VJJourneyStop,
+  To?: VJJourneyStop,
+  RunTime?: Duration;
 }
 
 /**
  * From/To field inside a JourneyPatternTimingLink
  */
-export interface JourneyStop {
+export interface JPJourneyStop {
   Activity: StopActivity,
   StopPointRef: ATCOCode,
-  TimingStatus: string,
+  TimingStatus: TimingStatus,
+  WaitTime?: Duration,
+}
+
+export enum TimingStatus {
+  PrincipalTimingPoint = "principalTimingPoint",
+  TimeInfoPoint = "timeInfoPoint",
+  OtherPoint = "otherPoint"
+}
+
+/**
+ * From/To field inside a VehicleJourneyTimingLink
+ */
+export interface VJJourneyStop {
+  Activity?: StopActivity,
   WaitTime?: Duration
 }
 
@@ -81,7 +128,8 @@ export type OperatorID = string;
 export interface Operator {
   OperatorCode: string,
   OperatorShortName: string,
-  OperatorNameOnLicence: string | undefined
+  OperatorNameOnLicence: string | undefined,
+  TradingName: string | undefined
 }
 
 /**
@@ -164,7 +212,8 @@ export interface VehicleJourney {
   JourneyPatternRef: string,
   DepartureTime: LocalTime,
   VehicleJourneyCode: string,
-  OperationalBlockNumber?: string
+  OperationalBlockNumber?: string,
+  TimingLinks?: VJTimingLink[]
 }
 
 export interface OperatingProfile {

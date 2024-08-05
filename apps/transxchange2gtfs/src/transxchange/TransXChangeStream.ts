@@ -3,16 +3,21 @@ import {
   DaysOfWeek, Holiday,
   JourneyPatterns,
   JourneyPatternSections,
-  JourneyStop,
+  JPJourneyStop,
   Lines,
   Mode,
   OperatingProfile,
   Operators,
+  RouteLinks,
   Services,
   StopActivity,
-  StopPoint, TimingLink,
+  StopPoint, JPTimingLink,
   TransXChange,
-  VehicleJourney
+  VehicleJourney,
+  VJTimingLink,
+  VJJourneyStop,
+  JPTimingLinks,
+  TimingStatus
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -50,7 +55,9 @@ export class TransXChangeStream extends Transform {
 
       result = {
         StopPoints: stops,
+        RouteLinks: tx.RouteSections[0].RouteSection.flatMap((r: any) => r.RouteLink).reduce(this.getRouteLinks, {}),
         JourneySections: tx.JourneyPatternSections[0].JourneyPatternSection.reduce(this.getJourneySections, {}),
+        JPTimingLinks: tx.JourneyPatternSections[0].JourneyPatternSection.flatMap((s: any) => s.JourneyPatternTimingLink).reduce(this.getJPTimingLinks, {}),
         Operators: (tx.Operators?.[0].Operator || []).concat(tx.Operators?.[0].LicensedOperator || []).reduce(this.getOperators, {}),
         Services: services,
         VehicleJourneys: tx.VehicleJourneys[0].VehicleJourney.map((v: any) => this.getVehicleJourney(v, patternIndex, services))
@@ -87,26 +94,67 @@ export class TransXChangeStream extends Transform {
     };
   }
 
-  private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
-    index[section.$.id] = section.JourneyPatternTimingLink ? section.JourneyPatternTimingLink.map(this.getLink) : [];
+  private getRouteLinks(index: RouteLinks, link: any): RouteLinks {
+    index[link.$.id] = {
+      From: link?.From?.[0] ?? "",
+      To: link?.To?.[0] ?? "",
+      Distance: link?.Distance ? Number(link.Distance[0]) : 0
+    };
 
     return index;
   }
 
-  private getLink(l: any): TimingLink {
+  private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
+    index[section.$.id] = section.JourneyPatternTimingLink ? section.JourneyPatternTimingLink.map(this.getJPLink) : [];
+
+    return index;
+  }
+
+  private getJPTimingLinks(index: JPTimingLinks, link: any): JPTimingLinks {
+    index[link.$.id] = this.getJPLink(link);
+
+    return index;
+  }
+
+  private getJPLink(l: any): JPTimingLink {
     return {
-      From: this.getJourneyStop(l?.From?.[0] ?? ""),
-      To: this.getJourneyStop(l?.To?.[0] ?? ""),
-      RunTime: Duration.parse(l?.RunTime?.[0] ?? "")
+      From: this.getJPJourneyStop(l?.From?.[0] ?? ""),
+      To: this.getJPJourneyStop(l?.To?.[0] ?? ""),
+      RunTime: Duration.parse(l?.RunTime?.[0] ?? ""),
+      RouteLinkRef: l?.RouteLinkRef?.[0] ?? ""
     };
   }
 
-  private getJourneyStop(stop: any): JourneyStop {
+  private getVJLink(l: any): VJTimingLink {
+    return {
+      JPTimingLinkRef: l?.JourneyPatternTimingLinkRef?.[0] ?? "",
+      From: this.getVJJourneyStop(l?.From?.[0] ?? ""),
+      To: this.getVJJourneyStop(l?.To?.[0] ?? ""),
+      RunTime: l?.RunTime?.[0] && Duration.parse(l.RunTime[0])
+    };
+  }
+
+  private normalizeTimingStatus(status: string): TimingStatus {
+    if (status === "PTP") return TimingStatus.PrincipalTimingPoint;
+    if (status === "TIP") return TimingStatus.TimeInfoPoint;
+    if (status === "OTH") return TimingStatus.OtherPoint;
+
+    return status as TimingStatus;
+  }
+
+  private getJPJourneyStop(stop: any): JPJourneyStop {
     return {
       Activity: stop?.Activity?.[0] ? stop.Activity[0] : StopActivity.PickUpAndSetDown,
       StopPointRef: stop?.StopPointRef?.[0] ?? "",
-      TimingStatus: stop?.TimingStatus?.[0] ?? "",
+      TimingStatus: this.normalizeTimingStatus(stop?.TimingStatus?.[0]) ?? TimingStatus.OtherPoint,
       WaitTime: stop?.WaitTime?.[0] && Duration.parse(stop.WaitTime[0])
+    };
+  }
+
+  private getVJJourneyStop(stop: any): VJJourneyStop {
+    return {
+      Activity: stop?.Activity?.[0],
+      WaitTime: stop?.WaitTime?.[0]
     };
   }
 
@@ -115,6 +163,7 @@ export class TransXChangeStream extends Transform {
       OperatorCode: operator?.OperatorCode?.[0] ? operator.OperatorCode[0] : operator?.NationalOperatorCode?.[0] ?? "",
       OperatorShortName: operator?.OperatorShortName?.[0] ?? "",
       OperatorNameOnLicence: operator?.OperatorNameOnLicence?.[0] && (operator.OperatorNameOnLicence[0]?._ ?? operator.OperatorNameOnLicence[0] ?? ""),
+      TradingName: operator?.TradingName?.[0]
     };
 
     return index;
@@ -173,7 +222,8 @@ export class TransXChangeStream extends Transform {
       OperatingProfile: vehicle.OperatingProfile
         ? this.getOperatingProfile(vehicle.OperatingProfile[0])
         : services[vehicle.ServiceRef[0]].OperatingProfile!,
-      OperationalBlockNumber: vehicle.Operational?.[0]?.Block?.[0].BlockNumber?.[0]
+      OperationalBlockNumber: vehicle.Operational?.[0]?.Block?.[0].BlockNumber?.[0],
+      TimingLinks: vehicle.VehicleJourneyTimingLink?.map(this.getVJLink)
     };
   }
 

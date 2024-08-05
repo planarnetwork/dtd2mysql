@@ -2,9 +2,14 @@ import {
   DaysOfWeek,
   Holiday,
   OperatingProfile,
+  RouteLinks,
   Service, StopActivity,
-  TimingLink,
-  TransXChange, VehicleJourney
+  JPTimingLink,
+  TransXChange, VehicleJourney,
+  VJTimingLink,
+  JPJourneyStop,
+  VJJourneyStop,
+  TimingStatus
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -41,6 +46,31 @@ export class TransXChangeJourneyStream extends Transform {
     callback();
   }
 
+  private mergeJourneyStop(jp: JPJourneyStop, vj?: VJJourneyStop): JPJourneyStop {
+    // Inheritance
+    if (!vj) {
+      return jp;
+    }
+
+    return {
+      Activity: vj.Activity ?? jp.Activity,
+      StopPointRef: jp.StopPointRef,
+      TimingStatus: jp.TimingStatus,
+      WaitTime: vj.WaitTime ?? jp.WaitTime
+    };
+  }
+
+  private mergeTimingLinks(jp: JPTimingLink, vj: VJTimingLink): JPTimingLink {
+    // Inheritance
+    return {
+      From: this.mergeJourneyStop(jp.From, vj.From),
+      To: this.mergeJourneyStop(jp.To, vj.To),
+      RunTime: vj.RunTime ?? jp.RunTime,
+      RouteLinkRef: jp.RouteLinkRef
+    };
+  }
+
+
   private processVehicle(schedule: TransXChange, vehicle: VehicleJourney) {
     const service = schedule.Services[vehicle.ServiceRef];
     const journeyPattern = service.StandardService[vehicle.JourneyPatternRef];
@@ -50,11 +80,13 @@ export class TransXChangeJourneyStream extends Transform {
       return;
     }
 
-    const sections = journeyPattern.Sections.flatMap(s => schedule.JourneySections[s] || []);
+    const sections = vehicle.TimingLinks ?
+      vehicle.TimingLinks.map(tl => this.mergeTimingLinks(schedule.JPTimingLinks[tl.JPTimingLinkRef], tl)) :
+      journeyPattern.Sections.flatMap(s => schedule.JourneySections[s] || []);
 
     if (sections.length > 0 && vehicle.OperatingProfile) {
       const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
-      const stops = this.getStopTimes(sections, vehicle.DepartureTime);
+      const stops = this.getStopTimes(schedule.RouteLinks, sections, vehicle.DepartureTime);
       const route = vehicle.ServiceRef;
       const blockId = vehicle.OperationalBlockNumber;
       const trip = {
@@ -151,21 +183,26 @@ export class TransXChangeJourneyStream extends Transform {
     ].join("_");
   }
 
-  private getStopTimes(links: TimingLink[], departureTime: LocalTime): StopTime[] {
+  private getStopTimes(routeLinksById: RouteLinks, links: JPTimingLink[], departureTime: LocalTime): StopTime[] {
     const stops = [{
       stop: links[0].From.StopPointRef,
       arrivalTime: departureTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
       departureTime: departureTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
       pickup: true,
       dropoff: false,
-      exactTime: links[0].From.TimingStatus === "PTP"
+      exactTime: links[0].From.TimingStatus === TimingStatus.PrincipalTimingPoint,
+      shapeDistTraveled: 0
     }];
 
     let lastDepartureTime = Duration.between(LocalTime.parse("00:00"), departureTime);
+    let distanceSoFarM = 0;
 
     for (const link of links) {
       const arrivalTime = lastDepartureTime.plusDuration(link.RunTime);
       lastDepartureTime = link.To.WaitTime ? arrivalTime.plusDuration(link.To.WaitTime) : arrivalTime;
+
+      const routeLink = routeLinksById[link.RouteLinkRef];
+      distanceSoFarM += routeLink.Distance;
 
       stops.push({
         stop: link.To.StopPointRef,
@@ -173,7 +210,8 @@ export class TransXChangeJourneyStream extends Transform {
         departureTime: this.getTime(lastDepartureTime),
         pickup: link.To.Activity === StopActivity.PickUp || link.To.Activity === StopActivity.PickUpAndSetDown,
         dropoff: link.To.Activity === StopActivity.SetDown || link.To.Activity === StopActivity.PickUpAndSetDown,
-        exactTime: link.To.TimingStatus === "PTP"
+        exactTime: link.To.TimingStatus === TimingStatus.PrincipalTimingPoint,
+        shapeDistTraveled: distanceSoFarM / 1000
       });
     }
 
@@ -217,5 +255,6 @@ export interface StopTime {
   departureTime: string,
   pickup: boolean,
   dropoff: boolean,
-  exactTime: boolean
+  exactTime: boolean,
+  shapeDistTraveled: number
 }
