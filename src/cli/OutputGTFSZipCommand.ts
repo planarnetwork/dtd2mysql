@@ -3,6 +3,7 @@ import {CLICommand} from "./CLICommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import * as fs from "fs";
 import {execSync} from "child_process";
+import * as path from "path";
 
 export class OutputGTFSZipCommand implements CLICommand {
 
@@ -22,7 +23,11 @@ export class OutputGTFSZipCommand implements CLICommand {
 
     argv[3] = "/tmp/gtfs/";
 
-    if (!fs.existsSync(argv[3])) {
+    if (fs.existsSync(argv[3])) {
+      for (const entry of fs.readdirSync(argv[3])) {
+        fs.rmSync(path.join(argv[3], entry), { recursive: true });
+      }
+    } else {
       fs.mkdirSync(argv[3]);
     }
 
@@ -31,7 +36,16 @@ export class OutputGTFSZipCommand implements CLICommand {
     // when node tells you it's finished writing a file, it's lying.
     setTimeout(() => {
       console.log("Writing " + filename);
-      execSync(`zip -j ${filename} ${argv[3]}/*.txt`);
+      try {
+        execSync(`zip -j ${filename} ${argv[3]}/*.txt`);
+      } catch (err) {
+        const dec = new TextDecoder();
+        console.error("STDOUT:");
+        console.error(dec.decode(err.stdout));
+        console.error("STDERR:");
+        console.error(dec.decode(err.stderr));
+        throw err;
+      }
     }, 1000);
   }
 
