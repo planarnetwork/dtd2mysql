@@ -80,8 +80,11 @@ export class CIFRepository {
    *
    * The second query selects all the z-trains (usually replacement buses) within three months. They already use CRS
    * codes as the location so avoid the disaster above.
+   *
+   * The argument range is a mysql expression like '3 MONTH'.
+   *   It is NOT SANITIZED so it cannot be untrusted user input.
    */
-  public async getSchedules(): Promise<ScheduleResults> {
+  public async getSchedules(range: string): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
 
@@ -103,7 +106,7 @@ export class CIFRepository {
         (
           stop_time.id IS NULL OR crs_code IS NOT NULL
         )
-        AND runs_from < CURDATE() + INTERVAL 3 MONTH
+        AND runs_from < CURDATE() + INTERVAL ${range}
         AND runs_to >= CURDATE()
         AND scheduled_pass_time is null
         ORDER BY stp_indicator DESC, id, stop_id
