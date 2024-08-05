@@ -9,7 +9,7 @@ import { stringify } from "csv-stringify";
 const asyncPipeline = promisify(pipeline);
 
 export class GetStopData {
-  private static readonly STOPS_URL = "https://beta-naptan.dft.gov.uk/Download/File/Stops.csv";
+  private static readonly STOPS_URL = "https://beta-naptan.dft.gov.uk/Download/National/csv";
 
   public async update() {
     const transform = new Transform({
