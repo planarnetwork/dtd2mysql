@@ -31,8 +31,13 @@ export class OutputGTFSCommand implements CLICommand {
       throw new Error(`Output path ${this.baseDir} does not exist.`);
     }
 
+    if (Object.hasOwn(process.env, "GTFS_RANGE")) {
+      console.log(`Using GTFS_RANGE = ${process.env.GTFS_RANGE}\n`);
+    }
+    const range = process.env.GTFS_RANGE || "3 MONTH";
+
     const associationsP = this.repository.getAssociations();
-    const scheduleResultsP = this.repository.getSchedules();
+    const scheduleResultsP = this.repository.getSchedules(range);
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");

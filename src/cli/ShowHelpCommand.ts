@@ -37,6 +37,10 @@ The --get-* and --download-* commands require SFTP environment properties:
   SFTP_USERNAME              SFTP username
   SFTP_PASSWORD              SFTP password
   SFTP_HOSTNAME              SFTP hostname (defaults to dtd.atocrsp.org)
+
+The --gtfs and --gtfs-zip commands take the following environment properties:
+
+  GTFS_RANGE                 A mysql interval expression for the scedules to include. This is NOT SANITIZED so it cannot be untrusted user input (defaults to '3 MONTH')
   
 `);
 
