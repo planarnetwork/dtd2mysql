@@ -1,4 +1,6 @@
 
+import * as os from 'node:os';
+import * as path from 'node:path';
 import {CLICommand} from "./CLICommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import * as fs from "fs";
@@ -19,12 +21,8 @@ export class OutputGTFSZipCommand implements CLICommand {
     if (fs.existsSync(filename)) {
       fs.unlinkSync(filename);
     }
-
-    argv[3] = "/tmp/gtfs/";
-
-    if (!fs.existsSync(argv[3])) {
-      fs.mkdirSync(argv[3]);
-    }
+    
+    argv[3] = fs.mkdtempSync(path.join(os.tmpdir(), "gtfs"));
 
     await this.command.run(argv);
 

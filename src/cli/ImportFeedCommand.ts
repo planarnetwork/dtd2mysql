@@ -132,7 +132,7 @@ export class ImportFeedCommand implements CLICommand {
     const file = this.getFeedFile(filename);
     const tables = await this.tables(file);
     const tableStream = new MySQLStream(filename, file, tables);
-    const stream = readFile(this.tmpFolder + filename).pipe(tableStream);
+    const stream = readFile(`${this.tmpFolder}/${filename}`).pipe(tableStream);
 
     try {
       await streamToPromise(stream);
