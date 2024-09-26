@@ -1,10 +1,10 @@
 
 import * as os from 'node:os';
 import * as path from 'node:path';
-import {CLICommand} from "./CLICommand";
+import {CLICommand, processSpawnResult} from "./CLICommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import * as fs from "fs";
-import {execSync} from "child_process";
+import {spawnSync} from "child_process";
 
 export class OutputGTFSZipCommand implements CLICommand {
 
@@ -29,7 +29,7 @@ export class OutputGTFSZipCommand implements CLICommand {
     // when node tells you it's finished writing a file, it's lying.
     setTimeout(() => {
       console.log("Writing " + filename);
-      execSync(`zip -j ${filename} ${argv[3]}/*.txt`);
+      processSpawnResult(spawnSync('zip', ['-jr', filename, argv[3]]));
     }, 1000);
   }
 
