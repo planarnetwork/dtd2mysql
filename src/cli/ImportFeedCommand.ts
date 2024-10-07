@@ -1,4 +1,5 @@
 import AdmZip = require("adm-zip");
+import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "../../config";
 import {FeedFile} from "../feed/file/FeedFile";
@@ -7,7 +8,6 @@ import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
 import {MySQLTable} from "../database/MySQLTable";
 import * as memoize from "memoized-class-decorator";
-import fs = require("fs-extra");
 import {MultiRecordFile} from "../feed/file/MultiRecordFile";
 import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
 import {MySQLStream, TableIndex} from "../database/MySQLStream";
@@ -46,7 +46,7 @@ export class ImportFeedCommand implements CLICommand {
    */
   public async doImport(filePath: string): Promise<void> {
     console.log(`Extracting ${filePath} to ${this.tmpFolder}`);
-    fs.emptyDirSync(this.tmpFolder);
+    fs.rmSync(this.tmpFolder, {recursive: true, force: true});
 
     new AdmZip(filePath).extractAllTo(this.tmpFolder);
 
@@ -73,6 +73,7 @@ export class ImportFeedCommand implements CLICommand {
     }
 
     await this.updateLastFile(zipName);
+    fs.rmSync(this.tmpFolder, { recursive: true });
   }
 
   /**

@@ -30,6 +30,7 @@ export class OutputGTFSZipCommand implements CLICommand {
     setTimeout(() => {
       console.log("Writing " + filename);
       processSpawnResult(spawnSync('zip', ['-jr', filename, argv[3]]));
+      fs.rmSync(argv[3], {recursive: true});
     }, 1000);
   }
 
