@@ -44,7 +44,6 @@
     "adm-zip": "^0.5.10",
     "byline": "^5.0.0",
     "csv-write-stream": "^2.0.0",
-    "fs-extra": "^11.1.1",
     "memoized-class-decorator": "^1.6.1",
     "moment": "^2.29.4",
     "mysql2": "^3.6.1",
@@ -53,12 +52,11 @@
     "stream-to-promise": "^3.0.0"
   },
   "engines": {
-    "node": "^14.0.0"
+    "node": "^14.14.0"
   },
   "devDependencies": {
     "@types/byline": "^4.2.33",
     "@types/chai": "^4.3.6",
-    "@types/fs-extra": "^11.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.11.6",
     "@types/ssh2": "^1.11.13",
