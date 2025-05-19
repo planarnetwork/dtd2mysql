@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import moment = require("moment");
+import * as moment from "moment";
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
 import {StopTime} from "../../../src/gtfs/file/StopTime";
@@ -41,8 +41,8 @@ describe("ApplyAssociations", () => {
     const association1 = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next, calendar);
 
     const resultByTuid = applyAssociations(
-      <ScheduleIndex>applyOverlays([base1, assoc1, base2, assoc2]),
-      <AssociationIndex>applyOverlays([association1]),
+      applyOverlays([base1, assoc1, base2, assoc2]) as ScheduleIndex,
+      applyOverlays([association1]) as AssociationIndex,
       idGenerator()
     );
 

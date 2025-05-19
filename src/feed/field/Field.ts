@@ -1,5 +1,8 @@
+// Remove the util import and add our own implementation
+function isNullOrUndefined(value: any): boolean {
+  return value === null || value === undefined;
+}
 
-import {isNullOrUndefined} from "util";
 import * as memoize from "memoized-class-decorator";
 
 /**

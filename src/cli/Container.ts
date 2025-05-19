@@ -20,6 +20,8 @@ import {GTFSImportCommand} from "./GTFSImportCommand";
 import {downloadUrl} from "../../config/nfm64";
 import {DownloadFileCommand} from "./DownloadFileCommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
+import {SnowflakeDatabaseCommand} from "./SnowflakeDatabaseCommand";
+import {MySQLDatabaseCommand} from "./MySQLDatabaseCommand";
 
 export class Container {
 
@@ -42,6 +44,7 @@ export class Container {
       case "--get-timetable": return this.getDownloadAndProcessCommand("/timetable/", this.getTimetableImportCommand());
       case "--get-routeing": return this.getDownloadAndProcessCommand("/routing_guide/", this.getRouteingImportCommand());
       case "--get-nfm64": return this.getDownloadAndProcessNFM64Command();
+      case "--database-type": return this.getDatabaseTypeCommand();
       default: return this.getShowHelpCommand();
     }
   }
@@ -170,10 +173,24 @@ export class Container {
 
   @memoize
   public getDatabaseConnection(): DatabaseConnection {
-    return require('mysql2/promise').createPool({
-      ...this.databaseConfiguration,
-      //debug: ['ComQueryPacket', 'RowDataPacket']
-    });
+    const dbType = process.env.DATABASE_TYPE || "mysql";
+    if (dbType === "snowflake") {
+      return require('snowflake-sdk').createPool({
+        ...this.databaseConfiguration,
+        account: this.databaseConfiguration.host,
+        username: this.databaseConfiguration.user,
+        password: this.databaseConfiguration.password,
+        database: this.databaseConfiguration.database,
+        schema: this.databaseConfiguration.schema,
+        warehouse: this.databaseConfiguration.warehouse,
+        role: this.databaseConfiguration.role
+      });
+    } else {
+      return require('mysql2/promise').createPool({
+        ...this.databaseConfiguration,
+        //debug: ['ComQueryPacket', 'RowDataPacket']
+      });
+    }
   }
 
   @memoize
@@ -186,7 +203,7 @@ export class Container {
       throw new Error("Please set the DATABASE_NAME environment variable.");
     }
 
-    return {
+    const config = {
       host: process.env.DATABASE_HOSTNAME || "localhost",
       user: process.env.DATABASE_USERNAME || "root",
       password: process.env.DATABASE_PASSWORD || null,
@@ -195,6 +212,36 @@ export class Container {
       connectionLimit: 20,
       multipleStatements: true
     };
+
+    if (process.env.DATABASE_TYPE === "snowflake") {
+      if (!process.env.SNOWFLAKE_SCHEMA) {
+        throw new Error("Please set the SNOWFLAKE_SCHEMA environment variable.");
+      }
+      if (!process.env.SNOWFLAKE_WAREHOUSE) {
+        throw new Error("Please set the SNOWFLAKE_WAREHOUSE environment variable.");
+      }
+      if (!process.env.SNOWFLAKE_ROLE) {
+        throw new Error("Please set the SNOWFLAKE_ROLE environment variable.");
+      }
+      return {
+        ...config,
+        schema: process.env.SNOWFLAKE_SCHEMA,
+        warehouse: process.env.SNOWFLAKE_WAREHOUSE,
+        role: process.env.SNOWFLAKE_ROLE
+      };
+    }
+
+    return config;
+  }
+
+  @memoize
+  public async getDatabaseTypeCommand(): Promise<CLICommand> {
+    const dbType = process.env.DATABASE_TYPE || "mysql";
+    if (dbType === "snowflake") {
+      return new SnowflakeDatabaseCommand();
+    } else {
+      return new MySQLDatabaseCommand();
+    }
   }
 
 }

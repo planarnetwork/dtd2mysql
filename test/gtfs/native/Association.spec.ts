@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import moment = require("moment");
+import * as moment from "moment";
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {StopTime} from "../../../src/gtfs/file/StopTime";

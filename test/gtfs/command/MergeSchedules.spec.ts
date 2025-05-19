@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import moment = require("moment");
+import * as moment from "moment";
 import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
 import {mergeSchedules} from "../../../src/gtfs/command/MergeSchedules";
 import {applyOverlays} from "../../../src/gtfs/command/ApplyOverlays";
