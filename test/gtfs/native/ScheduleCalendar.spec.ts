@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import moment = require("moment");
+import * as moment from "moment";
 import {Days, OverlapType, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 
 describe("ScheduleCalendar", () => {
