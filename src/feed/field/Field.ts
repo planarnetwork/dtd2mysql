@@ -1,5 +1,5 @@
 
-import * as memoize from "memoized-class-decorator";
+import memoize from "memoized-class-decorator";
 
 /**
  * Parent class for all fields

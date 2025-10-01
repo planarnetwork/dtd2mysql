@@ -1,0 +1,15 @@
+services:
+  mariadb:
+    image: mariadb:latest
+    container_name: dtd2mysql-db
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: dtd2mysql
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+volumes:
+  mariadb_data:

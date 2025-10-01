@@ -1,0 +1,32 @@
+name: Publish to NPM
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        registry-url: 'https://registry.npmjs.org'
+    - run: npm install
+    - run: npm test
+    - name: Configure git
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+    - name: Bump version and publish
+      run: |
+        npm version patch -m "Bump version to %s [skip ci]"
+        git push
+        git push --tags
+        npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

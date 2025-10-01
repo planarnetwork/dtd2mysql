@@ -9,6 +9,7 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "declaration": true,
+    "esModuleInterop": true,
     "lib": [
       "esnext",
       "dom"

@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import * as moment from "moment";
+import moment from "moment";
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
 import {StopTime} from "../../../src/gtfs/file/StopTime";

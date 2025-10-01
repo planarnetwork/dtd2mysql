@@ -1,4 +1,4 @@
-import * as AdmZip from "adm-zip";
+import AdmZip from "adm-zip";
 import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "../../config";
@@ -7,12 +7,12 @@ import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
 import {MySQLTable} from "../database/MySQLTable";
-import * as memoize from "memoized-class-decorator";
+import memoize from "memoized-class-decorator";
 import {MultiRecordFile} from "../feed/file/MultiRecordFile";
 import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
 import {MySQLStream, TableIndex} from "../database/MySQLStream";
-import * as byline from "byline";
-import * as streamToPromise from "stream-to-promise";
+import byline from "byline";
+import streamToPromise from "stream-to-promise";
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
 const readFile = filename => byline.createStream(fs.createReadStream(filename, "utf8"));

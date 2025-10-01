@@ -1,4 +1,4 @@
-import * as csvWriter from 'csv-write-stream';
+import csvWriter from 'csv-write-stream';
 import * as fs from "fs";
 import {GTFSOutput} from "./GTFSOutput";
 import {Writable} from "stream";

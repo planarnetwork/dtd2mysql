@@ -1,9 +1,9 @@
 
-import * as proj4 from 'proj4';
+import proj4 from 'proj4';
 import {DatabaseConnection} from "../../database/DatabaseConnection";
 import {Transfer} from "../file/Transfer";
 import {CRS, Stop} from "../file/Stop";
-import * as moment from "moment";
+import moment from "moment";
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";

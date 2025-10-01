@@ -6,7 +6,7 @@ import {DateField} from "../../../src/feed/field/DateField";
 import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 
-import * as memoize from "memoized-class-decorator";
+import memoize from "memoized-class-decorator";
 import {Record, FieldMap, ParsedRecord, RecordAction} from "../../../src/feed/record/Record";
 import {FieldValue} from "../../../src/feed/field/Field";
 
