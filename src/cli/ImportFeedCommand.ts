@@ -1,4 +1,4 @@
-import AdmZip = require("adm-zip");
+import * as AdmZip from "adm-zip";
 import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "../../config";
@@ -11,8 +11,8 @@ import * as memoize from "memoized-class-decorator";
 import {MultiRecordFile} from "../feed/file/MultiRecordFile";
 import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
 import {MySQLStream, TableIndex} from "../database/MySQLStream";
-import byline = require("byline");
-import streamToPromise = require("stream-to-promise");
+import * as byline from "byline";
+import * as streamToPromise from "stream-to-promise";
 
 const getExt = filename => path.extname(filename).slice(1).toUpperCase();
 const readFile = filename => byline.createStream(fs.createReadStream(filename, "utf8"));

@@ -1,7 +1,7 @@
 
 import {CLICommand} from "./CLICommand";
 import {DatabaseConnection} from "../database/DatabaseConnection";
-import moment = require("moment");
+import * as moment from "moment";
 import {Moment} from "moment";
 
 export class CleanFaresCommand implements CLICommand {

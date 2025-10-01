@@ -1,7 +1,7 @@
 import {IdGenerator, STP} from "../native/OverlayRecord";
 import {Schedule} from "../native/Schedule";
 import {RouteType} from "../file/Route";
-import moment = require("moment");
+import * as moment from "moment";
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";

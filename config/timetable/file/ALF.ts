@@ -6,10 +6,9 @@ import {DateField} from "../../../src/feed/field/DateField";
 import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 
-import memoize = require("memoized-class-decorator");
+import * as memoize from "memoized-class-decorator";
 import {Record, FieldMap, ParsedRecord, RecordAction} from "../../../src/feed/record/Record";
 import {FieldValue} from "../../../src/feed/field/Field";
-import {isNullOrUndefined} from "util";
 
 /**
  * Short format DTD date (e.g. 31/05/2017)
@@ -96,11 +95,11 @@ class ALFRecord implements Record {
       const [fieldKey, position] = this.fieldMap[name];
       const rawValue = csvMap.get(fieldKey);
 
-      if (isNullOrUndefined(rawValue)) {
+      if (rawValue === null || rawValue === undefined) {
         values[name] = null;
       }
       else {
-        const value = !isNullOrUndefined(position) ? rawValue.charAt(position) : rawValue;
+        const value = (position !== null && position !== undefined) ? rawValue.charAt(position) : rawValue;
         values[name] = field.extract(value);
       }
 

@@ -5,7 +5,7 @@ import {CRS, Stop} from "../file/Stop";
 import {Duration, Moment} from "moment";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
-import moment = require("moment");
+import * as moment from "moment";
 import {formatDuration} from "./Duration";
 
 export class Association implements OverlayRecord {
