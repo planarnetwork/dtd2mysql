@@ -185,33 +185,41 @@ describe("TransXChangeJourneyStream", () => {
         {
           From: { Activity: StopActivity.PickUp, StopPointRef: "118000037" },
           To: { Activity: StopActivity.PickUp, StopPointRef: "1180033077" },
-          RunTime: Duration.parse("PT5M")
+          RunTime: Duration.parse("PT5M"),
+          RouteLinkRef: ""
         }
       ],
       "JPSection-77": [
         {
           From: { Activity: StopActivity.PickUp, StopPointRef: "1180033077" },
           To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "1100DEC10183" },
-          RunTime: Duration.parse("PT65M")
+          RunTime: Duration.parse("PT65M"),
+          RouteLinkRef: ""
         }
       ],
       "JPSection-21": [
         {
           From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "1100DEC10183" },
           To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "010000036", WaitTime: Duration.parse("PT5M") },
-          RunTime: Duration.parse("PT115M")
+          RunTime: Duration.parse("PT115M"),
+          RouteLinkRef: ""
         },
         {
           From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "010000036" },
           To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "0170SGA56570" },
-          RunTime: Duration.parse("PT15M")
+          RunTime: Duration.parse("PT15M"),
+          RouteLinkRef: ""
         },
         {
           From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "0170SGA56570" },
           To: { Activity: StopActivity.SetDown, StopPointRef: "490016736W" },
-          RunTime: Duration.parse("PT155M")
+          RunTime: Duration.parse("PT155M"),
+          RouteLinkRef: ""
         }
       ],
+    },
+    RouteLinks: {
+      "": { Distance: 0 }
     }
   };
 

@@ -15,9 +15,9 @@ describe("StopTimesStream", () => {
         headsign: "G153"
       },
       stops: [
-        { stop: "A", "arrivalTime": "10:00", departureTime: "10:00", dropoff: false, pickup: true, exactTime: true },
-        { stop: "B", "arrivalTime": "11:00", departureTime: "11:10", dropoff: true, pickup: true, exactTime: true },
-        { stop: "C", "arrivalTime": "12:00", departureTime: "12:00", dropoff: true, pickup: false, exactTime: true },
+        { stop: "A", "arrivalTime": "10:00", departureTime: "10:00", dropoff: false, pickup: true, exactTime: true, shapeDistTraveled: "" },
+        { stop: "B", "arrivalTime": "11:00", departureTime: "11:10", dropoff: true, pickup: true, exactTime: true, shapeDistTraveled: "" },
+        { stop: "C", "arrivalTime": "12:00", departureTime: "12:00", dropoff: true, pickup: false, exactTime: true, shapeDistTraveled: "" },
       ]
     });
 

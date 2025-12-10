@@ -129,11 +129,11 @@ export class TransXChangeJourneyStream extends Transform {
     }
 
     for (const holiday of operatingProfile.BankHolidayOperation.DaysOfNonOperation) {
-      excludes.push(...this.getHoliday(holiday, startDate));
+      excludes.push(...this.getHoliday(holiday, startDate, endDate));
     }
 
     for (const holiday of operatingProfile.BankHolidayOperation.DaysOfOperation) {
-      includes.push(...this.getHoliday(holiday, startDate));
+      includes.push(...this.getHoliday(holiday, startDate, endDate));
     }
 
     const hash = this.getCalendarHash(days, startDate, endDate, includes, excludes);
@@ -165,8 +165,8 @@ export class TransXChangeJourneyStream extends Transform {
     }
   }
 
-  private getHoliday(holiday: Holiday, startDate: LocalDate): LocalDate[] {
-    return (this.holidays[holiday] || []).filter(date => date.isAfter(startDate));
+  private getHoliday(holiday: Holiday, startDate: LocalDate, endDate: LocalDate): LocalDate[] {
+    return (this.holidays[holiday] || []).filter(date => !date.isBefore(startDate) && !date.isAfter(endDate));
   }
 
   private getCalendarHash(days: DaysOfWeek,
