@@ -7,9 +7,15 @@
   "bin": {
     "transxchange2gtfs": "bin/transxchange2gtfs.sh"
   },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "logo.png"
+  ],
   "scripts": {
     "start": "tsx src/cli.ts",
-    "prepublishOnly": "rm -r dist;tsc -p ./ --outDir dist/; cp -r ./resource ./dist/",
+    "prepublishOnly": "rm -rf dist && tsc -p ./ --outDir dist/ && cp -r ./resource ./dist/",
     "test": "vitest run",
     "lint": "biome check src test",
     "lint:fix": "biome check --write src test",
