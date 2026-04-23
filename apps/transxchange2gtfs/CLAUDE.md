@@ -54,7 +54,7 @@ On first run the CLI downloads `/tmp/Stops.csv` from the NaPTAN endpoint (see `s
 
 ### Bank holidays
 
-Hard-coded in `Container.getBankHolidays()` as dates keyed by `Holiday` enum. When the list runs out, it needs extending by hand — there is no automated source.
+Resolved via the `date-holidays` npm package in `src/reference/BankHolidays.ts`, which maps each TransXChange `Holiday` enum to a rule+locale (GB-ENG / GB-SCT) and computes a rolling window of ±decades around the current year. No manual list to extend.
 
 ## Testing
 
