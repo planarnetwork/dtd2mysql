@@ -1,6 +1,6 @@
 import {GTFSFileStream} from "./GTFSFileStream";
 import {TransXChangeJourney} from "../transxchange/TransXChangeJourneyStream";
-import {LocalDate, DateTimeFormatter} from "js-joda";
+import {LocalDate, DateTimeFormatter} from "@js-joda/core";
 
 /**
  * Extract the calendars dates from the TransXChange journeys

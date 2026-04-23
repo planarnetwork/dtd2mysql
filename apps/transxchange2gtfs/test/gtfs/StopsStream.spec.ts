@@ -1,8 +1,6 @@
-import * as chai from "chai";
 import {StopsStream} from "../../src/gtfs/StopsStream";
 import {awaitStream, splitCSV} from "../util";
 
-// tslint:disable
 
 describe("StopsStream", () => {
   const naptan = {
@@ -26,15 +24,15 @@ describe("StopsStream", () => {
 
     return awaitStream(stops, (rows: string[]) => {
       // Expect header to have same number of columns as data rows do
-      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+      expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
 
       const [stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon] = splitCSV(rows[1]);
-      chai.expect(stop_id).to.equal("a");
-      chai.expect(stop_code).to.equal("naptanA");
-      chai.expect(stop_name).to.equal("nameA (NE), streetA, cityA");
-      chai.expect(stop_desc).to.equal("nameA");
-      chai.expect(stop_lat).to.equal("1.00");
-      chai.expect(stop_lon).to.equal("1.00");
+      expect(stop_id).to.equal("a");
+      expect(stop_code).to.equal("naptanA");
+      expect(stop_name).to.equal("nameA (NE), streetA, cityA");
+      expect(stop_desc).to.equal("nameA");
+      expect(stop_lat).to.equal("1.00");
+      expect(stop_lon).to.equal("1.00");
     });
   });
 
@@ -56,16 +54,16 @@ describe("StopsStream", () => {
 
     return awaitStream(stops, (rows: string[]) => {
       // Expect header to have same number of columns as data rows do
-      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+      expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
 
       const [stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon] = splitCSV(rows[1]);
 
-      chai.expect(stop_id).to.equal("NotInIndex");
-      chai.expect(stop_code).to.equal("");
-      chai.expect(stop_name).to.equal("name, qualifier");
-      chai.expect(stop_desc).to.equal("");
-      chai.expect(stop_lat).to.equal("0.123");
-      chai.expect(stop_lon).to.equal("-0.123");
+      expect(stop_id).to.equal("NotInIndex");
+      expect(stop_code).to.equal("");
+      expect(stop_name).to.equal("name, qualifier");
+      expect(stop_desc).to.equal("");
+      expect(stop_lat).to.equal("0.123");
+      expect(stop_lon).to.equal("-0.123");
     });
   });
 
@@ -83,13 +81,13 @@ describe("StopsStream", () => {
 
     return awaitStream(stops, (rows: string[]) => {
       // Expect header to have same number of columns as data rows do
-      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+      expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
 
       const [stop_id, stop_code, stop_name] = splitCSV(rows[1]);
 
-      chai.expect(stop_id).to.equal("b");
-      chai.expect(stop_code).to.equal("naptanB");
-      chai.expect(stop_name).to.equal("nameB (NE), streetB, townB");
+      expect(stop_id).to.equal("b");
+      expect(stop_code).to.equal("naptanB");
+      expect(stop_name).to.equal("nameB (NE), streetB, townB");
     });
   });
 
@@ -107,13 +105,13 @@ describe("StopsStream", () => {
 
     return awaitStream(stops, (rows: string[]) => {
       // Expect header to have same number of columns as data rows do
-      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+      expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
 
       const [stop_id, stop_code, stop_name] = splitCSV(rows[1]);
 
-      chai.expect(stop_id).to.equal("c");
-      chai.expect(stop_code).to.equal("naptanC");
-      chai.expect(stop_name).to.equal("nameC Road (NE), cityC");
+      expect(stop_id).to.equal("c");
+      expect(stop_code).to.equal("naptanC");
+      expect(stop_name).to.equal("nameC Road (NE), cityC");
     });
   });
 
@@ -131,13 +129,13 @@ describe("StopsStream", () => {
 
     return awaitStream(stops, (rows: string[]) => {
       // Expect header to have same number of columns as data rows do
-      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+      expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
 
       const [stop_id, stop_code, stop_name] = splitCSV(rows[1]);
 
-      chai.expect(stop_id).to.equal("d");
-      chai.expect(stop_code).to.equal("naptanD");
-      chai.expect(stop_name).to.equal("nameD (SW), streetD, cityD");
+      expect(stop_id).to.equal("d");
+      expect(stop_code).to.equal("naptanD");
+      expect(stop_name).to.equal("nameD (SW), streetD, cityD");
     });
   });
 
@@ -163,9 +161,9 @@ describe("StopsStream", () => {
 
     return awaitStream(stops, (rows: string[]) => {
       // Expect header to have same number of columns as data rows do
-      chai.expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
+      expect(splitCSV(rows[1])).to.have.lengthOf(splitCSV(rows[0]).length)
 
-      chai.expect(rows.length).to.equal(2);
+      expect(rows.length).to.equal(2);
     });
   });
 

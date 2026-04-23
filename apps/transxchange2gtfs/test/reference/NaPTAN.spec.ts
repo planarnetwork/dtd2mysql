@@ -1,4 +1,3 @@
-import * as chai from "chai";
 import {NaPTANFactory} from "../../src/reference/NaPTAN";
 import { parse } from "csv-parse";
 
@@ -13,8 +12,8 @@ describe("NaPTANFactory", () => {
 
     const [index] = await factory.getIndexes();
 
-    chai.expect(index["stopA"]).to.deep.equal(["stopA", "nameA"]);
-    chai.expect(index["stopB"]).to.deep.equal(["stopB", "nameB"]);
+    expect(index["stopA"]).to.deep.equal(["stopA", "nameA"]);
+    expect(index["stopB"]).to.deep.equal(["stopB", "nameB"]);
   });
 
 });

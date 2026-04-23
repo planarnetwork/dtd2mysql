@@ -9,7 +9,7 @@ import { FileStream } from "./converter/FileStream";
 import { AgencyStream } from "./gtfs/AgencyStream";
 import { RoutesStream } from "./gtfs/RoutesStream";
 import { CalendarStream } from "./gtfs/CalendarStream";
-import { LocalDate } from "js-joda";
+import { LocalDate } from "@js-joda/core";
 import { Holiday } from "./transxchange/TransXChange";
 import { BankHolidays, TransXChangeJourneyStream } from "./transxchange/TransXChangeJourneyStream";
 import { CalendarDatesStream } from "./gtfs/CalendarDatesStream";

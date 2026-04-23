@@ -1,8 +1,6 @@
-import * as chai from "chai";
 import {awaitStream, splitCSV} from "../util";
 import {StopTimesStream} from "../../src/gtfs/StopTimesStream";
 
-// tslint:disable
 
 describe("StopTimesStream", () => {
 
@@ -26,42 +24,42 @@ describe("StopTimesStream", () => {
     return awaitStream(stream, (rows: string[]) => {
       let [trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint] = splitCSV(rows[1]);
 
-      chai.expect(trip_id).to.equal("2");
-      chai.expect(arrival_time).to.equal("10:00");
-      chai.expect(departure_time).to.equal("10:00");
-      chai.expect(stop_id).to.equal("A");
-      chai.expect(stop_sequence).to.equal("1");
-      chai.expect(stop_headsign).to.equal("");
-      chai.expect(pickup_type).to.equal("0");
-      chai.expect(drop_off_type).to.equal("1");
-      chai.expect(shape_dist_traveled).to.equal("");
-      chai.expect(timepoint).to.equal("1");
+      expect(trip_id).to.equal("2");
+      expect(arrival_time).to.equal("10:00");
+      expect(departure_time).to.equal("10:00");
+      expect(stop_id).to.equal("A");
+      expect(stop_sequence).to.equal("1");
+      expect(stop_headsign).to.equal("");
+      expect(pickup_type).to.equal("0");
+      expect(drop_off_type).to.equal("1");
+      expect(shape_dist_traveled).to.equal("");
+      expect(timepoint).to.equal("1");
 
       [trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint] = splitCSV(rows[2]);
 
-      chai.expect(trip_id).to.equal("2");
-      chai.expect(arrival_time).to.equal("11:00");
-      chai.expect(departure_time).to.equal("11:10");
-      chai.expect(stop_id).to.equal("B");
-      chai.expect(stop_sequence).to.equal("2");
-      chai.expect(stop_headsign).to.equal("");
-      chai.expect(pickup_type).to.equal("0");
-      chai.expect(drop_off_type).to.equal("0");
-      chai.expect(shape_dist_traveled).to.equal("");
-      chai.expect(timepoint).to.equal("1");
+      expect(trip_id).to.equal("2");
+      expect(arrival_time).to.equal("11:00");
+      expect(departure_time).to.equal("11:10");
+      expect(stop_id).to.equal("B");
+      expect(stop_sequence).to.equal("2");
+      expect(stop_headsign).to.equal("");
+      expect(pickup_type).to.equal("0");
+      expect(drop_off_type).to.equal("0");
+      expect(shape_dist_traveled).to.equal("");
+      expect(timepoint).to.equal("1");
 
       [trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint] = splitCSV(rows[3]);
 
-      chai.expect(trip_id).to.equal("2");
-      chai.expect(arrival_time).to.equal("12:00");
-      chai.expect(departure_time).to.equal("12:00");
-      chai.expect(stop_id).to.equal("C");
-      chai.expect(stop_sequence).to.equal("3");
-      chai.expect(stop_headsign).to.equal("");
-      chai.expect(pickup_type).to.equal("1");
-      chai.expect(drop_off_type).to.equal("0");
-      chai.expect(shape_dist_traveled).to.equal("");
-      chai.expect(timepoint).to.equal("1");
+      expect(trip_id).to.equal("2");
+      expect(arrival_time).to.equal("12:00");
+      expect(departure_time).to.equal("12:00");
+      expect(stop_id).to.equal("C");
+      expect(stop_sequence).to.equal("3");
+      expect(stop_headsign).to.equal("");
+      expect(pickup_type).to.equal("1");
+      expect(drop_off_type).to.equal("0");
+      expect(shape_dist_traveled).to.equal("");
+      expect(timepoint).to.equal("1");
     });
   });
 

@@ -8,12 +8,12 @@
     "transxchange2gtfs": "bin/transxchange2gtfs.sh"
   },
   "scripts": {
-    "start": "ts-node src/cli.ts",
+    "start": "tsx src/cli.ts",
     "prepublishOnly": "rm -r dist;tsc -p ./ --outDir dist/; cp -r ./resource ./dist/",
-    "test": "npm run lint && mocha --require ts-node/register **/*.spec.ts",
-    "lint-raw": "tslint --project tsconfig.json",
-    "lint": "npm run lint-raw -- -t stylish",
-    "coverage": "nyc --reporter=text npm test"
+    "test": "vitest run",
+    "lint": "biome check src test",
+    "lint:fix": "biome check --write src test",
+    "coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
@@ -31,48 +31,31 @@
     "url": "https://github.com/planarnetwork/transxchange2gtfs/issues"
   },
   "homepage": "https://github.com/planarnetwork/transxchange2gtfs#readme",
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/autobind-decorator": "^2.1.0",
-    "@types/chai": "^4.3.0",
-    "@types/follow-redirects": "^1.13.1",
-    "@types/glob": "^7.2.0",
-    "@types/mocha": "^8.2.3",
-    "@types/node": "^16.11.21",
-    "@types/rimraf": "^3.0.2",
-    "@types/xml2js": "^0.4.9",
-    "@types/yauzl": "^2.9.2",
-    "@types/yazl": "^2.4.2",
-    "chai": "^4.3.4",
-    "mocha": "^11.1.0",
-    "nyc": "^15.1.0",
-    "ts-node": "^10.4.0",
-    "tslint": "^6.1.3",
-    "typescript": "^4.5.5"
+    "@types/follow-redirects": "^1.14.4",
+    "@types/node": "^22",
+    "@types/xml2js": "^0.4.14",
+    "@types/yauzl": "^2.10.3",
+    "@types/yazl": "^3.3.1",
+    "@biomejs/biome": "^2.4.12",
+    "@vitest/coverage-v8": "^4.1.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "autobind-decorator": "^2.4.0",
-    "csv-parse": "^5.0.4",
-    "csv-stringify": "^6.0.5",
-    "follow-redirects": "^1.14.7",
-    "glob": "^7.2.0",
-    "js-joda": "^1.11.0",
-    "rimraf": "^3.0.2",
-    "xml2js": "^0.5.0",
-    "yauzl": "^3.2.1",
-    "yazl": "^2.5.1"
-  },
-  "nyc": {
-    "extends": "@istanbul/nyc-config-typescript",
-    "all": true,
-    "check-coverage": true,
-    "extension": [
-      ".ts"
-    ],
-    "include": [
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "src/*.ts"
-    ]
+    "csv-parse": "^6.2.1",
+    "csv-stringify": "^6.7.0",
+    "@js-joda/core": "^6.0.1",
+    "follow-redirects": "^1.16.0",
+    "rimraf": "^6.1.3",
+    "xml2js": "^0.6.2",
+    "yauzl": "^3.3.0",
+    "yazl": "^3.3.1"
   }
 }

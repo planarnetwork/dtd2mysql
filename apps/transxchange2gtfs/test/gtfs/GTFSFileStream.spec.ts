@@ -1,4 +1,3 @@
-import * as chai from "chai";
 import {GTFSFileStream} from "../../src/gtfs/GTFSFileStream";
 import {awaitStream} from "../util";
 import {TransXChange} from "../../src/transxchange/TransXChange";
@@ -13,9 +12,9 @@ describe("GTFSFileStream", () => {
     stream.end();
 
     return awaitStream(stream, rows => {
-      chai.expect(rows[0]).to.equal("header\n");
-      chai.expect(rows[1]).to.equal("data\n");
-      chai.expect(rows[2]).to.equal("data\n");
+      expect(rows[0]).to.equal("header\n");
+      expect(rows[1]).to.equal("data\n");
+      expect(rows[2]).to.equal("data\n");
     });
   });
 });

@@ -1,6 +1,5 @@
-import * as chai from "chai";
 import {awaitStream} from "../util";
-import {Duration, LocalDate, LocalTime} from "js-joda";
+import {Duration, LocalDate, LocalTime} from "@js-joda/core";
 import {StopActivity} from "../../src/transxchange/TransXChange";
 import {
   BankHolidays,
@@ -8,7 +7,6 @@ import {
   TransXChangeJourneyStream
 } from "../../src/transxchange/TransXChangeJourneyStream";
 
-// tslint:disable
 
 describe("TransXChangeJourneyStream", () => {
   const transxchange = {
@@ -230,10 +228,10 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[0].calendar.startDate.toString()).to.equal("2018-06-24");
-      chai.expect(rows[0].calendar.endDate.toString()).to.equal("2099-12-31");
-      chai.expect(rows[0].calendar.days.toString()).to.equal("1,1,1,1,1,1,1");
-      chai.expect(rows[0].calendar.id).to.equal(1);
+      expect(rows[0].calendar.startDate.toString()).to.equal("2018-06-24");
+      expect(rows[0].calendar.endDate.toString()).to.equal("2099-12-31");
+      expect(rows[0].calendar.days.toString()).to.equal("1,1,1,1,1,1,1");
+      expect(rows[0].calendar.id).to.equal(1);
     });
   });
 
@@ -244,8 +242,8 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[1].calendar.id).to.equal(2);
-      chai.expect(rows[1].calendar.days.toString()).to.equal("1,1,1,0,1,0,0");
+      expect(rows[1].calendar.id).to.equal(2);
+      expect(rows[1].calendar.days.toString()).to.equal("1,1,1,0,1,0,0");
     });
   });
 
@@ -256,10 +254,10 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[2].calendar.startDate.toString()).to.equal("2018-08-01");
-      chai.expect(rows[2].calendar.endDate.toString()).to.equal("2099-12-31");
-      chai.expect(rows[3].calendar.startDate.toString()).to.equal("2018-06-24");
-      chai.expect(rows[3].calendar.endDate.toString()).to.equal("2018-07-23");
+      expect(rows[2].calendar.startDate.toString()).to.equal("2018-08-01");
+      expect(rows[2].calendar.endDate.toString()).to.equal("2099-12-31");
+      expect(rows[3].calendar.startDate.toString()).to.equal("2018-06-24");
+      expect(rows[3].calendar.endDate.toString()).to.equal("2018-07-23");
     });
   });
 
@@ -270,9 +268,9 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[4].calendar.excludes[0].toString()).to.equal("2018-07-24");
-      chai.expect(rows[4].calendar.excludes[1].toString()).to.equal("2018-07-25");
-      chai.expect(rows[4].calendar.excludes.length).to.equal(2);
+      expect(rows[4].calendar.excludes[0].toString()).to.equal("2018-07-24");
+      expect(rows[4].calendar.excludes[1].toString()).to.equal("2018-07-25");
+      expect(rows[4].calendar.excludes.length).to.equal(2);
     });
 
   });
@@ -288,10 +286,10 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[6].calendar.excludes[0].toString()).to.equal("2018-12-25");
-      chai.expect(rows[6].calendar.excludes[1].toString()).to.equal("2019-12-25");
-      chai.expect(rows[6].calendar.excludes[2].toString()).to.equal("2018-12-26");
-      chai.expect(rows[6].calendar.excludes[3].toString()).to.equal("2019-12-26");
+      expect(rows[6].calendar.excludes[0].toString()).to.equal("2018-12-25");
+      expect(rows[6].calendar.excludes[1].toString()).to.equal("2019-12-25");
+      expect(rows[6].calendar.excludes[2].toString()).to.equal("2018-12-26");
+      expect(rows[6].calendar.excludes[3].toString()).to.equal("2019-12-26");
     });
 
   });
@@ -306,11 +304,11 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[7].calendar.days.toString()).to.equal("0,0,0,0,0,0,0");
-      chai.expect(rows[7].calendar.startDate.toString()).to.equal("2018-06-24");
-      chai.expect(rows[7].calendar.endDate.toString()).to.equal("2099-12-31");
-      chai.expect(rows[7].calendar.includes[0].toString()).to.equal("2018-12-25");
-      chai.expect(rows[7].calendar.includes[1].toString()).to.equal("2019-12-25");
+      expect(rows[7].calendar.days.toString()).to.equal("0,0,0,0,0,0,0");
+      expect(rows[7].calendar.startDate.toString()).to.equal("2018-06-24");
+      expect(rows[7].calendar.endDate.toString()).to.equal("2099-12-31");
+      expect(rows[7].calendar.includes[0].toString()).to.equal("2018-12-25");
+      expect(rows[7].calendar.includes[1].toString()).to.equal("2019-12-25");
     });
 
 
@@ -323,17 +321,17 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[0].stops[0].dropoff).to.equal(false);
-      chai.expect(rows[0].stops[0].pickup).to.equal(true);
-      chai.expect(rows[0].stops[0].stop).to.equal("118000037");
-      chai.expect(rows[0].stops[0].arrivalTime).to.equal("01:00:00");
-      chai.expect(rows[0].stops[0].departureTime).to.equal("01:00:00");
+      expect(rows[0].stops[0].dropoff).to.equal(false);
+      expect(rows[0].stops[0].pickup).to.equal(true);
+      expect(rows[0].stops[0].stop).to.equal("118000037");
+      expect(rows[0].stops[0].arrivalTime).to.equal("01:00:00");
+      expect(rows[0].stops[0].departureTime).to.equal("01:00:00");
 
-      chai.expect(rows[0].stops[1].dropoff).to.equal(false);
-      chai.expect(rows[0].stops[1].pickup).to.equal(true);
-      chai.expect(rows[0].stops[1].stop).to.equal("1180033077");
-      chai.expect(rows[0].stops[1].arrivalTime).to.equal("01:05:00");
-      chai.expect(rows[0].stops[1].departureTime).to.equal("01:05:00");
+      expect(rows[0].stops[1].dropoff).to.equal(false);
+      expect(rows[0].stops[1].pickup).to.equal(true);
+      expect(rows[0].stops[1].stop).to.equal("1180033077");
+      expect(rows[0].stops[1].arrivalTime).to.equal("01:05:00");
+      expect(rows[0].stops[1].departureTime).to.equal("01:05:00");
     });
   });
 
@@ -344,17 +342,17 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[0].stops[2].dropoff).to.equal(true);
-      chai.expect(rows[0].stops[2].pickup).to.equal(true);
-      chai.expect(rows[0].stops[2].stop).to.equal("1100DEC10183");
-      chai.expect(rows[0].stops[2].arrivalTime).to.equal("02:10:00");
-      chai.expect(rows[0].stops[2].departureTime).to.equal("02:10:00");
+      expect(rows[0].stops[2].dropoff).to.equal(true);
+      expect(rows[0].stops[2].pickup).to.equal(true);
+      expect(rows[0].stops[2].stop).to.equal("1100DEC10183");
+      expect(rows[0].stops[2].arrivalTime).to.equal("02:10:00");
+      expect(rows[0].stops[2].departureTime).to.equal("02:10:00");
 
-      chai.expect(rows[0].stops[3].dropoff).to.equal(true);
-      chai.expect(rows[0].stops[3].pickup).to.equal(true);
-      chai.expect(rows[0].stops[3].stop).to.equal("010000036");
-      chai.expect(rows[0].stops[3].arrivalTime).to.equal("04:05:00");
-      chai.expect(rows[0].stops[3].departureTime).to.equal("04:10:00");
+      expect(rows[0].stops[3].dropoff).to.equal(true);
+      expect(rows[0].stops[3].pickup).to.equal(true);
+      expect(rows[0].stops[3].stop).to.equal("010000036");
+      expect(rows[0].stops[3].arrivalTime).to.equal("04:05:00");
+      expect(rows[0].stops[3].departureTime).to.equal("04:10:00");
     });
 
   });
@@ -366,23 +364,23 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[5].stops[0].dropoff).to.equal(false);
-      chai.expect(rows[5].stops[0].pickup).to.equal(true);
-      chai.expect(rows[5].stops[0].stop).to.equal("118000037");
-      chai.expect(rows[5].stops[0].arrivalTime).to.equal("23:00:00");
-      chai.expect(rows[5].stops[0].departureTime).to.equal("23:00:00");
+      expect(rows[5].stops[0].dropoff).to.equal(false);
+      expect(rows[5].stops[0].pickup).to.equal(true);
+      expect(rows[5].stops[0].stop).to.equal("118000037");
+      expect(rows[5].stops[0].arrivalTime).to.equal("23:00:00");
+      expect(rows[5].stops[0].departureTime).to.equal("23:00:00");
 
-      chai.expect(rows[5].stops[2].dropoff).to.equal(true);
-      chai.expect(rows[5].stops[2].pickup).to.equal(true);
-      chai.expect(rows[5].stops[2].stop).to.equal("1100DEC10183");
-      chai.expect(rows[5].stops[2].arrivalTime).to.equal("24:10:00");
-      chai.expect(rows[5].stops[2].departureTime).to.equal("24:10:00");
+      expect(rows[5].stops[2].dropoff).to.equal(true);
+      expect(rows[5].stops[2].pickup).to.equal(true);
+      expect(rows[5].stops[2].stop).to.equal("1100DEC10183");
+      expect(rows[5].stops[2].arrivalTime).to.equal("24:10:00");
+      expect(rows[5].stops[2].departureTime).to.equal("24:10:00");
 
-      chai.expect(rows[5].stops[3].dropoff).to.equal(true);
-      chai.expect(rows[5].stops[3].pickup).to.equal(true);
-      chai.expect(rows[5].stops[3].stop).to.equal("010000036");
-      chai.expect(rows[5].stops[3].arrivalTime).to.equal("26:05:00");
-      chai.expect(rows[5].stops[3].departureTime).to.equal("26:10:00");
+      expect(rows[5].stops[3].dropoff).to.equal(true);
+      expect(rows[5].stops[3].pickup).to.equal(true);
+      expect(rows[5].stops[3].stop).to.equal("010000036");
+      expect(rows[5].stops[3].arrivalTime).to.equal("26:05:00");
+      expect(rows[5].stops[3].departureTime).to.equal("26:10:00");
     });
 
   });
@@ -420,7 +418,7 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[0].trip.shortName).to.equal("Bungay");
+      expect(rows[0].trip.shortName).to.equal("Bungay");
     });
 
   });
@@ -458,7 +456,7 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[0].trip.shortName).to.equal("Aberdeen");
+      expect(rows[0].trip.shortName).to.equal("Aberdeen");
     });
 
   });
@@ -494,7 +492,7 @@ describe("TransXChangeJourneyStream", () => {
     stream.end();
 
     return awaitStream(stream, (rows: TransXChangeJourney[]) => {
-      chai.expect(rows[0].trip.shortName).to.equal("Falmouth - Victoria,London");
+      expect(rows[0].trip.shortName).to.equal("Falmouth - Victoria,London");
     });
 
   });

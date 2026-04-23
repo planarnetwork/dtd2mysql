@@ -13,7 +13,7 @@ import {
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
-import {LocalDate, LocalTime, Duration, DateTimeFormatter} from "js-joda";
+import {LocalDate, LocalTime, Duration, DateTimeFormatter} from "@js-joda/core";
 import {ATCOCode} from "../reference/NaPTAN";
 
 /**
@@ -108,8 +108,8 @@ export class TransXChangeJourneyStream extends Transform {
 
     let startDate = service.OperatingPeriod.StartDate;
     let endDate = service.OperatingPeriod.EndDate;
-    let excludes = [];
-    let includes = [];
+    const excludes = [];
+    const includes = [];
 
     for (const dates of operatingProfile.SpecialDaysOperation.DaysOfNonOperation) {
       // if the start date of the non-operation is on or before the start of the service date, change the calendar start date

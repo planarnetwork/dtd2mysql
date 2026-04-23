@@ -1,9 +1,7 @@
-import * as chai from "chai";
 import {awaitStream, splitCSV} from "../util";
-import {LocalDate} from "js-joda";
+import {LocalDate} from "@js-joda/core";
 import {TripsStream} from "../../src/gtfs/TripsStream";
 
-// tslint:disable
 
 describe("TripsStream", () => {
 
@@ -33,15 +31,15 @@ describe("TripsStream", () => {
     return awaitStream(stream, (rows: string[]) => {
       const [route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, wheelchair_accessible, bikes_allowed, block_id] = splitCSV(rows[1]);
 
-      chai.expect(route_id).to.equal("1");
-      chai.expect(service_id).to.equal("3");
-      chai.expect(trip_id).to.equal("2");
-      chai.expect(trip_headsign).to.equal("");
-      chai.expect(trip_short_name).to.equal('Victoria, London');
-      chai.expect(direction_id).to.equal("1");
-      chai.expect(wheelchair_accessible).to.equal("0");
-      chai.expect(bikes_allowed).to.equal("0");
-      chai.expect(block_id).to.equal("abc134")
+      expect(route_id).to.equal("1");
+      expect(service_id).to.equal("3");
+      expect(trip_id).to.equal("2");
+      expect(trip_headsign).to.equal("");
+      expect(trip_short_name).to.equal('Victoria, London');
+      expect(direction_id).to.equal("1");
+      expect(wheelchair_accessible).to.equal("0");
+      expect(bikes_allowed).to.equal("0");
+      expect(block_id).to.equal("abc134")
     });
   });
 
@@ -69,7 +67,7 @@ describe("TripsStream", () => {
 
     return awaitStream(stream, (rows: string[]) => {
       const [, , , , , , , , block_id] = splitCSV(rows[1]);
-      chai.expect(block_id).to.equal(undefined)
+      expect(block_id).to.equal(undefined)
     });
   });
 
