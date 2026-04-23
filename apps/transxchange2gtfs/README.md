@@ -1,6 +1,10 @@
 ![transxchange2gtfs](logo.png)
 
-[![Travis](https://img.shields.io/travis/planarnetwork/transxchange2gtfs.svg?style=flat-square)](https://travis-ci.org/planarnetwork/transxchange2gtfs) ![npm](https://img.shields.io/npm/v/transxchange2gtfs.svg?style=flat-square) ![David](https://img.shields.io/david/planarnetwork/transxchange2gtfs.svg?style=flat-square)
+[![CI](https://img.shields.io/github/actions/workflow/status/planarnetwork/transxchange2gtfs/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/planarnetwork/transxchange2gtfs/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/transxchange2gtfs.svg?style=flat-square)](https://www.npmjs.com/package/transxchange2gtfs)
+[![npm downloads](https://img.shields.io/npm/dm/transxchange2gtfs.svg?style=flat-square)](https://www.npmjs.com/package/transxchange2gtfs)
+[![Node](https://img.shields.io/node/v/transxchange2gtfs.svg?style=flat-square)](https://nodejs.org)
+[![License](https://img.shields.io/npm/l/transxchange2gtfs.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 transxchange2gtfs converts [TransXChange](http://naptan.dft.gov.uk/transxchange/index.htm) timetable data into a [GTFS](https://developers.google.com/transit/gtfs/) zip.
 
