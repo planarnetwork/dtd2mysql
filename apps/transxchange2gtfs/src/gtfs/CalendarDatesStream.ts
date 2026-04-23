@@ -7,6 +7,7 @@ import {LocalDate, DateTimeFormatter} from "js-joda";
  */
 export class CalendarDatesStream extends GTFSFileStream<TransXChangeJourney> {
   private readonly datesSeen: Record<string, boolean> = {};
+  private readonly dateRowsSeen: Set<string> = new Set();
   private readonly dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   protected header = "service_id,date,exception_type";
@@ -22,7 +23,11 @@ export class CalendarDatesStream extends GTFSFileStream<TransXChangeJourney> {
 
   private pushDates(dates: LocalDate[], type: Day, serviceId: number): void {
     for (const date of dates) {
-      this.pushLine(serviceId, date.format(this.dateFormatter), type);
+      const key = `${serviceId}:${date.toString()}`;
+      if (!this.dateRowsSeen.has(key)) {
+        this.dateRowsSeen.add(key);
+        this.pushLine(serviceId, date.format(this.dateFormatter), type);
+      }
     }
   }
 

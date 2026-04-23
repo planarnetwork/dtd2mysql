@@ -198,6 +198,7 @@ export enum Mode {
   Coach = "coach",
   Underground = "underground",
   Ferry = "ferry",
+  Rail = "rail",
   Train = "train",
   Tram = "tram"
 }

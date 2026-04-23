@@ -7,6 +7,35 @@ import {RoutesStream} from "../../src/gtfs/RoutesStream";
 
 describe("RoutesStream", () => {
 
+  it("emits rail routes with route_type 2", async () => {
+    const stream = new RoutesStream();
+
+    stream.write({
+      Services: {
+        "25-DLR-_-y05-216": {
+          "Description": "Bank - Beckton",
+          "Lines": { "l_DLR": "DLR" },
+          "Mode": "rail",
+          "OperatingPeriod": {
+            "EndDate": LocalDate.parse("2099-12-31"),
+            "StartDate": LocalDate.parse("2018-06-24")
+          },
+          "RegisteredOperatorRef": "OId_DLR",
+          "ServiceCode": "25-DLR-_-y05-216"
+        }
+      }
+    });
+
+    stream.end();
+
+    return awaitStream(stream, (rows: string[]) => {
+      const [route_id, , , , route_type] = splitCSV(rows[1]);
+
+      chai.expect(route_id).to.equal("25-DLR-_-y05-216");
+      chai.expect(route_type).to.equal("2");
+    });
+  });
+
   it("emits routes", async () => {
     const stream = new RoutesStream();
 
