@@ -42,11 +42,13 @@ export interface StopPoint {
   StopPointRef: ATCOCode,
   CommonName: string,
   LocalityName: string,
-  LocalityQualifier: string
-  Location: {
-    Latitude: number,
-    Longitude: number
-  }
+  LocalityQualifier: string,
+  Location: Location
+}
+
+export interface Location {
+  Latitude: number,
+  Longitude: number
 }
 
 /**
@@ -55,7 +57,8 @@ export interface StopPoint {
 export interface RouteLink {
   From: ATCOCode,
   To: ATCOCode,
-  Distance: number
+  Distance: number,
+  Locations: Location[]
 }
 
 /**
@@ -64,8 +67,8 @@ export interface RouteLink {
 export interface JPTimingLink {
   From: JPJourneyStop,
   To: JPJourneyStop,
-  RunTime: Duration;
-  RouteLinkRef: string;
+  RunTime: Duration,
+  RouteLinkRef: string
 }
 
 /**
@@ -75,7 +78,7 @@ export interface VJTimingLink {
   JPTimingLinkRef: string, // Values inherited from JPTimingLink
   From?: VJJourneyStop,
   To?: VJJourneyStop,
-  RunTime?: Duration;
+  RunTime?: Duration
 }
 
 /**
@@ -86,6 +89,7 @@ export interface JPJourneyStop {
   StopPointRef: ATCOCode,
   TimingStatus: TimingStatus,
   WaitTime?: Duration,
+  DynamicDestinationDisplay?: string
 }
 
 export enum TimingStatus {
@@ -126,6 +130,7 @@ export type OperatorID = string;
  * Operator
  */
 export interface Operator {
+  NationalOperatorCode: string,
   OperatorCode: string,
   OperatorShortName: string,
   OperatorNameOnLicence: string | undefined,
@@ -169,6 +174,7 @@ export type JourneyPatterns = Record<JourneyPatternID, JourneyPattern>;
 export interface JourneyPattern {
   Direction: "inbound" | "outbound",
   Sections: JourneyPatternSectionID[],
+  DestinationDisplay?: string
 }
 
 /**
@@ -179,7 +185,15 @@ export type JourneyPatternID = string;
 /**
  * Lines indexed by line ID
  */
-export type Lines = Record<string, string>;
+export type Lines = Record<string, Line>;
+
+/**
+ * Line
+ */
+export interface Line {
+  LineName: string,
+  Description: string
+}
 
 /**
  * Period of operation

@@ -461,6 +461,49 @@ describe("TransXChangeJourneyStream", () => {
 
   });
 
+  it("applies a From WaitTime to the previous stop's departure", async () => {
+    const stream = new TransXChangeJourneyStream({} as BankHolidays);
+
+    const customTransxchange = Object.assign({}, transxchange, {
+      JourneySections: Object.assign({}, transxchange.JourneySections, {
+        "JPSection-21": [
+          {
+            From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "1100DEC10183" },
+            To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "010000036", WaitTime: Duration.parse("PT5M") },
+            RunTime: Duration.parse("PT115M"),
+            RouteLinkRef: ""
+          },
+          {
+            From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "010000036", WaitTime: Duration.parse("PT3M") },
+            To: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "0170SGA56570" },
+            RunTime: Duration.parse("PT15M"),
+            RouteLinkRef: ""
+          },
+          {
+            From: { Activity: StopActivity.PickUpAndSetDown, StopPointRef: "0170SGA56570" },
+            To: { Activity: StopActivity.SetDown, StopPointRef: "490016736W" },
+            RunTime: Duration.parse("PT155M"),
+            RouteLinkRef: ""
+          }
+        ]
+      })
+    });
+
+    stream.write(customTransxchange);
+    stream.end();
+
+    return awaitStream(stream, (rows: TransXChangeJourney[]) => {
+      // stop[3] is "010000036": arrival 04:05, dep bumped from 04:10 to 04:13 by the From.WaitTime on the next link
+      expect(rows[0].stops[3].stop).to.equal("010000036");
+      expect(rows[0].stops[3].arrivalTime).to.equal("04:05:00");
+      expect(rows[0].stops[3].departureTime).to.equal("04:13:00");
+
+      // stop[4] is "0170SGA56570": leaves 010000036 at 04:13, +15m run time = 04:28
+      expect(rows[0].stops[4].stop).to.equal("0170SGA56570");
+      expect(rows[0].stops[4].arrivalTime).to.equal("04:28:00");
+    });
+  });
+
   it("creates a trip name where there is no service origin or destination", async () => {
     const stream = new TransXChangeJourneyStream({} as BankHolidays);
 

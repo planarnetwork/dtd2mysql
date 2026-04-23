@@ -17,7 +17,8 @@ import {
   VJTimingLink,
   VJJourneyStop,
   JPTimingLinks,
-  TimingStatus
+  TimingStatus,
+  Location
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -75,10 +76,14 @@ export class TransXChangeStream extends Transform {
       CommonName: stop?.CommonName?.[0] ?? "",
       LocalityName: stop?.LocalityName?.[0] ? stop.LocalityName[0] : "",
       LocalityQualifier: stop?.LocalityQualifier?.[0] ? stop.LocalityQualifier[0] : "",
-      Location:  {
-        Latitude: stop?.Location?.[0]?.Latitude ? Number(stop.Location[0].Latitude[0]) : 0.0,
-        Longitude: stop?.Location?.[0]?.Longitude ? Number(stop.Location[0].Longitude[0]) : 0.0
-      }
+      Location: this.getLocation(stop?.Location?.[0])
+    };
+  }
+
+  private getLocation(location: any): Location {
+    return {
+      Latitude: location?.Latitude ? Number(location.Latitude[0]) : 0.0,
+      Longitude: location?.Longitude ? Number(location.Longitude[0]) : 0.0
     };
   }
 
@@ -99,7 +104,8 @@ export class TransXChangeStream extends Transform {
     index[link.$.id] = {
       From: link?.From?.[0] ?? "",
       To: link?.To?.[0] ?? "",
-      Distance: link?.Distance ? Number(link.Distance[0]) : 0
+      Distance: link?.Distance ? Number(link.Distance[0]) : 0,
+      Locations: link?.Track?.flatMap((t: any) => t.Mapping[0].Location.map(this.getLocation)) ?? []
     };
 
     return index;
@@ -131,7 +137,7 @@ export class TransXChangeStream extends Transform {
       JPTimingLinkRef: l?.JourneyPatternTimingLinkRef?.[0] ?? "",
       From: this.getVJJourneyStop(l?.From?.[0] ?? ""),
       To: this.getVJJourneyStop(l?.To?.[0] ?? ""),
-      RunTime: l?.RunTime?.[0] && Duration.parse(l.RunTime[0])
+      RunTime: l?.RunTime?.[0] && Duration.parse(l.RunTime[0]),
     };
   }
 
@@ -148,19 +154,21 @@ export class TransXChangeStream extends Transform {
       Activity: stop?.Activity?.[0] ? stop.Activity[0] : StopActivity.PickUpAndSetDown,
       StopPointRef: stop?.StopPointRef?.[0] ?? "",
       TimingStatus: this.normalizeTimingStatus(stop?.TimingStatus?.[0]) ?? TimingStatus.OtherPoint,
-      WaitTime: stop?.WaitTime?.[0] && Duration.parse(stop.WaitTime[0])
+      WaitTime: stop?.WaitTime?.[0] && Duration.parse(stop.WaitTime[0]),
+      DynamicDestinationDisplay: stop?.DynamicDestinationDisplay?.[0]
     };
   }
 
   private getVJJourneyStop(stop: any): VJJourneyStop {
     return {
       Activity: stop?.Activity?.[0],
-      WaitTime: stop?.WaitTime?.[0]
+      WaitTime: stop?.WaitTime?.[0] && Duration.parse(stop.WaitTime[0])
     };
   }
 
   private getOperators(index: Operators, operator: any): Operators {
     index[operator.$.id] = {
+      NationalOperatorCode: operator?.NationalOperatorCode?.[0],
       OperatorCode: operator?.OperatorCode?.[0] ? operator.OperatorCode[0] : operator?.NationalOperatorCode?.[0] ?? "",
       OperatorShortName: operator?.OperatorShortName?.[0] ?? "",
       OperatorNameOnLicence: operator?.OperatorNameOnLicence?.[0] && (operator.OperatorNameOnLicence[0]?._ ?? operator.OperatorNameOnLicence[0] ?? ""),
@@ -194,14 +202,18 @@ export class TransXChangeStream extends Transform {
   private getJourneyPattern(patterns: JourneyPatterns, pattern: any): JourneyPatterns {
     patterns[pattern.$.id] = {
       Direction: pattern.Direction[0],
-      Sections: pattern.JourneyPatternSectionRefs
+      Sections: pattern.JourneyPatternSectionRefs,
+      DestinationDisplay: pattern.DestinationDisplay?.[0]
     };
 
     return patterns;
   }
 
   private getLines(index: Lines, line: any): Lines {
-    index[line.$.id] = line.LineName[0];
+    index[line.$.id] = {
+      LineName: line.LineName[0],
+      Description: line.OutboundDescription?.[0].Description?.[0] ?? ""
+    };
 
     return index;
   }

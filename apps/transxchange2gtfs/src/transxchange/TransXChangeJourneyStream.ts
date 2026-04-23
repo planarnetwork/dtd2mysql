@@ -9,7 +9,8 @@ import {
   VJTimingLink,
   JPJourneyStop,
   VJJourneyStop,
-  TimingStatus
+  TimingStatus,
+  RouteLink
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
 import autobind from "autobind-decorator";
@@ -56,7 +57,8 @@ export class TransXChangeJourneyStream extends Transform {
       Activity: vj.Activity ?? jp.Activity,
       StopPointRef: jp.StopPointRef,
       TimingStatus: jp.TimingStatus,
-      WaitTime: vj.WaitTime ?? jp.WaitTime
+      WaitTime: vj.WaitTime ?? jp.WaitTime,
+      DynamicDestinationDisplay: jp.DynamicDestinationDisplay
     };
   }
 
@@ -80,24 +82,41 @@ export class TransXChangeJourneyStream extends Transform {
       return;
     }
 
-    const sections = vehicle.TimingLinks ?
-      vehicle.TimingLinks.map(tl => this.mergeTimingLinks(schedule.JPTimingLinks[tl.JPTimingLinkRef], tl)) :
-      journeyPattern.Sections.flatMap(s => schedule.JourneySections[s] || []);
+    const headsign = journeyPattern.DestinationDisplay || service.ServiceDestination;
+
+    // Preserve the original order of the timing links from the journey pattern
+    const sections = journeyPattern.Sections.flatMap(s => schedule.JourneySections[s] || []);
+
+    if (vehicle.TimingLinks) {
+      // TODO: Time complexity?
+      for (const tl of vehicle.TimingLinks) {
+        const jp = schedule.JPTimingLinks[tl.JPTimingLinkRef];
+
+        // Find and merge
+        const sectionIndex = sections.findIndex(s => s.RouteLinkRef === jp.RouteLinkRef);
+        if (sectionIndex !== -1) {
+          sections[sectionIndex] = this.mergeTimingLinks(sections[sectionIndex], tl);
+        }
+      }
+    }
 
     if (sections.length > 0 && vehicle.OperatingProfile) {
       const calendar = this.getCalendar(vehicle.OperatingProfile, schedule.Services[vehicle.ServiceRef]);
-      const stops = this.getStopTimes(schedule.RouteLinks, sections, vehicle.DepartureTime);
-      const route = vehicle.ServiceRef;
+      const stops = this.getStopTimes(schedule.RouteLinks, sections, vehicle.DepartureTime, headsign);
+      const route = vehicle.ServiceRef + '|' + vehicle.LineRef;
       const blockId = vehicle.OperationalBlockNumber;
+      const routeLinkIds = sections.map(tl => tl.RouteLinkRef);
+      const routeLinks = routeLinkIds.map(rl => schedule.RouteLinks[rl]);
       const trip = {
         id: this.tripId++,
         shortName: journeyPattern.Direction === "outbound"
           ? service.ServiceDestination || service.Description
           : service.ServiceOrigin || service.Description,
         direction: journeyPattern.Direction,
+        headsign
       };
 
-      this.push({calendar, stops, trip, route, blockId});
+      this.push({calendar, stops, trip, route, blockId, routeLinkIds, routeLinks} as TransXChangeJourney);
     }
   }
 
@@ -183,11 +202,15 @@ export class TransXChangeJourneyStream extends Transform {
     ].join("_");
   }
 
-  private getStopTimes(routeLinksById: RouteLinks, links: JPTimingLink[], departureTime: LocalTime): StopTime[] {
-    const stops = [{
+  private getStopTimes(routeLinksById: RouteLinks, links: JPTimingLink[], departureTime: LocalTime, defaultHeadsign: string): StopTime[] {
+    // Don't include the headsign in every stop time if it's the same as the default
+    const excludeIfDefault = (headsign?: string) => headsign === defaultHeadsign ? undefined : headsign;
+
+    const stops: StopTime[] = [{
       stop: links[0].From.StopPointRef,
       arrivalTime: departureTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
       departureTime: departureTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+      headsign: excludeIfDefault(links[0].From.DynamicDestinationDisplay),
       pickup: true,
       dropoff: false,
       exactTime: links[0].From.TimingStatus === TimingStatus.PrincipalTimingPoint,
@@ -198,6 +221,11 @@ export class TransXChangeJourneyStream extends Transform {
     let distanceSoFarM = 0;
 
     for (const link of links) {
+      if (link.From.WaitTime) {
+        lastDepartureTime = lastDepartureTime.plusDuration(link.From.WaitTime);
+        stops[stops.length - 1].departureTime = this.getTime(lastDepartureTime);
+      }
+
       const arrivalTime = lastDepartureTime.plusDuration(link.RunTime);
       lastDepartureTime = link.To.WaitTime ? arrivalTime.plusDuration(link.To.WaitTime) : arrivalTime;
 
@@ -208,6 +236,7 @@ export class TransXChangeJourneyStream extends Transform {
         stop: link.To.StopPointRef,
         arrivalTime: this.getTime(arrivalTime),
         departureTime: this.getTime(lastDepartureTime),
+        headsign: excludeIfDefault(link.To.DynamicDestinationDisplay),
         pickup: link.To.Activity === StopActivity.PickUp || link.To.Activity === StopActivity.PickUpAndSetDown,
         dropoff: link.To.Activity === StopActivity.SetDown || link.To.Activity === StopActivity.PickUpAndSetDown,
         exactTime: link.To.TimingStatus === TimingStatus.PrincipalTimingPoint,
@@ -233,11 +262,14 @@ export interface TransXChangeJourney {
   trip: {
     id: number,
     shortName: string,
-    direction: "inbound" | "outbound"
+    direction: "inbound" | "outbound",
+    headsign: string
   }
   route: string,
   stops: StopTime[],
-  blockId?: string
+  blockId?: string,
+  routeLinkIds: string[],
+  routeLinks: RouteLink[],
 }
 
 export interface JourneyCalendar {
@@ -253,6 +285,7 @@ export interface StopTime {
   stop: ATCOCode,
   arrivalTime: string,
   departureTime: string,
+  headsign?: string,
   pickup: boolean,
   dropoff: boolean,
   exactTime: boolean,

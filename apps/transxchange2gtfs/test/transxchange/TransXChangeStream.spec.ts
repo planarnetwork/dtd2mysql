@@ -339,6 +339,7 @@ describe("TransXChangeStream", () => {
     return awaitStream(stream, ([row]: TransXChange[]) => {
       expect(row.Operators).to.deep.equal({
         "OId_MEGA": {
+          "NationalOperatorCode": undefined,
           "OperatorCode": "MEGA",
           "OperatorNameOnLicence": "Stagecoach Megabus",
           "OperatorShortName": "Megabus",
@@ -360,14 +361,16 @@ describe("TransXChangeStream", () => {
           "Activity": "pickUp",
           "StopPointRef": "490014051VC",
           "WaitTime": undefined,
-          "TimingStatus": "principalTimingPoint"
+          "TimingStatus": "principalTimingPoint",
+          "DynamicDestinationDisplay": undefined
         },
         "RunTime": Duration.parse("PT130M"),
         "To": {
           "Activity": "pickUpAndSetDown",
           "StopPointRef": "0170SGA56570",
           "WaitTime": undefined,
-          "TimingStatus": "principalTimingPoint"
+          "TimingStatus": "principalTimingPoint",
+          "DynamicDestinationDisplay": undefined
         },
         "RouteLinkRef": ""
       });
@@ -376,14 +379,16 @@ describe("TransXChangeStream", () => {
           "Activity": "pickUpAndSetDown",
           "StopPointRef": "1180033077",
           "WaitTime": undefined,
-          "TimingStatus": "principalTimingPoint"
+          "TimingStatus": "principalTimingPoint",
+          "DynamicDestinationDisplay": undefined
         },
         "RunTime": Duration.parse("PT10M"),
         "To": {
           "Activity": "pickUpAndSetDown",
           "StopPointRef": "118000037",
           "WaitTime": Duration.parse("PT5M"),
-          "TimingStatus": "principalTimingPoint"
+          "TimingStatus": "principalTimingPoint",
+          "DynamicDestinationDisplay": undefined
         },
         "RouteLinkRef": ""
       });
@@ -401,7 +406,7 @@ describe("TransXChangeStream", () => {
         {
           "Description": "Falmouth - Victoria,London",
           "Lines": {
-            "l_M6_MEGA": "M6"
+            "l_M6_MEGA": { "LineName": "M6", "Description": "" }
           },
           "Mode": "coach",
           "OperatingPeriod": {
@@ -420,7 +425,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-45",
                 "JPSection-66",
                 "JPSection-17"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP367": {
               "Direction": "outbound",
@@ -428,7 +434,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-46",
                 "JPSection-67",
                 "JPSection-18"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP368": {
               "Direction": "outbound",
@@ -436,7 +443,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-15",
                 "JPSection-68",
                 "JPSection-13"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP369": {
               "Direction": "outbound",
@@ -444,7 +452,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-16",
                 "JPSection-69",
                 "JPSection-14"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP370": {
               "Direction": "outbound",
@@ -453,7 +462,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-23",
                 "JPSection-71",
                 "JPSection-3"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP371": {
               "Direction": "outbound",
@@ -462,7 +472,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-24",
                 "JPSection-73",
                 "JPSection-4"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP372": {
               "Direction": "outbound",
@@ -470,25 +481,29 @@ describe("TransXChangeStream", () => {
                 "JPSection-49",
                 "JPSection-74",
                 "JPSection-47"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP373": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-19"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP375": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-75"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP376": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-20"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP378": {
               "Direction": "outbound",
@@ -496,31 +511,36 @@ describe("TransXChangeStream", () => {
                 "JPSection-50",
                 "JPSection-76",
                 "JPSection-48"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP379": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-1"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP380": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-5"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP382": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-2"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP383": {
               "Direction": "outbound",
               "Sections": [
                 "JPSection-6"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP384": {
               "Direction": "inbound",
@@ -528,7 +548,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-51",
                 "JPSection-77",
                 "JPSection-21"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP385": {
               "Direction": "inbound",
@@ -536,7 +557,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-52",
                 "JPSection-78",
                 "JPSection-9"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP386": {
               "Direction": "inbound",
@@ -544,21 +566,24 @@ describe("TransXChangeStream", () => {
                 "JPSection-25",
                 "JPSection-54",
                 "JPSection-79"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP387": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-7",
                 "JPSection-56"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP388": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-26",
                 "JPSection-80"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP389": {
               "Direction": "inbound",
@@ -566,28 +591,32 @@ describe("TransXChangeStream", () => {
                 "JPSection-53",
                 "JPSection-81",
                 "JPSection-36"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP390": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-27",
                 "JPSection-57"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP391": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-28",
                 "JPSection-39"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP392": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-8",
                 "JPSection-82"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP393": {
               "Direction": "inbound",
@@ -597,7 +626,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-83",
                 "JPSection-34",
                 "JPSection-84"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP394": {
               "Direction": "inbound",
@@ -607,7 +637,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-60",
                 "JPSection-35",
                 "JPSection-58"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP395": {
               "Direction": "inbound",
@@ -616,7 +647,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-61",
                 "JPSection-33",
                 "JPSection-59"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP396": {
               "Direction": "inbound",
@@ -624,14 +656,16 @@ describe("TransXChangeStream", () => {
                 "JPSection-12",
                 "JPSection-86",
                 "JPSection-40"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP397": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-29",
                 "JPSection-87"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP398": {
               "Direction": "inbound",
@@ -639,7 +673,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-30",
                 "JPSection-55",
                 "JPSection-37"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP399": {
               "Direction": "inbound",
@@ -647,14 +682,16 @@ describe("TransXChangeStream", () => {
                 "JPSection-31",
                 "JPSection-88",
                 "JPSection-38"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP400": {
               "Direction": "inbound",
               "Sections": [
                 "JPSection-32",
                 "JPSection-89"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP402": {
               "Direction": "inbound",
@@ -666,7 +703,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-62",
                 "JPSection-92",
                 "JPSection-22"
-              ]
+              ],
+              "DestinationDisplay": undefined
             },
             "JP404": {
               "Direction": "inbound",
@@ -677,7 +715,8 @@ describe("TransXChangeStream", () => {
                 "JPSection-63",
                 "JPSection-95",
                 "JPSection-10"
-              ]
+              ],
+              "DestinationDisplay": undefined
             }
           }
         }

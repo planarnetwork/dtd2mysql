@@ -41,7 +41,7 @@ export abstract class GTFSFileStream<T> extends Transform {
 
   private quote(value: string | number): string {
     return typeof value === "string"
-        ? value.includes(",") ? "\"" + value + "\"" : value
+        ? (value.includes(",") || value.includes("\"")) ? "\"" + value.replace(/"/g, "\"\"") + "\"" : value
         : value + "";
   }
 

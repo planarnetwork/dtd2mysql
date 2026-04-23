@@ -28,7 +28,7 @@ describe("StopTimesStream", () => {
       expect(arrival_time).to.equal("10:00");
       expect(departure_time).to.equal("10:00");
       expect(stop_id).to.equal("A");
-      expect(stop_sequence).to.equal("1");
+      expect(stop_sequence).to.equal("0");
       expect(stop_headsign).to.equal("");
       expect(pickup_type).to.equal("0");
       expect(drop_off_type).to.equal("1");
@@ -41,7 +41,7 @@ describe("StopTimesStream", () => {
       expect(arrival_time).to.equal("11:00");
       expect(departure_time).to.equal("11:10");
       expect(stop_id).to.equal("B");
-      expect(stop_sequence).to.equal("2");
+      expect(stop_sequence).to.equal("1");
       expect(stop_headsign).to.equal("");
       expect(pickup_type).to.equal("0");
       expect(drop_off_type).to.equal("0");
@@ -54,7 +54,7 @@ describe("StopTimesStream", () => {
       expect(arrival_time).to.equal("12:00");
       expect(departure_time).to.equal("12:00");
       expect(stop_id).to.equal("C");
-      expect(stop_sequence).to.equal("3");
+      expect(stop_sequence).to.equal("2");
       expect(stop_headsign).to.equal("");
       expect(pickup_type).to.equal("1");
       expect(drop_off_type).to.equal("0");

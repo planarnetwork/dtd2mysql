@@ -25,25 +25,29 @@ export class RoutesStream extends GTFSFileStream<TransXChange> {
     }
   }
 
-  private addRoute(service: Service): void {
+  private addRoute(service: Service) {
     const routeId = service.ServiceCode;
 
-    if (!this.routesSeen[routeId]) {
-      this.routesSeen[routeId] = true;
+    // TransXChange allows multiple lines per service; emit one GTFS route per line.
+    for (const lineId in service.Lines) {
+      const line = service.Lines[lineId];
+      const id = routeId + "|" + lineId;
 
-      const shortDescription = Object.values(service.Lines)[0];
+      if (!this.routesSeen[id]) {
+        this.routesSeen[id] = true;
 
-      this.pushLine(
-        routeId,
-        service.RegisteredOperatorRef,
-        shortDescription,
-        service.Description,
-        this.routeType[service.Mode],
-        "",
-        "",
-        "",
-        service.Description
-      );
+        this.pushLine(
+          id,
+          service.RegisteredOperatorRef,
+          line.LineName,
+          line.Description || service.Description,
+          this.routeType[service.Mode],
+          "",
+          "",
+          "",
+          service.Description
+        );
+      }
     }
   }
 
