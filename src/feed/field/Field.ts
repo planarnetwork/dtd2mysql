@@ -1,6 +1,5 @@
 
-import {isNullOrUndefined} from "util";
-import * as memoize from "memoized-class-decorator";
+import memoize from "memoized-class-decorator";
 
 /**
  * Parent class for all fields
@@ -27,7 +26,7 @@ export abstract class Field {
    * Do some null checking then offload to the sub classes parse method
    */
   public extract(value: string): FieldValue {
-    const isNull = isNullOrUndefined(value) || value === "" || this.nullValues.indexOf(value) > -1;
+    const isNull = value == null || value === "" || this.nullValues.indexOf(value) > -1;
 
     if (isNull) {
       if (this.nullable) return null;

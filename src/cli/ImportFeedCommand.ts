@@ -6,8 +6,8 @@ import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
 import {MySQLTable} from "../database/MySQLTable";
-import * as memoize from "memoized-class-decorator";
-import fs = require("fs-extra");
+import memoize from "memoized-class-decorator";
+import * as fs from "fs";
 import {MultiRecordFile} from "../feed/file/MultiRecordFile";
 import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
 import {MySQLStream, TableIndex} from "../database/MySQLStream";
@@ -51,7 +51,9 @@ export class ImportFeedCommand implements CLICommand {
    */
   public async doImport(filePath: string): Promise<void> {
     console.log(`Extracting ${filePath} to ${this.tmpFolder}`);
-    fs.emptyDirSync(this.tmpFolder);
+    // Empty the tmp folder (native equivalent of fs-extra's emptyDirSync).
+    fs.rmSync(this.tmpFolder, {recursive: true, force: true});
+    fs.mkdirSync(this.tmpFolder, {recursive: true});
 
     new AdmZip(filePath).extractAllTo(this.tmpFolder);
 

@@ -1,6 +1,6 @@
 import {CLICommand} from "./CLICommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
-import {FileEntry} from "ssh2-streams";
+import {FileEntry} from "ssh2";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 
 export class DownloadCommand implements CLICommand {

@@ -118,7 +118,7 @@ export class ScheduleBuilder {
       unadvertisedDeparture = true;
     }
 
-    const activities = row.activity.match(/.{1,2}/g) || [];
+    const activities: string[] = row.activity.match(/.{1,2}/g) || [];
     const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) && !unadvertisedDeparture ? 0 : 1;
     const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
     const dropOff = dropOffActivities.find(a => activities.includes(a)) && !unadvertisedArrival ? 0 : 1;

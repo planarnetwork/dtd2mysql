@@ -1,5 +1,4 @@
-import {Client, ConnectConfig, SFTPWrapper} from "ssh2";
-import {FileEntry} from "ssh2-streams";
+import {Client, ConnectConfig, FileEntry, SFTPWrapper} from "ssh2";
 import {promisify} from "util";
 
 

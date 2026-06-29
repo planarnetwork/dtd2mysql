@@ -1,4 +1,4 @@
-import * as memoize from "memoized-class-decorator";
+import memoize from "memoized-class-decorator";
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {

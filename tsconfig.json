@@ -9,10 +9,9 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "declaration": true,
+    "esModuleInterop": true,
     "lib": [
-      "es2017.object",
-      "es2015",
-      "es2017",
+      "esnext",
       "dom"
     ]
   },
