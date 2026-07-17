@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "module": "commonjs",
-    "target": "es2017",
+    "types": ["node", "mocha"],
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
+    /* todo: update once ts bump */
+    "target": "esnext",
     "sourceMap": true,
     "experimentalDecorators": true,
     "noImplicitAny": false,
