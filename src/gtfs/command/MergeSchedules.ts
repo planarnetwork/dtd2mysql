@@ -1,5 +1,4 @@
 import {OverlayRecord} from "../native/OverlayRecord";
-import {Schedule} from "../native/Schedule";
 import {OverlayIndex} from "./ApplyOverlays";
 
 /**
@@ -38,6 +37,6 @@ export function mergeSchedules(schedulesByTuid: OverlayIndex): OverlayRecord[] {
   return results;
 }
 
-function sortOverlays(a: Schedule, b: Schedule): number {
+function sortOverlays(a: OverlayRecord, b: OverlayRecord): number {
   return a.calendar.runsFrom.isSameOrBefore(b.calendar.runsFrom) ? -1 : 1;
 }

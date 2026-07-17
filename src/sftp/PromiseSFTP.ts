@@ -1,4 +1,4 @@
-import { Client, ConnectConfig, FileEntry, SFTPWrapper, TransferOptions } from "ssh2";
+import {Client, ClientSFTPCallback, ConnectConfig, FileEntry, SFTPWrapper, TransferOptions} from "ssh2";
 import { promisify } from "util";
 
 
@@ -22,7 +22,7 @@ export class PromiseSFTP {
 
       client.on("error", reject);
       client.on("ready", () => {
-        client.sftp((err: Error, sftp: SFTPWrapper) => {
+        client.sftp((err: Error | undefined, sftp: SFTPWrapper) => {
           if (err) {
             reject(err);
           }
