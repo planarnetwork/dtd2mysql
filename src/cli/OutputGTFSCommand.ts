@@ -124,7 +124,8 @@ export class OutputGTFSCommand implements CLICommand {
     const mergedSchedules = <Schedule[]>mergeSchedules(associatedSchedules);
     const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
 
-    return schedules;
+    // remove any schedules that no longer run on any days so invalid calendars are not output
+    return schedules.filter(schedule => !schedule.calendar.isEmpty);
   }
 
 }

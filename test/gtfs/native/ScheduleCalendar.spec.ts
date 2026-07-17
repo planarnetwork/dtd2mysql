@@ -149,6 +149,21 @@ describe("ScheduleCalendar", () => {
     expect(calendars[1].runsTo.equals("2017-01-30")).to.be.true;
   });
 
+  it("does not tighten the date range past its bounds when there are no operating days in the range", () => {
+    const saturdayOnly = calendar("2023-11-20", "2023-11-24", { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1 });
+    const result = saturdayOnly.clone(Temporal.PlainDate.from("2023-11-20"), Temporal.PlainDate.from("2023-11-24"));
+
+    expect(result.isEmpty).to.be.true;
+    expect(result.runsFrom.since(result.runsTo).days).to.equal(1);
+  });
+
+  it("terminates when the schedule has no operating days at all", () => {
+    const noDays = calendar("2023-11-20", "2023-11-24", { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 });
+    const result = noDays.clone(Temporal.PlainDate.from("2023-11-20"), Temporal.PlainDate.from("2023-11-24"));
+
+    expect(result.isEmpty).to.be.true;
+  });
+
   it("detects when a calendar can be merged with another", () => {
     // Monday + Friday service
     const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
