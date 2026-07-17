@@ -59,7 +59,7 @@ export class Schedule implements OverlayRecord {
   /**
    * Convert to a GTFS Trip
    */
-  public toTrip(serviceId: string, routeId: number): Trip {
+  public toTrip(serviceId: number, routeId: number): Trip {
     return {
       route_id: routeId,
       service_id: serviceId,

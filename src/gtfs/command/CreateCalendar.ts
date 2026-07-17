@@ -24,7 +24,7 @@ export function createCalendar(schedules: HasCalendar[]): [Calendar[], CalendarD
 }
 
 export type ServiceIdIndex = {
-  [calendarId: number]: number;
+  [calendarId: string]: number;
 }
 
 export interface HasCalendar {

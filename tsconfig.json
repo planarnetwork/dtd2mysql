@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "module": "commonjs",
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
     "target": "es2017",
     "sourceMap": true,
     "experimentalDecorators": true,
-    "noImplicitAny": false,
-    "noImplicitThis": true,
-    "strictNullChecks": true,
+    "strict": true,
     "declaration": true,
     "esModuleInterop": true,
     "lib": [
-      "esnext",
-      "dom"
+      "esnext"
+    ],
+    "types": [
+      "node",
+      "mocha"
     ]
   },
   "exclude": [

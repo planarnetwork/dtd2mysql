@@ -14,8 +14,8 @@ import {MySQLStream, TableIndex} from "../database/MySQLStream";
 import byline from "byline";
 import streamToPromise from "stream-to-promise";
 
-const getExt = filename => path.extname(filename).slice(1).toUpperCase();
-const readFile = filename => byline.createStream(fs.createReadStream(filename, "utf8"));
+const getExt = (filename: string) => path.extname(filename).slice(1).toUpperCase();
+const readFile = (filename: string) => byline.createStream(fs.createReadStream(filename, "utf8"));
 
 /**
  * Imports one of the feeds
@@ -153,7 +153,7 @@ export class ImportFeedCommand implements CLICommand {
 
   @memoize
   private async tables(file: FeedFile): Promise<TableIndex> {
-    const index = {};
+    const index: TableIndex = {};
 
     for (const record of file.recordTypes) {
       if (!index[record.name]) {
