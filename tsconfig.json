@@ -7,9 +7,7 @@
     "target": "esnext",
     "sourceMap": true,
     "experimentalDecorators": true,
-    "noImplicitAny": false,
-    "noImplicitThis": true,
-    "strictNullChecks": true,
+    "strict": true,
     "declaration": true,
     "esModuleInterop": true,
     "lib": [
