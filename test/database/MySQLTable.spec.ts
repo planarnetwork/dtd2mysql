@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {describe, it} from 'vitest';
+import {describe, it, expect} from 'vitest';
 import {DatabaseConnection} from "../../src/database/DatabaseConnection";
 import {MySQLTable} from "../../src/database/MySQLTable";
 import {RecordAction} from "../../src/feed/record/Record";
@@ -14,7 +14,7 @@ describe("MySQLTable", () => {
 
     table.apply({ action, values, keysValues: {} });
 
-    chai.expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
+    expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
   });
 
   it("buffers inserts", () => {
@@ -24,10 +24,10 @@ describe("MySQLTable", () => {
     const values = { some: "value" };
 
     table.apply({ action, values, keysValues: {} });
-    chai.expect(db.inserts.length).is.equal(0);
+    expect(db.inserts.length).is.equal(0);
 
     table.apply({ action, values, keysValues: {} });
-    chai.expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
+    expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
   });
 
   it("flushes all remaining inserts", () => {
@@ -39,7 +39,7 @@ describe("MySQLTable", () => {
     table.apply({ action, values, keysValues: {} });
     table.close();
 
-    chai.expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
+    expect(db.inserts[0]).is.equal("INSERT IGNORE INTO \`my_table\` VALUES ?");
   });
 
   it("updates records", () => {
@@ -50,7 +50,7 @@ describe("MySQLTable", () => {
 
     table.apply({ action, values, keysValues: {} });
 
-    chai.expect(db.inserts[0]).is.equal("REPLACE INTO \`my_table\` VALUES ?");
+    expect(db.inserts[0]).is.equal("REPLACE INTO \`my_table\` VALUES ?");
   });
 
   it("deletes records", () => {
@@ -65,7 +65,7 @@ describe("MySQLTable", () => {
 
     table.apply({ action, values: values2, keysValues: values2 });
 
-    chai.expect(db.inserts[0]).is.equal(
+    expect(db.inserts[0]).is.equal(
       "DELETE FROM \`my_table\` WHERE (`some` = ? AND `other` = ?) OR (`diff` = ? AND `other` = ?)"
     );
   });

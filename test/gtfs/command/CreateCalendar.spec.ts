@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {describe, it} from 'vitest';
+import {describe, it, expect} from 'vitest';
 import {createCalendar} from "../../../src/gtfs/command/CreateCalendar";
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {schedule} from "./MergeSchedules.spec";
@@ -15,9 +15,9 @@ describe("CreateCalendar", () => {
 
     const [calendars] = createCalendar(schedules);
 
-    chai.expect(calendars.length).to.equal(1);
-    chai.expect(calendars[0].start_date).to.equal("20170101");
-    chai.expect(calendars[0].end_date).to.equal("20170131");
+    expect(calendars.length).to.equal(1);
+    expect(calendars[0].start_date).to.equal("20170101");
+    expect(calendars[0].end_date).to.equal("20170131");
   });
 
   it("creates the serviceId index", () => {
@@ -30,10 +30,10 @@ describe("CreateCalendar", () => {
 
     const [calendars, _, index] = createCalendar(schedules);
 
-    chai.expect(index[schedule1.calendar.id]).to.equal(1);
-    chai.expect(index[schedule2.calendar.id]).to.equal(1);
-    chai.expect(index[schedule3.calendar.id]).to.equal(1);
-    chai.expect(index[schedule4.calendar.id]).to.equal(2);
+    expect(index[schedule1.calendar.id]).to.equal(1);
+    expect(index[schedule2.calendar.id]).to.equal(1);
+    expect(index[schedule3.calendar.id]).to.equal(1);
+    expect(index[schedule4.calendar.id]).to.equal(2);
   });
 
 });

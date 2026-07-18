@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {describe, it} from 'vitest';
+import {describe, it, expect} from 'vitest';
 import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {IntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
@@ -33,12 +33,12 @@ describe("MultiRecordFile", () => {
   }, 0);
 
   it("returns all the possible record types", () => {
-    chai.expect(file.recordTypes).to.deep.equal([record, record2]);
+    expect(file.recordTypes).to.deep.equal([record, record2]);
   });
 
   it("returns correct record based on the char at a certain position", () => {
-    chai.expect(file.getRecord("11012Hi 31122999")).to.deep.equal(record);
-    chai.expect(file.getRecord("21012Hi 31122999")).to.deep.equal(record2);
+    expect(file.getRecord("11012Hi 31122999")).to.deep.equal(record);
+    expect(file.getRecord("21012Hi 31122999")).to.deep.equal(record2);
   });
 
 });

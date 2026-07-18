@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {describe, it} from 'vitest';
+import {describe, it, expect} from 'vitest';
 import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {IntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";
@@ -22,13 +22,13 @@ describe("SingleRecordFile", () => {
   const file = new SingleRecordFile(record);
 
   it("wraps the record in an array", () => {
-    chai.expect(file.recordTypes).to.deep.equal([record]);
+    expect(file.recordTypes).to.deep.equal([record]);
   });
 
   it("always returns the record regardless of the string given", () => {
-    chai.expect(file.getRecord("")).to.deep.equal(record);
-    chai.expect(file.getRecord("derp")).to.deep.equal(record);
-    chai.expect(file.getRecord("123412123")).to.deep.equal(record);
+    expect(file.getRecord("")).to.deep.equal(record);
+    expect(file.getRecord("derp")).to.deep.equal(record);
+    expect(file.getRecord("123412123")).to.deep.equal(record);
   });
 
 });

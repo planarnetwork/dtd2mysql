@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import {describe, it} from 'vitest';
+import {describe, it, expect} from 'vitest';
 import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
 import {RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
 
@@ -10,11 +10,11 @@ describe("ForeignKeyField", () => {
     const field = new ForeignKeyField(record);
 
     record.extractValues("");
-    chai.expect(field.extract("goldfish")).to.equal(1);
-    chai.expect(field.extract("goldfish")).to.equal(1);
+    expect(field.extract("goldfish")).to.equal(1);
+    expect(field.extract("goldfish")).to.equal(1);
 
     record.extractValues("");
-    chai.expect(field.extract("goldfish")).to.equal(2);
+    expect(field.extract("goldfish")).to.equal(2);
   });
 
 });
