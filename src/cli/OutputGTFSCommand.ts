@@ -12,7 +12,7 @@ import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import {Route} from "../gtfs/file/Route";
 import * as fs from "fs";
 import {addLateNightServices} from "../gtfs/command/AddLateNightServices";
-import streamToPromise from "stream-to-promise";
+import {finished} from "node:stream/promises";
 
 export class OutputGTFSCommand implements CLICommand {
   private baseDir!: string;
@@ -75,7 +75,7 @@ export class OutputGTFSCommand implements CLICommand {
     rows.forEach(row => output.write(row));
     output.end();
 
-    return streamToPromise(output);
+    return finished(output);
   }
 
   /**
@@ -111,9 +111,9 @@ export class OutputGTFSCommand implements CLICommand {
     routeFile.end();
 
     return Promise.all([
-      streamToPromise(trips),
-      streamToPromise(stopTimes),
-      streamToPromise(routeFile),
+      finished(trips),
+      finished(stopTimes),
+      finished(routeFile),
     ]);
   }
 
