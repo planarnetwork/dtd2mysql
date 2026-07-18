@@ -1,5 +1,6 @@
 
 import {FieldMap, ParsedRecord, Record, RecordAction} from "./Record";
+import {FieldValue} from "../field/Field";
 
 /**
  * Record that has multiple row types, used for LI, LO stop records
@@ -24,7 +25,7 @@ export class MultiFormatRecord implements Record {
   public extractValues(line: string): ParsedRecord {
     const type = line.substr(this.recordIdentifierStart, this.recordIdentifierLength);
     const record = this.records[type];
-    const values = { id: ++this.lastId };
+    const values: { [field: string]: FieldValue } = { id: ++this.lastId };
     const action = RecordAction.Insert;
 
     for (const key in record) {

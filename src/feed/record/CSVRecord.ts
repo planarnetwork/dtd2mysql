@@ -24,7 +24,7 @@ export class CSVRecord implements Record {
    */
   extractValues(line: string): ParsedRecord {
     const fieldValues = line.trim().split(this.fieldDelimiter);
-    const values = { id: null };
+    const values: { [field: string]: FieldValue } = { id: null };
     const action = RecordAction.Insert;
 
     for (let i = 0; i < fieldValues.length; i++) {
@@ -37,7 +37,7 @@ export class CSVRecord implements Record {
       }
     }
 
-    const keysValues = this.key.reduce((vals, key) => {
+    const keysValues = this.key.reduce((vals: { [field: string]: FieldValue }, key) => {
       vals[key] = values[key];
 
       return vals;

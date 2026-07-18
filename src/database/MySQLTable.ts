@@ -1,7 +1,6 @@
 
 import {DatabaseConnection} from "./DatabaseConnection";
 import {ParsedRecord, RecordAction} from "../feed/record/Record";
-import ErrnoException = NodeJS.ErrnoException;
 
 /**
  * Stateful class that provides access to a MySQL table and acts as buffer for inserts.
@@ -74,8 +73,8 @@ export class MySQLTable {
     try {
       await this.query(type, rows);
     }
-    catch (err: unknown) {
-      if (isErrnoException(err) && err.errno === 1213 && numRetries > 0) {
+    catch (err) {
+      if (err instanceof Error && "errno" in err && err.errno === 1213 && numRetries > 0) {
         return this.queryWithRetry(type, rows, numRetries - 1);
       }
       else {
@@ -106,9 +105,5 @@ export class MySQLTable {
   private getDeleteSQL(rows: ParsedRecord[]): string {
     return rows.map(row => Object.keys(row.keysValues).map(k => `\`${k}\` = ?`).join(" AND ")).join(") OR (");
   }
-}
-
-function isErrnoException(err: unknown): err is ErrnoException {
-  return err instanceof Error && 'errno' in err;
 }
 

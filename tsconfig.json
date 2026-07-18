@@ -1,18 +1,19 @@
 {
   "compilerOptions": {
-    "types": ["node", "mocha"],
     "moduleResolution": "nodenext",
     "module": "nodenext",
-    /* todo: update once ts bump */
-    "target": "esnext",
+    "target": "es2017",
     "sourceMap": true,
     "experimentalDecorators": true,
     "strict": true,
     "declaration": true,
     "esModuleInterop": true,
     "lib": [
-      "esnext",
-      "dom"
+      "esnext"
+    ],
+    "types": [
+      "node",
+      "mocha"
     ]
   },
   "exclude": [

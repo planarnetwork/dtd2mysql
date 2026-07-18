@@ -70,7 +70,9 @@ export class ScheduleCalendar {
     const endDate = moment.min(this.runsTo, overlay.runsTo);
 
     while (startDate.isSameOrBefore(endDate)) {
-      if (this.days[startDate.day()] && overlay.days[startDate.day()]) {
+      const day = startDate.day() as keyof Days;
+
+      if (this.days[day] && overlay.days[day]) {
         yield startDate.clone();
       }
 
@@ -111,12 +113,12 @@ export class ScheduleCalendar {
     const days = this.removeDays(removeDays);
 
     // skip forward to the first day the schedule is operating
-    while (days[start.day()] === 0 || excludeDays[start.format("YYYYMMDD")] && start.isSameOrBefore(end)) {
+    while (days[start.day() as keyof Days] === 0 || excludeDays[start.format("YYYYMMDD")] && start.isSameOrBefore(end)) {
       start.add(1, "days");
     }
 
     // skip backward to the first day the schedule is operating
-    while (days[end.day()] === 0  || excludeDays[end.format("YYYYMMDD")] && end.isSameOrAfter(start)) {
+    while (days[end.day() as keyof Days] === 0  || excludeDays[end.format("YYYYMMDD")] && end.isSameOrAfter(start)) {
       end.subtract(1, "days");
     }
 
@@ -179,7 +181,7 @@ export class ScheduleCalendar {
     let  numAdditionalExcludeDays = 0;
 
     while (startDate.add(1, "days").isBefore(calendar.runsFrom)) {
-      if (this.days[startDate.day()] && ++numAdditionalExcludeDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
+      if (this.days[startDate.day() as keyof Days] && ++numAdditionalExcludeDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
         return false;
       }
     }
@@ -197,7 +199,7 @@ export class ScheduleCalendar {
     const startDate = this.runsTo.clone();
 
     while (startDate.add(1, "days").isBefore(calendar.runsFrom)) {
-      if (this.days[startDate.day()]) {
+      if (this.days[startDate.day() as keyof Days]) {
         excludeDays[startDate.format("YYYYMMDD")] = startDate.clone();
       }
     }
@@ -225,7 +227,7 @@ export class ScheduleCalendar {
    */
   @memoize
   public shiftForward(): ScheduleCalendar {
-    const excludeDays = {};
+    const excludeDays: ExcludeDays = {};
 
     for (const day of Object.values(this.excludeDays)) {
       const shiftedDay = day.clone().add(1, "days");
@@ -254,7 +256,7 @@ export class ScheduleCalendar {
    */
   @memoize
   public shiftBackward(): ScheduleCalendar {
-    const excludeDays = {};
+    const excludeDays: ExcludeDays = {};
 
     for (const day of Object.values(this.excludeDays)) {
       const shiftedDay = day.clone().subtract(1, "days");

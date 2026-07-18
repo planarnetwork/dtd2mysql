@@ -24,7 +24,7 @@ export class PromiseSFTP {
       client.on("ready", () => {
         client.sftp((err: Error | undefined, sftp: SFTPWrapper) => {
           if (err) {
-            reject(err);
+            return reject(err);
           }
 
           resolve(new PromiseSFTP(sftp, client));

@@ -9,7 +9,7 @@ export function mergeSchedules(schedulesByTuid: OverlayIndex): OverlayRecord[] {
 
   for (const tuid in schedulesByTuid) {
     // group schedules that run on the same days with the exact same stopping pattern
-    const schedulesByHash: OverlayIndex = schedulesByTuid[tuid].reduce((prev, cur) => {
+    const schedulesByHash = schedulesByTuid[tuid].reduce((prev: OverlayIndex, cur) => {
       (prev[cur.hash] = prev[cur.hash] || []).push(cur);
 
       return prev;

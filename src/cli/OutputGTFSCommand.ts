@@ -9,12 +9,13 @@ import {applyAssociations, AssociationIndex, ScheduleIndex} from "../gtfs/comman
 import {createCalendar, ServiceIdIndex} from "../gtfs/command/CreateCalendar";
 import {ScheduleResults} from "../gtfs/repository/ScheduleBuilder";
 import {GTFSOutput} from "../gtfs/output/GTFSOutput";
+import {Route} from "../gtfs/file/Route";
 import * as fs from "fs";
 import {addLateNightServices} from "../gtfs/command/AddLateNightServices";
 import streamToPromise from "stream-to-promise";
 
 export class OutputGTFSCommand implements CLICommand {
-  private baseDir?: string;
+  private baseDir!: string;
 
   public constructor(
     private readonly repository: CIFRepository,
@@ -85,7 +86,7 @@ export class OutputGTFSCommand implements CLICommand {
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
     const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
-    const routes = {};
+    const routes: { [routeShortName: string]: Route } = {};
 
     for (const schedule of schedules) {
       if (schedule.stopTimes.length <= 1) {
