@@ -62,9 +62,11 @@
     "chai": "6.2.0",
     "mocha": "11.7.3",
     "ts-node": "10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "7.0.2"
   },
   "allowScripts": {
-    "ssh2@1.17.0": true
+    "ssh2@1.17.0": true,
+    "esbuild@0.28.1": true
   }
 }
