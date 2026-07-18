@@ -8,6 +8,7 @@ import {DateField} from "../../src/feed/field/DateField";
 import {TimeField} from "../../src/feed/field/TimeField";
 import {BooleanField} from "../../src/feed/field/BooleanField";
 import {DoubleField} from "../../src/feed/field/DoubleField";
+import {describe, it} from 'vitest';
 
 describe("MySQLSchema", () => {
   const record = new FixedWidthRecord(

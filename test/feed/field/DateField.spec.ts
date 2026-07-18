@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {DateField, ShortDateField} from "../../../src/feed/field/DateField";
 
 describe("DateField", () => {

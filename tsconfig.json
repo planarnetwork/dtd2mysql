@@ -2,7 +2,7 @@
   "compilerOptions": {
     "moduleResolution": "nodenext",
     "module": "nodenext",
-    "target": "es2017",
+    "target": "es2025",
     "sourceMap": true,
     "experimentalDecorators": true,
     "strict": true,
@@ -12,12 +12,12 @@
       "esnext"
     ],
     "types": [
-      "node",
-      "mocha"
+      "node"
     ]
   },
   "exclude": [
     "node_modules",
+    "test/",
     "dist/"
   ]
 }

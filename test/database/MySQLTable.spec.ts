@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {DatabaseConnection} from "../../src/database/DatabaseConnection";
 import {MySQLTable} from "../../src/database/MySQLTable";
 import {RecordAction} from "../../src/feed/record/Record";

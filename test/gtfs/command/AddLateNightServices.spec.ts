@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {schedule} from "./MergeSchedules.spec";
 import {stop} from "./ApplyAssociations.spec";

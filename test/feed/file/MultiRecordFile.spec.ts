@@ -1,5 +1,5 @@
-
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
 import {IntField} from "../../../src/feed/field/IntField";
 import {DateField} from "../../../src/feed/field/DateField";

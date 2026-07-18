@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {BooleanField} from "../../../src/feed/field/BooleanField";
 
 describe("BooleanField", () => {

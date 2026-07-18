@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import moment from "moment";
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP} from "../../../src/gtfs/native/OverlayRecord";

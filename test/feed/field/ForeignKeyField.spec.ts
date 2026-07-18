@@ -1,6 +1,5 @@
-
 import * as chai from "chai";
-import {DoubleField} from "../../../src/feed/field/DoubleField";
+import {describe, it} from 'vitest';
 import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
 import {RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
 

@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {IntField} from "../../../src/feed/field/IntField";
 
 describe("IntField", () => {

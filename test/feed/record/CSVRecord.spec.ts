@@ -1,5 +1,5 @@
-
 import * as chai from "chai";
+import {describe, it} from 'vitest';
 import {DoubleField} from "../../../src/feed/field/DoubleField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {CSVRecord} from "../../../src/feed/record/CSVRecord";
