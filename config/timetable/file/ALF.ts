@@ -33,7 +33,7 @@ class ALFDate extends DateField {
  */
 class ALFRecord implements Record {
 
-  private readonly fieldMap = {
+  private readonly fieldMap: { [name: string]: [string] | [string, number] } = {
     "mode": ["M"],
     "origin": ["O"],
     "destination": ["D"],
@@ -88,7 +88,7 @@ class ALFRecord implements Record {
       .map(field => field.split("="));
 
     const csvMap = new Map(entries);
-    const values = { id: null };
+    const values: { [field: string]: FieldValue } = { id: null };
     const action = RecordAction.Insert;
 
     for (const [name, field] of Object.entries(this.fields)) {

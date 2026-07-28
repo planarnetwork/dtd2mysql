@@ -2,7 +2,7 @@ import {RSID, TUID} from "../native/OverlayRecord";
 
 export interface Trip {
   route_id: number;
-  service_id: string;
+  service_id: number;
   trip_id: number;
   trip_headsign: TUID;
   trip_short_name: RSID;

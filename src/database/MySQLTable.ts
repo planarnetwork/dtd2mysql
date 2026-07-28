@@ -74,7 +74,7 @@ export class MySQLTable {
       await this.query(type, rows);
     }
     catch (err) {
-      if (err.errno === 1213 && numRetries > 0) {
+      if (err instanceof Error && "errno" in err && err.errno === 1213 && numRetries > 0) {
         return this.queryWithRetry(type, rows, numRetries - 1);
       }
       else {

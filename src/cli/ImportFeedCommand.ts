@@ -12,10 +12,10 @@ import {MultiRecordFile} from "../feed/file/MultiRecordFile";
 import {RecordWithManualIdentifier} from "../feed/record/FixedWidthRecord";
 import {MySQLStream, TableIndex} from "../database/MySQLStream";
 import byline from "byline";
-import streamToPromise from "stream-to-promise";
+import {finished} from "node:stream/promises";
 
-const getExt = filename => path.extname(filename).slice(1).toUpperCase();
-const readFile = filename => byline.createStream(fs.createReadStream(filename, "utf8"));
+const getExt = (filename: string) => path.extname(filename).slice(1).toUpperCase();
+const readFile = (filename: string) => byline.createStream(fs.createReadStream(filename, "utf8"));
 
 /**
  * Imports one of the feeds
@@ -124,14 +124,14 @@ export class ImportFeedCommand implements CLICommand {
   /**
    * Process the records inside the given file
    */
-  private async processFile(filename: string): Promise<any> {
+  private async processFile(filename: string): Promise<void> {
     const file = this.getFeedFile(filename);
     const tables = await this.tables(file);
     const tableStream = new MySQLStream(filename, file, tables);
     const stream = readFile(`${this.tmpFolder}/${filename}`).pipe(tableStream);
 
     try {
-      await streamToPromise(stream);
+      await finished(stream);
 
       console.log(`Finished processing ${filename}`);
     }
@@ -153,7 +153,7 @@ export class ImportFeedCommand implements CLICommand {
 
   @memoize
   private async tables(file: FeedFile): Promise<TableIndex> {
-    const index = {};
+    const index: TableIndex = {};
 
     for (const record of file.recordTypes) {
       if (!index[record.name]) {

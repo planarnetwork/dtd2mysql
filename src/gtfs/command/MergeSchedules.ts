@@ -1,5 +1,4 @@
 import {OverlayRecord} from "../native/OverlayRecord";
-import {Schedule} from "../native/Schedule";
 import {OverlayIndex} from "./ApplyOverlays";
 
 /**
@@ -10,7 +9,7 @@ export function mergeSchedules(schedulesByTuid: OverlayIndex): OverlayRecord[] {
 
   for (const tuid in schedulesByTuid) {
     // group schedules that run on the same days with the exact same stopping pattern
-    const schedulesByHash: OverlayIndex = schedulesByTuid[tuid].reduce((prev, cur) => {
+    const schedulesByHash = schedulesByTuid[tuid].reduce((prev: OverlayIndex, cur) => {
       (prev[cur.hash] = prev[cur.hash] || []).push(cur);
 
       return prev;
@@ -38,6 +37,6 @@ export function mergeSchedules(schedulesByTuid: OverlayIndex): OverlayRecord[] {
   return results;
 }
 
-function sortOverlays(a: Schedule, b: Schedule): number {
+function sortOverlays(a: OverlayRecord, b: OverlayRecord): number {
   return a.calendar.runsFrom.isSameOrBefore(b.calendar.runsFrom) ? -1 : 1;
 }

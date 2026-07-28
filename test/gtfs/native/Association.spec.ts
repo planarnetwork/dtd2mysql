@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it, expect} from 'vitest';
 import moment from "moment";
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
@@ -25,17 +26,17 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("A_B");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[2].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[2].arrival_time).to.equal("12:00:00");
-    chai.expect(result.stopTimes[2].departure_time).to.equal("12:05:00");
-    chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.tuid).to.equal("A_B");
+    expect(result.stopTimes[0].stop_id).to.equal("TON");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[1].stop_id).to.equal("PDW");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[2].stop_id).to.equal("ASH");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[2].arrival_time).to.equal("12:00:00");
+    expect(result.stopTimes[2].departure_time).to.equal("12:05:00");
+    expect(result.stopTimes[3].stop_id).to.equal("DOV");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
   });
 
   it("re-sequences splits", () => {
@@ -54,22 +55,22 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("A_B");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[0].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[1].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[2].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[2].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[3].stop_id).to.equal("A");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
-    chai.expect(result.stopTimes[3].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[4].stop_id).to.equal("B");
-    chai.expect(result.stopTimes[4].stop_sequence).to.equal(5);
-    chai.expect(result.stopTimes[4].trip_id).to.equal(2);
+    expect(result.tuid).to.equal("A_B");
+    expect(result.stopTimes[0].stop_id).to.equal("PDW");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[0].trip_id).to.equal(2);
+    expect(result.stopTimes[1].stop_id).to.equal("ASH");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[1].trip_id).to.equal(2);
+    expect(result.stopTimes[2].stop_id).to.equal("DOV");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[2].trip_id).to.equal(2);
+    expect(result.stopTimes[3].stop_id).to.equal("A");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.stopTimes[3].trip_id).to.equal(2);
+    expect(result.stopTimes[4].stop_id).to.equal("B");
+    expect(result.stopTimes[4].stop_sequence).to.equal(5);
+    expect(result.stopTimes[4].trip_id).to.equal(2);
   });
 
   it("applies overnight splits", () => {
@@ -87,20 +88,20 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next).apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("A_B");
-    chai.expect(result.calendar.runsFrom.isSame("2017-07-10")).to.be.true;
-    chai.expect(result.calendar.runsTo.isSame("2017-07-16")).to.be.true;
-    chai.expect(result.stopTimes[0].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[2].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[2].arrival_time).to.equal("24:30:00");
-    chai.expect(result.stopTimes[2].departure_time).to.equal("24:35:00");
-    chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
-    chai.expect(result.stopTimes[3].departure_time).to.equal("25:00:00");
+    expect(result.tuid).to.equal("A_B");
+    expect(result.calendar.runsFrom.isSame("2017-07-10")).to.be.true;
+    expect(result.calendar.runsTo.isSame("2017-07-16")).to.be.true;
+    expect(result.stopTimes[0].stop_id).to.equal("TON");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[1].stop_id).to.equal("PDW");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[2].stop_id).to.equal("ASH");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[2].arrival_time).to.equal("24:30:00");
+    expect(result.stopTimes[2].departure_time).to.equal("24:35:00");
+    expect(result.stopTimes[3].stop_id).to.equal("DOV");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.stopTimes[3].departure_time).to.equal("25:00:00");
   });
 
   it("takes the correct departure time for splits", () => {
@@ -118,17 +119,17 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("A_B");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[2].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[2].arrival_time).to.equal("11:59:00");
-    chai.expect(result.stopTimes[2].departure_time).to.equal("11:59:00");
-    chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.tuid).to.equal("A_B");
+    expect(result.stopTimes[0].stop_id).to.equal("TON");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[1].stop_id).to.equal("PDW");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[2].stop_id).to.equal("ASH");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[2].arrival_time).to.equal("11:59:00");
+    expect(result.stopTimes[2].departure_time).to.equal("11:59:00");
+    expect(result.stopTimes[3].stop_id).to.equal("DOV");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
   });
 
   it("applies joins", () => {
@@ -147,17 +148,17 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("B_A");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[1].arrival_time).to.equal("11:55:00");
-    chai.expect(result.stopTimes[1].departure_time).to.equal("12:00:00");
-    chai.expect(result.stopTimes[2].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[3].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.tuid).to.equal("B_A");
+    expect(result.stopTimes[0].stop_id).to.equal("DOV");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[1].stop_id).to.equal("ASH");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[1].arrival_time).to.equal("11:55:00");
+    expect(result.stopTimes[1].departure_time).to.equal("12:00:00");
+    expect(result.stopTimes[2].stop_id).to.equal("PDW");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[3].stop_id).to.equal("TON");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
   });
 
   it("re-sequences applies joins", () => {
@@ -178,28 +179,28 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("B_A");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("A");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[0].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("B");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[1].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[2].stop_id).to.equal("C");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[2].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[3].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
-    chai.expect(result.stopTimes[3].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[4].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[4].stop_sequence).to.equal(5);
-    chai.expect(result.stopTimes[4].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[5].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[5].stop_sequence).to.equal(6);
-    chai.expect(result.stopTimes[5].trip_id).to.equal(2);
-    chai.expect(result.stopTimes[6].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[6].stop_sequence).to.equal(7);
-    chai.expect(result.stopTimes[6].trip_id).to.equal(2);
+    expect(result.tuid).to.equal("B_A");
+    expect(result.stopTimes[0].stop_id).to.equal("A");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[0].trip_id).to.equal(2);
+    expect(result.stopTimes[1].stop_id).to.equal("B");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[1].trip_id).to.equal(2);
+    expect(result.stopTimes[2].stop_id).to.equal("C");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[2].trip_id).to.equal(2);
+    expect(result.stopTimes[3].stop_id).to.equal("DOV");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.stopTimes[3].trip_id).to.equal(2);
+    expect(result.stopTimes[4].stop_id).to.equal("ASH");
+    expect(result.stopTimes[4].stop_sequence).to.equal(5);
+    expect(result.stopTimes[4].trip_id).to.equal(2);
+    expect(result.stopTimes[5].stop_id).to.equal("PDW");
+    expect(result.stopTimes[5].stop_sequence).to.equal(6);
+    expect(result.stopTimes[5].trip_id).to.equal(2);
+    expect(result.stopTimes[6].stop_id).to.equal("TON");
+    expect(result.stopTimes[6].stop_sequence).to.equal(7);
+    expect(result.stopTimes[6].trip_id).to.equal(2);
   });
 
   it("takes the correct departure time for joins", () => {
@@ -218,17 +219,17 @@ describe("Association", () => {
 
     const [result] = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("B_A");
-    chai.expect(result.stopTimes[0].stop_id).to.equal("DOV");
-    chai.expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    chai.expect(result.stopTimes[1].stop_id).to.equal("ASH");
-    chai.expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    chai.expect(result.stopTimes[1].arrival_time).to.equal("11:50:00");
-    chai.expect(result.stopTimes[1].departure_time).to.equal("11:50:00");
-    chai.expect(result.stopTimes[2].stop_id).to.equal("PDW");
-    chai.expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    chai.expect(result.stopTimes[3].stop_id).to.equal("TON");
-    chai.expect(result.stopTimes[3].stop_sequence).to.equal(4);
+    expect(result.tuid).to.equal("B_A");
+    expect(result.stopTimes[0].stop_id).to.equal("DOV");
+    expect(result.stopTimes[0].stop_sequence).to.equal(1);
+    expect(result.stopTimes[1].stop_id).to.equal("ASH");
+    expect(result.stopTimes[1].stop_sequence).to.equal(2);
+    expect(result.stopTimes[1].arrival_time).to.equal("11:50:00");
+    expect(result.stopTimes[1].departure_time).to.equal("11:50:00");
+    expect(result.stopTimes[2].stop_id).to.equal("PDW");
+    expect(result.stopTimes[2].stop_sequence).to.equal(3);
+    expect(result.stopTimes[3].stop_id).to.equal("TON");
+    expect(result.stopTimes[3].stop_sequence).to.equal(4);
   });
 
   it("creates a copy of the associated schedule where the association does not apply", () => {
@@ -262,21 +263,21 @@ describe("Association", () => {
 
     const [result, before, after, ex1, ex2] = association1.apply(base, assoc, idGenerator());
 
-    chai.expect(result.tuid).to.equal("A_B");
-    chai.expect(result.calendar.runsFrom.isSame("2017-07-20")).to.equal(true);
-    chai.expect(result.calendar.runsTo.isSame("2017-08-16")).to.equal(true);
-    chai.expect(before.tuid).to.equal("B");
-    chai.expect(before.calendar.runsFrom.isSame("2017-07-10")).to.equal(true);
-    chai.expect(before.calendar.runsTo.isSame("2017-07-19")).to.equal(true);
-    chai.expect(after.tuid).to.equal("B");
-    chai.expect(after.calendar.runsFrom.isSame("2017-08-17")).to.equal(true);
-    chai.expect(after.calendar.runsTo.isSame("2017-09-16")).to.equal(true);
-    chai.expect(ex1.tuid).to.equal("B");
-    chai.expect(ex1.calendar.runsFrom.isSame("2017-08-01")).to.equal(true);
-    chai.expect(ex1.calendar.runsTo.isSame("2017-08-01")).to.equal(true);
-    chai.expect(ex2.tuid).to.equal("B");
-    chai.expect(ex2.calendar.runsFrom.isSame("2017-08-05")).to.equal(true);
-    chai.expect(ex2.calendar.runsTo.isSame("2017-08-05")).to.equal(true);
+    expect(result.tuid).to.equal("A_B");
+    expect(result.calendar.runsFrom.isSame("2017-07-20")).to.equal(true);
+    expect(result.calendar.runsTo.isSame("2017-08-16")).to.equal(true);
+    expect(before.tuid).to.equal("B");
+    expect(before.calendar.runsFrom.isSame("2017-07-10")).to.equal(true);
+    expect(before.calendar.runsTo.isSame("2017-07-19")).to.equal(true);
+    expect(after.tuid).to.equal("B");
+    expect(after.calendar.runsFrom.isSame("2017-08-17")).to.equal(true);
+    expect(after.calendar.runsTo.isSame("2017-09-16")).to.equal(true);
+    expect(ex1.tuid).to.equal("B");
+    expect(ex1.calendar.runsFrom.isSame("2017-08-01")).to.equal(true);
+    expect(ex1.calendar.runsTo.isSame("2017-08-01")).to.equal(true);
+    expect(ex2.tuid).to.equal("B");
+    expect(ex2.calendar.runsFrom.isSame("2017-08-05")).to.equal(true);
+    expect(ex2.calendar.runsTo.isSame("2017-08-05")).to.equal(true);
   });
 
 });

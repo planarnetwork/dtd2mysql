@@ -1,5 +1,5 @@
-
 import * as chai from "chai";
+import {describe, it, expect} from 'vitest';
 import {DoubleField} from "../../../src/feed/field/DoubleField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {CSVRecord} from "../../../src/feed/record/CSVRecord";
@@ -21,7 +21,7 @@ describe("CSVRecord", () => {
         "field3": field3
     });
 
-    chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
+    expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
@@ -44,7 +44,7 @@ describe("CSVRecord", () => {
         "field2": field2,
       });
 
-    chai.expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
+    expect(record.extractValues("10.12,Hi ,31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {

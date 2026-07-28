@@ -1,4 +1,4 @@
-import * as chai from "chai";
+import {describe, it, expect} from 'vitest';
 import {TextField} from "../../../src/feed/field/TextField";
 
 describe("TextField", () => {
@@ -6,7 +6,7 @@ describe("TextField", () => {
   it("returns a string value", () => {
     const text = new TextField(0, 3);
 
-    chai.expect(text.extract("Hi")).to.equal("Hi");
+    expect(text.extract("Hi")).to.equal("Hi");
   });
 
 });

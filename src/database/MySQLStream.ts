@@ -27,7 +27,9 @@ export class MySQLStream extends Writable {
       callback();
     }
     catch (err) {
-      callback(Error(`Error processing ${this.filename} with data ${line}` + err.stack));
+      const details = err instanceof Error ? err.stack : String(err);
+
+      callback(Error(`Error processing ${this.filename} with data ${line}` + details));
     }
   }
 
@@ -38,7 +40,7 @@ export class MySQLStream extends Writable {
       callback();
     }
     catch (err) {
-      callback(err);
+      callback(err instanceof Error ? err : Error(String(err)));
     }
   }
 

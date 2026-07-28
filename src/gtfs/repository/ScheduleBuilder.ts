@@ -115,10 +115,17 @@ export class ScheduleBuilder {
     const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
     const dropOff = dropOffActivities.find(a => activities.includes(a)) ? 0 : 1;
 
+    const arrival = arrivalTime || departureTime;
+    const departure = departureTime || arrivalTime;
+
+    if (arrival === null || departure === null) {
+      throw new Error(`Stop ${row.crs_code} on trip ${row.id} has no arrival or departure time`);
+    }
+
     return {
       trip_id: row.id,
-      arrival_time: (arrivalTime || departureTime),
-      departure_time: (departureTime || arrivalTime),
+      arrival_time: arrival,
+      departure_time: departure,
       stop_id: row.crs_code,
       stop_sequence: stopId,
       stop_headsign: row.platform,
@@ -162,7 +169,7 @@ export interface ScheduleResults {
   idGenerator: IdGenerator
 }
 
-const routeTypeIndex: object = {
+const routeTypeIndex: { [trainCategory: string]: RouteType } = {
   "OO": RouteType.Rail,
   "XX": RouteType.Rail,
   "XZ": RouteType.Rail,

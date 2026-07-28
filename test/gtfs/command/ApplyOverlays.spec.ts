@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import {describe, it, expect} from 'vitest';
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {applyOverlays} from "../../../src/gtfs/command/ApplyOverlays";
 import {mergeSchedules} from "../../../src/gtfs/command/MergeSchedules";
@@ -14,17 +15,17 @@ describe("ApplyOverlays", () => {
 
     const schedules = mergeSchedules(applyOverlays(baseSchedules));
 
-    chai.expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    chai.expect(schedules[0].calendar.runsTo.isSame("20170131")).to.be.true;
-    chai.expect(schedules[1].calendar.runsFrom.isSame("20170105")).to.be.true;
-    chai.expect(schedules[1].calendar.runsTo.isSame("20170107")).to.be.true;
+    expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
+    expect(schedules[0].calendar.runsTo.isSame("20170131")).to.be.true;
+    expect(schedules[1].calendar.runsFrom.isSame("20170105")).to.be.true;
+    expect(schedules[1].calendar.runsTo.isSame("20170107")).to.be.true;
 
     const excludeDays = Object.keys(schedules[0].calendar.excludeDays);
 
-    chai.expect(excludeDays.length).to.equal(3);
-    chai.expect(excludeDays[0]).to.equal("20170105");
-    chai.expect(excludeDays[1]).to.equal("20170106");
-    chai.expect(excludeDays[2]).to.equal("20170107");
+    expect(excludeDays.length).to.equal(3);
+    expect(excludeDays[0]).to.equal("20170105");
+    expect(excludeDays[1]).to.equal("20170106");
+    expect(excludeDays[2]).to.equal("20170107");
   });
 
   it("divides schedules where overlapped", () => {
@@ -37,14 +38,14 @@ describe("ApplyOverlays", () => {
 
     const schedules = applyOverlays(baseSchedules);
 
-    chai.expect(schedules["A"][0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    chai.expect(schedules["A"][0].calendar.runsTo.isSame("20170114")).to.be.true;
-    chai.expect(schedules["A"][1].calendar.runsFrom.isSame("20170216")).to.be.true;
-    chai.expect(schedules["A"][1].calendar.runsTo.isSame("20170228")).to.be.true;
-    chai.expect(schedules["A"][2].calendar.runsFrom.isSame("20170115")).to.be.true;
-    chai.expect(schedules["A"][2].calendar.runsTo.isSame("20170215")).to.be.true;
-    chai.expect(schedules["B"][0].calendar.runsFrom.isSame("20170102")).to.be.true;
-    chai.expect(schedules["B"][0].calendar.runsTo.isSame("20170315")).to.be.true;
+    expect(schedules["A"][0].calendar.runsFrom.isSame("20170101")).to.be.true;
+    expect(schedules["A"][0].calendar.runsTo.isSame("20170114")).to.be.true;
+    expect(schedules["A"][1].calendar.runsFrom.isSame("20170216")).to.be.true;
+    expect(schedules["A"][1].calendar.runsTo.isSame("20170228")).to.be.true;
+    expect(schedules["A"][2].calendar.runsFrom.isSame("20170115")).to.be.true;
+    expect(schedules["A"][2].calendar.runsTo.isSame("20170215")).to.be.true;
+    expect(schedules["B"][0].calendar.runsFrom.isSame("20170102")).to.be.true;
+    expect(schedules["B"][0].calendar.runsTo.isSame("20170315")).to.be.true;
   });
 
   it("applies an overlay that doesn't overlap", () => {
@@ -53,8 +54,8 @@ describe("ApplyOverlays", () => {
 
     const schedules = applyOverlays([perm, nolay]);
 
-    chai.expect(schedules["A"][0]).to.equal(perm);
-    chai.expect(schedules["A"][1]).to.equal(nolay);
+    expect(schedules["A"][0]).to.equal(perm);
+    expect(schedules["A"][1]).to.equal(nolay);
   });
 
   it("applies a short overlay", () => {
@@ -63,8 +64,8 @@ describe("ApplyOverlays", () => {
 
     const schedules = applyOverlays([perm, short]);
 
-    chai.expect(schedules["A"][0]).not.to.equal(perm);
-    chai.expect(schedules["A"][0].tuid).to.equal(perm.tuid);
+    expect(schedules["A"][0]).not.to.equal(perm);
+    expect(schedules["A"][0].tuid).to.equal(perm.tuid);
   });
 
   it("applies a long overlay", () => {
@@ -74,11 +75,11 @@ describe("ApplyOverlays", () => {
     const schedules = applyOverlays([perm, long]);
     const [s1, s2, s3] = schedules["A"];
 
-    chai.expect(s1).not.to.equal(perm);
-    chai.expect(s1.tuid).to.equal(perm.tuid);
-    chai.expect(s2).not.to.equal(perm);
-    chai.expect(s2.tuid).to.equal(perm.tuid);
-    chai.expect(s3).to.equal(long);
+    expect(s1).not.to.equal(perm);
+    expect(s1.tuid).to.equal(perm.tuid);
+    expect(s2).not.to.equal(perm);
+    expect(s2.tuid).to.equal(perm.tuid);
+    expect(s3).to.equal(long);
   });
 
   it("removes cancellations", () => {
@@ -89,16 +90,16 @@ describe("ApplyOverlays", () => {
 
     const schedules = mergeSchedules(applyOverlays(baseSchedules));
 
-    chai.expect(schedules.length).to.equal(1);
-    chai.expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    chai.expect(schedules[0].calendar.runsTo.isSame("20170131")).to.be.true;
+    expect(schedules.length).to.equal(1);
+    expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
+    expect(schedules[0].calendar.runsTo.isSame("20170131")).to.be.true;
 
     const excludeDays = Object.keys(schedules[0].calendar.excludeDays);
 
-    chai.expect(excludeDays.length).to.equal(3);
-    chai.expect(excludeDays[0]).to.equal("20170105");
-    chai.expect(excludeDays[1]).to.equal("20170106");
-    chai.expect(excludeDays[2]).to.equal("20170107");
+    expect(excludeDays.length).to.equal(3);
+    expect(excludeDays[0]).to.equal("20170105");
+    expect(excludeDays[1]).to.equal("20170106");
+    expect(excludeDays[2]).to.equal("20170107");
   });
 
 });

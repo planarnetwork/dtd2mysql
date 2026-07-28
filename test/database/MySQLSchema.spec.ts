@@ -8,6 +8,7 @@ import {DateField} from "../../src/feed/field/DateField";
 import {TimeField} from "../../src/feed/field/TimeField";
 import {BooleanField} from "../../src/feed/field/BooleanField";
 import {DoubleField} from "../../src/feed/field/DoubleField";
+import {describe, it, expect} from 'vitest';
 
 describe("MySQLSchema", () => {
   const record = new FixedWidthRecord(
@@ -31,7 +32,7 @@ describe("MySQLSchema", () => {
 
     schema.dropSchema();
 
-    chai.expect(db.queries[0]).is.equal("DROP TABLE IF EXISTS \`test\`");
+    expect(db.queries[0]).is.equal("DROP TABLE IF EXISTS \`test\`");
   });
 
   it("creates a table", () => {
@@ -40,7 +41,7 @@ describe("MySQLSchema", () => {
 
     schema.createSchema();
 
-    chai.expect(db.queries[0]).is.equal(
+    expect(db.queries[0]).is.equal(
       "CREATE TABLE IF NOT EXISTS `test` (id INT(11) unsigned auto_increment NOT NULL PRIMARY KEY,`field` SMALLINT(4) unsigned NOT NULL,`field2` CHAR(3) NOT NULL,`field3` CHAR(5) NOT NULL,`field4` VARCHAR(5) NOT NULL,`field5` DATE NOT NULL,`field6` TIME DEFAULT NULL,`field7` TINYINT(1) unsigned NOT NULL,`field8` DOUBLE(7, 5) unsigned NOT NULL, UNIQUE test_key (field,field4), KEY field5 (field5), KEY field6 (field6)) Engine=InnoDB"
     );
   });

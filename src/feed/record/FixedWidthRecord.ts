@@ -1,5 +1,6 @@
 
 import {FieldMap, ParsedRecord, Record, RecordAction} from "./Record";
+import {FieldValue} from "../field/Field";
 
 /**
  * Record with fixed with fields
@@ -21,13 +22,13 @@ export class FixedWidthRecord implements Record {
    */
   public extractValues(line: string): ParsedRecord {
     const action = this.actionMap[line.charAt(this.charPosition)] || RecordAction.Insert;
-    const values = { id: null };
+    const values: { [field: string]: FieldValue } = { id: null };
 
     for (const key of Object.keys(this.fields)) {
       values[key] = this.fields[key].extract(line.substr(this.fields[key].position, this.fields[key].length));
     }
 
-    const keysValues = this.key.reduce((vals, key) => {
+    const keysValues = this.key.reduce((vals: { [field: string]: FieldValue }, key) => {
       vals[key] = values[key];
 
       return vals;
@@ -54,13 +55,13 @@ export class RecordWithManualIdentifier extends FixedWidthRecord {
 
   public extractValues(line: string): ParsedRecord {
     const action = this.actionMap[line.charAt(this.charPosition)] || RecordAction.Insert;
-    const values = action === RecordAction.Delete ? {} : { id: ++this.lastId };
+    const values: { [field: string]: FieldValue } = action === RecordAction.Delete ? {} : { id: ++this.lastId };
 
     for (const key in this.fields) {
       values[key] = this.fields[key].extract(line.substr(this.fields[key].position, this.fields[key].length));
     }
 
-    const keysValues = this.key.reduce((vals, key) => {
+    const keysValues = this.key.reduce((vals: { [field: string]: FieldValue }, key) => {
       vals[key] = values[key];
 
       return vals;

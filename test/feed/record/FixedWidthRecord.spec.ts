@@ -1,5 +1,5 @@
-
 import * as chai from "chai";
+import {describe, it, expect} from 'vitest';
 import {IntField} from "../../../src/feed/field/IntField";
 import {TextField} from "../../../src/feed/field/TextField";
 import {DateField} from "../../../src/feed/field/DateField";
@@ -21,7 +21,7 @@ describe("FixedWidthRecord", () => {
         "field3": field3
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
@@ -44,7 +44,7 @@ describe("FixedWidthRecord", () => {
         "field2": field2,
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
@@ -77,7 +77,7 @@ describe("FixedWidthRecord", () => {
       }
     );
 
-    chai.expect(record.extractValues("D1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("D1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Delete,
       keysValues: {
         field: 1012,
@@ -91,7 +91,7 @@ describe("FixedWidthRecord", () => {
       }
     });
 
-    chai.expect(record.extractValues("A1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("A1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Update,
       keysValues: {
         field: 1012,
@@ -122,7 +122,7 @@ describe("RecordWithManualIdentifier", () => {
         "field3": field3
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
@@ -145,7 +145,7 @@ describe("RecordWithManualIdentifier", () => {
         "field2": field2,
       });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
@@ -155,7 +155,7 @@ describe("RecordWithManualIdentifier", () => {
       }
     });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
@@ -165,7 +165,7 @@ describe("RecordWithManualIdentifier", () => {
       }
     });
 
-    chai.expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
+    expect(record.extractValues("1012Hi 31122999")).to.deep.equal({
       action: RecordAction.Insert,
       keysValues: {},
       values: {
