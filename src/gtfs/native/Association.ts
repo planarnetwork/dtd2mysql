@@ -109,9 +109,9 @@ export class Association implements OverlayRecord {
     let stopSequence: number = 1;
 
     const stops = [
-      ...start.map(s => cloneStop(s, stopSequence++, assoc.id)),
-      cloneStop(assocStop, stopSequence++, assoc.id),
-      ...end.map(s => cloneStop(s, stopSequence++, assoc.id, assocStop))
+      ...start.map(s => this.cloneStop(s, stopSequence++, assoc.id)),
+      this.cloneStop(assocStop, stopSequence++, assoc.id),
+      ...end.map(s => this.cloneStop(s, stopSequence++, assoc.id, assocStop))
     ];
 
     const calendar = this.dateIndicator === DateIndicator.Next ? assoc.calendar.shiftBackward() : assoc.calendar;
@@ -158,36 +158,36 @@ export class Association implements OverlayRecord {
     });
   }
 
-}
+  /**
+   * Clone the given stop overriding the sequence number and modifying the arrival/departure times if necessary
+   */
+  private cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocStop: StopTime | null = null): StopTime {
+    const assocTime = parseDuration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
 
-/**
- * Clone the given stop overriding the sequence number and modifying the arrival/departure times if necessary
- */
-function cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocStop: StopTime | null = null): StopTime {
-  const assocTime = parseDuration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
-
-  return Object.assign({}, stop, {
-    arrival_time: shiftPastAssociation(stop.arrival_time, assocTime),
-    departure_time: shiftPastAssociation(stop.departure_time, assocTime),
-    stop_sequence: stopSequence,
-    trip_id: tripId
-  });
-}
-
-/**
- * Format the given stop time, pushing it into the next day if it falls before the association.
- *
- * The absent check is on the string rather than the parsed seconds because midnight is a real time
- * but zero seconds is falsy.
- */
-function shiftPastAssociation(time: string | undefined, assocTime: Duration): string | undefined {
-  if (!time) {
-    return undefined;
+    return Object.assign({}, stop, {
+      arrival_time: this.shiftPastAssociation(stop.arrival_time, assocTime),
+      departure_time: this.shiftPastAssociation(stop.departure_time, assocTime),
+      stop_sequence: stopSequence,
+      trip_id: tripId
+    });
   }
 
-  const seconds = parseDuration(time);
+  /**
+   * Format the given stop time, pushing it into the next day if it falls before the association.
+   *
+   * The absent check is on the string rather than the parsed seconds because midnight is a real time
+   * but zero seconds is falsy.
+   */
+  private shiftPastAssociation(time: string | undefined, assocTime: Duration): string | undefined {
+    if (!time) {
+      return undefined;
+    }
 
-  return formatDuration(seconds < assocTime ? seconds + SECONDS_IN_DAY : seconds);
+    const seconds = parseDuration(time);
+
+    return formatDuration(seconds < assocTime ? seconds + SECONDS_IN_DAY : seconds);
+  }
+
 }
 
 export enum DateIndicator {
