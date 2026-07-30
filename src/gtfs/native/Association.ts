@@ -2,10 +2,10 @@
 import {Schedule} from "./Schedule";
 import {NO_DAYS, OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
 import {CRS, Stop} from "../file/Stop";
-import moment from "moment";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
 import {Duration, formatDuration, parseDuration, SECONDS_IN_DAY} from "./Duration";
+import {compare, maxDate, minDate} from "./PlainDate";
 
 export class Association implements OverlayRecord {
 
@@ -53,15 +53,15 @@ export class Association implements OverlayRecord {
     const schedules = [this.mergeSchedules(base, assoc)];
 
     // if the associated train starts running before the association, clone the associated schedule for those dates
-    if (assoc.calendar.runsFrom.isBefore(assocCalendar.runsFrom)) {
-      const before = assoc.calendar.clone(assoc.calendar.runsFrom, assocCalendar.runsFrom.clone().subtract(1, "days"));
+    if (compare(assoc.calendar.runsFrom, assocCalendar.runsFrom) < 0) {
+      const before = assoc.calendar.clone(assoc.calendar.runsFrom, assocCalendar.runsFrom.subtract({ days: 1 }));
 
       schedules.push(assoc.clone(before, idGenerator.next().value));
     }
 
     // if the associated train runs after the association has finished, clone the associated schedule for those dates
-    if (assoc.calendar.runsTo.isAfter(assocCalendar.runsTo)) {
-      const after = assoc.calendar.clone(assocCalendar.runsTo.clone().add(1, "days"), assoc.calendar.runsTo);
+    if (compare(assoc.calendar.runsTo, assocCalendar.runsTo) > 0) {
+      const after = assoc.calendar.clone(assocCalendar.runsTo.add({ days: 1 }), assoc.calendar.runsTo);
 
       schedules.push(assoc.clone(after, idGenerator.next().value));
     }
@@ -123,8 +123,8 @@ export class Association implements OverlayRecord {
       assoc.rsid,
       // only take the part of the schedule that the association applies to
       calendar.clone(
-        moment.max(this.calendar.runsFrom, calendar.runsFrom),
-        moment.min(this.calendar.runsTo, calendar.runsTo)
+        maxDate(this.calendar.runsFrom, calendar.runsFrom),
+        minDate(this.calendar.runsTo, calendar.runsTo)
       ),
       assoc.mode,
       assoc.operator,

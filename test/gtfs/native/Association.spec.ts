@@ -1,6 +1,5 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import moment from "moment";
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {StopTime} from "../../../src/gtfs/file/StopTime";
@@ -89,8 +88,8 @@ describe("Association", () => {
     const [result] = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next).apply(base, assoc, idGenerator());
 
     expect(result.tuid).to.equal("A_B");
-    expect(result.calendar.runsFrom.isSame("2017-07-10")).to.be.true;
-    expect(result.calendar.runsTo.isSame("2017-07-16")).to.be.true;
+    expect(result.calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(result.calendar.runsTo.equals("2017-07-16")).to.be.true;
     expect(result.stopTimes[0].stop_id).to.equal("TON");
     expect(result.stopTimes[0].stop_sequence).to.equal(1);
     expect(result.stopTimes[1].stop_id).to.equal("PDW");
@@ -246,8 +245,8 @@ describe("Association", () => {
     ]);
 
     const excludeDays = {
-      "20170801": moment("2017-08-01"),
-      "20170805": moment("2017-08-05")
+      "20170801": Temporal.PlainDate.from("2017-08-01"),
+      "20170805": Temporal.PlainDate.from("2017-08-05")
     };
 
     const association1 = new Association(
@@ -257,27 +256,27 @@ describe("Association", () => {
       "ASH",
       DateIndicator.Same,
       AssociationType.Split,
-      new ScheduleCalendar(moment("2017-07-20"), moment("2017-08-16"), ALL_DAYS, excludeDays),
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-20"), Temporal.PlainDate.from("2017-08-16"), ALL_DAYS, excludeDays),
       STP.Overlay
     );
 
     const [result, before, after, ex1, ex2] = association1.apply(base, assoc, idGenerator());
 
     expect(result.tuid).to.equal("A_B");
-    expect(result.calendar.runsFrom.isSame("2017-07-20")).to.equal(true);
-    expect(result.calendar.runsTo.isSame("2017-08-16")).to.equal(true);
+    expect(result.calendar.runsFrom.equals("2017-07-20")).to.equal(true);
+    expect(result.calendar.runsTo.equals("2017-08-16")).to.equal(true);
     expect(before.tuid).to.equal("B");
-    expect(before.calendar.runsFrom.isSame("2017-07-10")).to.equal(true);
-    expect(before.calendar.runsTo.isSame("2017-07-19")).to.equal(true);
+    expect(before.calendar.runsFrom.equals("2017-07-10")).to.equal(true);
+    expect(before.calendar.runsTo.equals("2017-07-19")).to.equal(true);
     expect(after.tuid).to.equal("B");
-    expect(after.calendar.runsFrom.isSame("2017-08-17")).to.equal(true);
-    expect(after.calendar.runsTo.isSame("2017-09-16")).to.equal(true);
+    expect(after.calendar.runsFrom.equals("2017-08-17")).to.equal(true);
+    expect(after.calendar.runsTo.equals("2017-09-16")).to.equal(true);
     expect(ex1.tuid).to.equal("B");
-    expect(ex1.calendar.runsFrom.isSame("2017-08-01")).to.equal(true);
-    expect(ex1.calendar.runsTo.isSame("2017-08-01")).to.equal(true);
+    expect(ex1.calendar.runsFrom.equals("2017-08-01")).to.equal(true);
+    expect(ex1.calendar.runsTo.equals("2017-08-01")).to.equal(true);
     expect(ex2.tuid).to.equal("B");
-    expect(ex2.calendar.runsFrom.isSame("2017-08-05")).to.equal(true);
-    expect(ex2.calendar.runsTo.isSame("2017-08-05")).to.equal(true);
+    expect(ex2.calendar.runsFrom.equals("2017-08-05")).to.equal(true);
+    expect(ex2.calendar.runsTo.equals("2017-08-05")).to.equal(true);
   });
 
 });
