@@ -193,7 +193,10 @@ export class Container {
       database: <string>process.env.DATABASE_NAME,
       port: +(process.env.DATABASE_PORT || 3306),
       connectionLimit: 20,
-      multipleStatements: true
+      multipleStatements: true,
+      // return DATE columns as YYYY-MM-DD rather than a Date at local midnight, so that reading a
+      // date out of the database does not depend on the timezone of the machine doing the reading
+      dateStrings: true
     };
   }
 
