@@ -8,6 +8,11 @@ Although both the timetable and fares feed are open data you will need to obtain
 
 At the moment only MySQL compatible databases are supported but it could be extended to support other data stores. PRs are very welcome.
 
+## Requirements
+
+Node.js 26 or later. Date handling is moving from `moment` to the built-in `Temporal` API, which is only
+available as a global from Node 26 onwards — see [the migration plan](docs/temporal-migration-plan.md).
+
 ## Download / Install
 
 You don't have to install it globally but it makes it easier if you are not going to use it as part of another project. The `-g` option usually requires `sudo`. It is not necessary to git clone this repository unless you would like to contribute.

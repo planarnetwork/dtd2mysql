@@ -38,6 +38,9 @@
     "url": "https://github.com/planarnetwork/dtd2mysql/issues"
   },
   "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
+  "engines": {
+    "node": ">=26"
+  },
   "dependencies": {
     "adm-zip": "0.6.0",
     "byline": "5.0.0",
