@@ -10,8 +10,8 @@ At the moment only MySQL compatible databases are supported but it could be exte
 
 ## Requirements
 
-Node.js 26 or later. Date handling is moving from `moment` to the built-in `Temporal` API, which is only
-available as a global from Node 26 onwards — see [the migration plan](docs/temporal-migration-plan.md).
+Node.js 26 or later. Date handling uses the built-in `Temporal` API, which is only available as a global
+from Node 26 onwards — see [the migration notes](docs/temporal-migration-plan.md).
 
 ## Download / Install
 
