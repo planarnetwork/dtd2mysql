@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "6.6.4",
+  "version": "6.6.6",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -38,12 +38,14 @@
     "url": "https://github.com/planarnetwork/dtd2mysql/issues"
   },
   "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
+  "engines": {
+    "node": ">=26"
+  },
   "dependencies": {
     "adm-zip": "0.6.0",
     "byline": "5.0.0",
     "csv-write-stream": "2.0.0",
     "memoized-class-decorator": "1.6.1",
-    "moment": "2.30.1",
     "mysql2": "3.23.0",
     "proj4": "2.20.9",
     "ssh2": "1.17.0"

@@ -1,5 +1,6 @@
 import {OverlayRecord} from "../native/OverlayRecord";
 import {OverlayIndex} from "./ApplyOverlays";
+import {compare} from "../native/PlainDate";
 
 /**
  * Flatten the index into a list of schedules, detecting any schedules that can be merged in the process.
@@ -38,5 +39,5 @@ export function mergeSchedules(schedulesByTuid: OverlayIndex): OverlayRecord[] {
 }
 
 function sortOverlays(a: OverlayRecord, b: OverlayRecord): number {
-  return a.calendar.runsFrom.isSameOrBefore(b.calendar.runsFrom) ? -1 : 1;
+  return compare(a.calendar.runsFrom, b.calendar.runsFrom) <= 0 ? -1 : 1;
 }

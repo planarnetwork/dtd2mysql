@@ -4,7 +4,6 @@ import {Pool} from "mysql2";
 import {DatabaseConnection} from "../../database/DatabaseConnection";
 import {Transfer} from "../file/Transfer";
 import {CRS, Stop} from "../file/Stop";
-import moment from "moment";
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {Association, AssociationType, DateIndicator} from "../native/Association";
 import {RSID, STP, TUID} from "../native/OverlayRecord";
@@ -155,8 +154,8 @@ export class CIFRepository {
       row.assoc_date_ind,
       row.assoc_cat,
       new ScheduleCalendar(
-        moment(row.start_date),
-        moment(row.end_date), {
+        Temporal.PlainDate.from(row.start_date),
+        Temporal.PlainDate.from(row.end_date), {
         0: row.sunday,
         1: row.monday,
         2: row.tuesday,

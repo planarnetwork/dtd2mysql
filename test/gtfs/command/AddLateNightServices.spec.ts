@@ -25,8 +25,8 @@ describe("AddLateNightServices", () => {
 
     const schedules = addLateNightServices(baseSchedules, idGenerator());
 
-    expect(schedules[0].calendar.runsFrom.isSame("20180930")).to.be.true;
-    expect(schedules[0].calendar.runsTo.isSame("20181030")).to.be.true;
+    expect(schedules[0].calendar.runsFrom.equals("20180930")).to.be.true;
+    expect(schedules[0].calendar.runsTo.equals("20181030")).to.be.true;
     expect(schedules[0].calendar.days[0]).to.equal(1);
     expect(schedules[0].calendar.days[1]).to.equal(1);
     expect(schedules[0].calendar.days[2]).to.equal(1);
@@ -34,8 +34,8 @@ describe("AddLateNightServices", () => {
     expect(schedules[0].calendar.days[4]).to.equal(0);
     expect(schedules[0].calendar.days[5]).to.equal(0);
     expect(schedules[0].calendar.days[6]).to.equal(1);
-    expect(schedules[1].calendar.runsFrom.isSame("20181001")).to.be.true;
-    expect(schedules[1].calendar.runsTo.isSame("20181031")).to.be.true;
+    expect(schedules[1].calendar.runsFrom.equals("20181001")).to.be.true;
+    expect(schedules[1].calendar.runsTo.equals("20181031")).to.be.true;
   });
 
 });

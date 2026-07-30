@@ -1,22 +1,22 @@
 
-import moment, {Moment} from "moment";
 import memoize from "memoized-class-decorator";
 import {Calendar} from "../file/Calendar";
 import {CalendarDate} from "../file/CalendarDate";
+import {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./PlainDate";
 
 export class ScheduleCalendar {
   public static readonly SHORT_OVERLAY_LENGTH = 7;
 
   constructor(
-    public readonly runsFrom: Moment,
-    public readonly runsTo: Moment,
+    public readonly runsFrom: Temporal.PlainDate,
+    public readonly runsTo: Temporal.PlainDate,
     public readonly days: Days,
     public readonly excludeDays: ExcludeDays = {}
   )  { }
 
   @memoize
   public get id() {
-    return this.runsFrom.format("YYYYMMDD") + this.runsTo.format("YYYYMMDD") + this.binaryDays + Object.keys(this.excludeDays).join("");
+    return toYYYYMMDD(this.runsFrom) + toYYYYMMDD(this.runsTo) + this.binaryDays + Object.keys(this.excludeDays).join("");
   }
 
   @memoize
@@ -36,7 +36,7 @@ export class ScheduleCalendar {
     let numDays = 0;
 
     for (const sharedDay of this.sharedDays(overlay)) {
-      const key = sharedDay.format("YYYYMMDD");
+      const key = toYYYYMMDD(sharedDay);
       const isShared = !this.excludeDays[key] && !overlay.excludeDays[key];
 
       if (isShared && ++numDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
@@ -54,29 +54,29 @@ export class ScheduleCalendar {
     const excludeDays = Object.assign({}, this.excludeDays); // clone
 
     for (const sharedDay of this.sharedDays(overlay)) {
-      excludeDays[sharedDay.format("YYYYMMDD")] = sharedDay;
+      excludeDays[toYYYYMMDD(sharedDay)] = sharedDay;
     }
 
     const calendar = this.clone(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
 
-    return calendar.runsFrom.isSameOrBefore(calendar.runsTo) ? [calendar] : [];
+    return compare(calendar.runsFrom, calendar.runsTo) <= 0 ? [calendar] : [];
   }
 
   /**
    * Returns the overlapping days between schedules (does not account for exclude days)
    */
   private* sharedDays(overlay: ScheduleCalendar) {
-    const startDate = moment.max(this.runsFrom, overlay.runsFrom).clone();
-    const endDate = moment.min(this.runsTo, overlay.runsTo);
+    const endDate = minDate(this.runsTo, overlay.runsTo);
+    let date = maxDate(this.runsFrom, overlay.runsFrom);
 
-    while (startDate.isSameOrBefore(endDate)) {
-      const day = startDate.day() as keyof Days;
+    while (compare(date, endDate) <= 0) {
+      const day = dayOfWeek(date);
 
       if (this.days[day] && overlay.days[day]) {
-        yield startDate.clone();
+        yield date;
       }
 
-      startDate.add(1, "days");
+      date = date.add({ days: 1 });
     }
   }
 
@@ -85,49 +85,51 @@ export class ScheduleCalendar {
    */
   public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
     const calendars: ScheduleCalendar[] = [
-      this.clone(this.runsFrom.clone(), calendar.runsFrom.clone().subtract(1, "days")),
-      this.clone(calendar.runsTo.clone().add(1, "days"), this.runsTo.clone())
+      this.clone(this.runsFrom, calendar.runsFrom.subtract({ days: 1 })),
+      this.clone(calendar.runsTo.add({ days: 1 }), this.runsTo)
     ];
 
     // if there are any days left after applying the overlay
     if (this.binaryDays - (this.binaryDays & calendar.binaryDays) > 0) {
       calendars.push(this.clone(
-        calendar.runsFrom.clone(),
-        calendar.runsTo.clone(),
+        calendar.runsFrom,
+        calendar.runsTo,
         calendar.days,
         this.excludeDays
       ));
     }
 
-    return calendars.filter(c => c.runsFrom.isSameOrBefore(c.runsTo));
+    return calendars.filter(c => compare(c.runsFrom, c.runsTo) <= 0);
   }
 
   /**
    * Remove the given days from the calendar then tighten the dates
    */
-  public clone(start: Moment,
-               end: Moment,
+  public clone(start: Temporal.PlainDate,
+               end: Temporal.PlainDate,
                removeDays: Days = NO_DAYS,
                excludeDays: ExcludeDays = this.excludeDays): ScheduleCalendar {
 
     const days = this.removeDays(removeDays);
+    let startDate = start;
+    let endDate = end;
 
     // skip forward to the first day the schedule is operating
-    while (days[start.day() as keyof Days] === 0 || excludeDays[start.format("YYYYMMDD")] && start.isSameOrBefore(end)) {
-      start.add(1, "days");
+    while (days[dayOfWeek(startDate)] === 0 || excludeDays[toYYYYMMDD(startDate)] && compare(startDate, endDate) <= 0) {
+      startDate = startDate.add({ days: 1 });
     }
 
     // skip backward to the first day the schedule is operating
-    while (days[end.day() as keyof Days] === 0  || excludeDays[end.format("YYYYMMDD")] && end.isSameOrAfter(start)) {
-      end.subtract(1, "days");
+    while (days[dayOfWeek(endDate)] === 0 || excludeDays[toYYYYMMDD(endDate)] && compare(endDate, startDate) >= 0) {
+      endDate = endDate.subtract({ days: 1 });
     }
 
     const newExcludes = Object
       .values(excludeDays)
-      .filter(d => d.isBetween(start, end, "days", "[]"))
-      .reduce((days: ExcludeDays, day: Moment) => { days[day.format("YYYYMMDD")] = day; return days; }, {});
+      .filter(d => compare(d, startDate) >= 0 && compare(d, endDate) <= 0)
+      .reduce((days: ExcludeDays, day) => { days[toYYYYMMDD(day)] = day; return days; }, {});
 
-    return new ScheduleCalendar(start, end, days, newExcludes);
+    return new ScheduleCalendar(startDate, endDate, days, newExcludes);
   }
 
   private removeDays(days: Days): Days {
@@ -155,8 +157,8 @@ export class ScheduleCalendar {
       friday: this.days[5],
       saturday: this.days[6],
       sunday: this.days[0],
-      start_date: this.runsFrom.format("YYYYMMDD"),
-      end_date: this.runsTo.format("YYYYMMDD"),
+      start_date: toYYYYMMDD(this.runsFrom),
+      end_date: toYYYYMMDD(this.runsTo),
     };
   }
 
@@ -167,7 +169,7 @@ export class ScheduleCalendar {
     return Object.values(this.excludeDays).map(d => {
       return {
         service_id: serviceId,
-        date: d.format("YYYYMMDD"),
+        date: toYYYYMMDD(d),
         exception_type: 2
       };
     });
@@ -177,13 +179,15 @@ export class ScheduleCalendar {
    * Returns true if this calendar would not be valid on any days before the given calendar starts
    */
   public canMerge(calendar: ScheduleCalendar): boolean {
-    const startDate = this.runsTo.clone();
-    let  numAdditionalExcludeDays = 0;
+    let date = this.runsTo.add({ days: 1 });
+    let numAdditionalExcludeDays = 0;
 
-    while (startDate.add(1, "days").isBefore(calendar.runsFrom)) {
-      if (this.days[startDate.day() as keyof Days] && ++numAdditionalExcludeDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
+    while (compare(date, calendar.runsFrom) < 0) {
+      if (this.days[dayOfWeek(date)] && ++numAdditionalExcludeDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
         return false;
       }
+
+      date = date.add({ days: 1 });
     }
 
     return true;
@@ -196,17 +200,19 @@ export class ScheduleCalendar {
    */
   public merge(calendar: ScheduleCalendar): ScheduleCalendar {
     const excludeDays = Object.assign({}, calendar.excludeDays, this.excludeDays);
-    const startDate = this.runsTo.clone();
+    let date = this.runsTo.add({ days: 1 });
 
-    while (startDate.add(1, "days").isBefore(calendar.runsFrom)) {
-      if (this.days[startDate.day() as keyof Days]) {
-        excludeDays[startDate.format("YYYYMMDD")] = startDate.clone();
+    while (compare(date, calendar.runsFrom) < 0) {
+      if (this.days[dayOfWeek(date)]) {
+        excludeDays[toYYYYMMDD(date)] = date;
       }
+
+      date = date.add({ days: 1 });
     }
 
     // for any shared
     for (const sharedDay of this.sharedDays(calendar)) {
-      const key = sharedDay.format("YYYYMMDD");
+      const key = toYYYYMMDD(sharedDay);
 
       // if the shared day is only excluded in one overlay, remove it
       if (!(this.excludeDays[key] && calendar.excludeDays[key])) {
@@ -216,7 +222,7 @@ export class ScheduleCalendar {
 
     return new ScheduleCalendar(
       this.runsFrom,
-      moment.max(this.runsTo, calendar.runsTo),
+      maxDate(this.runsTo, calendar.runsTo),
       this.days,
       excludeDays
     );
@@ -230,14 +236,14 @@ export class ScheduleCalendar {
     const excludeDays: ExcludeDays = {};
 
     for (const day of Object.values(this.excludeDays)) {
-      const shiftedDay = day.clone().add(1, "days");
+      const shiftedDay = day.add({ days: 1 });
 
-      excludeDays[shiftedDay.format("YYYYMMDD")] = shiftedDay;
+      excludeDays[toYYYYMMDD(shiftedDay)] = shiftedDay;
     }
 
     return new ScheduleCalendar(
-      this.runsFrom.clone().add(1, "days"),
-      this.runsTo.clone().add(1, "days"),
+      this.runsFrom.add({ days: 1 }),
+      this.runsTo.add({ days: 1 }),
       {
         0: this.days[6],
         1: this.days[0],
@@ -259,14 +265,14 @@ export class ScheduleCalendar {
     const excludeDays: ExcludeDays = {};
 
     for (const day of Object.values(this.excludeDays)) {
-      const shiftedDay = day.clone().subtract(1, "days");
+      const shiftedDay = day.subtract({ days: 1 });
 
-      excludeDays[shiftedDay.format("YYYYMMDD")] = shiftedDay;
+      excludeDays[toYYYYMMDD(shiftedDay)] = shiftedDay;
     }
 
     return new ScheduleCalendar(
-      this.runsFrom.clone().subtract(1, "days"),
-      this.runsTo.clone().subtract(1, "days"),
+      this.runsFrom.subtract({ days: 1 }),
+      this.runsTo.subtract({ days: 1 }),
       {
         0: this.days[1],
         1: this.days[2],
@@ -284,7 +290,7 @@ export class ScheduleCalendar {
 }
 
 export type ExcludeDays = {
-  [date: string]: Moment
+  [date: string]: Temporal.PlainDate
 }
 
 export interface Days {
