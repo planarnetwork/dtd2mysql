@@ -2,10 +2,10 @@
 import {Schedule} from "./Schedule";
 import {NO_DAYS, OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
 import {CRS, Stop} from "../file/Stop";
-import moment, {Duration, Moment} from "moment";
+import moment from "moment";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
-import {formatDuration} from "./Duration";
+import {Duration, formatDuration, parseDuration, SECONDS_IN_DAY} from "./Duration";
 
 export class Association implements OverlayRecord {
 
@@ -138,21 +138,21 @@ export class Association implements OverlayRecord {
    * Take the arrival time of the first stop and the departure time of the second stop and put them into a new stop
    */
   public mergeAssociationStop(arrivalStop: StopTime, departureStop: StopTime): StopTime {
-    let arrivalTime = moment.duration(arrivalStop.arrival_time);
-    let departureTime = moment.duration(departureStop.departure_time);
+    let arrivalTime = parseDuration(arrivalStop.arrival_time);
+    let departureTime = parseDuration(departureStop.departure_time);
 
-    if (arrivalTime.asSeconds() > departureTime.asSeconds()) {
+    if (arrivalTime > departureTime) {
       if (this.dateIndicator === DateIndicator.Next) {
-        departureTime.add(1, "days");
+        departureTime += SECONDS_IN_DAY;
       }
       else {
-        arrivalTime = moment.duration(departureStop.arrival_time);
+        arrivalTime = parseDuration(departureStop.arrival_time);
       }
     }
 
     return Object.assign({}, arrivalStop, {
-      arrival_time: formatDuration(arrivalTime.asSeconds()),
-      departure_time: formatDuration(departureTime.asSeconds()),
+      arrival_time: formatDuration(arrivalTime),
+      departure_time: formatDuration(departureTime),
       pickup_type: departureStop.pickup_type,
       drop_off_type: arrivalStop.drop_off_type
     });
@@ -164,25 +164,30 @@ export class Association implements OverlayRecord {
  * Clone the given stop overriding the sequence number and modifying the arrival/departure times if necessary
  */
 function cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocStop: StopTime | null = null): StopTime {
-  const assocTime = moment.duration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
-  const departureTime = stop.departure_time ? moment.duration(stop.departure_time) : undefined;
-
-  if (departureTime && departureTime.asSeconds() < assocTime.asSeconds()) {
-    departureTime.add(1, "day");
-  }
-
-  const arrivalTime = stop.arrival_time ? moment.duration(stop.arrival_time) : undefined;
-
-  if (arrivalTime && arrivalTime.asSeconds() < assocTime.asSeconds()) {
-    arrivalTime.add(1, "day");
-  }
+  const assocTime = parseDuration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
 
   return Object.assign({}, stop, {
-    arrival_time: arrivalTime ? formatDuration(arrivalTime.asSeconds()) : undefined,
-    departure_time: departureTime ? formatDuration(departureTime.asSeconds()) : undefined,
+    arrival_time: shiftPastAssociation(stop.arrival_time, assocTime),
+    departure_time: shiftPastAssociation(stop.departure_time, assocTime),
     stop_sequence: stopSequence,
     trip_id: tripId
   });
+}
+
+/**
+ * Format the given stop time, pushing it into the next day if it falls before the association.
+ *
+ * The absent check is on the string rather than the parsed seconds because midnight is a real time
+ * but zero seconds is falsy.
+ */
+function shiftPastAssociation(time: string | undefined, assocTime: Duration): string | undefined {
+  if (!time) {
+    return undefined;
+  }
+
+  const seconds = parseDuration(time);
+
+  return formatDuration(seconds < assocTime ? seconds + SECONDS_IN_DAY : seconds);
 }
 
 export enum DateIndicator {
