@@ -1,6 +1,5 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import moment from "moment";
 import {STP, TUID} from "../../../src/gtfs/native/OverlayRecord";
 import {mergeSchedules} from "../../../src/gtfs/command/MergeSchedules";
 import {applyOverlays} from "../../../src/gtfs/command/ApplyOverlays";
@@ -21,10 +20,10 @@ describe("MergeSchedules", () => {
 
     const schedules = mergeSchedules(applyOverlays(baseSchedules));
 
-    expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    expect(schedules[0].calendar.runsTo.isSame("20170228")).to.be.true;
-    expect(schedules[1].calendar.runsFrom.isSame("20170102")).to.be.true;
-    expect(schedules[1].calendar.runsTo.isSame("20170315")).to.be.true;
+    expect(schedules[0].calendar.runsFrom.equals("20170101")).to.be.true;
+    expect(schedules[0].calendar.runsTo.equals("20170228")).to.be.true;
+    expect(schedules[1].calendar.runsFrom.equals("20170102")).to.be.true;
+    expect(schedules[1].calendar.runsTo.equals("20170315")).to.be.true;
   });
 
 });
@@ -45,8 +44,8 @@ export function schedule(id: number,
     tuid,
     "",
     new ScheduleCalendar(
-      moment(from),
-      moment(to),
+      Temporal.PlainDate.from(from),
+      Temporal.PlainDate.from(to),
       days,
       {}
     ),

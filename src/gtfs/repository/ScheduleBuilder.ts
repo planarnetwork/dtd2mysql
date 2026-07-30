@@ -1,7 +1,6 @@
 import {IdGenerator, STP} from "../native/OverlayRecord";
 import {Schedule} from "../native/Schedule";
 import {RouteType} from "../file/Route";
-import moment from "moment";
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
@@ -76,8 +75,8 @@ export class ScheduleBuilder {
       row.train_uid,
       row.retail_train_id,
       new ScheduleCalendar(
-        moment(row.runs_from),
-        moment(row.runs_to),
+        Temporal.PlainDate.from(row.runs_from),
+        Temporal.PlainDate.from(row.runs_to),
         {
           0: row.sunday,
           1: row.monday,

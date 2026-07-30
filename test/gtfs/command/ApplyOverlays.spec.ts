@@ -15,10 +15,10 @@ describe("ApplyOverlays", () => {
 
     const schedules = mergeSchedules(applyOverlays(baseSchedules));
 
-    expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    expect(schedules[0].calendar.runsTo.isSame("20170131")).to.be.true;
-    expect(schedules[1].calendar.runsFrom.isSame("20170105")).to.be.true;
-    expect(schedules[1].calendar.runsTo.isSame("20170107")).to.be.true;
+    expect(schedules[0].calendar.runsFrom.equals("20170101")).to.be.true;
+    expect(schedules[0].calendar.runsTo.equals("20170131")).to.be.true;
+    expect(schedules[1].calendar.runsFrom.equals("20170105")).to.be.true;
+    expect(schedules[1].calendar.runsTo.equals("20170107")).to.be.true;
 
     const excludeDays = Object.keys(schedules[0].calendar.excludeDays);
 
@@ -38,14 +38,14 @@ describe("ApplyOverlays", () => {
 
     const schedules = applyOverlays(baseSchedules);
 
-    expect(schedules["A"][0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    expect(schedules["A"][0].calendar.runsTo.isSame("20170114")).to.be.true;
-    expect(schedules["A"][1].calendar.runsFrom.isSame("20170216")).to.be.true;
-    expect(schedules["A"][1].calendar.runsTo.isSame("20170228")).to.be.true;
-    expect(schedules["A"][2].calendar.runsFrom.isSame("20170115")).to.be.true;
-    expect(schedules["A"][2].calendar.runsTo.isSame("20170215")).to.be.true;
-    expect(schedules["B"][0].calendar.runsFrom.isSame("20170102")).to.be.true;
-    expect(schedules["B"][0].calendar.runsTo.isSame("20170315")).to.be.true;
+    expect(schedules["A"][0].calendar.runsFrom.equals("20170101")).to.be.true;
+    expect(schedules["A"][0].calendar.runsTo.equals("20170114")).to.be.true;
+    expect(schedules["A"][1].calendar.runsFrom.equals("20170216")).to.be.true;
+    expect(schedules["A"][1].calendar.runsTo.equals("20170228")).to.be.true;
+    expect(schedules["A"][2].calendar.runsFrom.equals("20170115")).to.be.true;
+    expect(schedules["A"][2].calendar.runsTo.equals("20170215")).to.be.true;
+    expect(schedules["B"][0].calendar.runsFrom.equals("20170102")).to.be.true;
+    expect(schedules["B"][0].calendar.runsTo.equals("20170315")).to.be.true;
   });
 
   it("applies an overlay that doesn't overlap", () => {
@@ -91,8 +91,8 @@ describe("ApplyOverlays", () => {
     const schedules = mergeSchedules(applyOverlays(baseSchedules));
 
     expect(schedules.length).to.equal(1);
-    expect(schedules[0].calendar.runsFrom.isSame("20170101")).to.be.true;
-    expect(schedules[0].calendar.runsTo.isSame("20170131")).to.be.true;
+    expect(schedules[0].calendar.runsFrom.equals("20170101")).to.be.true;
+    expect(schedules[0].calendar.runsTo.equals("20170131")).to.be.true;
 
     const excludeDays = Object.keys(schedules[0].calendar.excludeDays);
 

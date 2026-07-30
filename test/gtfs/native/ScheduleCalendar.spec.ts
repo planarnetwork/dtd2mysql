@@ -1,6 +1,5 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import moment from "moment";
 import {Days, OverlapType, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 
 describe("ScheduleCalendar", () => {
@@ -60,8 +59,8 @@ describe("ScheduleCalendar", () => {
     const excludeDays = Object.keys(calendar2.excludeDays);
 
     expect(excludeDays.length).to.equal(0);
-    expect(calendar2.runsFrom.isSame("20170108")).to.be.true;
-    expect(calendar2.runsTo.isSame("20170129")).to.be.true;
+    expect(calendar2.runsFrom.equals("20170108")).to.be.true;
+    expect(calendar2.runsTo.equals("20170129")).to.be.true;
   });
 
   it("adding exclude days might remove the schedule", () => {
@@ -71,8 +70,8 @@ describe("ScheduleCalendar", () => {
 
     const [calendar1] = perm.addExcludeDays(c1);
 
-    expect(calendar1.runsFrom.isSame("20170108")).to.be.true;
-    expect(calendar1.runsTo.isSame("20170115")).to.be.true;
+    expect(calendar1.runsFrom.equals("20170108")).to.be.true;
+    expect(calendar1.runsTo.equals("20170115")).to.be.true;
 
     const calendars = calendar1.addExcludeDays(c2);
 
@@ -84,8 +83,8 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-01", "2017-01-07");
 
     const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.isSame("2017-01-08")).to.be.true;
-    expect(calendars[0].runsTo.isSame("2017-01-31")).to.be.true;
+    expect(calendars[0].runsFrom.equals("2017-01-08")).to.be.true;
+    expect(calendars[0].runsTo.equals("2017-01-31")).to.be.true;
   });
 
   it("divides around a date range spanning the end", () => {
@@ -93,8 +92,8 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-29", "2017-02-07");
 
     const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.isSame("2017-01-05")).to.be.true;
-    expect(calendars[0].runsTo.isSame("2017-01-28")).to.be.true;
+    expect(calendars[0].runsFrom.equals("2017-01-05")).to.be.true;
+    expect(calendars[0].runsTo.equals("2017-01-28")).to.be.true;
   });
 
   it("divides around a date range and creates the smallest date range possible", () => {
@@ -104,8 +103,8 @@ describe("ScheduleCalendar", () => {
 
     const calendars = perm.divideAround(underlay);
 
-    expect(calendars[0].runsFrom.isSame("2017-05-26")).to.be.true;
-    expect(calendars[0].runsTo.isSame("2017-06-23")).to.be.true;
+    expect(calendars[0].runsFrom.equals("2017-05-26")).to.be.true;
+    expect(calendars[0].runsTo.equals("2017-06-23")).to.be.true;
   });
 
   it("divides around a date range in the middle", () => {
@@ -113,10 +112,10 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-15", "2017-01-20");
 
     const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.isSame("2017-01-05")).to.be.true;
-    expect(calendars[0].runsTo.isSame("2017-01-14")).to.be.true;
-    expect(calendars[1].runsFrom.isSame("2017-01-21")).to.be.true;
-    expect(calendars[1].runsTo.isSame("2017-01-31")).to.be.true;
+    expect(calendars[0].runsFrom.equals("2017-01-05")).to.be.true;
+    expect(calendars[0].runsTo.equals("2017-01-14")).to.be.true;
+    expect(calendars[1].runsFrom.equals("2017-01-21")).to.be.true;
+    expect(calendars[1].runsTo.equals("2017-01-31")).to.be.true;
   });
 
   it("partially degrades the services", () => {
@@ -125,14 +124,14 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-11", "2017-01-19", { 0: 0, 1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0 });
 
     const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.isSame("2017-01-01")).to.be.true;
-    expect(calendars[0].runsTo.isSame("2017-01-10")).to.be.true;
-    expect(calendars[1].runsFrom.isSame("2017-01-20")).to.be.true;
-    expect(calendars[1].runsTo.isSame("2017-01-31")).to.be.true;
+    expect(calendars[0].runsFrom.equals("2017-01-01")).to.be.true;
+    expect(calendars[0].runsTo.equals("2017-01-10")).to.be.true;
+    expect(calendars[1].runsFrom.equals("2017-01-20")).to.be.true;
+    expect(calendars[1].runsTo.equals("2017-01-31")).to.be.true;
     expect(calendars[2].days).to.deep.equal({0: 1, 1: 1, 2: 1, 3: 0, 4: 0, 5: 1, 6: 1});
     // days where the service is not running are removed
-    expect(calendars[2].runsFrom.isSame("2017-01-13")).to.be.true;
-    expect(calendars[2].runsTo.isSame("2017-01-17")).to.be.true;
+    expect(calendars[2].runsFrom.equals("2017-01-13")).to.be.true;
+    expect(calendars[2].runsTo.equals("2017-01-17")).to.be.true;
   });
 
   it("degrades the service to the point where it doesn't run", () => {
@@ -144,10 +143,10 @@ describe("ScheduleCalendar", () => {
     const calendars = perm.divideAround(underlay);
 
     expect(calendars.length).to.equal(2);
-    expect(calendars[0].runsFrom.isSame("2017-01-02")).to.be.true;
-    expect(calendars[0].runsTo.isSame("2017-01-13")).to.be.true;
-    expect(calendars[1].runsFrom.isSame("2017-01-20")).to.be.true;
-    expect(calendars[1].runsTo.isSame("2017-01-30")).to.be.true;
+    expect(calendars[0].runsFrom.equals("2017-01-02")).to.be.true;
+    expect(calendars[0].runsTo.equals("2017-01-13")).to.be.true;
+    expect(calendars[1].runsFrom.equals("2017-01-20")).to.be.true;
+    expect(calendars[1].runsTo.equals("2017-01-30")).to.be.true;
   });
 
   it("detects when a calendar can be merged with another", () => {
@@ -163,15 +162,15 @@ describe("ScheduleCalendar", () => {
   it("can merge with another calendar", () => {
     // Monday + Friday service
     const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170710"] = moment("20170710");
+    c1.excludeDays["20170710"] = Temporal.PlainDate.from("20170710");
 
     const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c2.excludeDays["20170721"] = moment("20170721");
+    c2.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
 
     const c3 = c1.merge(c2);
 
-    expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
-    expect(c3.runsTo.isSame(c2.runsTo)).to.be.true;
+    expect(c3.runsFrom.equals(c1.runsFrom)).to.be.true;
+    expect(c3.runsTo.equals(c2.runsTo)).to.be.true;
     expect(c3.excludeDays["20170710"]).to.not.be.undefined;
     expect(c3.excludeDays["20170721"]).to.not.be.undefined;
   });
@@ -179,16 +178,16 @@ describe("ScheduleCalendar", () => {
   it("can merge with an overlapping calendar", () => {
     // Monday + Friday service
     const c1 = calendar("2017-07-03", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170717"] = moment("20170717");
-    c1.excludeDays["20170721"] = moment("20170721");
+    c1.excludeDays["20170717"] = Temporal.PlainDate.from("20170717");
+    c1.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
 
     const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c2.excludeDays["20170721"] = moment("20170721");
+    c2.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
 
     const c3 = c1.merge(c2);
 
-    expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
-    expect(c3.runsTo.isSame(c1.runsTo)).to.be.true;
+    expect(c3.runsFrom.equals(c1.runsFrom)).to.be.true;
+    expect(c3.runsTo.equals(c1.runsTo)).to.be.true;
     expect(Object.keys(c3.excludeDays).length).to.equal(1);
     expect(c3.excludeDays["20170721"]).to.not.be.undefined;
   });
@@ -196,15 +195,15 @@ describe("ScheduleCalendar", () => {
   it("can bridge the gap between a merging service with exclude days", () => {
     // Monday + Friday service
     const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170710"] = moment("20170710");
+    c1.excludeDays["20170710"] = Temporal.PlainDate.from("20170710");
 
     const c2 = calendar("2017-07-21", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c2.excludeDays["20170721"] = moment("20170721");
+    c2.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
 
     const c3 = c1.merge(c2);
 
-    expect(c3.runsFrom.isSame(c1.runsFrom)).to.be.true;
-    expect(c3.runsTo.isSame(c2.runsTo)).to.be.true;
+    expect(c3.runsFrom.equals(c1.runsFrom)).to.be.true;
+    expect(c3.runsTo.equals(c2.runsTo)).to.be.true;
     expect(c3.excludeDays["20170710"]).to.not.be.undefined;
     expect(c3.excludeDays["20170717"]).to.not.be.undefined;
     expect(c3.excludeDays["20170721"]).to.not.be.undefined;
@@ -213,13 +212,13 @@ describe("ScheduleCalendar", () => {
   it("shift forward", () => {
     // Monday + Saturday service
     const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1 });
-    c1.excludeDays["20170710"] = moment("20170710");
+    c1.excludeDays["20170710"] = Temporal.PlainDate.from("20170710");
 
     const c2 = c1.shiftForward();
 
     expect(c2.days).to.deep.equal({ 0: 1, 1: 0, 2: 1, 3: 0, 4: 0, 5: 0, 6: 0 });
-    expect(c2.runsFrom.isSame("20170704")).to.be.true;
-    expect(c2.runsTo.isSame("20170715")).to.be.true;
+    expect(c2.runsFrom.equals("20170704")).to.be.true;
+    expect(c2.runsTo.equals("20170715")).to.be.true;
     expect(c2.excludeDays["20170710"]).to.be.undefined;
     expect(c2.excludeDays["20170711"]).to.not.be.undefined;
   });
@@ -227,13 +226,13 @@ describe("ScheduleCalendar", () => {
   it("shift backward", () => {
     // Sunday + Friday service
     const c1 = calendar("2017-07-02", "2017-07-14", { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170709"] = moment("20170709");
+    c1.excludeDays["20170709"] = Temporal.PlainDate.from("20170709");
 
     const c2 = c1.shiftBackward();
 
     expect(c2.days).to.deep.equal({ 0: 0, 1: 0, 2: 0, 3: 0, 4: 1, 5: 0, 6: 1 });
-    expect(c2.runsFrom.isSame("20170701")).to.be.true;
-    expect(c2.runsTo.isSame("20170713")).to.be.true;
+    expect(c2.runsFrom.equals("20170701")).to.be.true;
+    expect(c2.runsTo.equals("20170713")).to.be.true;
     expect(c2.excludeDays["20170709"]).to.be.undefined;
     expect(c2.excludeDays["20170708"]).to.not.be.undefined;
   });
@@ -242,8 +241,8 @@ describe("ScheduleCalendar", () => {
 
 function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }): ScheduleCalendar {
   return new ScheduleCalendar(
-    moment(from),
-    moment(to),
+    Temporal.PlainDate.from(from),
+    Temporal.PlainDate.from(to),
     days,
     {}
   );
