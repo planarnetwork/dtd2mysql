@@ -42,6 +42,23 @@ this made the types honest and removed a timezone sensitivity instead of carryin
 `dateStrings` is pool-wide. Anything added later that reads a `DATE` or `DATETIME` column gets a string —
 `Temporal.PlainDate.from` accepts both the `YYYY-MM-DD` and `YYYY-MM-DD HH:MM:SS` forms.
 
+### What mysql2 does and does not know about Temporal
+
+Reading: nothing. mysql2 3.23 has no option to hand back a `Temporal` value; a date column is either a JS
+`Date` or, with `dateStrings`, a string. Parsing the string ourselves is the only route.
+
+Writing through `query()`: supported. mysql2 3.23 escapes via `sql-escaper`, which detects Temporal
+values by their `Symbol.toStringTag` and renders a `PlainDate` as `'2017-07-01'`.
+
+Writing through `execute()`: **broken, and quietly.** The prepared statement encoder has no Temporal
+branch, and it decides a value is JSON by looking for a `toJSON` method — which every Temporal type has.
+A `PlainDate` therefore goes out as a JSON parameter holding the quoted string `"2017-07-01"`, quotes
+included, rather than as a date.
+
+This project only calls `query()`, so it is unaffected, and `CleanFaresCommand` passes `.toString()`
+rather than the object anyway. But do not assume a `Temporal` value can be bound as a parameter if
+anything here ever moves to prepared statements — convert to a string at the call site.
+
 ## Temporal throws where moment returned an invalid object
 
 `CleanFaresCommand.getFirstDateAfter` built a date from a year plus an `MMDD` restriction month and the
