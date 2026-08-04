@@ -25,6 +25,13 @@ export class ScheduleCalendar {
   }
 
   /**
+   * Returns true if the calendar does not run on any days e.g. the date range has been tightened beyond its bounds
+   */
+  public get isEmpty(): boolean {
+    return compare(this.runsFrom, this.runsTo) > 0;
+  }
+
+  /**
    * Count the number of days that the overlay shares with this schedule and return true if the max has been exceeded
    */
   public getOverlap(overlay: ScheduleCalendar): OverlapType {
@@ -59,7 +66,7 @@ export class ScheduleCalendar {
 
     const calendar = this.clone(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
 
-    return compare(calendar.runsFrom, calendar.runsTo) <= 0 ? [calendar] : [];
+    return calendar.isEmpty ? [] : [calendar];
   }
 
   /**
@@ -99,7 +106,7 @@ export class ScheduleCalendar {
       ));
     }
 
-    return calendars.filter(c => compare(c.runsFrom, c.runsTo) <= 0);
+    return calendars.filter(c => !c.isEmpty);
   }
 
   /**
@@ -115,12 +122,12 @@ export class ScheduleCalendar {
     let endDate = end;
 
     // skip forward to the first day the schedule is operating
-    while (days[dayOfWeek(startDate)] === 0 || excludeDays[toYYYYMMDD(startDate)] && compare(startDate, endDate) <= 0) {
+    while ((days[dayOfWeek(startDate)] === 0 || excludeDays[toYYYYMMDD(startDate)]) && compare(startDate, endDate) <= 0) {
       startDate = startDate.add({ days: 1 });
     }
 
     // skip backward to the first day the schedule is operating
-    while (days[dayOfWeek(endDate)] === 0 || excludeDays[toYYYYMMDD(endDate)] && compare(endDate, startDate) >= 0) {
+    while ((days[dayOfWeek(endDate)] === 0 || excludeDays[toYYYYMMDD(endDate)]) && compare(endDate, startDate) >= 0) {
       endDate = endDate.subtract({ days: 1 });
     }
 

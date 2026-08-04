@@ -279,9 +279,75 @@ describe("Association", () => {
     expect(ex2.calendar.runsTo.equals("2017-08-05")).to.equal(true);
   });
 
+  it("does not create a copy of the associated schedule for dates when it does not run", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-08-16", STP.Overlay, WEEKDAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "PDW", "11:00"),
+      stop(3, "ASH", "12:00"),
+      stop(4, "RAM", "13:00"),
+    ]);
+
+    // starts on Saturday the 15th but only runs on weekdays
+    const assoc = schedule(2, "B", "2017-07-15", "2017-08-16", STP.Overlay, WEEKDAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    const association1 = new Association(
+      1,
+      base.tuid,
+      assoc.tuid,
+      "ASH",
+      DateIndicator.Same,
+      AssociationType.Split,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-17"), Temporal.PlainDate.from("2017-08-16"), ALL_DAYS),
+      STP.Overlay
+    );
+
+    // no copy is created for the 15th and 16th as the associated schedule does not run on those days
+    const results = association1.apply(base, assoc, idGenerator());
+
+    expect(results).to.have.length(1);
+    expect(results[0].tuid).to.equal("A_B");
+    expect(results[0].calendar.isEmpty).to.equal(false);
+  });
+
+  it("does not create a schedule for exclude days when the associated schedule does not run", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-21", STP.Overlay, WEEKDAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "PDW", "11:00"),
+      stop(3, "ASH", "12:00"),
+      stop(4, "RAM", "13:00"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-21", STP.Overlay, WEEKDAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    // the association does not apply on Sunday the 16th, a day the associated schedule does not run anyway
+    const association1 = new Association(
+      1,
+      base.tuid,
+      assoc.tuid,
+      "ASH",
+      DateIndicator.Same,
+      AssociationType.Split,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-10"), Temporal.PlainDate.from("2017-07-21"), ALL_DAYS, { "20170716": Temporal.PlainDate.from("2017-07-16") }),
+      STP.Overlay
+    );
+
+    const results = association1.apply(base, assoc, idGenerator());
+
+    expect(results).to.have.length(1);
+    expect(results[0].tuid).to.equal("A_B");
+    expect(results[0].calendar.isEmpty).to.equal(false);
+  });
+
 });
 
 const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+const WEEKDAYS: Days = { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 0 };
 
 function stop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
   return {
