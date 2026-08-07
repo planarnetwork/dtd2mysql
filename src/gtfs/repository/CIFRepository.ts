@@ -248,6 +248,8 @@ export interface ScheduleStopTimeRow {
   crs_code: CRS,
   train_category: string,
   atoc_code: string | null,
+  // stop_time.id from the LEFT JOIN in getSchedules - null when the schedule has no stop times
+  stop_id: number | null,
   public_arrival_time: string | null,
   public_departure_time: string | null,
   scheduled_arrival_time: string | null,

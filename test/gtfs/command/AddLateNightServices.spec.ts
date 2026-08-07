@@ -33,9 +33,31 @@ describe("AddLateNightServices", () => {
     expect(schedules[0].calendar.days[3]).to.equal(1);
     expect(schedules[0].calendar.days[4]).to.equal(0);
     expect(schedules[0].calendar.days[5]).to.equal(0);
+
     expect(schedules[0].calendar.days[6]).to.equal(1);
     expect(schedules[1].calendar.runsFrom.equals("20181001")).to.be.true;
     expect(schedules[1].calendar.runsTo.equals("20181031")).to.be.true;
+  });
+
+  /**
+   * A schedule with no stop times reaches here when the feed contains a schedule with no
+   * associated stop time records. Reading stopTimes[0] threw and aborted the whole build.
+   */
+  it("passes through a schedule with no stop times", () => {
+    const baseSchedules = [
+      schedule(1, "A", "2018-10-01", "2018-10-31", STP.Permanent, WEEK_DAYS, []),
+      schedule(2, "B", "2018-10-01", "2018-10-31", STP.Permanent, WEEK_DAYS, [
+        stop(1, "TON", "01:30"),
+        stop(2, "PDW", "01:40")
+      ])
+    ];
+
+    const schedules = addLateNightServices(baseSchedules, idGenerator());
+
+    expect(schedules.length).to.equal(2);
+    expect(schedules[0].stopTimes.length).to.equal(0);
+    // the schedule that does have stops is still shifted back a day
+    expect(schedules[1].calendar.runsFrom.equals("20180930")).to.be.true;
   });
 
 });

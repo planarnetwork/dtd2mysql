@@ -26,34 +26,52 @@ export class ScheduleBuilder {
       let stops: StopTime[] = [];
       let prevRow: ScheduleStopTimeRow;
       let departureHour = 4;
+      let failed = false;
 
       results.on("result", (row: ScheduleStopTimeRow) => {
-        if (prevRow && prevRow.id !== row.id) {
-          this.schedules.push(this.createSchedule(prevRow, stops));
-          stops = [];
+        // an error thrown from here is emitted inside the driver's packet parser, where it is
+        // swallowed - the query then emits neither "end" nor "error" and this promise never
+        // settles. Catch it so a bad row fails the build rather than hanging it forever.
+        if (failed) return;
 
-          departureHour = row.public_arrival_time
-            ? parseInt(row.public_arrival_time.substr(0, 2), 10)
-            : row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
-        }
+        try {
+          if (prevRow && prevRow.id !== row.id) {
+            this.schedules.push(this.createSchedule(prevRow, stops));
+            stops = [];
 
-        if (row.stp_indicator !== STP.Cancellation) {
-          const stop = this.createStop(row, stops.length + 1, departureHour);
+            departureHour = row.public_arrival_time
+              ? parseInt(row.public_arrival_time.substr(0, 2), 10)
+              : row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
+          }
 
-          if (prevRow && prevRow.id === row.id && row.crs_code === prevRow.crs_code) {
-            if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
-              stops[stops.length - 1] = Object.assign(stop, { stop_sequence: stops.length });
+          // A schedule with no stop times is returned as a single row with every stop_time
+          // column null, because getSchedules keeps them with `stop_time.id IS NULL`. There is
+          // no stop to build from that row, and the schedule is dropped later on when it turns
+          // out to have fewer than two stops.
+          if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
+            const stop = this.createStop(row, stops.length + 1, departureHour);
+
+            if (prevRow && prevRow.id === row.id && row.crs_code === prevRow.crs_code) {
+              if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
+                stops[stops.length - 1] = Object.assign(stop, { stop_sequence: stops.length });
+              }
+            }
+            else {
+              stops.push(stop);
             }
           }
-          else {
-            stops.push(stop);
-          }
-        }
 
-        prevRow = row;
+          prevRow = row;
+        }
+        catch (err) {
+          failed = true;
+          reject(err);
+        }
       });
 
       results.on("end", () => {
+        if (failed) return;
+
         if (prevRow) {
           this.schedules.push(this.createSchedule(prevRow, stops));
         }

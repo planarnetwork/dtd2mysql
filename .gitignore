@@ -5,3 +5,7 @@ npm-debug.log
 dist/
 *.txt
 *.d.ts
+
+# local e2e baseline work (feeds, snapshots, credentials)
+.env.local
+data/

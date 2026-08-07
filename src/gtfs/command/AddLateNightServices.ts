@@ -15,6 +15,13 @@ export function addLateNightServices(schedules: Schedule[], idGenerator: IdGener
   const result: Schedule[] = [];
 
   for (const schedule of schedules) {
+    // a schedule with no stop times has no departure to shift, and will be dropped before
+    // any trip is written
+    if (schedule.stopTimes.length === 0) {
+      result.push(schedule);
+      continue;
+    }
+
     const departureHour = parseInt(schedule.stopTimes[0].departure_time.substr(0, 2), 10);
 
     if (departureHour <= 1) {
