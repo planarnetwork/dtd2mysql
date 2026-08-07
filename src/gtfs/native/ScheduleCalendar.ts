@@ -40,18 +40,8 @@ export class ScheduleCalendar {
       return OverlapType.None;
     }
 
-    let numDays = 0;
-
-    for (const sharedDay of this.sharedDays(overlay)) {
-      const key = toYYYYMMDD(sharedDay);
-      const isShared = !this.excludeDays[key] && !overlay.excludeDays[key];
-
-      if (isShared && ++numDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
-        return OverlapType.Long;
-      }
-    }
-
-    return (numDays > 0) ? OverlapType.Short : OverlapType.None;
+    let first = this.sharedDays(overlay).next();
+    return first.done ? OverlapType.None : OverlapType.Overlap;
   }
 
   /**
@@ -314,8 +304,7 @@ export type BankHoliday = string;
 
 export enum OverlapType {
   None = 0,
-  Short = 1,
-  Long = 2
+  Overlap = 1
 }
 
 export const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };

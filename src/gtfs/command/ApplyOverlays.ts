@@ -40,21 +40,19 @@ function *getDefaultIdGenerator(): IterableIterator<number> {
 }
 
 /**
- * Check if the given schedule overlaps the current one and if necessary divide this schedule into many others.
+ * Check if the given schedule overlaps the current one.
  *
  * If there is no overlap this Schedule will be returned intact.
  */
 function applyOverlay(base: OverlayRecord, overlay: OverlayRecord, ids: IdGenerator): OverlayRecord[] {
   const overlap = base.calendar.getOverlap(overlay.calendar);
 
-  // if this schedules schedule overlaps it at any point
+  // if this schedule overlaps it at any point
   if (overlap === OverlapType.None) {
     return [base];
   }
 
-  return overlap === OverlapType.Short
-    ? base.calendar.addExcludeDays(overlay.calendar).map(calendar => base.clone(calendar, base.id))
-    : base.calendar.divideAround(overlay.calendar).map(calendar => base.clone(calendar, ids.next().value));
+  return base.calendar.addExcludeDays(overlay.calendar).map(calendar => base.clone(calendar, base.id));
 }
 
 

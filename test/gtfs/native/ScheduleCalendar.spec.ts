@@ -11,9 +11,9 @@ describe("ScheduleCalendar", () => {
     const overlay = calendar("2017-01-31", "2017-02-07");
     const nolay = calendar("2017-02-05", "2017-02-07");
 
-    expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Long);
-    expect(perm.getOverlap(innerlay)).to.deep.equal(OverlapType.Short);
-    expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Short);
+    expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Overlap);
+    expect(perm.getOverlap(innerlay)).to.deep.equal(OverlapType.Overlap);
+    expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Overlap);
     expect(perm.getOverlap(nolay)).to.deep.equal(OverlapType.None);
   });
 
@@ -24,18 +24,18 @@ describe("ScheduleCalendar", () => {
 
     expect(weekday.getOverlap(weekend)).to.deep.equal(OverlapType.None);
     expect(weekend.getOverlap(weekday)).to.deep.equal(OverlapType.None);
-    expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Short);
+    expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Overlap);
   });
 
-  it("detects short overlays", () => {
+  it("detects overlays", () => {
     const perm = calendar("2017-01-01", "2017-01-31");
     // Wed + Thurs for two weeks
     const short = calendar("2017-01-11", "2017-01-19", { 0: 0, 1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0 });
     // full two weeks
     const long = calendar("2017-01-11", "2017-01-19");
 
-    expect(perm.getOverlap(short)).to.deep.equal(OverlapType.Short);
-    expect(perm.getOverlap(long)).to.deep.equal(OverlapType.Long);
+    expect(perm.getOverlap(short)).to.deep.equal(OverlapType.Overlap);
+    expect(perm.getOverlap(long)).to.deep.equal(OverlapType.Overlap);
   });
 
   it("adds exclude days", () => {
