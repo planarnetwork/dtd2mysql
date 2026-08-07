@@ -165,7 +165,7 @@ interface Enricher {
 Driven by config:
 
 ```yaml
-source:  { type: cif, path: ./RJTTF582.ZIP }   # or { type: mysql }
+source:  { type: cif, path: ./RJTTF918.ZIP }   # or { type: mysql }
 today:   2025-09-02                            # omit for the real date
 range:   6 months
 licence: ogl                                   # or "full" to admit ODbL sources
@@ -231,195 +231,134 @@ PnP buys nothing here.
 
 ## 3. Test strategy
 
-### The reference feed
+### What dtd2mysql actually promises
 
-`RJTTF582.ZIP` — DTD timetable feed, sequence 582, generated **2025-09-02**. This is the input, and
-it is the only asset the test strategy depends on.
+The restructure moves 3,500 lines across twelve packages. dtd2mysql exposes four contracts, and
+before this work only one of them had any defence at all:
 
-### Why the shipped `gtfs.zip` is not usable as a golden file
+| Contract | What the restructure does to it | Guarded today |
+|---|---|---|
+| Database content after import | A4 moves `ImportFeedCommand`, `MySQLSchema`, `MySQLTable`, `MySQLStream` across a new abstraction | no |
+| CLI flags | `Container` dissolves into per-app composition roots | no |
+| Published package layout | `files: ["dist/src", "dist/config"]`, but `config/` becomes `libs/dtd-schema` | no |
+| Exported types | `types: ./dist/index.d.ts`; the package is imported as a library | no |
+| GTFS output | rebuilt on `TimetableSource` | partly, via T7 |
 
-A GTFS output built from that feed also exists. It is a genuine pair — its calendars peak at
-`end_date` 202512 (5,025 of 7,146), `calendar_dates` span 20250722–20251212, which is exactly the
-shape of `runs_from < CURDATE() + INTERVAL 3 MONTH AND runs_to >= CURDATE()` evaluated on
-2025-09-02 — but it cannot serve as a comparison target, for two independent reasons.
+The starting position was worse than it looks: **no test touched a real database**.
+`MySQLTable.spec.ts` uses a `MockDatabaseConnection`, `ci.yml` has no service container, and
+`docker-compose.yml` was not wired into anything. Schema generation, inserts, the fares clean SQL
+and `LOAD DATA LOCAL INFILE` had no end-to-end coverage.
 
-**It was built by code that no longer exists.** At 2025-09-02 the repository was at `f9f52fb`,
-v6.6.1 of June 2024. Everything since postdates it:
+Note also that `import` is the larger half of the contract. GTFS output is one command; the other
+three feeds and every `--download-*`/`--get-*` flag run through the import path.
 
-| | |
-|---|---|
-| `4f7a1c8` | Load TSI file (#107) — a feed file that was not previously parsed |
-| `5a33785`, `e3a6af0`, `8fd910a` | modernise, dependency updates, import fixes |
-| `b921971` | **Replace Moment with Temporal** — every date path rewritten |
-| `91d7ee5` | **#117 reversed date ranges** — calendar output behaviour |
+### The reference data
 
-A diff against that file mixes intended fixes, the Temporal migration and genuine regressions with
-no way to attribute any of them. It is not merely non-reproducible, it is uninterpretable.
+Feeds are pulled from the DTD SFTP server and kept in `data/`, which is gitignored, along with
+`.env.local` holding the credentials. Baselines are generated locally with the scripts in `data/`.
 
-**And T7 already does the job correctly.** Old-versus-new equivalence runs the previous
-implementation at a *pinned commit*, so every difference maps to a known change. That is what the
-shipped file was meant to provide, done in a way that yields signal.
+| Feed | Files | Notes |
+|---|---|---|
+| Timetable | `RJTTF918` + `RJTTC919` + `RJTTC920` | full refresh generated 2026-08-04 |
+| Fares | `RJFAF847` + `RJFAC848` + `RJFAC849` | |
+| Routeing | `RJRG1057` | |
+| NFM64 | `nfm64.zip` | separate HTTP download, not SFTP |
 
-The file is therefore not committed. Its row counts are retained below purely as a coarse smoke
-check — if a build from this feed produces 190,000 trips rather than something near 240,000,
-something is wrong — and explicitly not as a target.
+Imported, this is **80 tables**: 424,684 schedules and 6,961,761 stop times; 7,334,718 fares and
+696,661 flows; 246,316 permitted routes; 10,148,371 nfm64 rows.
 
-Historical reference (v6.6.1, built ≈2025-09-02):
+Three tables import zero rows — `easement_exception`, `location_association`,
+`non_derivable_fare`. Expected for these feeds; recorded so the baseline does not look suspicious.
 
-| Input (RJTTF582) | | Output (golden) | |
-|---|---:|---|---:|
-| BS (schedules) | 440,671 | trips | 240,009 |
-| LO / LT | 381,647 | stop_times | 2,366,906 |
-| LI | 6,258,576 | routes | 6,437 |
-| CR | 86,742 | calendar | 7,146 |
-| AA (associations) | 4,693 | calendar_dates | 48,499 |
-| MSN A-records | 3,265 | stops | 3,079 |
-| MCA uncompressed | 651 MB | transfers / links | 3,078 / 8,702 |
-| agency | | | 34 |
+**Feeds are not committed.** They are large (118 MB of DTD zips plus a 239 MB nfm64 zip), they are
+current operational data rather than superseded snapshots, and they go stale. The committed fixture
+is the small derived slice in T4. *This revises decision 1, which was taken when the only feed to
+hand was the superseded RJTTF582 — see §6.*
 
-### Blocker: the pipeline is not reproducible
+### What the tooling produces
 
-That file cannot be regenerated today, on any machine, for three reasons:
+`data/snapshot-db.sh <dir>` fingerprints the database:
 
-1. **`CURDATE()`** drives all three GTFS queries. Output is a function of the wall clock.
-2. **IDs come from MySQL auto-increment.** `trip_id`, `route_id` and `service_id` all derive from
-   `schedule.id`. `MySQLTable` buffers 5,000-row batches and flushes through a *connection pool*, so
-   ordering is not guaranteed by construction even if it happens to hold.
-3. **No `ORDER BY` on the output queries.** `getStops()` is a bare `GROUP BY crs_code`; row order is
-   whatever the engine returns.
+- `schema.sql` — DDL via `mariadb-dump --no-data --skip-dump-date`
+- `tables.tsv` — per table: row count and a sha256 over a primary-key-ordered dump, so the hash is
+  stable regardless of storage order
+- `columns.tsv` — column types, nullability and defaults, so a type change is visible even when the
+  row hash happens to match
 
-Determinism is not test infrastructure here, it is a product requirement. The nightly build must
-distinguish "the timetable changed" from "MySQL returned rows in a different order", or every build
-looks like a diff. That work belongs at the front of the plan.
+`data/snapshot-gtfs.sh <dir>` builds a feed and records, per file, the row count plus two hashes:
+raw and content-sorted, so a change in row *ordering* can be told apart from a change in *content*.
 
-### The golden file contains real bugs
+An early result from this: after importing fares, routeing and nfm64, all 16 timetable table hashes
+were byte-identical to the timetable-only snapshot, with only `log` differing. The four importers
+genuinely do not touch each other's tables — an assumption A4 depends on, now with evidence.
 
-Two defects confirmed against the source records. A byte-for-byte golden test would enshrine both
-and block the tickets meant to fix them.
+### What is reproducible, and what is not
 
-**The MSN header leaks in as a stop.** Line 6 of the MSN is:
+**The import is reproducible in principle.** It is a pure function of the feed files: no
+`CURDATE()`, no clock. That makes the database snapshot usable as a comparison target immediately,
+and it is the half that guards the largest contract.
 
-```
-A                             FILE-SPEC=05 1.00 02/09/25 18.08.00   584
-```
+*In principle*, because one thing is unverified: `trip_id`/`route_id`/`service_id` all derive from
+`schedule.id`, a MySQL auto-increment. `MySQLTable` buffers 5,000-row batches and flushes them
+through a connection *pool*, so insert ordering is not guaranteed by construction even if it holds
+in practice. T2 has to establish this by re-importing into a fresh database and diffing the hashes,
+before any of it can be trusted.
 
-It starts with `A`, so `MultiRecordFile` parses it as a `physical_station`. The existing
-`IntField(35, 1, true, ["S"])` "hack for header" only nulls the interchange status; it does not
-reject the record. Result, in `stops.txt` line 2:
-
-```
-2/0,PEC=05,                         F,,,,,,Europe/London,0,-14.507,-4.165
-```
-
-`stop_id` `2/0` comes from `02/09/25`; `stop_code` `PEC=05` from `SPEC=05`.
-
-**44 MSN records carry `easting=00000, northing=00000`.** `IntField` parses `"00000"` as `0`, not
-null, so `(0 - 10000) * 100` projects them to 4.17°S 14.51°W, in the South Atlantic.
-
-61 stops in the reference output sit outside the GB bounding box. They are five distinct
-populations, and only one of them is a single decision:
-
-| | Count | What they are | Disposition |
-|---|---:|---|---|
-| CIE stations | 43 | Irish Rail — Cork, Galway, Tralee. Real places, absent from MSN | `overrides.yaml` with real coordinates (B10) |
-| `SOS` Stromness | 1 | Orkney ferry port, same cause | `overrides.yaml` (B10) |
-| TOC placeholders | 12 | **Fictional.** `CH ORIGIN`/`CH DESTINATION` and equivalents for EMR, Northern, SWR, TransPennine and CrossCountry | Drop from `stops.txt` with their stop times (B12) |
-| `QBN`, `QBS` | 2 | Blackpool North/South bus-tram. Real interchange points, junk coordinates | `overrides.yaml` (B10) |
-| `HVH` Hoek van Holland | 1 | Genuinely non-GB but correctly placed at 4.126 E, 51.998 N | No action |
-| `2/0` | 1 | The MSN header record | B9 |
-
-The placeholders are **not** identifiable by their `Q` prefix. `Q` is simply a letter, and most `Q*`
-codes are real stations — Queens Park London (`QPW`, 4,593 stop times), Queens Road Peckham,
-Queenstown Road Battersea, Queenborough, Quakers Yard, Quintrell Downs.
-
-Nor are they identifiable by their `CATZ` TIPLOC prefix. There are 114 `CATZ*` records in the MSN
-and most are real rail-replacement stops: `MAERDY BUS` (199 stop times), `DEREHAM KONECTBUS`,
-`DEREHAM (COACH)`, `GLASGOW SUBWAY`, `PATCHWAY TITAN RD BUS STOP`. Dropping by TIPLOC prefix would
-delete legitimate stops.
-
-The only reliable discriminator is the `<TOC> ORIGIN` / `<TOC> DESTINATION` name pattern, in
-combination with a `CATZ` TIPLOC and an invalid coordinate.
-
-**A sixth defect, in the override file itself.** `config/gtfs/station-coordinates.ts:13613` has
-TCR's latitude and longitude transposed:
-
-```ts
-"TCR": { "stop_name": "Tottenham Court Road (Elizabeth line)",
-         "stop_lat": -0.1306, "stop_lon": 51.5163, ... }
-```
-
-placing Tottenham Court Road in the Indian Ocean. Exactly one station in 15,568 lines is affected,
-which is the argument for D7: a hand-maintained literal with no validation. Ticket B11.
-
-The baseline therefore records **what the code does today, not what is correct**. That distinction
-is built into the harness (T6, T8).
+**The GTFS build is not reproducible.** It filters on `CURDATE()`, so its output is a function of
+the day it runs and cannot be regenerated tomorrow. T1 must land before a GTFS baseline means
+anything beyond same-day comparison.
 
 ### Layers
 
-**Layer 0 — Determinism.** Inject a clock, pin the IDs, sort the output. Nothing above works without
-these three.
+**Layer 0 — Determinism.** Inject a clock (T1), pin the identifiers (T2), sort the output (T3).
+Nothing above works without these.
 
-**Layer 1 — Unit.** Pure functions in `libs/gtfs`. Exists today; keep.
+**Layer 1 — Unit.** Pure functions in `libs/gtfs`. 104 tests today.
 
-**Layer 2 — Mini-fixture e2e.** *Runs on every PR.* The workhorse, and what makes Epic A safe.
+**Layer 2 — Mini-fixture e2e.** *Every PR.* The workhorse, and what makes Epic A safe.
 
-Carve a slice out of RJTTF582 — roughly 40 stations and 800 schedules, under 2 MB — and commit the
-expected GTFS as **plain sorted text files, not a zip**. A behaviour change then appears as a
-readable diff in code review, which is what is needed while moving 3,500 lines across twelve
-packages.
-
-The slice must deliberately cover:
+A slice of a real feed, under 2 MB, with the expected GTFS committed as **plain sorted text, not a
+zip**, so a behaviour change appears as a readable diff in review. It must deliberately cover:
 
 - the full STP overlay stack (P/O/N/C) on one TUID
-- associations VV / JJ / NP with each date indicator, **including the transitive closure** of
-  associated TUIDs (the same connected-component logic F1 needs — build once, use twice)
-- late-night rollover through `formatTime`'s +24h path
-- Z-trains from ZTR
+- associations VV / JJ / NP with each date indicator, including the transitive closure of
+  associated TUIDs (the connected-component logic F1 also needs — build once, use twice)
+- late-night rollover through `formatTime`'s +24h path, and a schedule with **no** stop times, which
+  `addLateNightServices` used to crash on
+- Z-trains from ZTR, including a location absent from `physical_station` (see B15)
 - every `routeTypeIndex` entry: OO, XX, XZ, BR, BS, OL, XC, SS
-- activity codes R, T, TB, TF, U, D, N
-- a single-stop schedule (dropped by `stopTimes.length <= 1`)
-- a schedule whose calendar empties after overlays (the `filter(!isEmpty)` path)
+- activity codes R, T, TB, TF, U, D, N, and a **null** activity
+- a single-stop schedule, and one whose calendar empties after overlays
 - schedules starting and expiring at the window boundary
-- reversed date ranges (the [#117](https://github.com/planarnetwork/dtd2mysql/pull/117) regression)
-- **a CIE station with zero eastings, and the MSN header record**, so the two known defects are
-  pinned and then flipped when fixed
+- reversed date ranges (#117) and an all-zero day mask (B16)
+- a CIE station with zero eastings, and the MSN header record
 
-**Layer 3 — Full-feed e2e.** *Nightly, plus a `full-e2e` PR label.* RJTTF582 at
-`--today=2025-09-02` against **a baseline we generate ourselves** (T10), not the shipped output.
-Because the baseline is produced by our own pinned code after T1–T3, it is reproducible by
-construction and every difference is attributable. Two tracks:
+**Layer 3 — Import equivalence.** *The one that actually protects dtd2mysql.* Import each of the
+four feeds with pre-refactor code at a pinned commit, snapshot, repeat with refactored code, assert
+identical. This is what defends A4, and a test double cannot do it: a double proves the abstraction
+is called, not that the SQL is the same.
 
-- *Track A — invariants* that hold regardless of bug fixes: referential integrity (every
-  `stop_times.stop_id` in stops, every `trips.service_id` in calendar ∪ calendar_dates, every
-  `route_id` in routes); no `start_date > end_date`; arrival ≤ departure and monotonic within a
-  trip; no duplicate keys; row counts within ±2% of the table above.
-- *Track B — normalised diff against the T10 baseline.* Canonicalise (sort rows by declared key,
-  columns to spec order, lat/lon to 6dp, empty ≡ missing) and diff. Any difference is a regression
-  unless the ticket causing it rebaselines under T8, so this is a true regression test rather than
-  a comparison against a moving target. **The rebaseline log is the feed's changelog**, and it is
-  what E5 renders.
+**Layer 4 — Full-feed GTFS.** Track A invariants — referential integrity, no `start_date >
+end_date`, monotonic times within a trip, no duplicate keys, row counts within tolerance — plus a
+normalised diff against the T10 baseline. Requires credentials, so it runs locally and on a
+credentialed nightly, not on PRs.
 
-**Layer 4 — Old-vs-new equivalence.** Temporary scaffolding for Epics A and C: run pre-refactor
-`dtd2mysql --gtfs` at a pinned commit and the new build on the same input at the same pinned date;
-assert normalised-identical. Deleted in C2.
+**Layer 5 — Surface tests.** Cheap, and they catch what unit tests structurally cannot:
+CLI contract (T11), packaged artifact (T12), type surface (T13).
 
-**Layer 5 — GTFS validator.** MobilityData validator with a committed notice baseline. It will flag
-the `2/0` stop and the Atlantic coordinates, giving independent confirmation when the fixes land.
+**Layer 6 — GTFS validator.** MobilityData validator with a committed notice baseline.
 
-### Asset hosting
+### Process controls
 
-The mini fixture and `RJTTF582.ZIP` live in the repo under `fixtures/`. The generated baseline
-(T10) lives alongside them.
+These matter as much as the tests:
 
-`RJTTF582.ZIP` is 68 MB — clear of GitHub's 100 MB per-file hard limit, though it trips the 50 MB
-advisory warning on push. Plain git rather than LFS: it is a fixed historical snapshot that will
-never be modified, so it costs one object and avoids making every contributor install `git-lfs` or
-consume LFS bandwidth quota.
+- **Each extraction is a pure move.** No logic change in the same commit as a file move, so the diff
+  is reviewable and `git log --follow` shows a rename.
+- **dtd2mysql is assembled last** (A8), so its behaviour stays frozen while libs are extracted
+  beneath it.
+- **Gate `publish.yml` before starting** (E8). A half-migrated master must not ship.
+- **Prerelease before `latest`.** Publish an rc, dogfood it, then move the dist-tag.
 
-The feed is superseded and no longer operationally valid, so it is retained purely as a regression
-fixture. `fixtures/README.md` records its provenance and that fact.
-
----
 
 ## 4. Tickets
 
@@ -469,40 +408,79 @@ stops by construction and are correctly excluded. The remainder are unmeasured, 
 #80 both claim to reduce them, so a number is needed before and after. The counts feed E5's Quality
 page.
 
+**T6b · Import equivalence harness** *(depends T9, T14)*
+The Layer 3 test, and the one that actually protects dtd2mysql. Import each of the four feeds with
+pre-refactor code at a pinned commit, snapshot with `snapshot-db.sh`, repeat with the refactored
+code, assert every table hash matches. Named in A4's acceptance criteria, replacing "covered by a
+test double".
+
 **T7 · Old-vs-new equivalence harness** *(depends T2, T3)*
 Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; normalised-identical
 or fails with a per-file diff. Marked for deletion in C2.
 
 **T8 · Rebaseline protocol** *(depends T5)*
-`yarn test:e2e --update` regenerates both the mini golden and the T10 full-feed baseline. CI fails
-any commit touching `fixtures/*/golden/**` or `fixtures/full/baseline/**` without a corresponding
-entry in `fixtures/BASELINE.md` giving the reason and issue number.
+`yarn test:e2e --update` regenerates the mini golden, and the `data/snapshot-*.sh` scripts
+regenerate the T10 fingerprints. CI fails any commit touching `fixtures/*/golden/**` or a committed
+baseline fingerprint without a corresponding entry in `fixtures/BASELINE.md` giving the reason and
+issue number.
 
 Since the baseline encodes current behaviour rather than correct behaviour, rebaselining is the
 normal path for every ticket in Epic B and beyond — the requirement is that it is deliberate and
 explained, not that it is rare.
 
-**T9 · Commit the reference feed**
-`RJTTF582.ZIP` committed to `fixtures/full/` in plain git (not LFS). `.npmignore` and the workspace
-`files` lists updated so it never reaches a published tarball. Checked into a single dedicated
-commit so the object is easy to identify. `fixtures/README.md` records provenance, the 2025-09-02
-generation date, and that the feed is superseded and retained for regression testing only.
+**T9 · Reference feed acquisition**
+Scripted, credentialed download of all four feeds into a gitignored `data/`, with `.env.local` for
+credentials (both already in place). `data/README.md` documents which feed each baseline was cut
+from and how to reproduce it. Feeds are deliberately **not** committed: they are large, current and
+perishable. What is committed is T4's derived slice.
 
-The GTFS output shipped alongside it is **not** committed — see §3 for why it cannot serve as a
-comparison target.
+**T10 · Generate the baselines** *(depends T1, T2, T3, T9)*
+Run the current implementation against the reference feeds and commit the fingerprints — not the
+feeds, not the GTFS payload.
 
-**T10 · Generate the full-feed baseline** *(depends T1, T2, T3, T9)*
-Run the current implementation against `RJTTF582.ZIP` at `--today=2025-09-02` and commit the
-canonicalised output to `fixtures/full/baseline/` as plain text. Reproducible by construction, so
-regenerating it on any machine yields byte-identical files — assert that in CI.
+- Database: `data/snapshot-db.sh`, all 80 tables, for all four feeds.
+- GTFS: `data/snapshot-gtfs.sh` at a pinned `--today`, which requires T1.
 
-This captures current behaviour *including* the known defects; that is the point. B7 to B14 then
-each rebaseline under T8, and the resulting diff is the proof the fix worked. Record the generating
-commit SHA in `fixtures/README.md`.
+Assert regeneration is byte-identical on a second run. Record the generating commit. The baseline
+captures current behaviour *including* known defects; that is the point, and each fix rebaselines
+under T8 with the diff as evidence it worked.
+
+**T11 · CLI contract test**
+Table-driven over every flag in the README, asserting each resolves to the expected command.
+`Container.getCommand` ends in `default: return this.getShowHelpCommand()`, so a dropped `case`
+label does not throw — it prints help and exits 0. A user's cron job would silently stop importing.
+Assert exhaustively, including that an unknown flag *does* fall through to help.
+
+**T12 · Packaged artifact smoke test**
+`npm pack`, install the tarball into a clean directory, run `--help` and one real command against a
+throwaway database. Tests execute against source, so `main`/`types`/`files` breakage is invisible to
+them — and `files: ["dist/src", "dist/config"]` is exactly what breaks when `config/` moves to
+`libs/dtd-schema`.
+
+**T13 · Type surface snapshot**
+Generate `.d.ts` and diff against a committed snapshot, so a removed or renamed export is a decision
+rather than an accident. The package ships `types`, so library consumers exist.
+
+**T14 · MariaDB service container in CI**
+`ci.yml` has no database, so nothing above Layer 1 can run there. Add a MariaDB service, wire up
+`docker-compose.yml`, and make Layer 2 and Layer 5 run on every PR. Prerequisite for Epic A.
 
 ### Epic B — Correctness
 
 Land on master before the restructure, so the move is a pure refactor with green tests either side.
+
+**B0 · GTFS build hangs on schedules with no stop times** — **done**, `3d8f218`
+`getSchedules` keeps schedules with no stop time records via `stop_time.id IS NULL`. Those arrive as
+a single row with every stop_time column null, and `createStop` was still called on them, so
+`row.activity.match()` threw on the null activity. The throw happened inside the driver's result
+listener, where it was swallowed: the query emitted neither "end" nor "error", `loadSchedules` never
+settled, and the build hung at four of nine files, 0% CPU, indefinitely. 6,560 schedules in the
+current feed trigger it, so `--gtfs` could not produce a feed at all.
+
+Fixed by skipping stop creation when `stop_id` is null (guarding `activity` alone would only move
+the throw two lines down), catching throws in the result listener so a bad row fails the build
+loudly, and teaching `addLateNightServices` that `stopTimes[0]` may not exist. Added the
+`ScheduleBuilder` spec, which did not exist.
 
 **B1 · Emit `feed_info.txt`** *(coordinate with B14)*
 Written by the build; `feed_version` from the source DTD filename; start and end dates from the
@@ -590,7 +568,27 @@ Harmless to a consumer in isolation, but it interacts with B1 — `feed_start_da
 misleading. Drop calendars ending before the build date, log the count, and make B1 derive its
 window from what remains.
 
-B7 to B14 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
+**B15 · Z-train stop times reference stops that do not exist**
+34 rows in `stop_times.txt` point at `QHA` (31) and `ZUX` (3), which appear in `z_stop_time` but not
+in `physical_station`. `getStops` only emits rows from `physical_station`, while the z-train query
+passes `location AS crs_code` straight through. The comment in `getSchedules` claims ZTR locations
+"already use CRS codes so avoid the disaster above" — they do not. Referential integrity failure in
+the published feed. Either emit a stop for these locations or drop the stop times, and log the
+count. D4 (CORPUS) may resolve the mapping properly.
+
+**B16 · Calendars with no days set**
+`service_id 101` in the current build has all seven day flags zero, runs 20260222–20991231, is
+attached to a live trip and has no `calendar_dates` entries — a service that can never run.
+`ScheduleCalendar.isEmpty` tests only `runsFrom > runsTo`, so an all-zero mask survives the filter
+that #117 added. Extend `isEmpty`, or filter in `createCalendar`.
+
+**B17 · Download commands never exit**
+`DownloadCommand.run` closes the SFTP connection but never the database pool, so the process hangs
+after the transfer completes. Harmless interactively, fatal for a scheduled job — E2 would hang
+until the workflow timeout. Ties in with A5's `FeedCursor`, which removes the database from the
+download path entirely.
+
+B7 to B17 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
 
 ### Epic A — Monorepo migration
@@ -611,8 +609,9 @@ circularity.
 
 **A4 · Extract `@gb-rail/feed-storage`** *(depends A2)*
 Exports `Storage` and a storage-agnostic `ImportFeed`. No `mysql2` import anywhere in the package.
-The incremental-vs-full-refresh logic and the `CFA`/`lastScheduleId` special-casing preserved and
-covered by a test double.
+The incremental-vs-full-refresh logic and the `CFA`/`lastScheduleId` special-casing preserved.
+Verified by T6b against all four feeds — every table hash identical before and after — not by a test
+double, which would prove only that the abstraction is called.
 
 **A5 · Extract `@gb-rail/dtd-source`** *(depends A3)*
 SFTP client and download sequencing moved. **The last-processed cursor must no longer come from the
@@ -655,7 +654,7 @@ the only work is a stable sort on the STP indicator. Comparison runs through T7'
 recorded, feeding E2 and F1.
 
 **C3 · `apps/dtd2gtfs`** *(depends C2, A7)*
-`dtd2gtfs build --source RJTTF582.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
+`dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
 the tree. Published bare.
 
 **C4 · `apps/dtd2postgres`** *(depends A4, C1)* — **closes #116**
@@ -736,6 +735,22 @@ Per-service or per-TOC bike policy mapped to `bikes_allowed` 1/2. Services with 
 at `0`. Coverage report by operator, since this will be patchy and the website should say so.
 
 ### Epic E — Publishing
+
+**E8 · Fix the npm release pipeline** — *do this first*
+Publishing has been broken since 2025-12-02: npm has 6.6.3 while git carries tags through v6.6.9.
+`npm publish` fails with `404 Not Found - PUT .../dtd2mysql`, which is npm's response to an
+*unauthorised* publish rather than a missing package. The `NPM_TOKEN` secret needs regenerating.
+
+Two defects beyond the expired token:
+
+- `npm version patch` and `git push --follow-tags` run **before** `npm publish`, so every failed run
+  still burns a version number and pushes a tag. Six phantom versions exist as tags but were never
+  published. Reorder, or roll back the bump on failure.
+- The workflow triggers on every push to `master` with no path filter, so a documentation-only
+  commit attempts a release. Add a path filter, and gate the workflow while Epic A is in flight — a
+  half-migrated master must not ship.
+
+Until this is fixed, no fix reaches users, including B0.
 
 **E1 · Create the `gb-rail-gtfs` data repo**
 A year of daily releases would bury the npm tags, and DTD credentials should not sit in a repo that
@@ -853,7 +868,7 @@ only, no feed changes — a data-quality signal for the site.
 ## 5. Sequencing
 
 ```
-B1,B2,B4,B5,B7..B14  →  T1,T2,T3  →  T4,T5,T9  →  T10  →  T6,T7
+E8, T14  →  B1,B2,B4,B5,B7..B17  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
                                    ↓
                                   A1  →  A2,A6  →  A3,A4,A5,A7  →  A8
                                                                     ↓
@@ -875,10 +890,15 @@ parallel by different people without touching the core.
 
 ## 6. Decisions
 
-1. **Test assets** — `RJTTF582.ZIP` is committed to `fixtures/full/` in plain git as the input
-   fixture (T9). The GTFS output shipped with it is **not** committed: it was built by v6.6.1 code
-   that predates the Temporal migration and the #117 calendar fix, so differences against it are
-   uninterpretable. The full-feed baseline is generated by our own pinned code instead (T10).
+1. **Test assets** — *revised.* Reference feeds are pulled live from the DTD SFTP server into a
+   gitignored `data/` and are **not** committed: they are large (118 MB of DTD zips plus a 239 MB
+   nfm64 zip), current rather than superseded, and perishable. Only the derived slice (T4) and the
+   generated fingerprints (T10) are committed.
+
+   This supersedes the earlier decision to commit `RJTTF582.ZIP`, which was taken when that
+   superseded feed was the only one to hand. A current feed is also a strictly better fixture: it
+   contains the pathological cases — RJTTF582 evidently did not trigger B0, since the 2025 build
+   succeeded, whereas the current feed has 6,560 schedules that do.
 2. **Coordinate-less stops** — resolved into six populations rather than one decision: the 43 CIE
    stations, Stromness and the two Blackpool bus-tram points get real coordinates in
    `overrides.yaml` (B10); the twelve TOC origin/destination placeholders are dropped with their
