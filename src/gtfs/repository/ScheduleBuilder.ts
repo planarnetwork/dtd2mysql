@@ -4,7 +4,8 @@ import {RouteType} from "../file/Route";
 import {ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
-import { agencies } from "../../../config/gtfs/agency";
+import {agencies} from "../../../config/gtfs/agency";
+import {toYYYYMMDD} from "../native/PlainDate";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
@@ -17,6 +18,10 @@ const notAdvertised = "N ";
 export class ScheduleBuilder {
   private readonly schedules: Schedule[] = [];
   private maxId: number = 0;
+
+  private getTripId(row: ScheduleStopTimeRow) {
+    return `${row.train_uid}_${toYYYYMMDD(Temporal.PlainDate.from(row.runs_from))}_${toYYYYMMDD(Temporal.PlainDate.from(row.runs_to))}`;
+  }
 
   /**
    * Take a stream of ScheduleStopTimeRow, turn them into Schedule objects and add the result to the schedules
@@ -140,7 +145,7 @@ export class ScheduleBuilder {
     }
 
     return {
-      trip_id: row.id,
+      trip_id: this.getTripId(row),
       arrival_time: arrival,
       departure_time: departure,
       stop_id: row.crs_code,

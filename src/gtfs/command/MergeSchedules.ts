@@ -1,43 +1,26 @@
-import {OverlayRecord} from "../native/OverlayRecord";
-import {OverlayIndex} from "./ApplyOverlays";
-import {compare} from "../native/PlainDate";
+import {ScheduleIndex} from "./ApplyAssociations";
+import {Schedule} from "../native/Schedule";
 
 /**
- * Flatten the index into a list of schedules, detecting any schedules that can be merged in the process.
+ * Flatten the index into a list of schedules, ensuring that there are no duplicate trip IDs
  */
-export function mergeSchedules(schedulesByTuid: OverlayIndex): OverlayRecord[] {
-  const results: OverlayRecord[] = [];
+export function mergeSchedules(schedulesByTuid: ScheduleIndex): Schedule[] {
+  const schedulesByTripId: { [tripId: string]: Schedule } = {};
 
   for (const tuid in schedulesByTuid) {
-    // group schedules that run on the same days with the exact same stopping pattern
-    const schedulesByHash = schedulesByTuid[tuid].reduce((prev: OverlayIndex, cur) => {
-      (prev[cur.hash] = prev[cur.hash] || []).push(cur);
-
-      return prev;
-    }, {});
-
-    // for each group of schedules that might be merged
-    for (const groupedSchedules of Object.values(schedulesByHash)) {
-      // sortSchedules by start date
-      groupedSchedules.sort(sortOverlays);
-
-      // iterate through each schedule
-      for (let i = 0; i < groupedSchedules.length; i++) {
-        let scheduleI = groupedSchedules[i];
-
-        // merge as many schedules in as possible
-        while (groupedSchedules[i + 1] && scheduleI.calendar.canMerge(groupedSchedules[i + 1].calendar)) {
-          scheduleI = scheduleI.clone(scheduleI.calendar.merge(groupedSchedules[++i].calendar), scheduleI.id);
+    if (schedulesByTuid.hasOwnProperty(tuid)) {
+      for (const schedule of schedulesByTuid[tuid]) {
+        const tripId = schedule.tripId;
+        if (schedulesByTripId[tripId] !== undefined) {
+          throw new Error(`Duplicate trip_id ${tripId} detected. This should not happen. Please file a bug report.`);
         }
-
-        results.push(scheduleI);
+        if (schedule.stopTimes.length && schedule.stopTimes[0].trip_id !== tripId) {
+          throw new Error(`The trip_id of the stop times do not match the trip_id for trip ${tripId}. This should not happen. Please file a bug report.`);
+        }
+        schedulesByTripId[tripId] = schedule;
       }
     }
   }
 
-  return results;
-}
-
-function sortOverlays(a: OverlayRecord, b: OverlayRecord): number {
-  return compare(a.calendar.runsFrom, b.calendar.runsFrom) <= 0 ? -1 : 1;
+  return Object.values(schedulesByTripId);
 }

@@ -1,4 +1,3 @@
-import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
 import {Days, OverlapType, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 
@@ -11,9 +10,9 @@ describe("ScheduleCalendar", () => {
     const overlay = calendar("2017-01-31", "2017-02-07");
     const nolay = calendar("2017-02-05", "2017-02-07");
 
-    expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Long);
-    expect(perm.getOverlap(innerlay)).to.deep.equal(OverlapType.Short);
-    expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Short);
+    expect(perm.getOverlap(underlay)).to.deep.equal(OverlapType.Overlap);
+    expect(perm.getOverlap(innerlay)).to.deep.equal(OverlapType.Overlap);
+    expect(perm.getOverlap(overlay)).to.deep.equal(OverlapType.Overlap);
     expect(perm.getOverlap(nolay)).to.deep.equal(OverlapType.None);
   });
 
@@ -24,7 +23,7 @@ describe("ScheduleCalendar", () => {
 
     expect(weekday.getOverlap(weekend)).to.deep.equal(OverlapType.None);
     expect(weekend.getOverlap(weekday)).to.deep.equal(OverlapType.None);
-    expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Short);
+    expect(weekday.getOverlap(tuesday)).to.deep.equal(OverlapType.Overlap);
   });
 
   it("detects short overlays", () => {
@@ -34,16 +33,16 @@ describe("ScheduleCalendar", () => {
     // full two weeks
     const long = calendar("2017-01-11", "2017-01-19");
 
-    expect(perm.getOverlap(short)).to.deep.equal(OverlapType.Short);
-    expect(perm.getOverlap(long)).to.deep.equal(OverlapType.Long);
+    expect(perm.getOverlap(short)).to.deep.equal(OverlapType.Overlap);
+    expect(perm.getOverlap(long)).to.deep.equal(OverlapType.Overlap);
   });
 
   it("adds exclude days", () => {
     const perm = calendar("2017-01-01", "2017-01-31");
     const overlay = calendar("2017-01-20", "2017-01-21");
 
-    const [calendar1] = perm.addExcludeDays(overlay);
-    const excludeDays = Object.keys(calendar1.excludeDays);
+    const calendar1 = perm.addExcludeDays(overlay);
+    const excludeDays = Object.keys(calendar1!.excludeDays);
 
     expect(excludeDays[0]).to.equal("20170120");
     expect(excludeDays[1]).to.equal("20170121");
@@ -54,13 +53,18 @@ describe("ScheduleCalendar", () => {
     const underlay = calendar("2017-01-01", "2017-01-07");
     const overlay = calendar("2017-01-30", "2017-02-07");
 
-    const [calendar1] = perm.addExcludeDays(underlay);
-    const [calendar2] = calendar1.addExcludeDays(overlay);
-    const excludeDays = Object.keys(calendar2.excludeDays);
+    const calendar1 = perm.addExcludeDays(underlay);
+    const calendar2 = calendar1!.addExcludeDays(overlay);
+    const excludeDays = Object.keys(calendar2!.excludeDays);
 
-    expect(excludeDays.length).to.equal(0);
-    expect(calendar2.runsFrom.equals("20170108")).to.be.true;
-    expect(calendar2.runsTo.equals("20170129")).to.be.true;
+    expect(excludeDays.length).to.equal(5);
+    expect(calendar2!.runsFrom.equals("20170105")).to.be.true;
+    expect(calendar2!.runsTo.equals("20170131")).to.be.true;
+    expect(excludeDays[0]).to.equal("20170105");
+    expect(excludeDays[1]).to.equal("20170106");
+    expect(excludeDays[2]).to.equal("20170107");
+    expect(excludeDays[3]).to.equal("20170130");
+    expect(excludeDays[4]).to.equal("20170131");
   });
 
   it("adding exclude days might remove the schedule", () => {
@@ -68,93 +72,26 @@ describe("ScheduleCalendar", () => {
     const c1 = calendar("2017-01-01", "2017-01-07", { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 });
     const c2 = calendar("2017-01-08", "2017-01-15", { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 });
 
-    const [calendar1] = perm.addExcludeDays(c1);
+    const calendar1 = perm.addExcludeDays(c1)!;
 
-    expect(calendar1.runsFrom.equals("20170108")).to.be.true;
+    expect(calendar1.runsFrom.equals("20170101")).to.be.true;
     expect(calendar1.runsTo.equals("20170115")).to.be.true;
+
+    const excludeDays = Object.keys(calendar1!.excludeDays);
+    
+    expect(excludeDays.length).to.equal(1);
+    expect(excludeDays[0]).to.equal("20170101");
 
     const calendars = calendar1.addExcludeDays(c2);
 
-    expect(calendars.length).to.equal(0);
+    expect(calendars).null;
   });
 
-  it("divides around a date range spanning the beginning", () => {
-    const perm = calendar("2017-01-05", "2017-01-31");
-    const underlay = calendar("2017-01-01", "2017-01-07");
-
-    const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.equals("2017-01-08")).to.be.true;
-    expect(calendars[0].runsTo.equals("2017-01-31")).to.be.true;
-  });
-
-  it("divides around a date range spanning the end", () => {
-    const perm = calendar("2017-01-05", "2017-01-31");
-    const underlay = calendar("2017-01-29", "2017-02-07");
-
-    const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.equals("2017-01-05")).to.be.true;
-    expect(calendars[0].runsTo.equals("2017-01-28")).to.be.true;
-  });
-
-  it("divides around a date range and creates the smallest date range possible", () => {
-    // this is based of a real world scenario using the C29405
-    const perm = calendar("2017-05-26", "2017-06-30", { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0});
-    const underlay = calendar("2017-06-26", "2017-06-30");
-
-    const calendars = perm.divideAround(underlay);
-
-    expect(calendars[0].runsFrom.equals("2017-05-26")).to.be.true;
-    expect(calendars[0].runsTo.equals("2017-06-23")).to.be.true;
-  });
-
-  it("divides around a date range in the middle", () => {
-    const perm = calendar("2017-01-05", "2017-01-31");
-    const underlay = calendar("2017-01-15", "2017-01-20");
-
-    const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.equals("2017-01-05")).to.be.true;
-    expect(calendars[0].runsTo.equals("2017-01-14")).to.be.true;
-    expect(calendars[1].runsFrom.equals("2017-01-21")).to.be.true;
-    expect(calendars[1].runsTo.equals("2017-01-31")).to.be.true;
-  });
-
-  it("partially degrades the services", () => {
-    const perm = calendar("2017-01-01", "2017-01-31");
-    // Wed + Thurs for two weeks
-    const underlay = calendar("2017-01-11", "2017-01-19", { 0: 0, 1: 0, 2: 0, 3: 1, 4: 1, 5: 0, 6: 0 });
-
-    const calendars = perm.divideAround(underlay);
-    expect(calendars[0].runsFrom.equals("2017-01-01")).to.be.true;
-    expect(calendars[0].runsTo.equals("2017-01-10")).to.be.true;
-    expect(calendars[1].runsFrom.equals("2017-01-20")).to.be.true;
-    expect(calendars[1].runsTo.equals("2017-01-31")).to.be.true;
-    expect(calendars[2].days).to.deep.equal({0: 1, 1: 1, 2: 1, 3: 0, 4: 0, 5: 1, 6: 1});
-    // days where the service is not running are removed
-    expect(calendars[2].runsFrom.equals("2017-01-13")).to.be.true;
-    expect(calendars[2].runsTo.equals("2017-01-17")).to.be.true;
-  });
-
-  it("degrades the service to the point where it doesn't run", () => {
-    // Monday + Friday service
-    const perm = calendar("2017-01-02", "2017-01-30", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    // Remove a Monday
-    const underlay = calendar("2017-01-15", "2017-01-19", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 });
-
-    const calendars = perm.divideAround(underlay);
-
-    expect(calendars.length).to.equal(2);
-    expect(calendars[0].runsFrom.equals("2017-01-02")).to.be.true;
-    expect(calendars[0].runsTo.equals("2017-01-13")).to.be.true;
-    expect(calendars[1].runsFrom.equals("2017-01-20")).to.be.true;
-    expect(calendars[1].runsTo.equals("2017-01-30")).to.be.true;
-  });
-
-  it("does not tighten the date range past its bounds when there are no operating days in the range", () => {
+  it("terminates when all dates have been removed from the schedule", () => {
     const saturdayOnly = calendar("2023-11-20", "2023-11-24", { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 1 });
     const result = saturdayOnly.clone(Temporal.PlainDate.from("2023-11-20"), Temporal.PlainDate.from("2023-11-24"));
 
     expect(result.isEmpty).to.be.true;
-    expect(result.runsFrom.since(result.runsTo).days).to.equal(1);
   });
 
   it("terminates when the schedule has no operating days at all", () => {
@@ -162,66 +99,6 @@ describe("ScheduleCalendar", () => {
     const result = noDays.clone(Temporal.PlainDate.from("2023-11-20"), Temporal.PlainDate.from("2023-11-24"));
 
     expect(result.isEmpty).to.be.true;
-  });
-
-  it("detects when a calendar can be merged with another", () => {
-    // Monday + Friday service
-    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    const c2 = calendar("2017-07-17", "2017-07-21", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    const c3 = calendar("2017-10-13", "2017-10-16", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-
-    expect(c1.canMerge(c2)).to.be.true;
-    expect(c1.canMerge(c3)).to.be.false;
-  });
-
-  it("can merge with another calendar", () => {
-    // Monday + Friday service
-    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170710"] = Temporal.PlainDate.from("20170710");
-
-    const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c2.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
-
-    const c3 = c1.merge(c2);
-
-    expect(c3.runsFrom.equals(c1.runsFrom)).to.be.true;
-    expect(c3.runsTo.equals(c2.runsTo)).to.be.true;
-    expect(c3.excludeDays["20170710"]).to.not.be.undefined;
-    expect(c3.excludeDays["20170721"]).to.not.be.undefined;
-  });
-
-  it("can merge with an overlapping calendar", () => {
-    // Monday + Friday service
-    const c1 = calendar("2017-07-03", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170717"] = Temporal.PlainDate.from("20170717");
-    c1.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
-
-    const c2 = calendar("2017-07-17", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c2.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
-
-    const c3 = c1.merge(c2);
-
-    expect(c3.runsFrom.equals(c1.runsFrom)).to.be.true;
-    expect(c3.runsTo.equals(c1.runsTo)).to.be.true;
-    expect(Object.keys(c3.excludeDays).length).to.equal(1);
-    expect(c3.excludeDays["20170721"]).to.not.be.undefined;
-  });
-
-  it("can bridge the gap between a merging service with exclude days", () => {
-    // Monday + Friday service
-    const c1 = calendar("2017-07-03", "2017-07-14", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c1.excludeDays["20170710"] = Temporal.PlainDate.from("20170710");
-
-    const c2 = calendar("2017-07-21", "2017-07-28", { 0: 0, 1: 1, 2: 0, 3: 0, 4: 0, 5: 1, 6: 0 });
-    c2.excludeDays["20170721"] = Temporal.PlainDate.from("20170721");
-
-    const c3 = c1.merge(c2);
-
-    expect(c3.runsFrom.equals(c1.runsFrom)).to.be.true;
-    expect(c3.runsTo.equals(c2.runsTo)).to.be.true;
-    expect(c3.excludeDays["20170710"]).to.not.be.undefined;
-    expect(c3.excludeDays["20170717"]).to.not.be.undefined;
-    expect(c3.excludeDays["20170721"]).to.not.be.undefined;
   });
 
   it("shift forward", () => {

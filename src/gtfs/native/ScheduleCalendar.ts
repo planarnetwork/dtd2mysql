@@ -25,10 +25,18 @@ export class ScheduleCalendar {
   }
 
   /**
-   * Returns true if the calendar does not run on any days e.g. the date range has been tightened beyond its bounds
+   * Returns true if the calendar does not run on any days e.g. when the whole day range has been excluded
    */
   public get isEmpty(): boolean {
-    return compare(this.runsFrom, this.runsTo) > 0;
+    const start = this.runsFrom;
+    const end = this.runsTo;
+
+    for (let date = start; compare(date, end) <= 0; date = date.add({ days: 1 })) {
+      if (this.days[dayOfWeek(date)] && !this.excludeDays[toYYYYMMDD(date)]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -40,24 +48,14 @@ export class ScheduleCalendar {
       return OverlapType.None;
     }
 
-    let numDays = 0;
-
-    for (const sharedDay of this.sharedDays(overlay)) {
-      const key = toYYYYMMDD(sharedDay);
-      const isShared = !this.excludeDays[key] && !overlay.excludeDays[key];
-
-      if (isShared && ++numDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
-        return OverlapType.Long;
-      }
-    }
-
-    return (numDays > 0) ? OverlapType.Short : OverlapType.None;
+    let first = this.sharedDays(overlay).next();
+    return first.done ? OverlapType.None : OverlapType.Overlap;
   }
 
   /**
    * Add each date in the range as an exclude day
    */
-  public addExcludeDays(overlay: ScheduleCalendar): ScheduleCalendar[] {
+  public addExcludeDays(overlay: ScheduleCalendar): ScheduleCalendar | null {
     const excludeDays = Object.assign({}, this.excludeDays); // clone
 
     for (const sharedDay of this.sharedDays(overlay)) {
@@ -66,11 +64,11 @@ export class ScheduleCalendar {
 
     const calendar = this.clone(this.runsFrom, this.runsTo, NO_DAYS, excludeDays);
 
-    return calendar.isEmpty ? [] : [calendar];
+    return calendar.isEmpty ? null : calendar;
   }
 
   /**
-   * Returns the overlapping days between schedules (does not account for exclude days)
+   * Returns the overlapping days between schedules, accounting for exclude days for each calendar
    */
   private* sharedDays(overlay: ScheduleCalendar) {
     const endDate = minDate(this.runsTo, overlay.runsTo);
@@ -79,7 +77,8 @@ export class ScheduleCalendar {
     while (compare(date, endDate) <= 0) {
       const day = dayOfWeek(date);
 
-      if (this.days[day] && overlay.days[day]) {
+      if (this.days[day] && overlay.days[day]
+        && !this.excludeDays[toYYYYMMDD(date)] && !overlay.excludeDays[toYYYYMMDD(date)]) {
         yield date;
       }
 
@@ -88,29 +87,7 @@ export class ScheduleCalendar {
   }
 
   /**
-   * Remove the given date range from this schedule and return one or two calendars
-   */
-  public divideAround(calendar: ScheduleCalendar): ScheduleCalendar[] {
-    const calendars: ScheduleCalendar[] = [
-      this.clone(this.runsFrom, calendar.runsFrom.subtract({ days: 1 })),
-      this.clone(calendar.runsTo.add({ days: 1 }), this.runsTo)
-    ];
-
-    // if there are any days left after applying the overlay
-    if (this.binaryDays - (this.binaryDays & calendar.binaryDays) > 0) {
-      calendars.push(this.clone(
-        calendar.runsFrom,
-        calendar.runsTo,
-        calendar.days,
-        this.excludeDays
-      ));
-    }
-
-    return calendars.filter(c => !c.isEmpty);
-  }
-
-  /**
-   * Remove the given days from the calendar then tighten the dates
+   * Remove the given days from the calendar
    */
   public clone(start: Temporal.PlainDate,
                end: Temporal.PlainDate,
@@ -120,16 +97,6 @@ export class ScheduleCalendar {
     const days = this.removeDays(removeDays);
     let startDate = start;
     let endDate = end;
-
-    // skip forward to the first day the schedule is operating
-    while ((days[dayOfWeek(startDate)] === 0 || excludeDays[toYYYYMMDD(startDate)]) && compare(startDate, endDate) <= 0) {
-      startDate = startDate.add({ days: 1 });
-    }
-
-    // skip backward to the first day the schedule is operating
-    while ((days[dayOfWeek(endDate)] === 0 || excludeDays[toYYYYMMDD(endDate)]) && compare(endDate, startDate) >= 0) {
-      endDate = endDate.subtract({ days: 1 });
-    }
 
     const newExcludes = Object
       .values(excludeDays)
@@ -180,59 +147,6 @@ export class ScheduleCalendar {
         exception_type: 2
       };
     });
-  }
-
-  /**
-   * Returns true if this calendar would not be valid on any days before the given calendar starts
-   */
-  public canMerge(calendar: ScheduleCalendar): boolean {
-    let date = this.runsTo.add({ days: 1 });
-    let numAdditionalExcludeDays = 0;
-
-    while (compare(date, calendar.runsFrom) < 0) {
-      if (this.days[dayOfWeek(date)] && ++numAdditionalExcludeDays > ScheduleCalendar.SHORT_OVERLAY_LENGTH) {
-        return false;
-      }
-
-      date = date.add({ days: 1 });
-    }
-
-    return true;
-  }
-
-  /**
-   * Return a new calendar starting from the runsFrom of this calendar and running to the runsTo of the given calendar.
-   *
-   * Exclude days are merged together.
-   */
-  public merge(calendar: ScheduleCalendar): ScheduleCalendar {
-    const excludeDays = Object.assign({}, calendar.excludeDays, this.excludeDays);
-    let date = this.runsTo.add({ days: 1 });
-
-    while (compare(date, calendar.runsFrom) < 0) {
-      if (this.days[dayOfWeek(date)]) {
-        excludeDays[toYYYYMMDD(date)] = date;
-      }
-
-      date = date.add({ days: 1 });
-    }
-
-    // for any shared
-    for (const sharedDay of this.sharedDays(calendar)) {
-      const key = toYYYYMMDD(sharedDay);
-
-      // if the shared day is only excluded in one overlay, remove it
-      if (!(this.excludeDays[key] && calendar.excludeDays[key])) {
-        delete excludeDays[key];
-      }
-    }
-
-    return new ScheduleCalendar(
-      this.runsFrom,
-      maxDate(this.runsTo, calendar.runsTo),
-      this.days,
-      excludeDays
-    );
   }
 
   /**
@@ -314,8 +228,7 @@ export type BankHoliday = string;
 
 export enum OverlapType {
   None = 0,
-  Short = 1,
-  Long = 2
+  Overlap = 1
 }
 
 export const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };

@@ -1,12 +1,11 @@
-
 import {StopTime} from "../file/StopTime";
-import {OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
+import {ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../file/Trip";
 import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
 import {CRS} from "../file/Stop";
-import {IdGenerator, OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
-import memoize from "memoized-class-decorator";
+import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
+import {toYYYYMMDD} from "./PlainDate";
 
 /**
  * A CIF schedule (BS record)
@@ -25,6 +24,10 @@ export class Schedule implements OverlayRecord {
     public readonly firstClassAvailable: boolean,
     public readonly reservationPossible: boolean
   ) {}
+  
+  public get tripId(): string {
+    return `${this.tuid}_${toYYYYMMDD(this.calendar.runsFrom)}_${toYYYYMMDD(this.calendar.runsTo)}`
+  }
 
   public get origin(): CRS {
     return this.stopTimes[0].stop_id;
@@ -41,10 +44,10 @@ export class Schedule implements OverlayRecord {
   /**
    * Clone the current record with the new calendar and id
    */
-  public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
+  public clone(calendar: ScheduleCalendar, scheduleId: number): this {
     return new Schedule(
       scheduleId,
-      this.stopTimes.map(st => Object.assign({}, st, { trip_id: scheduleId })),
+      this.stopTimes,
       this.tuid,
       this.rsid,
       calendar,
@@ -53,7 +56,7 @@ export class Schedule implements OverlayRecord {
       this.stp,
       this.firstClassAvailable,
       this.reservationPossible
-    );
+    ) as this;
   }
 
   /**
@@ -63,7 +66,7 @@ export class Schedule implements OverlayRecord {
     return {
       route_id: routeId,
       service_id: serviceId,
-      trip_id: this.id,
+      trip_id: this.stopTimes[0].trip_id,
       trip_headsign: this.tuid,
       trip_short_name: this.rsid,
       direction_id: 0,

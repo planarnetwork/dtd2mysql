@@ -5,7 +5,7 @@ import {CRS, Stop} from "../file/Stop";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
 import {Duration, formatDuration, parseDuration, SECONDS_IN_DAY} from "./Duration";
-import {compare, maxDate, minDate} from "./PlainDate";
+import {compare, maxDate, minDate, toYYYYMMDD} from "./PlainDate";
 
 export class Association implements OverlayRecord {
 
@@ -49,34 +49,19 @@ export class Association implements OverlayRecord {
    * association does not and create additional schedules to cover those periods.
    */
   public apply(base: Schedule, assoc: Schedule, idGenerator: IdGenerator): Schedule[] {
-    const assocCalendar = this.dateIndicator === DateIndicator.Next ? this.calendar.shiftForward() : this.calendar;
-    const schedules = [this.mergeSchedules(base, assoc)];
-
-    // if the associated train starts running before the association, clone the associated schedule for those dates
-    if (compare(assoc.calendar.runsFrom, assocCalendar.runsFrom) < 0) {
-      const before = assoc.calendar.clone(assoc.calendar.runsFrom, assocCalendar.runsFrom.subtract({ days: 1 }));
-
-      if (!before.isEmpty) {
-        schedules.push(assoc.clone(before, idGenerator.next().value));
-      }
+    const assocCalendar = this.dateIndicator === DateIndicator.Next ? this.calendar.shiftForward() :
+        this.dateIndicator === DateIndicator.Previous ? this.calendar.shiftBackward() : this.calendar;
+    const mergedBase = this.mergeSchedules(base, assoc);
+    if (mergedBase === null) {
+      // the association does not apply
+      return [assoc];
     }
+    const schedules = [mergedBase];
 
-    // if the associated train runs after the association has finished, clone the associated schedule for those dates
-    if (compare(assoc.calendar.runsTo, assocCalendar.runsTo) > 0) {
-      const after = assoc.calendar.clone(assocCalendar.runsTo.add({ days: 1 }), assoc.calendar.runsTo);
-
-      if (!after.isEmpty) {
-        schedules.push(assoc.clone(after, idGenerator.next().value));
-      }
-    }
-
-    // for each exclude day of the association
-    for (const excludeDay of Object.values(assocCalendar.excludeDays)) {
-      const excluded = assoc.calendar.clone(excludeDay, excludeDay);
-
-      if (!excluded.isEmpty) {
-        schedules.push(assoc.clone(excluded, idGenerator.next().value));
-      }
+    // exclude the associated schedule from running when the association is active
+    const excludeCalendar = assoc.calendar.addExcludeDays(assocCalendar);
+    if (excludeCalendar !== null) {
+      schedules.push(assoc.clone(excludeCalendar, idGenerator.next().value));
     }
 
     return schedules;
@@ -85,7 +70,7 @@ export class Association implements OverlayRecord {
   /**
    * Apply the split or join to the given schedules
    */
-  private mergeSchedules(base: Schedule, assoc: Schedule): Schedule {
+  private mergeSchedules(base: Schedule, assoc: Schedule): Schedule | null {
     let tuid: TUID;
     let start: StopTime[];
     let assocStop: StopTime;
@@ -96,7 +81,7 @@ export class Association implements OverlayRecord {
 
     // this should never happen, unless data feed is corrupted. It will prevent us from update failure
     if (baseStopTime === undefined || assocStopTime === undefined) {
-      return assoc;
+      return null;
     }
 
     if (this.assocType === AssociationType.Split) {
@@ -115,14 +100,24 @@ export class Association implements OverlayRecord {
     }
 
     let stopSequence: number = 1;
+    const calendar = this.dateIndicator === DateIndicator.Next ? assoc.calendar.shiftBackward() : assoc.calendar;
+    const thisCalendar = this.dateIndicator === DateIndicator.Previous ? this.calendar.shiftBackward() : this.calendar;
+
+    const newCalendar = calendar.clone(
+        maxDate(thisCalendar.runsFrom, calendar.runsFrom),
+        minDate(thisCalendar.runsTo, calendar.runsTo),
+        NO_DAYS,
+        {...calendar.excludeDays, ...thisCalendar.excludeDays}
+    );
+    if (newCalendar === null) return null;
+    const tripId = `${tuid}_${toYYYYMMDD(newCalendar.runsFrom)}_${toYYYYMMDD(newCalendar.runsTo)}`;
 
     const stops = [
-      ...start.map(s => this.cloneStop(s, stopSequence++, assoc.id)),
-      this.cloneStop(assocStop, stopSequence++, assoc.id),
-      ...end.map(s => this.cloneStop(s, stopSequence++, assoc.id, assocStop))
+      ...start.map(s => this.cloneStop(s, stopSequence++, tripId, false)),
+      this.cloneStop(assocStop, stopSequence++, tripId, false),
+      ...end.map(s => this.cloneStop(s, stopSequence++, tripId, this.assocType === AssociationType.Split && this.dateIndicator === DateIndicator.Next || this.assocType === AssociationType.Join && this.dateIndicator === DateIndicator.Previous))
     ];
 
-    const calendar = this.dateIndicator === DateIndicator.Next ? assoc.calendar.shiftBackward() : assoc.calendar;
 
     return new Schedule(
       assoc.id,
@@ -169,33 +164,23 @@ export class Association implements OverlayRecord {
   /**
    * Clone the given stop overriding the sequence number and modifying the arrival/departure times if necessary
    */
-  private cloneStop(stop: StopTime, stopSequence: number, tripId: number, assocStop: StopTime | null = null): StopTime {
-    const assocTime = parseDuration(assocStop && assocStop.arrival_time ? assocStop.arrival_time : "00:00");
+  private cloneStop(stop: StopTime, stopSequence: number, tripId: string, nextDay: boolean): StopTime {
+    let departureTime = stop.departure_time ? parseDuration(stop.departure_time) : null;
+    let arrivalTime = stop.arrival_time ? parseDuration(stop.arrival_time) : null;
+    if (nextDay) {
+      if (departureTime !== null) departureTime += SECONDS_IN_DAY;
+      if (arrivalTime !== null) arrivalTime += SECONDS_IN_DAY;
+    }
+
 
     return Object.assign({}, stop, {
-      arrival_time: this.shiftPastAssociation(stop.arrival_time, assocTime),
-      departure_time: this.shiftPastAssociation(stop.departure_time, assocTime),
+      arrival_time: arrivalTime ? formatDuration(arrivalTime) : null,
+      departure_time: departureTime ? formatDuration(departureTime) : null,
       stop_sequence: stopSequence,
       trip_id: tripId
     });
   }
-
-  /**
-   * Format the given stop time, pushing it into the next day if it falls before the association.
-   *
-   * The absent check is on the string rather than the parsed seconds because midnight is a real time
-   * but zero seconds is falsy.
-   */
-  private shiftPastAssociation(time: string | undefined, assocTime: Duration): string | undefined {
-    if (!time) {
-      return undefined;
-    }
-
-    const seconds = parseDuration(time);
-
-    return formatDuration(seconds < assocTime ? seconds + SECONDS_IN_DAY : seconds);
-  }
-
+  
 }
 
 export enum DateIndicator {
