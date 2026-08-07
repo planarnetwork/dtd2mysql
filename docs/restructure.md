@@ -231,17 +231,40 @@ PnP buys nothing here.
 
 ## 3. Test strategy
 
-### The reference pair
+### The reference feed
 
-- `RJTTF582.ZIP` — DTD timetable feed, sequence 582, generated **2025-09-02**.
-- `gtfs.zip` — GTFS built from it.
+`RJTTF582.ZIP` — DTD timetable feed, sequence 582, generated **2025-09-02**. This is the input, and
+it is the only asset the test strategy depends on.
 
-Verified as a genuine pair: the golden feed's calendars peak at `end_date` 202512 (5,025 of 7,146),
-`calendar_dates` span 20250722–20251212, and `start_date` reaches back to 20210103. That is exactly
-the shape of `runs_from < CURDATE() + INTERVAL 3 MONTH AND runs_to >= CURDATE()` evaluated on
-2025-09-02. The 2026-06-01 timestamps inside the zip are a repack.
+### Why the shipped `gtfs.zip` is not usable as a golden file
 
-Baseline anchors:
+A GTFS output built from that feed also exists. It is a genuine pair — its calendars peak at
+`end_date` 202512 (5,025 of 7,146), `calendar_dates` span 20250722–20251212, which is exactly the
+shape of `runs_from < CURDATE() + INTERVAL 3 MONTH AND runs_to >= CURDATE()` evaluated on
+2025-09-02 — but it cannot serve as a comparison target, for two independent reasons.
+
+**It was built by code that no longer exists.** At 2025-09-02 the repository was at `f9f52fb`,
+v6.6.1 of June 2024. Everything since postdates it:
+
+| | |
+|---|---|
+| `4f7a1c8` | Load TSI file (#107) — a feed file that was not previously parsed |
+| `5a33785`, `e3a6af0`, `8fd910a` | modernise, dependency updates, import fixes |
+| `b921971` | **Replace Moment with Temporal** — every date path rewritten |
+| `91d7ee5` | **#117 reversed date ranges** — calendar output behaviour |
+
+A diff against that file mixes intended fixes, the Temporal migration and genuine regressions with
+no way to attribute any of them. It is not merely non-reproducible, it is uninterpretable.
+
+**And T7 already does the job correctly.** Old-versus-new equivalence runs the previous
+implementation at a *pinned commit*, so every difference maps to a known change. That is what the
+shipped file was meant to provide, done in a way that yields signal.
+
+The file is therefore not committed. Its row counts are retained below purely as a coarse smoke
+check — if a build from this feed produces 190,000 trips rather than something near 240,000,
+something is wrong — and explicitly not as a target.
+
+Historical reference (v6.6.1, built ≈2025-09-02):
 
 | Input (RJTTF582) | | Output (golden) | |
 |---|---:|---|---:|
@@ -293,8 +316,8 @@ reject the record. Result, in `stops.txt` line 2:
 **44 MSN records carry `easting=00000, northing=00000`.** `IntField` parses `"00000"` as `0`, not
 null, so `(0 - 10000) * 100` projects them to 4.17°S 14.51°W, in the South Atlantic.
 
-61 stops in the golden feed sit outside the GB bounding box. They are five distinct populations,
-and only one of them is a single decision:
+61 stops in the reference output sit outside the GB bounding box. They are five distinct
+populations, and only one of them is a single decision:
 
 | | Count | What they are | Disposition |
 |---|---:|---|---|
@@ -361,17 +384,20 @@ The slice must deliberately cover:
 - **a CIE station with zero eastings, and the MSN header record**, so the two known defects are
   pinned and then flipped when fixed
 
-**Layer 3 — Full-feed e2e.** *Nightly, plus a `full-e2e` PR label.* Real RJTTF582 against real
-gtfs.zip. **Not byte-for-byte.** Two tracks:
+**Layer 3 — Full-feed e2e.** *Nightly, plus a `full-e2e` PR label.* RJTTF582 at
+`--today=2025-09-02` against **a baseline we generate ourselves** (T10), not the shipped output.
+Because the baseline is produced by our own pinned code after T1–T3, it is reproducible by
+construction and every difference is attributable. Two tracks:
 
 - *Track A — invariants* that hold regardless of bug fixes: referential integrity (every
   `stop_times.stop_id` in stops, every `trips.service_id` in calendar ∪ calendar_dates, every
   `route_id` in routes); no `start_date > end_date`; arrival ≤ departure and monotonic within a
   trip; no duplicate keys; row counts within ±2% of the table above.
-- *Track B — normalised diff with a declared allowlist.* Canonicalise (sort rows by declared key,
-  columns to spec order, lat/lon to 6dp, empty ≡ missing), diff, compare against a manifest of
-  expected differences. When B7 flips `wheelchair_accessible` 1→0, the ticket adds a manifest entry
-  with a reason. **The manifest is the feed's changelog**, and it is what E5 renders.
+- *Track B — normalised diff against the T10 baseline.* Canonicalise (sort rows by declared key,
+  columns to spec order, lat/lon to 6dp, empty ≡ missing) and diff. Any difference is a regression
+  unless the ticket causing it rebaselines under T8, so this is a true regression test rather than
+  a comparison against a moving target. **The rebaseline log is the feed's changelog**, and it is
+  what E5 renders.
 
 **Layer 4 — Old-vs-new equivalence.** Temporary scaffolding for Epics A and C: run pre-refactor
 `dtd2mysql --gtfs` at a pinned commit and the new build on the same input at the same pinned date;
@@ -382,15 +408,16 @@ the `2/0` stop and the Atlantic coordinates, giving independent confirmation whe
 
 ### Asset hosting
 
-Both the mini fixture and the full reference pair live in the repo, under `fixtures/`.
+The mini fixture and `RJTTF582.ZIP` live in the repo under `fixtures/`. The generated baseline
+(T10) lives alongside them.
 
-The full pair is 68 MB + 16 MB. Both clear GitHub's 100 MB per-file hard limit; the 68 MB feed
-trips the 50 MB advisory warning on push but is accepted. Plain git rather than LFS: the files are
-fixed historical snapshots that will never be modified, so they cost one object each and avoid
-making every contributor install `git-lfs` or consume LFS bandwidth quota.
+`RJTTF582.ZIP` is 68 MB — clear of GitHub's 100 MB per-file hard limit, though it trips the 50 MB
+advisory warning on push. Plain git rather than LFS: it is a fixed historical snapshot that will
+never be modified, so it costs one object and avoids making every contributor install `git-lfs` or
+consume LFS bandwidth quota.
 
-These feeds are superseded and no longer operationally valid, so they are retained purely as
-regression fixtures. `fixtures/README.md` records their provenance and that fact.
+The feed is superseded and no longer operationally valid, so it is retained purely as a regression
+fixture. `fixtures/README.md` records its provenance and that fact.
 
 ---
 
@@ -426,10 +453,13 @@ connected-component code F1 needs.
 Fixture and golden text files committed; `yarn test:e2e` builds and diffs; wired into `ci.yml`.
 Every case in the Layer 2 list has a named test asserting the specific behaviour, not just the diff.
 
-**T6 · Full-feed harness** *(depends T5, T9)*
-Track A invariants plus Track B normalised diff against `gtfs.zip`. Runs nightly and on the
-`full-e2e` label. The known defects (B7 to B13) start in the allowlist with issue links. Runtime and
-peak RSS recorded per run, feeding E2's sizing and F1's targets.
+**T6 · Full-feed harness** *(depends T5, T9, T10)*
+Track A invariants plus Track B normalised diff against the T10 baseline. Runs nightly and on the
+`full-e2e` label. Runtime and peak RSS recorded per run, feeding E2's sizing and F1's targets.
+
+No defect allowlist is needed: the baseline captures current behaviour including the known bugs, so
+B7 to B14 each rebaseline under T8 as they land, and the rebaseline diff *is* the evidence the fix
+did what it claimed.
 
 **Instruments the discard paths.** Every place the pipeline drops data reports a count: schedules
 removed by the `stopTimes.length <= 1` filter, stop times dropped by the `crs_code IS NOT NULL`
@@ -444,22 +474,37 @@ Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; n
 or fails with a per-file diff. Marked for deletion in C2.
 
 **T8 · Rebaseline protocol** *(depends T5)*
-`yarn test:e2e --update` regenerates goldens. CI fails any commit touching `fixtures/*/golden/**` or
-the Track B allowlist without a corresponding entry in `fixtures/BASELINE.md` giving the reason and
-issue number.
+`yarn test:e2e --update` regenerates both the mini golden and the T10 full-feed baseline. CI fails
+any commit touching `fixtures/*/golden/**` or `fixtures/full/baseline/**` without a corresponding
+entry in `fixtures/BASELINE.md` giving the reason and issue number.
 
-**T9 · Commit the reference feeds**
-`RJTTF582.ZIP` and `gtfs.zip` committed to `fixtures/full/` in plain git (not LFS). `.npmignore`
-and the workspace `files` lists updated so they never reach a published tarball. Checked into a
-single dedicated commit so the objects are easy to identify. `fixtures/README.md` records
-provenance, the 2025-09-02 generation date, and that the feeds are superseded and retained for
-regression testing only.
+Since the baseline encodes current behaviour rather than correct behaviour, rebaselining is the
+normal path for every ticket in Epic B and beyond — the requirement is that it is deliberate and
+explained, not that it is rare.
+
+**T9 · Commit the reference feed**
+`RJTTF582.ZIP` committed to `fixtures/full/` in plain git (not LFS). `.npmignore` and the workspace
+`files` lists updated so it never reaches a published tarball. Checked into a single dedicated
+commit so the object is easy to identify. `fixtures/README.md` records provenance, the 2025-09-02
+generation date, and that the feed is superseded and retained for regression testing only.
+
+The GTFS output shipped alongside it is **not** committed — see §3 for why it cannot serve as a
+comparison target.
+
+**T10 · Generate the full-feed baseline** *(depends T1, T2, T3, T9)*
+Run the current implementation against `RJTTF582.ZIP` at `--today=2025-09-02` and commit the
+canonicalised output to `fixtures/full/baseline/` as plain text. Reproducible by construction, so
+regenerating it on any machine yields byte-identical files — assert that in CI.
+
+This captures current behaviour *including* the known defects; that is the point. B7 to B14 then
+each rebaseline under T8, and the resulting diff is the proof the fix worked. Record the generating
+commit SHA in `fixtures/README.md`.
 
 ### Epic B — Correctness
 
 Land on master before the restructure, so the move is a pure refactor with green tests either side.
 
-**B1 · Emit `feed_info.txt`**
+**B1 · Emit `feed_info.txt`** *(coordinate with B14)*
 Written by the build; `feed_version` from the source DTD filename; start and end dates from the
 actual min/max of emitted calendars, not the requested range.
 
@@ -533,7 +578,20 @@ trip headsign at a stop — it means "this service terminates here", not "platfo
 to `stops.platform_code` on the platform-level stop (F3), or is dropped from `stop_times` if F3 has
 not landed. Coordinate with B8, which gives `trip_headsign` a real value for the first time.
 
-B9 to B13 stay in T6's allowlist until they land, then flip.
+**B14 · Calendar fragments lying entirely in the past**
+`applyOverlays` calls `ScheduleCalendar.divideAround` to split a base schedule around an overlay.
+The query filters on the *original* schedule's `runs_to`, so a resulting fragment can fall wholly
+before the build date. `isEmpty` is `runsFrom > runsTo`, which catches reversed ranges (#117) but
+not expired ones, so those fragments survive: 32 calendars in the reference output end before the
+generation date, the earliest starting 2021-01-03.
+
+Harmless to a consumer in isolation, but it interacts with B1 — `feed_start_date` computed from
+`min(calendar.start_date)` would report 2021 for a feed covering autumn 2025, which is actively
+misleading. Drop calendars ending before the build date, log the count, and make B1 derive its
+window from what remains.
+
+B7 to B14 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
+it lands.
 
 ### Epic A — Monorepo migration
 
@@ -795,7 +853,7 @@ only, no feed changes — a data-quality signal for the site.
 ## 5. Sequencing
 
 ```
-B1,B2,B4,B5,B7..B13  →  T1,T2,T3  →  T4,T5,T9  →  T6,T7
+B1,B2,B4,B5,B7..B14  →  T1,T2,T3  →  T4,T5,T9  →  T10  →  T6,T7
                                    ↓
                                   A1  →  A2,A6  →  A3,A4,A5,A7  →  A8
                                                                     ↓
@@ -811,15 +869,16 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**61 tickets** (B3 is absorbed into T1).
+**63 tickets** (B3 is absorbed into T1).
 
 ---
 
 ## 6. Decisions
 
-1. **Test assets** — `RJTTF582.ZIP` and `gtfs.zip` are committed to `fixtures/full/` in plain git.
-   The feeds are superseded and no longer operationally valid, so they are retained purely as
-   regression fixtures (T9).
+1. **Test assets** — `RJTTF582.ZIP` is committed to `fixtures/full/` in plain git as the input
+   fixture (T9). The GTFS output shipped with it is **not** committed: it was built by v6.6.1 code
+   that predates the Temporal migration and the #117 calendar fix, so differences against it are
+   uninterpretable. The full-feed baseline is generated by our own pinned code instead (T10).
 2. **Coordinate-less stops** — resolved into six populations rather than one decision: the 43 CIE
    stations, Stromness and the two Blackpool bus-tram points get real coordinates in
    `overrides.yaml` (B10); the twelve TOC origin/destination placeholders are dropped with their
