@@ -3,7 +3,7 @@
 Status: proposal
 Issues: [#119](https://github.com/planarnetwork/dtd2mysql/issues/119) (external data),
 [#115](https://github.com/planarnetwork/dtd2mysql/issues/115) (one-shot GTFS),
-[#116](https://github.com/planarnetwork/dtd2mysql/issues/116) (other databases),
+[#116](https://github.com/planarnetwork/dtd2mysql/issues/116) (other databases — deferred, see C4),
 [#81](https://github.com/planarnetwork/dtd2mysql/issues/81) / [#80](https://github.com/planarnetwork/dtd2mysql/issues/80) (splits and joins),
 [#69](https://github.com/planarnetwork/dtd2mysql/issues/69) (stations and platforms)
 
@@ -12,9 +12,13 @@ Issues: [#119](https://github.com/planarnetwork/dtd2mysql/issues/119) (external 
 Turn a single-purpose MySQL import tool into a monorepo that can:
 
 1. Build a GTFS feed with no database at all (#115).
-2. Import into MySQL or Postgres behind one abstraction (#116).
-3. Accept external data from sources other than the DTD feed (#119).
-4. Publish that feed nightly as a GitHub release, linked from a website built in the same repo.
+2. Accept external data from sources other than the DTD feed (#119).
+3. Publish that feed nightly as a GitHub release, linked from a website built in the same repo.
+
+Support for other databases (#116) is **deliberately out of scope for this pass**. There is one
+storage app, `apps/dtd2mysql`. The seam that would make a second backend possible is built, because
+it is worth having on cohesion grounds alone, but no second implementation is written until the
+restructure has landed. See §2 and C4.
 
 ---
 
@@ -80,7 +84,6 @@ Turn a single-purpose MySQL import tool into a monorepo that can:
 apps/
   website/
   dtd2mysql/
-  dtd2postgres/
   dtd2gtfs/
 libs/
   feed-parser/
@@ -96,8 +99,10 @@ libs/
   enrich-darwin/
 ```
 
-Libs publish as `@gb-rail/*`. The three CLI apps publish bare: `dtd2mysql`, `dtd2postgres`,
-`dtd2gtfs`.
+Libs publish as `@gb-rail/*`. The two CLI apps publish bare: `dtd2mysql` and `dtd2gtfs`.
+
+A second storage app (`dtd2postgres`, or any other backend) slots in beside `dtd2mysql` without
+moving anything, but is not built in this pass.
 
 ### Dependency graph
 
@@ -111,7 +116,6 @@ libs/gtfs-output        →  gtfs
 libs/enrich-*           →  gtfs
 
 apps/dtd2mysql          →  feed-parser, dtd-schema, feed-storage, dtd-source, gtfs, gtfs-output
-apps/dtd2postgres       →  (same)
 apps/dtd2gtfs           →  dtd-source, gtfs, gtfs-output, enrich-*
 apps/website            →  (none; consumes build artifacts)
 ```
@@ -120,17 +124,28 @@ Libs never depend on apps.
 
 ### Decision: `feed-storage` abstracts import, not query
 
-The read-side SQL in `CIFRepository` is hand-written MySQL — `IF()`, `POSITION()`, `CONCAT()`,
-`INTERVAL ${range}`. Making that portable means a query builder or dialect layer, which is a lot of
-machinery for two backends. The import side is genuinely uniform.
-
 - `libs/feed-storage` exports `Storage` — `createSchema(record)`, `dropSchema(record)`,
   `bulkLoad(table): Writable`, `recordProcessedFile(name)` — plus the storage-agnostic `ImportFeed`
   orchestration lifted from `ImportFeedCommand`.
-- `apps/dtd2mysql` and `apps/dtd2postgres` each own their `Storage` implementation **and** their own
-  `TimetableSource` SQL.
+- `apps/dtd2mysql` owns the `Storage` implementation **and** its own `TimetableSource` SQL.
 
-Each backend owns its queries; nobody builds an ORM.
+With one backend this is not a portability layer, and it should not be justified as one. It earns
+its place on two grounds that hold with a single implementation:
+
+**Cohesion.** `ImportFeedCommand` currently mixes two unrelated concerns: feed sequencing (full
+refresh versus incremental, the `CFA`/`lastScheduleId` special case, dispatching files by extension)
+and MySQL mechanics (DDL generation from `Record` definitions, buffered inserts, `LOAD DATA`). The
+first is about the DTD feed format and has nothing to do with SQL. Splitting them is worth doing
+whether or not a second backend ever appears.
+
+**Testability.** The seam is what T6b asserts against, and it lets `ImportFeed` be exercised with a
+fake `Storage` rather than a live database — which matters because today *no* test touches a real
+database at all.
+
+What it explicitly does **not** do is abstract the read side. The SQL in `CIFRepository` is
+hand-written MySQL — `IF()`, `POSITION()`, `CONCAT()`, `INTERVAL ${range}` — and making that
+portable would mean a query builder or dialect layer. When #116 is picked up, each backend writes
+its own `TimetableSource` queries. Nobody builds an ORM.
 
 ### Decision: `libs/gtfs` owns the domain and the interfaces
 
@@ -166,7 +181,7 @@ Driven by config:
 
 ```yaml
 source:  { type: cif, path: ./RJTTF918.ZIP }   # or { type: mysql }
-today:   2025-09-02                            # omit for the real date
+today:   2026-08-07                            # omit for the real date
 range:   6 months
 licence: ogl                                   # or "full" to admit ODbL sources
 extensions: [pathways, shapes, fares_v2, translations]
@@ -649,24 +664,32 @@ to today's `CIFRepository`. The ordering contract documented and asserted.
 
 **C2 · `CifFileSource` — one-shot** *(depends C1, A5)* — **closes #115**
 Read MCA/MSN/ALF/ZTR from the zip via `feed-parser`. A CIF file is already grouped by schedule, so
-the only work is a stable sort on the STP indicator. Comparison runs through T7's harness at
-`--today=2025-09-02`; differences explained or zero. **T7 is deleted in this ticket.** Peak RSS
+the only work is a stable sort on the STP indicator. Comparison runs through T7's harness at a
+pinned `--today`; differences explained or zero. **T7 is deleted in this ticket.** Peak RSS
 recorded, feeding E2 and F1.
 
 **C3 · `apps/dtd2gtfs`** *(depends C2, A7)*
 `dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
 the tree. Published bare.
 
-**C4 · `apps/dtd2postgres`** *(depends A4, C1)* — **closes #116**
-Postgres `Storage` (DDL generation, `COPY`-based bulk load) and `PostgresTimetableSource`.
-`CleanFaresCommand` equivalent. Import of all four feeds verified against a MySQL import
-row-for-row.
-
 **C5 · Rail Data Marketplace credential path** *(depends A5)*
 The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; tokens now come from Rail Data
 Marketplace (`raildata.org.uk`). The SFTP host still serves files but credential issuance has moved.
 `dtd-source` transport becomes pluggable (SFTP today, RDM API when needed); credentials resolved
 from env in one place; README updated.
+
+**C4 · `apps/dtd2postgres`** — **deferred, not in this pass** — **would close #116**
+Postgres `Storage` (DDL generation, `COPY`-based bulk load) and `PostgresTimetableSource`, plus a
+`CleanFaresCommand` equivalent, verified against a MySQL import row-for-row via T6b.
+
+Held back deliberately. Adding a second backend during the restructure would mean validating the
+`Storage` abstraction against a backend that does not exist yet, while simultaneously moving 3,500
+lines — two sources of uncertainty at once, with no way to tell which caused a failure. A4 and T6b
+establish that the MySQL import is unchanged first; only then is there a trustworthy baseline to
+hold a second implementation against.
+
+Nothing in the structure has to move when it is picked up: `dtd2postgres` slots in beside
+`dtd2mysql`, implements the same two interfaces, and depends on the same libs.
 
 ### Epic D — Enrichment (#119)
 
@@ -884,7 +907,8 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**63 tickets** (B3 is absorbed into T1).
+**74 tickets** listed. B3 is absorbed into T1, B0 is done, and C4 is deferred out of this
+pass, leaving 71 in scope.
 
 ---
 
@@ -910,6 +934,9 @@ parallel by different people without touching the core.
    release.
 4. **Tiers** — `gtfs-slim.zip` (OGL-compatible) and `gtfs-full.zip` (adds ODbL). No plain
    `gtfs.zip`; slim is the documented default (D8, E4, E5).
+5. **One storage app** — `apps/dtd2mysql` only. #116 and `dtd2postgres` are deferred until after
+   the restructure lands (C4). `libs/feed-storage` is still built, but justified on cohesion and
+   testability rather than portability — see §2. The read side is not abstracted at all.
 
 ---
 
