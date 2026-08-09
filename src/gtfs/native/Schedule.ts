@@ -8,6 +8,17 @@ import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
 import {toYYYYMMDD} from "./PlainDate";
 
 /**
+ * The identifier for a trip, stable across data revisions.
+ *
+ * The STP indicator is deliberately left out, so that when an overlay covering a whole permanent
+ * schedule is withdrawn the trip keeps its ID and reads as an amended timetable rather than one
+ * trip disappearing and another appearing.
+ */
+export function tripId(tuid: TUID, calendar: ScheduleCalendar): string {
+  return `${tuid}_${toYYYYMMDD(calendar.runsFrom)}_${toYYYYMMDD(calendar.runsTo)}`;
+}
+
+/**
  * A CIF schedule (BS record)
  */
 export class Schedule implements OverlayRecord {
@@ -26,7 +37,7 @@ export class Schedule implements OverlayRecord {
   ) {}
   
   public get tripId(): string {
-    return `${this.tuid}_${toYYYYMMDD(this.calendar.runsFrom)}_${toYYYYMMDD(this.calendar.runsTo)}`
+    return tripId(this.tuid, this.calendar);
   }
 
   public get origin(): CRS {
@@ -37,17 +48,15 @@ export class Schedule implements OverlayRecord {
     return this.stopTimes[this.stopTimes.length - 1].stop_id;
   }
 
-  public get hash(): string {
-    return this.tuid + this.stopTimes.map(s => s.stop_id + s.departure_time + s.arrival_time).join("") + this.calendar.binaryDays;
-  }
-
   /**
-   * Clone the current record with the new calendar and id
+   * Clone the current record with the new calendar and id.
+   *
+   * The stop times are copied because callers shift the times of a clone in place.
    */
-  public clone(calendar: ScheduleCalendar, scheduleId: number): this {
+  public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
     return new Schedule(
       scheduleId,
-      this.stopTimes,
+      this.stopTimes.map(st => Object.assign({}, st)),
       this.tuid,
       this.rsid,
       calendar,
@@ -56,7 +65,7 @@ export class Schedule implements OverlayRecord {
       this.stp,
       this.firstClassAvailable,
       this.reservationPossible
-    ) as this;
+    );
   }
 
   /**

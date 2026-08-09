@@ -5,22 +5,42 @@ import {Schedule} from "../native/Schedule";
  * Flatten the index into a list of schedules, ensuring that there are no duplicate trip IDs
  */
 export function mergeSchedules(schedulesByTuid: ScheduleIndex): Schedule[] {
-  const schedulesByTripId: { [tripId: string]: Schedule } = {};
+  const schedulesByTripId = new Map<string, Schedule>();
 
-  for (const tuid in schedulesByTuid) {
-    if (schedulesByTuid.hasOwnProperty(tuid)) {
-      for (const schedule of schedulesByTuid[tuid]) {
-        const tripId = schedule.tripId;
-        if (schedulesByTripId[tripId] !== undefined) {
-          throw new Error(`Duplicate trip_id ${tripId} detected. This should not happen. Please file a bug report.`);
-        }
-        if (schedule.stopTimes.length && schedule.stopTimes[0].trip_id !== tripId) {
-          throw new Error(`The trip_id of the stop times do not match the trip_id for trip ${tripId}. This should not happen. Please file a bug report.`);
-        }
-        schedulesByTripId[tripId] = schedule;
+  for (const schedules of Object.values(schedulesByTuid)) {
+    for (const schedule of schedules) {
+      let tripId = schedule.tripId;
+
+      // the same two trains may be associated more than once over the same dates
+      for (let occurrence = 2; schedulesByTripId.has(tripId); occurrence++) {
+        tripId = `${schedule.tripId}_${occurrence}`;
       }
+
+      schedulesByTripId.set(tripId, withTripId(schedule, tripId));
     }
   }
 
-  return Object.values(schedulesByTripId);
+  return [...schedulesByTripId.values()];
+}
+
+/**
+ * Point the schedule's stop times at the given trip ID so that stop_times.txt joins to trips.txt
+ */
+function withTripId(schedule: Schedule, tripId: string): Schedule {
+  if (schedule.stopTimes.length === 0 || schedule.stopTimes[0].trip_id === tripId) {
+    return schedule;
+  }
+
+  return new Schedule(
+    schedule.id,
+    schedule.stopTimes.map(st => Object.assign({}, st, { trip_id: tripId })),
+    schedule.tuid,
+    schedule.rsid,
+    schedule.calendar,
+    schedule.mode,
+    schedule.operator,
+    schedule.stp,
+    schedule.firstClassAvailable,
+    schedule.reservationPossible
+  );
 }

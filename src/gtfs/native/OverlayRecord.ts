@@ -5,9 +5,8 @@ export interface OverlayRecord {
   stp: STP;
   id: number;
   tuid: TUID;
-  hash: string;
 
-  clone(calendar: ScheduleCalendar, scheduleId: number): this;
+  clone(calendar: ScheduleCalendar, scheduleId: number): OverlayRecord;
 }
 
 
@@ -15,9 +14,9 @@ export type TUID = string;
 export type RSID = string;
 
 export enum STP {
-  Permanent = "Previous",
+  Permanent = "P",
   Overlay = "O",
-  New = "Next",
+  New = "N",
   Cancellation = "C"
 }
 

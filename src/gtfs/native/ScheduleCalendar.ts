@@ -5,8 +5,6 @@ import {CalendarDate} from "../file/CalendarDate";
 import {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./PlainDate";
 
 export class ScheduleCalendar {
-  public static readonly SHORT_OVERLAY_LENGTH = 7;
-
   constructor(
     public readonly runsFrom: Temporal.PlainDate,
     public readonly runsTo: Temporal.PlainDate,

@@ -1,11 +1,10 @@
 import {IdGenerator, STP} from "../native/OverlayRecord";
-import {Schedule} from "../native/Schedule";
+import {Schedule, tripId} from "../native/Schedule";
 import {RouteType} from "../file/Route";
-import {ScheduleCalendar} from "../native/ScheduleCalendar";
+import {NO_DAYS, ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
 import {agencies} from "../../../config/gtfs/agency";
-import {toYYYYMMDD} from "../native/PlainDate";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
@@ -20,7 +19,11 @@ export class ScheduleBuilder {
   private maxId: number = 0;
 
   private getTripId(row: ScheduleStopTimeRow) {
-    return `${row.train_uid}_${toYYYYMMDD(Temporal.PlainDate.from(row.runs_from))}_${toYYYYMMDD(Temporal.PlainDate.from(row.runs_to))}`;
+    return tripId(row.train_uid, new ScheduleCalendar(
+      Temporal.PlainDate.from(row.runs_from),
+      Temporal.PlainDate.from(row.runs_to),
+      NO_DAYS
+    ));
   }
 
   /**

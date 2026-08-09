@@ -1,11 +1,11 @@
 
-import {Schedule} from "./Schedule";
+import {Schedule, tripId as tripIdFor} from "./Schedule";
 import {NO_DAYS, OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
 import {CRS, Stop} from "../file/Stop";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../file/StopTime";
-import {Duration, formatDuration, parseDuration, SECONDS_IN_DAY} from "./Duration";
-import {compare, maxDate, minDate, toYYYYMMDD} from "./PlainDate";
+import {formatDuration, parseDuration, SECONDS_IN_DAY} from "./Duration";
+import {maxDate, minDate} from "./PlainDate";
 
 export class Association implements OverlayRecord {
 
@@ -21,11 +21,7 @@ export class Association implements OverlayRecord {
   ) { }
 
   public get tuid(): TUID {
-    return this.baseTUID + "_" + this.assocTUID + "_";
-  }
-
-  public get hash(): string {
-    return this.tuid + this.assocLocation + this.calendar.binaryDays;
+    return this.baseTUID + "_" + this.assocTUID + "_" + this.assocLocation;
   }
 
   /**
@@ -109,8 +105,11 @@ export class Association implements OverlayRecord {
         NO_DAYS,
         {...calendar.excludeDays, ...thisCalendar.excludeDays}
     );
-    if (newCalendar === null) return null;
-    const tripId = `${tuid}_${toYYYYMMDD(newCalendar.runsFrom)}_${toYYYYMMDD(newCalendar.runsTo)}`;
+    if (newCalendar.isEmpty) {
+      return null;
+    }
+
+    const tripId = tripIdFor(tuid, newCalendar);
 
     const stops = [
       ...start.map(s => this.cloneStop(s, stopSequence++, tripId, false)),
@@ -125,10 +124,7 @@ export class Association implements OverlayRecord {
       tuid,
       assoc.rsid,
       // only take the part of the schedule that the association applies to
-      calendar.clone(
-        maxDate(this.calendar.runsFrom, calendar.runsFrom),
-        minDate(this.calendar.runsTo, calendar.runsTo)
-      ),
+      newCalendar,
       assoc.mode,
       assoc.operator,
       assoc.stp,
