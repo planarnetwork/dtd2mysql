@@ -87,7 +87,6 @@ apps/
   dtd2gtfs/
 libs/
   feed-parser/
-  feed-storage/
   dtd-schema/
   dtd-source/
   gtfs/
@@ -109,43 +108,41 @@ moving anything, but is not built in this pass.
 ```
 libs/feed-parser        →  (none)
 libs/dtd-schema         →  feed-parser
-libs/feed-storage       →  feed-parser
 libs/dtd-source         →  feed-parser, dtd-schema, gtfs
 libs/gtfs               →  (none)
 libs/gtfs-output        →  gtfs
 libs/enrich-*           →  gtfs
 
-apps/dtd2mysql          →  feed-parser, dtd-schema, feed-storage, dtd-source, gtfs, gtfs-output
+apps/dtd2mysql          →  feed-parser, dtd-schema, dtd-source, gtfs, gtfs-output
 apps/dtd2gtfs           →  dtd-source, gtfs, gtfs-output, enrich-*
 apps/website            →  (none; consumes build artifacts)
 ```
 
 Libs never depend on apps.
 
-### Decision: `feed-storage` abstracts import, not query
+### Decision: leave the storage layer alone
 
-- `libs/feed-storage` exports `Storage` — `createSchema(record)`, `dropSchema(record)`,
-  `bulkLoad(table): Writable`, `recordProcessedFile(name)` — plus the storage-agnostic `ImportFeed`
-  orchestration lifted from `ImportFeedCommand`.
-- `apps/dtd2mysql` owns the `Storage` implementation **and** its own `TimetableSource` SQL.
+There is **no `libs/feed-storage`**, and the import path is not restructured in this pass.
+`ImportFeedCommand`, `MySQLSchema`, `MySQLTable`, `MySQLStream` and `DatabaseConnection` all stay
+where they are, moving into `apps/dtd2mysql` unchanged when the app is assembled.
 
-With one backend this is not a portability layer, and it should not be justified as one. It earns
-its place on two grounds that hold with a single implementation:
+A database-agnostic patch for this area is coming from someone else. Refactoring the same files
+concurrently would produce a conflict that is expensive to resolve and, worse, impossible to review
+honestly — a rebase across a moved, split and renamed storage layer gives no way to tell an
+intentional behaviour change from one introduced by the merge.
 
-**Cohesion.** `ImportFeedCommand` currently mixes two unrelated concerns: feed sequencing (full
-refresh versus incremental, the `CFA`/`lastScheduleId` special case, dispatching files by extension)
-and MySQL mechanics (DDL generation from `Record` definitions, buffered inserts, `LOAD DATA`). The
-first is about the DTD feed format and has nothing to do with SQL. Splitting them is worth doing
-whether or not a second backend ever appears.
+So the sequencing is inverted: **the incoming patch lands first, then anything here builds on
+whatever abstraction it introduces.** Designing a `Storage` interface now would either duplicate
+that work or actively conflict with it.
 
-**Testability.** The seam is what T6b asserts against, and it lets `ImportFeed` be exercised with a
-fake `Storage` rather than a live database — which matters because today *no* test touches a real
-database at all.
+This changes what the plan owes that patch rather than removing work. **T6b becomes the priority,
+and it is useful to the patch author, not just to us**: import each feed, fingerprint all 80 tables,
+assert the fingerprints are unchanged. That is exactly the evidence a database-agnostic rewrite
+needs, and the baseline for it already exists. Build it early, independently of the restructure, and
+hand it over.
 
-What it explicitly does **not** do is abstract the read side. The SQL in `CIFRepository` is
-hand-written MySQL — `IF()`, `POSITION()`, `CONCAT()`, `INTERVAL ${range}` — and making that
-portable would mean a query builder or dialect layer. When #116 is picked up, each backend writes
-its own `TimetableSource` queries. Nobody builds an ORM.
+The read side is untouched by all of this. `CIFRepository`'s hand-written MySQL is replaced by
+`TimetableSource` in C1, which is a different file and a different concern.
 
 ### Decision: `libs/gtfs` owns the domain and the interfaces
 
@@ -226,9 +223,7 @@ PnP buys nothing here.
 |---|---|
 | `src/feed/**` | `libs/feed-parser/src/` |
 | `config/{fares,timetable,routeing,nfm64}/**` | `libs/dtd-schema/src/` |
-| `src/database/DatabaseConnection.ts` | `libs/feed-storage/src/Storage.ts` (interface only) |
-| `src/cli/ImportFeedCommand.ts` | `libs/feed-storage/src/ImportFeed.ts` (storage-agnostic) |
-| `src/database/MySQL{Schema,Table,Stream}.ts` | `apps/dtd2mysql/src/storage/` |
+| `src/database/**`, `src/cli/ImportFeedCommand.ts` | `apps/dtd2mysql/src/` — **moved verbatim, not restructured** (see §2) |
 | `src/sftp/PromiseSFTP.ts`, `src/cli/Download*.ts` | `libs/dtd-source/src/` |
 | `src/gtfs/file/**` | `libs/gtfs/src/entity/` |
 | `src/gtfs/native/**` | `libs/gtfs/src/model/` |
@@ -253,7 +248,7 @@ before this work only one of them had any defence at all:
 
 | Contract | What the restructure does to it | Guarded today |
 |---|---|---|
-| Database content after import | A4 moves `ImportFeedCommand`, `MySQLSchema`, `MySQLTable`, `MySQLStream` across a new abstraction | no |
+| Database content after import | A8 relocates `ImportFeedCommand` and `src/database/**`; an incoming patch then rewrites them | no |
 | CLI flags | `Container` dissolves into per-app composition roots | no |
 | Published package layout | `files: ["dist/src", "dist/config"]`, but `config/` becomes `libs/dtd-schema` | no |
 | Exported types | `types: ./dist/index.d.ts`; the package is imported as a library | no |
@@ -305,7 +300,8 @@ raw and content-sorted, so a change in row *ordering* can be told apart from a c
 
 An early result from this: after importing fares, routeing and nfm64, all 16 timetable table hashes
 were byte-identical to the timetable-only snapshot, with only `log` differing. The four importers
-genuinely do not touch each other's tables — an assumption A4 depends on, now with evidence.
+genuinely do not touch each other's tables — an assumption the incoming storage patch depends on,
+now with evidence.
 
 ### What is reproducible, and what is not
 
@@ -350,8 +346,9 @@ zip**, so a behaviour change appears as a readable diff in review. It must delib
 
 **Layer 3 — Import equivalence.** *The one that actually protects dtd2mysql.* Import each of the
 four feeds with pre-refactor code at a pinned commit, snapshot, repeat with refactored code, assert
-identical. This is what defends A4, and a test double cannot do it: a double proves the abstraction
-is called, not that the SQL is the same.
+identical. This is what defends the storage layer through both the move and the incoming
+database-agnostic patch, and a test double cannot do it: a double proves an abstraction is called,
+not that the SQL is the same.
 
 **Layer 4 — Full-feed GTFS.** Track A invariants — referential integrity, no `start_date >
 end_date`, monotonic times within a trip, no duplicate keys, row counts within tolerance — plus a
@@ -423,11 +420,15 @@ stops by construction and are correctly excluded. The remainder are unmeasured, 
 #80 both claim to reduce them, so a number is needed before and after. The counts feed E5's Quality
 page.
 
-**T6b · Import equivalence harness** *(depends T9, T14)*
-The Layer 3 test, and the one that actually protects dtd2mysql. Import each of the four feeds with
-pre-refactor code at a pinned commit, snapshot with `snapshot-db.sh`, repeat with the refactored
-code, assert every table hash matches. Named in A4's acceptance criteria, replacing "covered by a
-test double".
+**T6b · Import equivalence harness** *(depends T9, T14)* — **highest priority in Epic T**
+The Layer 3 test, and the one that actually protects dtd2mysql. Import each of the four feeds,
+fingerprint all 80 tables with `snapshot-db.sh`, and assert the hashes match a committed baseline.
+
+Promoted because the storage layer is about to be rewritten by an incoming database-agnostic patch
+(§2, A4). This harness is what makes that patch reviewable — it answers "did the rewrite change what
+lands in the database?" with a yes or no rather than an opinion. It is not restructure-specific and
+does not depend on any of Epic A, so it can be built now and handed to the patch author. The
+baseline it needs already exists.
 
 **T7 · Old-vs-new equivalence harness** *(depends T2, T3)*
 Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; normalised-identical
@@ -622,11 +623,14 @@ dry-run clean.
 All four feed configs moved; imports `@gb-rail/feed-parser` only. Removes the `config/` ↔ `src/`
 circularity.
 
-**A4 · Extract `@gb-rail/feed-storage`** *(depends A2)*
-Exports `Storage` and a storage-agnostic `ImportFeed`. No `mysql2` import anywhere in the package.
-The incremental-vs-full-refresh logic and the `CFA`/`lastScheduleId` special-casing preserved.
-Verified by T6b against all four feeds — every table hash identical before and after — not by a test
-double, which would prove only that the abstraction is called.
+**A4 · Extract `@gb-rail/feed-storage`** — **deferred, not in this pass**
+Blocked on an incoming database-agnostic patch to the same files. Restructuring them concurrently
+would conflict, and the merge would be unreviewable. See §2.
+
+What this pass owes instead: `src/database/**` and `ImportFeedCommand` move into
+`apps/dtd2mysql/src/` **verbatim** in A8 — a path change and nothing else, so the incoming patch
+rebases cleanly onto a rename rather than onto a rewrite. T6b is the deliverable that makes that
+patch safe to merge, and should be built before it arrives.
 
 **A5 · Extract `@gb-rail/dtd-source`** *(depends A3)*
 SFTP client and download sequencing moved. **The last-processed cursor must no longer come from the
@@ -641,9 +645,10 @@ Entities, model, transforms, build orchestrator. `agency.ts` and `station-coordi
 **A7 · Extract `@gb-rail/gtfs-output`** *(depends A6)*
 `FileOutput`, `GTFSOutput`, fixed `ZipOutput` (post-B5). Nothing else.
 
-**A8 · Assemble `apps/dtd2mysql`** *(depends A4, A5, A6, A7)*
-MySQL `Storage`, `MySqlTimetableSource`, `CleanFaresCommand`, `GTFSImportCommand`, per-app
-composition root replacing `Container`. **CLI surface byte-identical** — every flag in the README
+**A8 · Assemble `apps/dtd2mysql`** *(depends A5, A6, A7)*
+`src/database/**` and `ImportFeedCommand` moved verbatim, `MySqlTimetableSource`,
+`CleanFaresCommand`, `GTFSImportCommand`, per-app composition root replacing `Container`.
+**No logic changes to the import path** — it is a path move, reviewable as a rename. **CLI surface byte-identical** — every flag in the README
 behaves as before. Smoke test installs the tarball and runs `--help`. The two `mysql2` pools are
 resolved once in the composition root, not via `require()` inside a memoized getter;
 `Container.ts`'s dynamic requires do not survive the move.
@@ -684,9 +689,10 @@ Postgres `Storage` (DDL generation, `COPY`-based bulk load) and `PostgresTimetab
 
 Held back deliberately. Adding a second backend during the restructure would mean validating the
 `Storage` abstraction against a backend that does not exist yet, while simultaneously moving 3,500
-lines — two sources of uncertainty at once, with no way to tell which caused a failure. A4 and T6b
-establish that the MySQL import is unchanged first; only then is there a trustworthy baseline to
-hold a second implementation against.
+lines — two sources of uncertainty at once, with no way to tell which caused a failure. T6b
+establishes that the MySQL import is unchanged first; only then is there a trustworthy baseline to
+hold a second implementation against. The incoming database-agnostic patch (§2) may supersede this
+ticket entirely.
 
 Nothing in the structure has to move when it is picked up: `dtd2postgres` slots in beside
 `dtd2mysql`, implements the same two interfaces, and depends on the same libs.
@@ -893,7 +899,7 @@ only, no feed changes — a data-quality signal for the site.
 ```
 E8, T14  →  B1,B2,B4,B5,B7..B17  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
                                    ↓
-                                  A1  →  A2,A6  →  A3,A4,A5,A7  →  A8
+                                  A1  →  A2,A6  →  A3,A5,A7  →  A8
                                                                     ↓
                                                         C1  →  C2  →  C3
                                                                        ↓
@@ -907,8 +913,8 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**74 tickets** listed. B3 is absorbed into T1, B0 is done, and C4 is deferred out of this
-pass, leaving 71 in scope.
+**74 tickets** listed. B3 is absorbed into T1, B0 is done, and A4 and C4 are deferred out
+of this pass, leaving 70 in scope.
 
 ---
 
@@ -934,9 +940,12 @@ pass, leaving 71 in scope.
    release.
 4. **Tiers** — `gtfs-slim.zip` (OGL-compatible) and `gtfs-full.zip` (adds ODbL). No plain
    `gtfs.zip`; slim is the documented default (D8, E4, E5).
-5. **One storage app** — `apps/dtd2mysql` only. #116 and `dtd2postgres` are deferred until after
-   the restructure lands (C4). `libs/feed-storage` is still built, but justified on cohesion and
-   testability rather than portability — see §2. The read side is not abstracted at all.
+5. **The storage layer is not touched** — no `libs/feed-storage`, and A4 is deferred. A
+   database-agnostic patch to those files is coming from someone else, and concurrent refactoring
+   would conflict irreconcilably. `src/database/**` and `ImportFeedCommand` move into
+   `apps/dtd2mysql` verbatim so the patch rebases onto a rename. #116 and `dtd2postgres` (C4) are
+   deferred with it. T6b is promoted, because it is what makes the incoming patch reviewable — see
+   §2.
 
 ---
 
