@@ -1,7 +1,7 @@
 import AdmZip from "adm-zip";
 import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
-import {FeedConfig} from "../../config";
+import {FeedConfig} from "@gb-rail/dtd-schema";
 import {FeedFile, MultiRecordFile, RecordWithManualIdentifier} from "@gb-rail/feed-parser";
 import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";

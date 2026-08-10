@@ -11,6 +11,9 @@
   "references": [
     {
       "path": "./libs/feed-parser"
+    },
+    {
+      "path": "./libs/dtd-schema"
     }
   ]
 }

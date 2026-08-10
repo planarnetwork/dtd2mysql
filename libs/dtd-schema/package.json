@@ -1,0 +1,36 @@
+{
+  "name": "@gb-rail/dtd-schema",
+  "version": "0.0.0",
+  "description": "Declarative record layouts for the DTD fares, timetable, routeing guide and NFM64 feeds",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/dtd-schema"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@gb-rail/feed-parser": "workspace:^"
+  }
+}

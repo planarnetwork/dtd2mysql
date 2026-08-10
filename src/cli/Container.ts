@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import {CLICommand} from "./CLICommand";
 import {ImportFeedCommand} from "./ImportFeedCommand";
 import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseConnection";
-import config from "../../config";
+import config from "@gb-rail/dtd-schema";
 import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
 import {OutputGTFSCommand} from "./OutputGTFSCommand";
@@ -17,7 +17,7 @@ import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 import {GTFSImportCommand} from "./GTFSImportCommand";
-import {downloadUrl} from "../../config/nfm64";
+import {downloadUrl} from "@gb-rail/dtd-schema";
 import {DownloadFileCommand} from "./DownloadFileCommand";
 import {PromiseSFTP} from "../sftp/PromiseSFTP";
 
