@@ -2,14 +2,14 @@
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {CLICommand, processSpawnResult} from "./CLICommand";
-import {OutputGTFSCommand} from "./OutputGTFSCommand";
+import {BuildFeed} from "@gb-rail/gtfs";
 import * as fs from "fs";
 import {spawnSync} from "child_process";
 
 export class OutputGTFSZipCommand implements CLICommand {
 
   constructor(
-    private readonly command: OutputGTFSCommand
+    private readonly command: BuildFeed
   ) { }
 
   /**

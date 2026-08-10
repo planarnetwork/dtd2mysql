@@ -1,0 +1,32 @@
+{
+  "name": "@gb-rail/gtfs",
+  "version": "0.0.0",
+  "description": "GTFS entities, the GB rail transit model, the schedule transforms and the feed build",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/gtfs"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "memoized-class-decorator": "1.6.1"
+  }
+}

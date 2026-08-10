@@ -8,11 +8,9 @@ import {DatabaseConfiguration, DatabaseConnection} from "../database/DatabaseCon
 import config from "@gb-rail/dtd-schema";
 import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
-import {OutputGTFSCommand} from "./OutputGTFSCommand";
 import {CIFRepository} from "../gtfs/repository/CIFRepository";
-import {stationCoordinates} from "../../config/gtfs/station-coordinates";
+import {BuildFeed, GTFSOutput, stationCoordinates} from "@gb-rail/gtfs";
 import {FileOutput} from "../gtfs/output/FileOutput";
-import {GTFSOutput} from "../gtfs/output/GTFSOutput";
 import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
 import {DownloadCommand} from "./DownloadCommand";
 import {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
@@ -83,8 +81,8 @@ export class Container {
   }
 
   @memoize
-  private getOutputGTFSCommandWithOutput(output: GTFSOutput): OutputGTFSCommand {
-    return new OutputGTFSCommand(
+  private getOutputGTFSCommandWithOutput(output: GTFSOutput): BuildFeed {
+    return new BuildFeed(
       new CIFRepository(
         this.getDatabaseConnection(),
         this.getDatabaseStream(),
@@ -95,7 +93,7 @@ export class Container {
   }
 
   @memoize
-  private async getOutputGTFSCommand(): Promise<OutputGTFSCommand> {
+  private async getOutputGTFSCommand(): Promise<BuildFeed> {
     return this.getOutputGTFSCommandWithOutput(new FileOutput());
   }
 

@@ -2,20 +2,27 @@
 import proj4 from 'proj4';
 import {Pool} from "mysql2";
 import {DatabaseConnection} from "../../database/DatabaseConnection";
-import {Transfer} from "../file/Transfer";
-import {CRS, Stop} from "../file/Stop";
-import {ScheduleCalendar} from "../native/ScheduleCalendar";
-import {Association, AssociationType, DateIndicator} from "../native/Association";
-import {RSID, STP, TUID} from "../native/OverlayRecord";
-import {ScheduleBuilder, ScheduleResults} from "./ScheduleBuilder";
-import {RouteType} from "../file/Route";
-import {Duration} from "../native/Duration";
-import {FixedLink} from "../file/FixedLink";
+import {
+  Association,
+  AssociationType,
+  CRS,
+  DateIndicator,
+  Duration,
+  FixedLink,
+  ScheduleBuilder,
+  ScheduleCalendar,
+  ScheduleResults,
+  StationCoordinates,
+  STP,
+  Stop,
+  TimetableSource,
+  Transfer
+} from "@gb-rail/gtfs";
 
 /**
  * Provide access to the CIF/TTIS data in a vaguely GTFS-ish shape.
  */
-export class CIFRepository {
+export class CIFRepository implements TimetableSource {
 
   constructor(
     private readonly db: DatabaseConnection,
@@ -230,44 +237,6 @@ export class CIFRepository {
   }
 
 }
-
-export interface ScheduleStopTimeRow {
-  id: number,
-  train_uid: TUID,
-  retail_train_id: RSID,
-  runs_from: string,
-  runs_to: string,
-  monday: 0 | 1,
-  tuesday: 0 | 1,
-  wednesday: 0 | 1,
-  thursday: 0 | 1,
-  friday: 0 | 1,
-  saturday: 0 | 1,
-  sunday: 0 | 1,
-  stp_indicator: STP,
-  crs_code: CRS,
-  train_category: string,
-  atoc_code: string | null,
-  // stop_time.id from the LEFT JOIN in getSchedules - null when the schedule has no stop times
-  stop_id: number | null,
-  public_arrival_time: string | null,
-  public_departure_time: string | null,
-  scheduled_arrival_time: string | null,
-  scheduled_departure_time: string | null,
-  platform: string,
-  activity: string,
-  train_class: null | "S" | "B",
-  reservations: null | "R" | "S" | "A"
-}
-
-export type StationCoordinates = {
-  [crs: string]: {
-    stop_lat: number,
-    stop_lon: number,
-    stop_name: string,
-    wheelchair_boarding: 0 | 1 | 2
-  }
-};
 
 interface AssociationRow {
   id: number;
