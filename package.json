@@ -8,7 +8,7 @@
     "libs/*"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b tsconfig.build.json",
     "test": "yarn build && vitest run",
     "watch-test": "vitest",
     "start": "yarn workspace dtd2mysql run start",
