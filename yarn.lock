@@ -195,6 +195,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-rail/dtd-source@workspace:^, @gb-rail/dtd-source@workspace:libs/dtd-source":
+  version: 0.0.0-use.local
+  resolution: "@gb-rail/dtd-source@workspace:libs/dtd-source"
+  dependencies:
+    "@types/ssh2": "npm:1.15.5"
+    ssh2: "npm:1.17.0"
+  languageName: unknown
+  linkType: soft
+
 "@gb-rail/feed-parser@workspace:^, @gb-rail/feed-parser@workspace:libs/feed-parser":
   version: 0.0.0-use.local
   resolution: "@gb-rail/feed-parser@workspace:libs/feed-parser"
@@ -795,6 +804,7 @@ __metadata:
   resolution: "dtd2mysql@workspace:."
   dependencies:
     "@gb-rail/dtd-schema": "workspace:^"
+    "@gb-rail/dtd-source": "workspace:^"
     "@gb-rail/feed-parser": "workspace:^"
     "@gb-rail/gtfs": "workspace:^"
     "@types/adm-zip": "npm:0.5.8"

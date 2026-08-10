@@ -1,18 +1,11 @@
-import {CLICommand} from "./CLICommand";
-import {PromiseSFTP} from "../sftp/PromiseSFTP";
-import {DatabaseConnection} from "../database/DatabaseConnection";
+import {PromiseSFTP} from "./PromiseSFTP";
+import {FeedCursor} from "./FeedCursor";
 import { FileEntry } from "ssh2";
 
-interface LogEntry {
-  id: number,
-  filename: string | null,
-  processed: string | null,
-}
-
-export class DownloadCommand implements CLICommand {
+export class DownloadCommand {
 
   constructor(
-    private readonly db: DatabaseConnection,
+    private readonly cursor: FeedCursor,
     private readonly sftp: PromiseSFTP,
     private readonly directory: string
   ) {}
@@ -24,7 +17,7 @@ export class DownloadCommand implements CLICommand {
     const outputDirectory = argv[3] || "/tmp/";
     const [remoteFiles, lastProcessedFile] = await Promise.all([
       this.sftp.readdir(this.directory),
-      this.getLastProcessedFile()
+      this.cursor.getLastProcessedFile()
     ]);
 
     const files = this.getFilesToProcess(remoteFiles!, lastProcessedFile);
@@ -48,17 +41,6 @@ export class DownloadCommand implements CLICommand {
     this.sftp.end();
 
     return files.map(filename => outputDirectory + filename);
-  }
-
-  private async getLastProcessedFile(): Promise<string | undefined> {
-    try {
-      const [[log]] = await this.db.query<LogEntry>("SELECT * FROM log ORDER BY id DESC LIMIT 1");
-
-      return log.filename !== null ? log.filename : undefined;
-    }
-    catch (err) {
-      return undefined;
-    }
   }
 
   /**

@@ -17,6 +17,9 @@
     },
     {
       "path": "./libs/gtfs"
+    },
+    {
+      "path": "./libs/dtd-source"
     }
   ]
 }

@@ -1,12 +1,9 @@
 
-import {CLICommand} from "./CLICommand";
-import {ImportFeedCommand} from "./ImportFeedCommand";
-
-export class DownloadAndProcessCommand implements CLICommand {
+export class DownloadAndProcessCommand {
 
   constructor(
     private readonly download: FileProvider,
-    private readonly process: ImportFeedCommand
+    private readonly process: FeedProcessor
   ) {}
 
   /**
@@ -31,4 +28,14 @@ export class DownloadAndProcessCommand implements CLICommand {
 
 export interface FileProvider {
   run(args: any[]): Promise<string[]>;
+}
+
+/**
+ * Whatever consumes a downloaded feed file. The storage apps pass their
+ * ImportFeedCommand; a one-shot build passes something that never touches a
+ * database, which is the point of keeping the type structural.
+ */
+export interface FeedProcessor {
+  doImport(filename: string): Promise<any>;
+  end(): Promise<any>;
 }

@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@gb-rail/dtd-schema": "workspace:^",
+    "@gb-rail/dtd-source": "workspace:^",
     "@gb-rail/feed-parser": "workspace:^",
     "@gb-rail/gtfs": "workspace:^",
     "adm-zip": "0.6.0",

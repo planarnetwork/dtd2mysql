@@ -1,10 +1,8 @@
-import {CLICommand} from "./CLICommand";
-
 import * as http from "http";
 import * as fs from "fs";
 
 
-export class DownloadFileCommand implements CLICommand {
+export class DownloadFileCommand {
 
   constructor(private readonly url: string) {}
 
