@@ -133,14 +133,29 @@ describe("the feed the mini fixture produces", () => {
     expect(ids.length).to.equal(new Set(ids).size);
   });
 
-  it("keeps the MSN header record, which parses as a station", () => {
-    // The header line begins with A, like every station record, so it is read as
-    // one: "FILE-SPEC=05 1.00 ..." lands in the columns a station's code, name
-    // and coordinates come from. Pinned here because it is the fixture's job to
-    // hold what is wrong as well as what is right.
-    const header = columns("stops.txt").find(s => s.stop_id === "4/0");
+  it("does not read the MSN header as a station", () => {
+    // The header line begins with A, like every station record, and read as one
+    // it became stop 4/0 with a name of "F" and coordinates in the South
+    // Atlantic
+    expect(columns("stops.txt").find(s => s.stop_id === "4/0")).to.equal(undefined);
+  });
 
-    expect(header?.stop_code).to.equal("PEC=05");
+  it("names a trip after where it is going", () => {
+    const trips = columns("trips.txt");
+
+    expect(trips.every(t => t.trip_headsign !== t.trip_id.split("_")[0])).to.equal(true);
+    expect(trips.some(t => t.trip_headsign.length > 3)).to.equal(true);
+  });
+
+  it("claims nothing about wheelchairs or bicycles", () => {
+    const trips = columns("trips.txt");
+
+    expect(trips.every(t => t.wheelchair_accessible === "0")).to.equal(true);
+    expect(trips.every(t => t.bikes_allowed === "0")).to.equal(true);
+  });
+
+  it("puts no platform in stop_headsign", () => {
+    expect(columns("stop_times.txt").every(s => s.stop_headsign === "")).to.equal(true);
   });
 
   it("puts a CIE station in the sea, because its eastings are zero", () => {

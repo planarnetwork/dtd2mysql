@@ -1,5 +1,5 @@
 
-import {FeedFile} from "./FeedFile";
+import {FeedFile, RecordFilter} from "./FeedFile";
 import {Record} from "../record/Record";
 
 export class SingleRecordFile implements FeedFile {
@@ -27,5 +27,3 @@ export class SingleRecordFile implements FeedFile {
     return null;
   }
 }
-
-export type RecordFilter = (line: string) => boolean;

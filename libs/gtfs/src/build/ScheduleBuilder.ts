@@ -201,7 +201,10 @@ export class ScheduleBuilder {
       departure_time: departure,
       stop_id: row.crs_code,
       stop_sequence: stopId,
-      stop_headsign: row.platform,
+      // Not the platform. stop_headsign overrides the trip headsign at a stop -
+      // it means "this service terminates here", not "platform 3". The platform
+      // belongs on a platform-level stop, which needs the station hierarchy.
+      stop_headsign: null,
       pickup_type: coordinatedDropOff || pickup,
       drop_off_type: coordinatedDropOff || dropOff,
       shape_dist_traveled: null,

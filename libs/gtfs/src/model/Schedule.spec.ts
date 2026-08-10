@@ -36,7 +36,7 @@ function stop(stopId: string, time: string): StopTime {
     departure_time: time,
     stop_id: stopId,
     stop_sequence: 1,
-    stop_headsign: "",
+    stop_headsign: null,
     pickup_type: 0,
     drop_off_type: 0,
     shape_dist_traveled: null,

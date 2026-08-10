@@ -1,6 +1,12 @@
 
 import {Record} from "../record/Record";
 
+/**
+ * True if the line is a record rather than something the file wraps its records
+ * in, such as a header or a footer.
+ */
+export type RecordFilter = (line: string) => boolean;
+
 export interface FeedFile {
 
   /**

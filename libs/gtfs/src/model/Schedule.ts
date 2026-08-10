@@ -69,17 +69,25 @@ export class Schedule implements OverlayRecord {
   }
 
   /**
-   * Convert to a GTFS Trip
+   * Convert to a GTFS Trip.
+   *
+   * The headsign is what a passenger reads on the front of the train, so it is
+   * where the train is going. `destination` is the name of the last stop, which
+   * the caller has and this does not.
+   *
+   * `wheelchair_accessible` and `bikes_allowed` are both 0, which in GTFS means
+   * "no information". Nothing in the DTD feed says otherwise, and claiming
+   * either way would be inventing an answer.
    */
-  public toTrip(serviceId: number, routeId: number): Trip {
+  public toTrip(serviceId: number, routeId: number, destination: string): Trip {
     return {
       route_id: routeId,
       service_id: serviceId,
       trip_id: this.stopTimes[0].trip_id,
-      trip_headsign: this.tuid,
+      trip_headsign: destination,
       trip_short_name: this.rsid,
       direction_id: 0,
-      wheelchair_accessible: 1,
+      wheelchair_accessible: 0,
       bikes_allowed: 0
     };
   }

@@ -10,6 +10,7 @@ import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
+import {Stop} from "../entity/Stop";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
@@ -47,7 +48,8 @@ export class BuildFeed {
     const associationsP = this.repository.getAssociations(range);
     const scheduleResultsP = this.repository.getSchedules(range);
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt", by("from_stop_id", "to_stop_id"));
-    const stopsP = this.copy(this.repository.getStops(), "stops.txt", by("stop_id"));
+    const stops = await this.repository.getStops();
+    const stopsP = this.copy(stops, "stops.txt", by("stop_id"));
     const agencyP = this.copy(agencies, "agency.txt", by("agency_id"));
     const fixedLinksP = this.copy(
       this.repository.getFixedLinks(),
@@ -68,7 +70,7 @@ export class BuildFeed {
 
     const calendarP = this.copy(calendars, "calendar.txt", by("service_id"));
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", by("service_id", "date"));
-    const tripsP = this.copyTrips(schedules, serviceIds);
+    const tripsP = this.copyTrips(schedules, serviceIds, names(stops));
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -111,7 +113,7 @@ export class BuildFeed {
   /**
    * trips.txt, stop_times.txt and routes.txt have interdependencies so they are written together
    */
-  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex): Promise<any> {
+  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex, stopNames: Map<string, string>): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
@@ -156,7 +158,13 @@ export class BuildFeed {
       .sort((a, b) => a.tripId < b.tripId ? -1 : a.tripId > b.tripId ? 1 : 0);
 
     for (const schedule of written) {
-      trips.write(schedule.toTrip(serviceIds[schedule.calendar.id], routeIds[schedule.routeShortName]));
+      const destination = stopNames.get(schedule.destination) ?? schedule.destination;
+
+      trips.write(schedule.toTrip(
+        serviceIds[schedule.calendar.id],
+        routeIds[schedule.routeShortName],
+        destination
+      ));
       schedule.stopTimes.forEach(r => stopTimes.write(r));
     }
 
@@ -182,6 +190,14 @@ export class BuildFeed {
     return schedules.filter(schedule => !schedule.calendar.isEmpty);
   }
 
+}
+
+/**
+ * Where a trip is going, by the CRS code of the stop it ends at. A stop the feed
+ * never described falls back to the code itself rather than to nothing.
+ */
+function names(stops: Stop[]): Map<string, string> {
+  return new Map(stops.map(stop => [stop.stop_id, stop.stop_name]));
 }
 
 /**

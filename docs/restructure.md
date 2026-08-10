@@ -715,11 +715,14 @@ stops and is removed in full by the existing `stopTimes.length <= 1` filter. No 
 partially truncated. All 22 originate in ZTR, which is consistent with their being replacement-bus
 placeholders. The fixture in T4 must include one so this stays true.
 
-**B13 · Platform number is in the wrong field**
-`ScheduleBuilder.createStop` sets `stop_headsign` to the platform. `stop_headsign` overrides the
-trip headsign at a stop — it means "this service terminates here", not "platform 3". Platform moves
-to `stops.platform_code` on the platform-level stop (F3), or is dropped from `stop_times` if F3 has
-not landed. Coordinate with B8, which gives `trip_headsign` a real value for the first time.
+**B13 · Platform number is in the wrong field** — **done**
+`stop_headsign` is null. It overrides the trip headsign at a stop — it means "this service
+terminates here", not "platform 3" — so with B8 giving the trip headsign a real value for the first
+time, leaving the platform there would have overridden it at every call.
+
+The platform is dropped rather than moved: `stops.platform_code` needs the station hierarchy, which
+is F3. `StopTime.stop_headsign` is typed `null` rather than `Platform`, so putting something back
+there is a deliberate act.
 
 **B14 · Calendar fragments lying entirely in the past** — **superseded by #121**
 `applyOverlays` called `ScheduleCalendar.divideAround` to split a base schedule around an overlay.

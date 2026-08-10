@@ -1,13 +1,14 @@
 
 import {Record} from "../record/Record";
-import {FeedFile} from "./FeedFile";
+import {FeedFile, RecordFilter} from "./FeedFile";
 
 export class MultiRecordFile implements FeedFile {
 
   constructor(
     public readonly records: RecordTypeMap,
     public readonly typeStart: number = 1,
-    public readonly typeLength: number = 1
+    public readonly typeLength: number = 1,
+    private readonly filter: RecordFilter | null = null
   ) { }
 
   /**
@@ -18,9 +19,14 @@ export class MultiRecordFile implements FeedFile {
   }
 
   /**
-   * Look at the characters in the given line to determine which record type is relevant
+   * Look at the characters in the given line to determine which record type is
+   * relevant, unless the file says the line is not a record at all.
    */
-  public getRecord(line: string): Record {
+  public getRecord(line: string): Record | null {
+    if (this.filter !== null && !this.filter(line)) {
+      return null;
+    }
+
     return this.records[line.substr(this.typeStart, this.typeLength)];
   }
 }

@@ -78,6 +78,13 @@ export class MySqlTimetableSource implements TimetableSource {
   public async getSchedules(range: DateRange): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+
+    if (!lastSchedule) {
+      throw new Error(
+        "The schedule table is empty, so there is no timetable to export. " +
+        "Import a timetable feed first: dtd2mysql --timetable /path/to/RJTTFxxx.ZIP"
+      );
+    }
     const window = [range.to.toString(), range.from.toString()];
 
     await Promise.all([
