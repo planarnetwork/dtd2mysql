@@ -1,10 +1,10 @@
 import {IdGenerator, STP} from "../native/OverlayRecord";
-import {Schedule} from "../native/Schedule";
+import {Schedule, tripId} from "../native/Schedule";
 import {RouteType} from "../file/Route";
-import {ScheduleCalendar} from "../native/ScheduleCalendar";
+import {NO_DAYS, ScheduleCalendar} from "../native/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "./CIFRepository";
 import {StopTime} from "../file/StopTime";
-import { agencies } from "../../../config/gtfs/agency";
+import {agencies} from "../../../config/gtfs/agency";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
@@ -17,6 +17,14 @@ const notAdvertised = "N ";
 export class ScheduleBuilder {
   private readonly schedules: Schedule[] = [];
   private maxId: number = 0;
+
+  private getTripId(row: ScheduleStopTimeRow) {
+    return tripId(row.train_uid, new ScheduleCalendar(
+      Temporal.PlainDate.from(row.runs_from),
+      Temporal.PlainDate.from(row.runs_to),
+      NO_DAYS
+    ));
+  }
 
   /**
    * Take a stream of ScheduleStopTimeRow, turn them into Schedule objects and add the result to the schedules
@@ -140,7 +148,7 @@ export class ScheduleBuilder {
     }
 
     return {
-      trip_id: row.id,
+      trip_id: this.getTripId(row),
       arrival_time: arrival,
       departure_time: departure,
       stop_id: row.crs_code,

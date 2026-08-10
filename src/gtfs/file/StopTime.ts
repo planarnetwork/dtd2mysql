@@ -2,7 +2,7 @@
 import {CRS} from "./Stop";
 
 export interface StopTime {
-  trip_id: number;
+  trip_id: string;
   arrival_time: string;
   departure_time: string;
   stop_id: CRS;

@@ -1,11 +1,11 @@
-import * as chai from "chai";
-import {describe, it, expect} from 'vitest';
+import {describe, expect, it} from 'vitest';
 import {Days, ScheduleCalendar} from "../../../src/gtfs/native/ScheduleCalendar";
 import {STP} from "../../../src/gtfs/native/OverlayRecord";
 import {StopTime} from "../../../src/gtfs/file/StopTime";
 import {Schedule} from "../../../src/gtfs/native/Schedule";
 import {CRS} from "../../../src/gtfs/file/Stop";
 import {Association, AssociationType, DateIndicator} from "../../../src/gtfs/native/Association";
+import {applyOverlays} from "../../../src/gtfs/command/ApplyOverlays";
 import {schedule} from "../command/MergeSchedules.spec";
 
 describe("Association", () => {
@@ -57,19 +57,19 @@ describe("Association", () => {
     expect(result.tuid).to.equal("A_B");
     expect(result.stopTimes[0].stop_id).to.equal("PDW");
     expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    expect(result.stopTimes[0].trip_id).to.equal(2);
+    expect(result.stopTimes[0].trip_id).to.equal("A_B_20170710_20170716");
     expect(result.stopTimes[1].stop_id).to.equal("ASH");
     expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    expect(result.stopTimes[1].trip_id).to.equal(2);
+    expect(result.stopTimes[1].trip_id).to.equal("A_B_20170710_20170716");
     expect(result.stopTimes[2].stop_id).to.equal("DOV");
     expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    expect(result.stopTimes[2].trip_id).to.equal(2);
+    expect(result.stopTimes[2].trip_id).to.equal("A_B_20170710_20170716");
     expect(result.stopTimes[3].stop_id).to.equal("A");
     expect(result.stopTimes[3].stop_sequence).to.equal(4);
-    expect(result.stopTimes[3].trip_id).to.equal(2);
+    expect(result.stopTimes[3].trip_id).to.equal("A_B_20170710_20170716");
     expect(result.stopTimes[4].stop_id).to.equal("B");
     expect(result.stopTimes[4].stop_sequence).to.equal(5);
-    expect(result.stopTimes[4].trip_id).to.equal(2);
+    expect(result.stopTimes[4].trip_id).to.equal("A_B_20170710_20170716");
   });
 
   it("applies overnight splits", () => {
@@ -181,25 +181,25 @@ describe("Association", () => {
     expect(result.tuid).to.equal("B_A");
     expect(result.stopTimes[0].stop_id).to.equal("A");
     expect(result.stopTimes[0].stop_sequence).to.equal(1);
-    expect(result.stopTimes[0].trip_id).to.equal(2);
+    expect(result.stopTimes[0].trip_id).to.equal("B_A_20170710_20170716");
     expect(result.stopTimes[1].stop_id).to.equal("B");
     expect(result.stopTimes[1].stop_sequence).to.equal(2);
-    expect(result.stopTimes[1].trip_id).to.equal(2);
+    expect(result.stopTimes[1].trip_id).to.equal("B_A_20170710_20170716");
     expect(result.stopTimes[2].stop_id).to.equal("C");
     expect(result.stopTimes[2].stop_sequence).to.equal(3);
-    expect(result.stopTimes[2].trip_id).to.equal(2);
+    expect(result.stopTimes[2].trip_id).to.equal("B_A_20170710_20170716");
     expect(result.stopTimes[3].stop_id).to.equal("DOV");
     expect(result.stopTimes[3].stop_sequence).to.equal(4);
-    expect(result.stopTimes[3].trip_id).to.equal(2);
+    expect(result.stopTimes[3].trip_id).to.equal("B_A_20170710_20170716");
     expect(result.stopTimes[4].stop_id).to.equal("ASH");
     expect(result.stopTimes[4].stop_sequence).to.equal(5);
-    expect(result.stopTimes[4].trip_id).to.equal(2);
+    expect(result.stopTimes[4].trip_id).to.equal("B_A_20170710_20170716");
     expect(result.stopTimes[5].stop_id).to.equal("PDW");
     expect(result.stopTimes[5].stop_sequence).to.equal(6);
-    expect(result.stopTimes[5].trip_id).to.equal(2);
+    expect(result.stopTimes[5].trip_id).to.equal("B_A_20170710_20170716");
     expect(result.stopTimes[6].stop_id).to.equal("TON");
     expect(result.stopTimes[6].stop_sequence).to.equal(7);
-    expect(result.stopTimes[6].trip_id).to.equal(2);
+    expect(result.stopTimes[6].trip_id).to.equal("B_A_20170710_20170716");
   });
 
   it("takes the correct departure time for joins", () => {
@@ -260,23 +260,35 @@ describe("Association", () => {
       STP.Overlay
     );
 
-    const [result, before, after, ex1, ex2] = association1.apply(base, assoc, idGenerator());
+    const [result, other] = association1.apply(base, assoc, idGenerator());
 
     expect(result.tuid).to.equal("A_B");
     expect(result.calendar.runsFrom.equals("2017-07-20")).to.equal(true);
     expect(result.calendar.runsTo.equals("2017-08-16")).to.equal(true);
-    expect(before.tuid).to.equal("B");
-    expect(before.calendar.runsFrom.equals("2017-07-10")).to.equal(true);
-    expect(before.calendar.runsTo.equals("2017-07-19")).to.equal(true);
-    expect(after.tuid).to.equal("B");
-    expect(after.calendar.runsFrom.equals("2017-08-17")).to.equal(true);
-    expect(after.calendar.runsTo.equals("2017-09-16")).to.equal(true);
-    expect(ex1.tuid).to.equal("B");
-    expect(ex1.calendar.runsFrom.equals("2017-08-01")).to.equal(true);
-    expect(ex1.calendar.runsTo.equals("2017-08-01")).to.equal(true);
-    expect(ex2.tuid).to.equal("B");
-    expect(ex2.calendar.runsFrom.equals("2017-08-05")).to.equal(true);
-    expect(ex2.calendar.runsTo.equals("2017-08-05")).to.equal(true);
+    expect(other.tuid).to.equal("B");
+    expect(other.calendar.runsFrom.equals("2017-07-10")).to.equal(true);
+    expect(other.calendar.runsTo.equals("2017-09-16")).to.equal(true);
+    expect(other.calendar.excludeDays).to.include.all.keys("20170720", "20170816");
+    expect(other.calendar.excludeDays).to.not.have.any.keys("20170801", "20170805");
+
+    expect(result.calendar.excludeDays).to.include.all.keys("20170801", "20170805");
+  });
+
+  it("keeps the stop time trip ID in step with the calendar for previous day associations", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "ASH", "12:00"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    const association1 = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Previous);
+    const [result] = association1.apply(base, assoc, idGenerator());
+
+    expect(result.stopTimes[0].trip_id).to.equal(result.tripId);
   });
 
   it("does not create a copy of the associated schedule for dates when it does not run", () => {
@@ -344,12 +356,35 @@ describe("Association", () => {
     expect(results[0].calendar.isEmpty).to.equal(false);
   });
 
+
+  it("cancels only the association at the location the cancellation names", () => {
+    const calendar = new ScheduleCalendar(
+      Temporal.PlainDate.from("2026-12-14"), Temporal.PlainDate.from("2027-05-13"), ALL_DAYS
+    );
+
+    const divideAtBarnham = new Association(
+      1, "A", "B", "BAA", DateIndicator.Same, AssociationType.Split, calendar, STP.Permanent
+    );
+    const divideAtHorsham = new Association(
+      2, "A", "B", "HRH", DateIndicator.Same, AssociationType.Split, calendar, STP.Permanent
+    );
+    const cancelAtBarnham = new Association(
+      3, "A", "B", "BAA", DateIndicator.Same, AssociationType.NA, calendar, STP.Cancellation
+    );
+
+    const index = applyOverlays([divideAtBarnham, divideAtHorsham, cancelAtBarnham]);
+    const surviving = Object.values(index).flat();
+
+    expect(surviving).to.have.length(1);
+    expect(surviving[0].assocLocation).to.equal("HRH");
+  });
+
 });
 
 const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 const WEEKDAYS: Days = { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 0 };
 
-function stop(stopSequence: number, location: CRS, time: string, tripId: number = 1): StopTime {
+function stop(stopSequence: number, location: CRS, time: string, tripId: string = "Z00000_20270101_20270101"): StopTime {
   return {
     trip_id: tripId,
     arrival_time: time,

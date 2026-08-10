@@ -1,12 +1,22 @@
-
 import {StopTime} from "../file/StopTime";
-import {OverlapType, ScheduleCalendar} from "./ScheduleCalendar";
+import {ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../file/Trip";
 import {Route, RouteType} from "../file/Route";
 import {AgencyID} from "../file/Agency";
 import {CRS} from "../file/Stop";
-import {IdGenerator, OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
-import memoize from "memoized-class-decorator";
+import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
+import {toYYYYMMDD} from "./PlainDate";
+
+/**
+ * The identifier for a trip, stable across data revisions.
+ *
+ * The STP indicator is deliberately left out, so that when an overlay covering a whole permanent
+ * schedule is withdrawn the trip keeps its ID and reads as an amended timetable rather than one
+ * trip disappearing and another appearing.
+ */
+export function tripId(tuid: TUID, calendar: ScheduleCalendar): string {
+  return `${tuid}_${toYYYYMMDD(calendar.runsFrom)}_${toYYYYMMDD(calendar.runsTo)}`;
+}
 
 /**
  * A CIF schedule (BS record)
@@ -25,6 +35,10 @@ export class Schedule implements OverlayRecord {
     public readonly firstClassAvailable: boolean,
     public readonly reservationPossible: boolean
   ) {}
+  
+  public get tripId(): string {
+    return tripId(this.tuid, this.calendar);
+  }
 
   public get origin(): CRS {
     return this.stopTimes[0].stop_id;
@@ -34,17 +48,15 @@ export class Schedule implements OverlayRecord {
     return this.stopTimes[this.stopTimes.length - 1].stop_id;
   }
 
-  public get hash(): string {
-    return this.tuid + this.stopTimes.map(s => s.stop_id + s.departure_time + s.arrival_time).join("") + this.calendar.binaryDays;
-  }
-
   /**
-   * Clone the current record with the new calendar and id
+   * Clone the current record with the new calendar and id.
+   *
+   * The stop times are copied because callers shift the times of a clone in place.
    */
   public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
     return new Schedule(
       scheduleId,
-      this.stopTimes.map(st => Object.assign({}, st, { trip_id: scheduleId })),
+      this.stopTimes.map(st => Object.assign({}, st)),
       this.tuid,
       this.rsid,
       calendar,
@@ -63,7 +75,7 @@ export class Schedule implements OverlayRecord {
     return {
       route_id: routeId,
       service_id: serviceId,
-      trip_id: this.id,
+      trip_id: this.stopTimes[0].trip_id,
       trip_headsign: this.tuid,
       trip_short_name: this.rsid,
       direction_id: 0,

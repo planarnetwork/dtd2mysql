@@ -118,8 +118,8 @@ export class OutputGTFSCommand implements CLICommand {
   }
 
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults): Schedule[] {
-    const processedAssociations = <AssociationIndex>applyOverlays(associations);
-    const processedSchedules = <ScheduleIndex>applyOverlays(scheduleResults.schedules, scheduleResults.idGenerator);
+    const processedAssociations: AssociationIndex = applyOverlays(associations);
+    const processedSchedules: ScheduleIndex = applyOverlays(scheduleResults.schedules);
     const associatedSchedules = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
     const mergedSchedules = <Schedule[]>mergeSchedules(associatedSchedules);
     const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
