@@ -206,6 +206,46 @@ describe("BuildFeed ordering", () => {
     expect(ids).to.deep.equal([...ids].sort());
   });
 
+  it("orders rows the declared key leaves tied, rather than leaving them as they arrived", async () => {
+    // Two links between the same pair, same mode, same dates, same start time,
+    // differing only in the days they run - which is 1,276 rows of the real feed
+    const weekday = {...link("TON", "SEV"), saturday: 0 as const, sunday: 0 as const};
+    const weekend = {...link("TON", "SEV"), monday: 0 as const, tuesday: 0 as const,
+                     wednesday: 0 as const, thursday: 0 as const, friday: 0 as const};
+
+    const forwards = await build(new FakeSource(feed(), [], [], [weekday, weekend]));
+    const backwards = await build(new FakeSource(feed(), [], [], [weekend, weekday]));
+
+    expect(backwards.files["links.txt"]).to.deep.equal(forwards.files["links.txt"]);
+  });
+
+  it("puts a null ahead of a value rather than wherever it was found", async () => {
+    const named = stop("SEV");
+    const unnamed = {...stop("TON"), stop_id: null as unknown as string};
+
+    const forwards = await build(new FakeSource(feed(), [named, unnamed]));
+    const backwards = await build(new FakeSource(feed(), [unnamed, named]));
+
+    expect(forwards.files["stops.txt"].map(s => s.stop_id)).to.deep.equal([null, "SEV"]);
+    expect(backwards.files["stops.txt"]).to.deep.equal(forwards.files["stops.txt"]);
+  });
+
+  it("describes a route the same way whichever of its trips is seen first", async () => {
+    // Two trips on one route disagreeing about first class, which 352 routes in
+    // the real feed do
+    const standard = schedule(1, "C00001", "2024-01-01", "2024-02-01", "SE", ["TON", "SEV"]);
+    const first = new Schedule(
+      2, standard.stopTimes, "C00002", "", standard.calendar,
+      standard.mode, standard.operator, standard.stp, false, false
+    );
+
+    const forwards = await build(new FakeSource([standard, first]));
+    const backwards = await build(new FakeSource([first, standard]));
+
+    expect(backwards.files["routes.txt"]).to.deep.equal(forwards.files["routes.txt"]);
+    expect(forwards.files["routes.txt"].length).to.equal(1);
+  });
+
   it("produces the same feed whatever order the source returns the schedules in", async () => {
     const forwards = await build(new FakeSource(feed()));
     const backwards = await build(new FakeSource(feed().reverse()));

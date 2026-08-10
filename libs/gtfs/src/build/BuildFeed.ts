@@ -119,11 +119,24 @@ export class BuildFeed {
 
     // A trip needs a route before it can be written, and a route's number comes
     // from where its name sorts rather than from which trip reached it first.
+    //
+    // Trips on one route can disagree about the route's description - 352 of
+    // them do, over whether first class is available - because it is a property
+    // of a train being flattened onto the line it runs on. There is no right
+    // answer, so the answer is the one that sorts first rather than the one that
+    // arrived first.
     const routes = new Map<string, Route>();
 
     for (const schedule of schedules) {
-      if (schedule.stopTimes.length > 1 && !routes.has(schedule.routeShortName)) {
-        routes.set(schedule.routeShortName, schedule.toRoute());
+      if (schedule.stopTimes.length <= 1) {
+        continue;
+      }
+
+      const candidate = schedule.toRoute();
+      const chosen = routes.get(schedule.routeShortName);
+
+      if (!chosen || describes(candidate) < describes(chosen)) {
+        routes.set(schedule.routeShortName, candidate);
       }
     }
 
@@ -172,15 +185,53 @@ export class BuildFeed {
 }
 
 /**
- * Sort by the named fields, in order.
+ * Sort by the named fields, and then by everything else.
+ *
+ * The named fields say what the file is ordered by and are what the
+ * documentation quotes. The fallback is what makes the order total: a key that
+ * leaves two rows tied would leave their order to whatever the source returned,
+ * which is the thing this is here to remove. links.txt has 1,276 rows that tie
+ * on their declared key.
+ *
+ * The fallback reads the row's fields in name order rather than in the order the
+ * object was built, so two sources that build the same row differently still
+ * agree.
  */
 function by(...fields: string[]): (a: any, b: any) => number {
   return (a, b) => {
     for (const field of fields) {
-      if (a[field] < b[field]) return -1;
-      if (a[field] > b[field]) return 1;
+      const order = compare(a[field], b[field]);
+
+      if (order !== 0) {
+        return order;
+      }
     }
 
-    return 0;
+    return compare(canonical(a), canonical(b));
   };
+}
+
+/**
+ * Null sorts before everything, so a missing value has a place rather than
+ * comparing equal to whatever it is put next to.
+ */
+function compare(a: unknown, b: unknown): number {
+  if (a === b) return 0;
+  if (a === null || a === undefined) return -1;
+  if (b === null || b === undefined) return 1;
+
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * A route without its number, which is assigned later.
+ */
+function describes(route: Route): string {
+  const {route_id, ...rest} = route;
+
+  return canonical(rest);
+}
+
+function canonical(row: object): string {
+  return JSON.stringify(Object.entries(row).sort(([a], [b]) => a < b ? -1 : 1));
 }

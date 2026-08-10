@@ -14,8 +14,15 @@ exclusions.
 Every output file is now written in a declared order as well: stops by `stop_id`,
 trips by `trip_id`, stop times by `(trip_id, stop_sequence)`, and so on.
 
-**Identifiers and row order both change with this release.** The content does not:
-the same trips, calendars and stop times are present, numbered and ordered
-differently. Anything storing `route_id` or `service_id` from a previous feed has
-to re-read them - which is what GTFS expects of a dataset-internal id, but worth
-knowing before you upgrade.
+**Identifiers and row order both change with this release.** The trips, calendars
+and stop times are the same; they are numbered and ordered differently. Anything
+storing a `route_id` or `service_id` from a previous feed has to re-read them,
+which is what GTFS expects of a dataset-internal id but is worth knowing before
+you upgrade.
+
+One piece of content changes with them. `route_desc` says whether first class is
+available, which is a property of a train rather than of the line it runs on, and
+trips on the same route can disagree - **352 of the 6,184 routes do**. Whichever
+trip reached the route first used to decide it; now the description that sorts
+first does. The value was arbitrary either way, but it no longer depends on the
+order the rows came back in. Nothing else about a route changes.

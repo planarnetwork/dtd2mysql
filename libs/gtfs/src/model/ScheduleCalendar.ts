@@ -12,9 +12,18 @@ export class ScheduleCalendar {
     public readonly excludeDays: ExcludeDays = {}
   )  { }
 
+  /**
+   * What makes two calendars the same service. Service IDs are numbered from a
+   * sort of this, so it has to depend on the calendar and not on the order the
+   * exclude days were added - which is why they are sorted rather than taken in
+   * the order the object happens to hold them.
+   */
   @memoize
   public get id() {
-    return toYYYYMMDD(this.runsFrom) + toYYYYMMDD(this.runsTo) + this.binaryDays + Object.keys(this.excludeDays).join("");
+    return toYYYYMMDD(this.runsFrom)
+      + toYYYYMMDD(this.runsTo)
+      + this.binaryDays
+      + Object.keys(this.excludeDays).sort().join("");
   }
 
   @memoize

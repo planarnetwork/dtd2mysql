@@ -1,5 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {Days, OverlapType, ScheduleCalendar} from "../model/ScheduleCalendar";
+import {ALL_DAYS} from "../transform/MergeSchedules.spec";
 
 describe("ScheduleCalendar", () => {
 
@@ -139,3 +140,38 @@ function calendar(from: string, to: string, days: Days = { 0: 1, 1: 1, 2: 1, 3: 
     {}
   );
 }
+describe("ScheduleCalendar identity", () => {
+
+  it("does not depend on the order the exclude days were added", () => {
+    const days = {...ALL_DAYS};
+    const first = Temporal.PlainDate.from("2024-02-01");
+    const second = Temporal.PlainDate.from("2024-01-15");
+
+    const forwards = new ScheduleCalendar(
+      Temporal.PlainDate.from("2024-01-01"),
+      Temporal.PlainDate.from("2024-03-01"),
+      days,
+      {"20240201": first, "20240115": second}
+    );
+
+    const backwards = new ScheduleCalendar(
+      Temporal.PlainDate.from("2024-01-01"),
+      Temporal.PlainDate.from("2024-03-01"),
+      days,
+      {"20240115": second, "20240201": first}
+    );
+
+    expect(forwards.id).to.equal(backwards.id);
+  });
+
+  it("separates calendars that differ only in their exclude days", () => {
+    const range = [Temporal.PlainDate.from("2024-01-01"), Temporal.PlainDate.from("2024-03-01")] as const;
+    const day = Temporal.PlainDate.from("2024-02-01");
+
+    const excluded = new ScheduleCalendar(range[0], range[1], {...ALL_DAYS}, {"20240201": day});
+    const included = new ScheduleCalendar(range[0], range[1], {...ALL_DAYS}, {});
+
+    expect(excluded.id).to.not.equal(included.id);
+  });
+
+});
