@@ -352,8 +352,8 @@ zip**, so a behaviour change appears as a readable diff in review. It must delib
   the trip ID decision in §6.6 stays deliberate
 - a schedule cancelled **while its association is also cancelled** — the shape B18 fabricated
   service from
-- **two associations for the same pair of TUIDs at different locations**, the only remaining path
-  to a duplicate trip ID
+- **two associations for the same pair of TUIDs at different locations**, one cancelled and one
+  live over the same dates (B21)
 - an all-permanent source with **overlapping records**, which `z_schedule` is and the CIF timetable
   is not (B19)
 
@@ -426,7 +426,7 @@ Track A invariants plus Track B normalised diff against the T10 baseline. Runs n
 `full-e2e` label. Runtime and peak RSS recorded per run, feeding E2's sizing and F1's targets.
 
 No defect allowlist is needed: the baseline captures current behaviour including the known bugs, so
-B7 to B20 each rebaseline under T8 as they land, and the rebaseline diff *is* the evidence the fix
+B7 to B21 each rebaseline under T8 as they land, and the rebaseline diff *is* the evidence the fix
 did what it claimed.
 
 **Instruments the discard paths.** Every place the pipeline drops data reports a count: schedules
@@ -667,7 +667,31 @@ published with drop-off permitted.
 #121 removes the merge step entirely, so each record keeps its own activities. That is also where
 its trip count increase comes from — see E2.
 
-B7 to B20 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
+**B21 · Association overlays ignore the association location** — **fixed by #121**
+CIF identifies an association by `base_uid` + `assoc_uid` + `assoc_location` + `start_date` +
+`stp_indicator`, and `applyOverlays` resolves the last two — so the key it groups by has to be the
+other three. `Association.tuid` was `base_assoc` only, one field short, so every association for a
+pair shared a bucket and each overlaid the others regardless of location.
+
+A timetable change that moves a divide is written as a cancellation at the old location plus an
+overlay at the new one, over identical dates. Both landed in one bucket, the cancellation sorted
+last and excluded every day of the overlay, and the join was lost entirely on exactly the dates the
+feed was describing it. `G26265`/`G26144` does this four times:
+
+```
+HORSHAM  2026-10-19  2026-10-22  VV  O     divide at Horsham for these dates
+BRHM     2026-10-19  2026-10-22  NULL C    and cancel Barnham for these dates
+```
+
+8 records are over-cancelled feed-wide. Adding the location to the key restores 13 date/TUID pairs
+that were emitting the two trains separately, with service days and trip count unchanged.
+
+Not every cancellation pairs with a substitute — `G26265`/`G26144` also cancels at Horsham on dates
+with no Horsham association in the window. Either those target records outside it, or the location
+on a `C` is sometimes incidental, in which case they should still be cancelling Barnham. Unresolved,
+and the fixture case in §3 should pin whichever reading is right.
+
+B7 to B21 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
 
 ### Epic A — Monorepo migration
@@ -967,7 +991,7 @@ only, no feed changes — a data-quality signal for the site.
 ## 5. Sequencing
 
 ```
-E8, T14  →  B1,B2,B4,B5,B7..B20  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
+E8, T14  →  B1,B2,B4,B5,B7..B21  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
                                    ↓
                                   A1  →  A2,A6  →  A3,A5,A7  →  A8
                                                                     ↓
@@ -983,8 +1007,8 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**77 tickets** listed. B3 is absorbed into T1, B0 is done, B14, B16, B18 and B20 are resolved by
-#121, and A4 and C4 are deferred out of this pass, leaving 69 in scope.
+**78 tickets** listed. B3 is absorbed into T1, B0 is done, B14, B16, B18, B20 and B21 are
+resolved by #121, and A4 and C4 are deferred out of this pass, leaving 69 in scope.
 
 ---
 
@@ -1028,10 +1052,9 @@ parallel by different people without touching the core.
    `UNIQUE KEY (train_uid, runs_from, stp_indicator)`, and no `train_uid` appears in both, so two
    base schedules can only share an id when a permanent and an overlay share a date range — and the
    overlay supersedes the permanent, so one of them drops out. The only path that can still collide
-   is two associations for the same pair of TUIDs over the same dates, which exists in the feed but
-   is defective data: `P55949`/`P55776` are recorded as dividing at both Horsham and Barnham, and a
-   pair divides once. `mergeSchedules` suffixes rather than throwing, so bad data cannot fail a
-   build.
+   is two associations for the same pair of TUIDs live over the same dates, and a pair divides once,
+   so the feed always cancels one: there are no uncancelled multi-location overlaps. `mergeSchedules`
+   suffixes rather than throwing anyway, so bad data cannot fail a build.
 
 ---
 
