@@ -89,7 +89,7 @@ export class MySqlTimetableSource implements TimetableSource {
         SELECT crs_code, tiploc_code, station_name, cate_interchange_status, easting, northing
         FROM (
           SELECT *, ROW_NUMBER() OVER (
-            PARTITION BY crs_code ORDER BY cate_interchange_status <=> 9
+            PARTITION BY crs_code ORDER BY cate_interchange_status <=> 9, tiploc_code
           ) AS preference
           FROM physical_station
           WHERE crs_code IS NOT NULL

@@ -946,32 +946,62 @@ ids and let the unique keys carry the identity. It moves the T10 baseline, so it
 T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
 racing.
 
-**B23 · Preserve the platform as a producer extension column** *(depends B13)*
+**B23 · Platforms as child stops** *(depends B13)* — *supersedes the extension-column approach*
 
 B13 took the platform out of `stop_headsign` and nothing carries it, so the export loses a field the
 feed supplies. The data is not gone — `stop_time.platform` in the database, the `LI`/`LO`/`LT`
-records in the CIF — only the GTFS output drops it. **3,823 distinct station-platform pairs across
-1,314 stations.**
+records in the CIF — only the GTFS output drops it.
 
-GTFS has no platform field on `stop_times.txt`, and the spec's model for platforms is a stop:
-`location_type=0` with a `parent_station` and a `platform_code`. That is F3, and it is not an
-acceptable answer here — it takes `stops.txt` from 3,109 rows to roughly 6,932 and breaks every
-consumer that joins on a three-letter code unless it walks `parent_station`.
+This was first planned as a producer extension column on `stop_times.txt`, on the grounds that it
+cost one column and fragmented nothing. That was the wrong call. The
+[stops.txt best practices](https://gtfs.org/documentation/schedule/schedule-best-practices/#stopstxt)
+are explicit that a station with multiple boarding facilities should be described with the types the
+spec already has:
 
-So: a **producer extension column `platform_code` on `stop_times.txt`**. The spec allows producers
-to add fields it does not define and requires consumers to ignore columns they do not recognise, so
-this costs one column, keeps one row per stop time, fragments nothing, and gives anyone who wants
-platforms a direct read.
+> Many stations or terminals have multiple boarding facilities...feed producers should describe
+> stations, boarding facilities (also called child stops), and their relation.
 
-Two alternatives rejected. `stop_headsign` is B13's whole point — it means "this service terminates
-here", and with B8 putting a real destination in `trip_headsign` a platform there would override it
-at every call. A bespoke `platforms.txt` keyed by trip and sequence is the same column behind a
-join, and B2 is deleting `links.txt` precisely to stop shipping files nobody reads.
+A station is `location_type=1`; each boarding facility is `location_type=0` with `parent_station`
+pointing at it; and the child's name should identify both — their example is "Chicago Union Station"
+with a child "Chicago Union Station Platform 19". A non-standard column expresses none of that, and
+every consumer would need bespoke code to read it. A child stop is understood by everything.
 
-Being honestly non-standard in a column with no defined meaning beats misusing a field that has one.
-The column survives F3 as the station-level fallback, since F3 ships behind a flag with CRS-only
-stops as the default for at least one release. Golden fixture asserts the column, so B13's removal
-and this restoration are both visible in the diff.
+| | station row | platform row |
+|---|---|---|
+| `stop_id` | `PAD` | `PAD_A` |
+| `stop_code` | TIPLOC (until F3 swaps it for CRS) | same |
+| `stop_name` | London Paddington | London Paddington Platform A |
+| `location_type` | `1` | `0` |
+| `parent_station` | — | `PAD` |
+| `platform_code` | — | `A` |
+
+`<CRS>_<platform>` needs no external data, which is what separates this from F3. The underscore
+matches the separator the trip ids already use.
+
+**What the data actually holds.** Measured on the database's public calls (4,034,934 rows, of which
+2,467,114 carry a platform) there are **3,750 station-platform pairs**. 3,705 are platform-shaped —
+`1`, `13`, `A`, `3A`, `4B`. The remaining **45 are not platforms at all**: `DF`, `UM`, `DM`, `DPL`,
+`UGL` and friends are running-line designations that describe which track a service takes, and
+turning those into boarding facilities would invent places passengers cannot stand on. So the value
+has to be filtered to `^[0-9]{1,2}[A-Z]?$|^[A-Z]$` before it becomes a stop; a call carrying anything
+else references the station. `BAY` is a real designation and is a deliberate casualty of that
+pattern — worth revisiting, not worth special-casing first time.
+
+`stops.txt` goes from 3,054 rows to roughly 6,759. Stations with no platform anywhere stay plain
+stops rather than becoming childless `location_type=1` rows.
+
+**This is a breaking change** for every consumer joining on a three-letter code, because
+`stop_times.stop_id` starts pointing at `PAD_A`. Same treatment F3 gets: behind a flag, CRS-only
+stops as the default for at least one release, and announced before the default flips.
+`transfers.txt` keeps referencing parent stations.
+
+Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying;
+a trip may reference a platform at one call and the station at the next, which is valid but should
+be visible in the fixture; and the golden should show one station gaining children so B13's removal
+and this restoration both read in the diff.
+
+`stop_headsign` stays null. It means "this service terminates here", and B8 now puts a real
+destination in `trip_headsign` for it to override.
 
 B7 to B22 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
@@ -1317,7 +1347,10 @@ months. Unblocks raising E2's horizon.
 Geometry from Network Rail GIS track centrelines (OGL). `shape_dist_traveled` populated. Behind an
 `extensions:` flag, since it materially inflates feed size.
 
-**F3 · Station and platform hierarchy** *(depends D3, D4, B13)* — **closes #69**
+**F3 · Station and platform hierarchy from NaPTAN** *(depends D3, D4, B23)* — **closes #69**
+
+B23 builds the hierarchy from the timetable alone, with `<CRS>_<platform>` ids. F3 is the upgrade
+that needs external data: real ATCO ids, station entrances, and the `stop_id`/`stop_code` swap.
 
 The current feed has `stop_id` and `stop_code` the wrong way round. GTFS defines `stop_code` as
 rider-facing text — which CRS is, since it appears on tickets and departure boards — while
@@ -1332,19 +1365,19 @@ Proposed `stops.txt`:
 
 | field | now | proposed |
 |---|---|---|
-| `stop_id` | CRS (`PAD`) | NaPTAN ATCO where available, else CRS-derived; platforms as `<station_id>:<platform>` |
+| `stop_id` | CRS (`PAD`) | NaPTAN ATCO where available, else B23's `<CRS>_<platform>` |
 | `stop_code` | TIPLOC (`PADTON`) | **CRS** (`PAD`) |
-| `platform_code` | — | platform number (new field) |
-| `location_type` | always NULL | `1` station, `0` platform, `2` entrance |
-| `parent_station` | always NULL | populated for platforms and entrances |
+| `platform_code` | B23 sets it on platforms | unchanged |
+| `location_type` | B23 sets `1` and `0` | adds `2` entrance |
+| `parent_station` | B23 sets it on platforms | adds entrances |
 | `stop_desc` | `cate_interchange_status` | free text; interchange status is already carried by `transfers.txt` |
 
 Knock-on changes: `stop_times.stop_id` references the platform stop where known, falling back to
 the station; `transfers.txt` `from_stop_id`/`to_stop_id` reference parent stations.
 
-This is a breaking change for every existing consumer joining on three-letter codes. Ship behind a
-flag with CRS-only stops as the default for at least one release, and announce the flip on the
-website before changing the default.
+B23 already broke the three-letter join and carries the flag; F3 changes the ids again, from
+`PAD_A` to the ATCO form, so it needs the same treatment rather than inheriting B23's. Do not flip
+both defaults in one release.
 
 **F4 · Splits and joins as transfers** *(depends C1)* — **closes #81**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
