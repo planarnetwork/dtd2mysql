@@ -163,8 +163,8 @@ async function getDownloadAndProcessCommand(
 /**
  * Resolve a CLI flag to the command that implements it.
  *
- * An unrecognised flag prints the help text and exits zero. That is deliberate,
- * and ticket T11 pins it.
+ * An unrecognised flag prints the help text and exits zero. That is deliberate
+ * rather than a case someone forgot.
  */
 export const getCommand = once(async (type: string): Promise<CLICommand> => {
   switch (type) {

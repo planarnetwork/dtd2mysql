@@ -43,6 +43,6 @@ export type {ScheduleResults} from "./build/ScheduleBuilder";
 // The source SPI
 export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";
 
-// Data that belongs in an enricher - ticket D7
+// Data that belongs in a source with a provenance rather than in the library
 export {agencies} from "./data/agency";
 export {stationCoordinates} from "./data/station-coordinates";
