@@ -4,6 +4,8 @@ typings/
 npm-debug.log
 dist/
 *.txt
+# the committed golden feed, which is the point of it being text
+!apps/dtd2gtfs/fixtures/**/*.txt
 *.d.ts
 *.tsbuildinfo
 

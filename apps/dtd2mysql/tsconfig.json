@@ -25,6 +25,7 @@
     }
   ],
   "exclude": [
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "**/*.spec.mts"
   ]
 }

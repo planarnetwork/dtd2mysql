@@ -54,6 +54,11 @@ yarn install
 yarn test
 ```
 
+`apps/dtd2gtfs/fixtures/mini` holds a small slice of a real feed and the GTFS it produces,
+committed as text. The test suite builds it and diffs, so a change in the feed's behaviour
+shows up in review as a readable diff rather than as a hash that moved. To take a change,
+run `UPDATE_GOLDEN=1 yarn vitest run` and read the diff before committing it.
+
 Anything that should reach a user needs a changeset: run `yarn changeset`, pick the bump
 type, and commit the file it writes. A pull request with no changeset publishes nothing,
 which is the right answer for documentation and CI changes.
