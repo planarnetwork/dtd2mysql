@@ -1,6 +1,22 @@
 # Restructure plan
 
-Status: proposal
+Status: Epic A landed; everything else proposal.
+
+**Epic A is done.** The tree is a Yarn 4 monorepo of one app and five libraries, built
+exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
+written, as decided in §2. Nothing from Epics B, C, D, E or F is in yet.
+
+The move was verified rather than asserted: `scripts/verify-against-master.sh` builds the
+feed from master and from the restructured tree against the same database on the same day
+and diffs them. Every output file is byte-identical, `--help` is unchanged, the same set
+of CLI flags is handled, and the same 119 tests exist and pass. Two consecutive runs of
+the same code on the same day are byte-identical, so that comparison distinguishes a real
+change from noise.
+
+One deliberate departure from the move map: the `GTFSOutput` *interface* lives in
+`libs/gtfs`, not `libs/gtfs-output`. The build orchestrator writes through it and the
+dependency graph runs `gtfs-output → gtfs`, so putting it in `gtfs-output` would invert
+that edge. `FileOutput` and the zip command are in `gtfs-output` as planned.
 Issues: [#119](https://github.com/planarnetwork/dtd2mysql/issues/119) (external data),
 [#115](https://github.com/planarnetwork/dtd2mysql/issues/115) (one-shot GTFS),
 [#116](https://github.com/planarnetwork/dtd2mysql/issues/116) (other databases — deferred, see C4),
@@ -696,17 +712,17 @@ it lands.
 
 ### Epic A — Monorepo migration
 
-**A1 · Bootstrap Yarn 4 workspaces**
+**A1 · Bootstrap Yarn 4 workspaces** — **done**
 `.yarnrc.yml` with `nodeLinker: node-modules`; `.yarn/releases/` committed; root manifest declares
 `apps/*` and `libs/*`; lavamoat `allowScripts` migrated to `dependenciesMeta.*.built`; root
 `tsconfig.base.json` with project references; vitest `projects`. `yarn install --immutable` and
 `yarn test` green with the tree still in its current shape.
 
-**A2 · Extract `@gb-rail/feed-parser`** *(depends A1)*
+**A2 · Extract `@gb-rail/feed-parser`** *(depends A1)* — **done**
 `src/feed/**` and its tests moved. Zero dependencies on `config/` or `src/database`. Publish
 dry-run clean.
 
-**A3 · Extract `@gb-rail/dtd-schema`** *(depends A2)*
+**A3 · Extract `@gb-rail/dtd-schema`** *(depends A2)* — **done**
 All four feed configs moved; imports `@gb-rail/feed-parser` only. Removes the `config/` ↔ `src/`
 circularity.
 
@@ -719,20 +735,20 @@ What this pass owes instead: `src/database/**` and `ImportFeedCommand` move into
 rebases cleanly onto a rename rather than onto a rewrite. T6b is the deliverable that makes that
 patch safe to merge, and should be built before it arrives.
 
-**A5 · Extract `@gb-rail/dtd-source`** *(depends A3)*
+**A5 · Extract `@gb-rail/dtd-source`** *(depends A3)* — **done**
 SFTP client and download sequencing moved. **The last-processed cursor must no longer come from the
 `log` table** — `DownloadCommand.getLastProcessedFile()` queries MySQL, which `dtd2gtfs` will not
 have. Introduce a `FeedCursor` interface with a `Storage`-backed implementation for the DB apps and
 a file or no-op implementation for one-shot.
 
-**A6 · Extract `@gb-rail/gtfs`** *(depends A1)*
+**A6 · Extract `@gb-rail/gtfs`** *(depends A1)* — **done**
 Entities, model, transforms, build orchestrator. `agency.ts` and `station-coordinates.ts` land in
 `src/data/` unchanged. **No `mysql2` dependency.** All existing gtfs tests pass untouched.
 
-**A7 · Extract `@gb-rail/gtfs-output`** *(depends A6)*
+**A7 · Extract `@gb-rail/gtfs-output`** *(depends A6)* — **done**
 `FileOutput`, `GTFSOutput`, fixed `ZipOutput` (post-B5). Nothing else.
 
-**A8 · Assemble `apps/dtd2mysql`** *(depends A5, A6, A7)*
+**A8 · Assemble `apps/dtd2mysql`** *(depends A5, A6, A7)* — **done**
 `src/database/**` and `ImportFeedCommand` moved verbatim, `MySqlTimetableSource`,
 `CleanFaresCommand`, `GTFSImportCommand`, per-app composition root replacing `Container`.
 **No logic changes to the import path** — it is a path move, reviewable as a rename. **CLI surface byte-identical** — every flag in the README
@@ -740,11 +756,11 @@ behaves as before. Smoke test installs the tarball and runs `--help`. The two `m
 resolved once in the composition root, not via `require()` inside a memoized getter;
 `Container.ts`'s dynamic requires do not survive the move.
 
-**A9 · Changesets and release pipeline** *(depends A8)*
+**A9 · Changesets and release pipeline** *(depends A8)* — **done**
 `publish.yml` replaced. `yarn workspaces foreach --topological npm publish` gated on a changeset.
 Libs public under `@gb-rail`, apps bare. Dry-run on PRs.
 
-**A10 · CI for workspaces** *(depends A1)*
+**A10 · CI for workspaces** *(depends A1)* — **done**
 `yarn install --immutable`, `.yarn/cache` cached, tests run per workspace with failures attributed
 to a package.
 
