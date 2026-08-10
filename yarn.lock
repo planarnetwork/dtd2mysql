@@ -212,6 +212,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-rail/gtfs-output@workspace:^, @gb-rail/gtfs-output@workspace:libs/gtfs-output":
+  version: 0.0.0-use.local
+  resolution: "@gb-rail/gtfs-output@workspace:libs/gtfs-output"
+  dependencies:
+    "@gb-rail/gtfs": "workspace:^"
+    "@types/csv-write-stream": "npm:2.0.3"
+    csv-write-stream: "npm:2.0.0"
+  languageName: unknown
+  linkType: soft
+
 "@gb-rail/gtfs@workspace:^, @gb-rail/gtfs@workspace:libs/gtfs":
   version: 0.0.0-use.local
   resolution: "@gb-rail/gtfs@workspace:libs/gtfs"
@@ -807,6 +817,7 @@ __metadata:
     "@gb-rail/dtd-source": "workspace:^"
     "@gb-rail/feed-parser": "workspace:^"
     "@gb-rail/gtfs": "workspace:^"
+    "@gb-rail/gtfs-output": "workspace:^"
     "@types/adm-zip": "npm:0.5.8"
     "@types/byline": "npm:4.2.36"
     "@types/csv-write-stream": "npm:2.0.3"

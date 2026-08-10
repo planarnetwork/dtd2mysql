@@ -50,6 +50,7 @@
     "@gb-rail/dtd-source": "workspace:^",
     "@gb-rail/feed-parser": "workspace:^",
     "@gb-rail/gtfs": "workspace:^",
+    "@gb-rail/gtfs-output": "workspace:^",
     "adm-zip": "0.6.0",
     "byline": "5.0.0",
     "csv-write-stream": "2.0.0",

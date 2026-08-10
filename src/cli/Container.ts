@@ -10,8 +10,7 @@ import {CleanFaresCommand} from "./CleanFaresCommand";
 import {ShowHelpCommand} from "./ShowHelpCommand";
 import {CIFRepository} from "../gtfs/repository/CIFRepository";
 import {BuildFeed, GTFSOutput, stationCoordinates} from "@gb-rail/gtfs";
-import {FileOutput} from "../gtfs/output/FileOutput";
-import {OutputGTFSZipCommand} from "./OutputGTFSZipCommand";
+import {FileOutput, OutputGTFSZipCommand} from "@gb-rail/gtfs-output";
 import {GTFSImportCommand} from "./GTFSImportCommand";
 import {downloadUrl} from "@gb-rail/dtd-schema";
 import {

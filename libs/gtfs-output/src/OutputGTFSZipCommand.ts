@@ -1,12 +1,12 @@
 
 import * as os from 'node:os';
 import * as path from 'node:path';
-import {CLICommand, processSpawnResult} from "./CLICommand";
+import {processSpawnResult} from "./processSpawnResult";
 import {BuildFeed} from "@gb-rail/gtfs";
 import * as fs from "fs";
 import {spawnSync} from "child_process";
 
-export class OutputGTFSZipCommand implements CLICommand {
+export class OutputGTFSZipCommand {
 
   constructor(
     private readonly command: BuildFeed
