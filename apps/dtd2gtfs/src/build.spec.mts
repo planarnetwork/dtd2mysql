@@ -23,7 +23,6 @@ const TODAY = "2026-08-10";
 let built: string;
 
 const feed = (file: string) => fs.readFileSync(path.join(built, file), "utf8");
-const rows = (file: string) => feed(file).split("\n").filter(line => line !== "").slice(1);
 const columns = (file: string) => {
   const lines = feed(file).split("\n").filter(line => line !== "");
   const names = lines[0].split(",");

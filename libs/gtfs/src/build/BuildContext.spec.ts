@@ -52,9 +52,15 @@ describe("buildContext", () => {
   const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
 
   it("defaults to three months from the current date", () => {
+    // Read either side of the call rather than compared to a single reading, so
+    // a run that crosses midnight sees the date it started with or the one it
+    // ended with and not a mismatch. vi.setSystemTime cannot help here: it moves
+    // Date and leaves Temporal.Now on the real clock.
+    const before = Temporal.Now.plainDateISO().toString();
     const context = buildContext(argv(), {});
+    const after = Temporal.Now.plainDateISO().toString();
 
-    expect(context.today.toString()).to.equal(Temporal.Now.plainDateISO().toString());
+    expect([before, after]).to.contain(context.today.toString());
     expect(context.range.months).to.equal(3);
   });
 
