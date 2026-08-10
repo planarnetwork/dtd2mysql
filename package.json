@@ -4,13 +4,16 @@
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "packageManager": "yarn@4.18.0",
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
   "files": [
     "dist/src",
     "dist/config"
   ],
-  "bin": {
-    "dtd2mysql": "bin/dtd2mysql.sh"
-  },
+  "bin": "bin/dtd2mysql.sh",
   "scripts": {
     "test": "vitest run",
     "watch-test": "vitest",
@@ -60,8 +63,12 @@
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },
-  "allowScripts": {
-    "ssh2@1.17.0": true,
-    "esbuild@0.28.1": true
+  "dependenciesMeta": {
+    "esbuild@0.28.2": {
+      "built": true
+    },
+    "ssh2@1.17.0": {
+      "built": true
+    }
   }
 }

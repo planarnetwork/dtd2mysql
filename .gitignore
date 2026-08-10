@@ -5,6 +5,15 @@ npm-debug.log
 dist/
 *.txt
 *.d.ts
+*.tsbuildinfo
+
+# Yarn 4 (Berry). The release bundle is committed so every checkout, including
+# CI, runs the same yarn; everything else it writes is generated.
+.yarn/*
+!.yarn/releases
+!.yarn/patches
+!.yarn/plugins
+.pnp.*
 
 # local e2e baseline work (feeds, snapshots, credentials)
 .env.local
