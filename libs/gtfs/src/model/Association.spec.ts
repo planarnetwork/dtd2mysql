@@ -46,10 +46,10 @@ describe("Association", () => {
     ]);
 
     const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "ASH", "12:05", 2),
-      stop(3, "DOV", "13:00", 2),
-      stop(5, "A", "13:20", 2),
-      stop(7, "B", "13:40", 2),
+      stop(1, "ASH", "12:05"),
+      stop(3, "DOV", "13:00"),
+      stop(5, "A", "13:20"),
+      stop(7, "B", "13:40"),
     ]);
 
     const [result] = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator());
@@ -169,11 +169,11 @@ describe("Association", () => {
     ]);
 
     const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "A", "10:00", 2),
-      stop(3, "B", "10:20", 2),
-      stop(5, "C", "10:40", 2),
-      stop(7, "DOV", "11:00", 2),
-      stop(9, "ASH", "11:55", 2),
+      stop(1, "A", "10:00"),
+      stop(3, "B", "10:20"),
+      stop(5, "C", "10:40"),
+      stop(7, "DOV", "11:00"),
+      stop(9, "ASH", "11:55"),
     ]);
 
     const [result] = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator());

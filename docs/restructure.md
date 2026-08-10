@@ -579,9 +579,20 @@ minor version, then removed. `config/gtfs/import.ts` updated. Blocks E2.
 **B4 · Handle an empty `schedule` table**
 Clear error naming the missing import step instead of `TypeError`.
 
-**B5 · Remove the zip race**
+**B5 · Remove the zip race** — **done**
 Zip written after awaited stream completion, in-process (`adm-zip`/`yazl`) rather than shelling out.
 No `setTimeout`. `run()` resolves only when the zip exists.
+
+The race was worse than it read. `FileOutput` piped a CSV writer into a file and the build awaited
+the *writer*, which finishes when it has handed on its last row, not when the row is on disk - which
+is what the `// when node tells you it's finished writing a file, it's lying` comment was working
+around. One second was not enough for a 164 MB `stop_times.txt`: taking the sleep out and zipping
+immediately produced an archive **60,885 bytes short**, silently. `FileOutput.end` now awaits the
+destination streams rather than the writers, and `BuildFeed` awaits every copy before asking the
+output whether it has finished, because `copy` only opens its file once its query returns.
+
+So `--gtfs-zip` has been capable of publishing a truncated feed whenever the flush outran the sleep.
+The directory output was never affected: the process stays alive until the streams drain.
 
 **B6 · GTFS validator in CI** *(depends B1, B2)*
 The mini fixture builds a feed in CI and runs the MobilityData `gtfs-validator` jar. Fails on any
@@ -1133,7 +1144,7 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**79 tickets** listed (B22 was found while building C2). B3 is absorbed into T1, B0 is done, B14, B16, B18, B20 and B21 are
+**79 tickets** listed (B22 was found while building C2). B3 is absorbed into T1, B0 and B5 are done, B14, B16, B18, B20 and B21 are
 resolved by #121, and A4 and C4 are deferred out of this pass, leaving 69 in scope.
 
 ---

@@ -35,6 +35,9 @@ jobs:
       # tsc -b walks the project references in dependency order, so a type error
       # is reported against the package that contains it.
       - run: yarn build
+      # The build excludes the specs so they do not reach dist, which also means
+      # nothing type checks them. This does.
+      - run: yarn typecheck
       # Each workspace is a vitest project named after its package, so a failure
       # names the package rather than the repository.
       - run: yarn vitest run

@@ -90,3 +90,21 @@ describe("timetableFeeds", () => {
   });
 
 });
+
+describe("timetableFeeds, on a file that is not a timetable feed", () => {
+
+  it("refuses the fares feed rather than building an empty timetable", () => {
+    give("RJFAF847.ZIP");
+
+    expect(() => timetableFeeds([path.join(directory, "RJFAF847.ZIP")]))
+      .to.throw(/is not a timetable feed/);
+  });
+
+  it("refuses anything else that happens to be a zip", () => {
+    give("holiday-photos.zip");
+
+    expect(() => timetableFeeds([path.join(directory, "holiday-photos.zip")]))
+      .to.throw(/is not a timetable feed/);
+  });
+
+});

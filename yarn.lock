@@ -464,7 +464,9 @@ __metadata:
   resolution: "@gb-rail/gtfs-output@workspace:libs/gtfs-output"
   dependencies:
     "@gb-rail/gtfs": "workspace:^"
+    "@types/adm-zip": "npm:0.5.8"
     "@types/csv-write-stream": "npm:2.0.3"
+    adm-zip: "npm:0.6.0"
     csv-write-stream: "npm:2.0.0"
   languageName: unknown
   linkType: soft

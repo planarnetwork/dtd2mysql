@@ -1,9 +1,7 @@
 import config from "@gb-rail/dtd-schema";
-import {MultiRecordFile, RecordAction, RecordWithManualIdentifier, SingleRecordFile} from "@gb-rail/feed-parser";
+import {FieldValue, MultiRecordFile, RecordAction, SingleRecordFile} from "@gb-rail/feed-parser";
 import {
   Association,
-  AssociationType,
-  DateIndicator,
   DateRange,
   FixedLink,
   FixedLinkRecord,
@@ -14,7 +12,6 @@ import {
   ScheduleResults,
   ScheduleStopTimeRow,
   StationCoordinates,
-  StationRecord,
   Stop,
   STP,
   TimetableSource,
@@ -25,6 +22,7 @@ import {
 } from "@gb-rail/gtfs";
 import {FeedZip} from "./FeedZip";
 import {charColumns, MemoryTable, Row} from "./MemoryTable";
+import {additionalFixedLink, associationRow, AssociationRow, fixedLink, integer, stationRecord} from "./Rows";
 
 const timetable = config.timetable;
 
@@ -46,7 +44,7 @@ const timetable = config.timetable;
 export class CifFileSource implements TimetableSource {
 
   private reference?: Promise<Reference>;
-  private schedules?: Promise<Timetable>;
+  private schedules?: {range: DateRange, timetable: Promise<Timetable>};
 
   constructor(
     private readonly sources: string[],
@@ -60,7 +58,7 @@ export class CifFileSource implements TimetableSource {
     const {stations} = await this.loadReference();
 
     return groupByCrs(stations.rows.filter(row => row.crs_code !== null))
-      .map(row => toStop(row as unknown as StationRecord, this.stationCoordinates));
+      .map(row => toStop(stationRecord(row), this.stationCoordinates));
   }
 
   /**
@@ -77,7 +75,7 @@ export class CifFileSource implements TimetableSource {
         from_stop_id: row.crs_code as string,
         to_stop_id: row.crs_code as string,
         transfer_type: TransferType.MinTime,
-        min_transfer_time: (row.minimum_change_time as number) * 60
+        min_transfer_time: integer(row, "minimum_change_time") * 60
       }));
   }
 
@@ -94,39 +92,17 @@ export class CifFileSource implements TimetableSource {
 
     for (const row of additionalFixedLinks.rows) {
       if (known.has(String(row.origin)) && known.has(String(row.destination))) {
-        records.push({
-          mode: row.mode as string,
-          duration: (row.duration as number) * 60,
-          origin: row.origin as string,
-          destination: row.destination as string,
-          start_time: row.start_time as string,
-          end_time: row.end_time as string,
-          start_date: row.start_date as string | null,
-          end_date: row.end_date as string | null,
-          monday: row.monday, tuesday: row.tuesday, wednesday: row.wednesday,
-          thursday: row.thursday, friday: row.friday, saturday: row.saturday,
-          sunday: row.sunday
-        } as unknown as FixedLinkRecord);
+        records.push(additionalFixedLink(row));
       }
     }
 
     for (const row of fixedLinks.rows) {
       if (!covered.has(`${row.origin}${row.destination}`)) {
-        records.push({
-          mode: row.mode as string,
-          duration: (row.duration as number) * 60,
-          origin: row.origin as string,
-          destination: row.destination as string,
-          start_time: "00:00:00",
-          end_time: "23:59:59",
-          start_date: "2017-01-01",
-          end_date: "2038-01-19",
-          monday: 1, tuesday: 1, wednesday: 1, thursday: 1, friday: 1, saturday: 1, sunday: 1
-        });
+        records.push(fixedLink(row));
       }
     }
 
-    return dedupe(records, row => JSON.stringify(row)).flatMap(toFixedLinks);
+    return dedupe(records, fixedLinkKey).flatMap(toFixedLinks);
   }
 
   public async getSchedules(range: DateRange): Promise<ScheduleResults> {
@@ -149,8 +125,22 @@ export class CifFileSource implements TimetableSource {
     return this.reference ??= this.readReference();
   }
 
+  /**
+   * getSchedules and getAssociations are both asked for the same window and the
+   * feed is only read once. A second window would need a second read, so say so
+   * rather than quietly answering the first question again.
+   */
   private loadTimetable(range: DateRange): Promise<Timetable> {
-    return this.schedules ??= this.readTimetable(range);
+    this.schedules ??= {range, timetable: this.readTimetable(range)};
+
+    if (!sameRange(this.schedules.range, range)) {
+      throw new Error(
+        `This source has already been read for ${window(this.schedules.range)}; ` +
+        `it cannot also answer for ${window(range)}. Use a source per window.`
+      );
+    }
+
+    return this.schedules.timetable;
   }
 
   /**
@@ -216,13 +206,6 @@ export class CifFileSource implements TimetableSource {
     const mca = timetable["MCA"] as MultiRecordFile;
     const cfa = timetable["CFA"] as MultiRecordFile;
     const ztr = timetable["ZTR"] as MultiRecordFile;
-
-    // CFA shares MCA's record objects, which is how the schedule ids carry on
-    // from the refresh into the incrementals. Reset them so loading twice in one
-    // process assigns the same ids as loading once.
-    (mca.records["BS"] as RecordWithManualIdentifier).lastId = 0;
-    (ztr.records["BS"] as RecordWithManualIdentifier).lastId = 0;
-
     const loader = new ScheduleLoader(range, crsByTiploc);
 
     for (const source of this.sources) {
@@ -244,7 +227,7 @@ export class CifFileSource implements TimetableSource {
       }
     }
 
-    return loader.results((mca.records["BS"] as RecordWithManualIdentifier).lastId);
+    return loader.results();
   }
 
 }
@@ -263,6 +246,13 @@ class ScheduleLoader {
   private readonly associations = new MemoryTable((timetable["MCA"] as MultiRecordFile).records["AA"]);
   private readonly tiplocs = new MemoryTable((timetable["MCA"] as MultiRecordFile).records["TI"]);
   private pending: Pending | null = null;
+
+  // The importer numbers schedules in the order their BS records are parsed and
+  // skips deletions, and route_id is that number. Counting here rather than
+  // reading the parser's counter keeps the numbering to this read: the record
+  // objects are shared with every other reader in the process.
+  private scheduleId = 0;
+  private zScheduleId = 0;
 
   constructor(
     private readonly range: DateRange,
@@ -344,11 +334,11 @@ class ScheduleLoader {
     this.store();
   }
 
-  public results(maxScheduleId: number): Timetable {
+  public results(): Timetable {
     this.store();
 
     const schedules = [...this.schedules.values()].sort(byStpThenId);
-    const zTrains = [...this.zSchedules.values()].map(z => offsetId(z, maxScheduleId));
+    const zTrains = [...this.zSchedules.values()].map(z => offsetId(z, this.scheduleId));
     const all = [...schedules, ...zTrains];
     const maxId = all.reduce((max, schedule) => Math.max(max, schedule.id), 0);
 
@@ -371,6 +361,10 @@ class ScheduleLoader {
       return;
     }
 
+    // A deletion carries no id, anything else takes the next one whether or not
+    // it is kept
+    const id = zTrain ? ++this.zScheduleId : ++this.scheduleId;
+
     // INSERT IGNORE: the first record for a key wins, and the stop times that
     // follow the rejected one are orphaned and removed
     if (action === RecordAction.Insert && target.has(key)) {
@@ -381,7 +375,7 @@ class ScheduleLoader {
       return;
     }
 
-    this.pending = {key, values, extra: null, stops: [], seen: new Set(), zTrain};
+    this.pending = {key, id, values, extra: null, stops: [], seen: new Set(), zTrain};
   }
 
   /**
@@ -427,7 +421,7 @@ class ScheduleLoader {
   private scheduleRows(pending: Pending): ScheduleStopTimeRow[] {
     const {values, extra, stops} = pending;
     const common = {
-      id: values.id as number,
+      id: pending.id,
       train_uid: values.train_uid as string,
       retail_train_id: (extra?.retail_train_id ?? null) as string,
       runs_from: values.runs_from as string,
@@ -469,7 +463,7 @@ class ScheduleLoader {
   private zTrainRows(pending: Pending): ScheduleStopTimeRow[] {
     const {values, extra, stops} = pending;
     const common = {
-      id: values.id as number,
+      id: pending.id,
       // the query selects a bare `null` for this column, so it arrives undefined
       retail_train_id: undefined as unknown as string,
       train_uid: values.train_uid as string,
@@ -496,33 +490,26 @@ class ScheduleLoader {
    */
   private buildAssociations(): Association[] {
     const rows = this.associations.rows
-      .filter(row =>
+      .map(associationRow)
+      .filter((row: AssociationRow) =>
         this.tiplocs.get(row.assoc_location) !== undefined
-        && this.inWindow(row.start_date as string, row.end_date as string)
+        && this.inWindow(row.start_date, row.end_date)
       )
       .sort(byStpThenId);
 
     return rows.map(row => new Association(
-      row.id as number,
-      row.base_uid as string,
-      row.assoc_uid as string,
+      row.id,
+      row.base_uid,
+      row.assoc_uid,
       this.tiplocs.get(row.assoc_location)!.crs_code as string,
-      row.assoc_date_ind as DateIndicator,
-      row.assoc_cat as AssociationType,
+      row.assoc_date_ind,
+      row.assoc_cat,
       new ScheduleCalendar(
-        Temporal.PlainDate.from(row.start_date as string),
-        Temporal.PlainDate.from(row.end_date as string),
-        {
-          0: row.sunday as 0 | 1,
-          1: row.monday as 0 | 1,
-          2: row.tuesday as 0 | 1,
-          3: row.wednesday as 0 | 1,
-          4: row.thursday as 0 | 1,
-          5: row.friday as 0 | 1,
-          6: row.saturday as 0 | 1
-        }
+        Temporal.PlainDate.from(row.start_date),
+        Temporal.PlainDate.from(row.end_date),
+        row.days
       ),
-      row.stp_indicator as STP
+      row.stp_indicator
     ));
   }
 
@@ -559,11 +546,21 @@ const NO_STOP = {
 /**
  * ORDER BY stp_indicator DESC, id
  */
-function byStpThenId(a: any, b: any): number {
+function byStpThenId(a: Overlaid, b: Overlaid): number {
   const aStp = String(a.stp_indicator ?? a.stp);
   const bStp = String(b.stp_indicator ?? b.stp);
 
-  return aStp === bStp ? (a.id as number) - (b.id as number) : (aStp < bStp ? 1 : -1);
+  return aStp === bStp ? a.id - b.id : (aStp < bStp ? 1 : -1);
+}
+
+/**
+ * A schedule or an association, either of which may name its STP indicator as
+ * the column it came from or as the property the model exposes.
+ */
+interface Overlaid {
+  readonly id: number;
+  readonly stp?: STP;
+  readonly stp_indicator?: FieldValue;
 }
 
 /**
@@ -582,6 +579,19 @@ function groupByCrs(rows: Row[]): Row[] {
   }
 
   return [...groups.values()].sort((a, b) => String(a.crs_code) < String(b.crs_code) ? -1 : 1);
+}
+
+/**
+ * The columns the UNION deduplicates on, named rather than taken from the object
+ * so that the two branches building those objects cannot drift apart.
+ */
+function fixedLinkKey(row: FixedLinkRecord): string {
+  return JSON.stringify([
+    row.mode, row.duration, row.origin, row.destination,
+    row.start_time, row.end_time, row.start_date, row.end_date,
+    row.monday, row.tuesday, row.wednesday, row.thursday,
+    row.friday, row.saturday, row.sunday
+  ]);
 }
 
 function dedupe<T>(rows: T[], keyOf: (row: T) => string): T[] {
@@ -623,6 +633,7 @@ function* idsFrom(start: number): IdGenerator {
 
 interface Pending {
   key: string;
+  id: number;
   values: Row;
   extra: Row | null;
   stops: Row[];
@@ -640,4 +651,12 @@ interface Timetable {
   schedules: Schedule[];
   associations: Association[];
   maxId: number;
+}
+
+function sameRange(a: DateRange, b: DateRange): boolean {
+  return a.from.equals(b.from) && a.to.equals(b.to);
+}
+
+function window(range: DateRange): string {
+  return `${range.from} to ${range.to}`;
 }

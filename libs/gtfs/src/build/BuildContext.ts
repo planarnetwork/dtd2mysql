@@ -53,7 +53,13 @@ export function parseRange(text: string): Temporal.Duration {
     throw new Error(`Cannot read "${text}" as a range. Expected something like "3 months".`);
   }
 
-  return Temporal.Duration.from({[unit]: parseInt(parsed[1], 10)});
+  const length = parseInt(parsed[1], 10);
+
+  if (length === 0) {
+    throw new Error(`A range of "${text}" covers no days, so the feed would be empty.`);
+  }
+
+  return Temporal.Duration.from({[unit]: length});
 }
 
 /**
@@ -66,6 +72,10 @@ export function option(argv: string[], name: string): string | undefined {
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === flag) {
+      if (argv[i + 1] === undefined) {
+        throw new Error(`${flag} needs a value.`);
+      }
+
       return argv[i + 1];
     }
     if (argv[i].startsWith(`${flag}=`)) {
@@ -85,7 +95,11 @@ export function options(argv: string[], name: string): string[] {
   const values: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === flag && argv[i + 1] !== undefined) {
+    if (argv[i] === flag) {
+      if (argv[i + 1] === undefined) {
+        throw new Error(`${flag} needs a value.`);
+      }
+
       values.push(argv[i + 1]);
     }
     else if (argv[i].startsWith(`${flag}=`)) {

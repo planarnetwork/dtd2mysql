@@ -18,20 +18,15 @@ export class MemoryTable {
 
   constructor(private readonly record: Record) {}
 
-  /**
-   * Apply a parsed record, and return the row if it landed.
-   */
-  public apply(parsed: ParsedRecord): Row | null {
+  public apply(parsed: ParsedRecord): void {
     const values = charColumns(this.record, parsed.values);
 
     if (this.record.key.length === 0) {
       if (parsed.action !== RecordAction.Delete) {
         this.unkeyed.push(this.withId(values));
-
-        return this.unkeyed[this.unkeyed.length - 1];
       }
 
-      return null;
+      return;
     }
 
     const key = this.keyOf(values);
@@ -39,22 +34,27 @@ export class MemoryTable {
     switch (parsed.action) {
       case RecordAction.Delete:
         this.keyed.delete(key);
-        return null;
+        return;
 
       case RecordAction.Update:
         // REPLACE INTO: the old row goes and the new one takes a new id
         this.keyed.delete(key);
         this.keyed.set(key, this.withId(values));
-        return this.keyed.get(key)!;
+        return;
 
-      default:
+      case RecordAction.Insert:
         // INSERT IGNORE: first one wins
-        if (this.keyed.has(key)) {
-          return null;
+        if (!this.keyed.has(key)) {
+          this.keyed.set(key, this.withId(values));
         }
 
-        this.keyed.set(key, this.withId(values));
-        return this.keyed.get(key)!;
+        return;
+
+      default:
+        // DelayedInsert is an insert the importer holds back until the end. No
+        // record in the timetable feeds produces one, and guessing at it would
+        // be worse than saying so.
+        throw new Error(`${this.record.name} produced a ${parsed.action} record, which is not handled`);
     }
   }
 

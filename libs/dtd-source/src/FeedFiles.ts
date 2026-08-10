@@ -33,7 +33,18 @@ export function timetableFeeds(sources: string[]): string[] {
       throw new Error(`Source ${source} does not exist.`);
     }
 
-    return fs.statSync(source).isDirectory() ? feedsIn(source) : [source];
+    if (fs.statSync(source).isDirectory()) {
+      return feedsIn(source);
+    }
+
+    if (!TIMETABLE_FEED.test(path.basename(source))) {
+      throw new Error(
+        `${source} is not a timetable feed. Expected a file named RJTTFxxx.ZIP or RJTTCxxx.ZIP - ` +
+        `the fares, routeing and NFM64 feeds are named the same way but hold different files.`
+      );
+    }
+
+    return [source];
   });
 }
 

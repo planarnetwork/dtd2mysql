@@ -47,9 +47,25 @@ export class FeedZip {
     const extracted = path.join(this.directory, path.basename(entry.entryName));
     const lines = byline.createStream(fs.createReadStream(extracted, "utf8"));
 
+    let number = 0;
+
     lines.on("data", (line: string) => {
-      if (line !== "" && line.charAt(0) !== "/") {
+      number++;
+
+      if (line === "" || line.charAt(0) === "/") {
+        return;
+      }
+
+      try {
         onLine(line);
+      }
+      catch (err) {
+        // Seven million lines in, "non-nullable field received null value" is
+        // only useful with the line it came from attached.
+        throw new Error(
+          `${path.basename(entry.entryName)} line ${number}: ${err instanceof Error ? err.message : err}\n  ${line}`,
+          {cause: err}
+        );
       }
     });
 
@@ -63,10 +79,6 @@ export class FeedZip {
 
   public close(): void {
     fs.rmSync(this.directory, {recursive: true, force: true});
-  }
-
-  public toString(): string {
-    return path.basename(this.filename);
   }
 
 }

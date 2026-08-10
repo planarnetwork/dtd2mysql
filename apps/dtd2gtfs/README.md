@@ -71,6 +71,8 @@ or take it from wherever you already keep it.
 `calendar.txt` and `calendar_dates.txt`. Output matches what `dtd2mysql --gtfs` produces from the
 same feed files.
 
+A build that finds no schedules in the window fails rather than writing an empty feed.
+
 Building three months of the whole GB network takes around 45 seconds and 5 GB of memory.
 
 ## Contributing
