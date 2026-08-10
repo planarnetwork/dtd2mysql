@@ -12,7 +12,27 @@ const coordinatedActivity = ["R "];
 const notAdvertised = "N ";
 
 /**
- * This class takes a stream of results and builds a list of Schedules
+ * Where a run of rows for one schedule is accumulated.
+ *
+ * This is per-run rather than per-builder because the MySQL source loads the
+ * passenger schedules and the z-trains concurrently into the same builder. Two
+ * interleaved streams sharing one cursor would splice each other's stop times
+ * into the wrong trains.
+ */
+interface Cursor {
+  stops: StopTime[];
+  prevRow?: ScheduleStopTimeRow;
+  departureHour: number;
+}
+
+/**
+ * This class takes rows in the TimetableSource ordering and builds a list of Schedules.
+ *
+ * The ordering is the contract: rows for one schedule must be contiguous and in
+ * stop sequence, and schedules must arrive stp_indicator DESC so a cancellation
+ * or overlay follows the permanent record it replaces. The builder groups on
+ * `id` changing, so a source that interleaves two schedules produces two trains
+ * with each other's stops.
  */
 export class ScheduleBuilder {
   private readonly schedules: Schedule[] = [];
@@ -31,9 +51,7 @@ export class ScheduleBuilder {
    */
   public loadSchedules(results: any): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      let stops: StopTime[] = [];
-      let prevRow: ScheduleStopTimeRow;
-      let departureHour = 4;
+      const cursor = newCursor();
       let failed = false;
 
       results.on("result", (row: ScheduleStopTimeRow) => {
@@ -43,33 +61,7 @@ export class ScheduleBuilder {
         if (failed) return;
 
         try {
-          if (prevRow && prevRow.id !== row.id) {
-            this.schedules.push(this.createSchedule(prevRow, stops));
-            stops = [];
-
-            departureHour = row.public_arrival_time
-              ? parseInt(row.public_arrival_time.substr(0, 2), 10)
-              : row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
-          }
-
-          // A schedule with no stop times is returned as a single row with every stop_time
-          // column null, because getSchedules keeps them with `stop_time.id IS NULL`. There is
-          // no stop to build from that row, and the schedule is dropped later on when it turns
-          // out to have fewer than two stops.
-          if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
-            const stop = this.createStop(row, stops.length + 1, departureHour);
-
-            if (prevRow && prevRow.id === row.id && row.crs_code === prevRow.crs_code) {
-              if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
-                stops[stops.length - 1] = Object.assign(stop, { stop_sequence: stops.length });
-              }
-            }
-            else {
-              stops.push(stop);
-            }
-          }
-
-          prevRow = row;
+          this.processRow(cursor, row);
         }
         catch (err) {
           failed = true;
@@ -80,14 +72,63 @@ export class ScheduleBuilder {
       results.on("end", () => {
         if (failed) return;
 
-        if (prevRow) {
-          this.schedules.push(this.createSchedule(prevRow, stops));
-        }
-
+        this.flush(cursor);
         resolve();
       });
       results.on("error", reject);
     });
+  }
+
+  /**
+   * Take rows from anything iterable in the same order a stream would deliver
+   * them. This is what a source that is not a database query uses.
+   */
+  public load(rows: Iterable<ScheduleStopTimeRow>): void {
+    const cursor = newCursor();
+
+    for (const row of rows) {
+      this.processRow(cursor, row);
+    }
+
+    this.flush(cursor);
+  }
+
+  private processRow(cursor: Cursor, row: ScheduleStopTimeRow): void {
+    if (cursor.prevRow && cursor.prevRow.id !== row.id) {
+      this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
+      cursor.stops = [];
+
+      cursor.departureHour = row.public_arrival_time
+        ? parseInt(row.public_arrival_time.substr(0, 2), 10)
+        : row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;
+    }
+
+    // A schedule with no stop times is returned as a single row with every stop_time
+    // column null, because getSchedules keeps them with `stop_time.id IS NULL`. There is
+    // no stop to build from that row, and the schedule is dropped later on when it turns
+    // out to have fewer than two stops.
+    if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
+      const stop = this.createStop(row, cursor.stops.length + 1, cursor.departureHour);
+
+      if (cursor.prevRow && cursor.prevRow.id === row.id && row.crs_code === cursor.prevRow.crs_code) {
+        if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
+          cursor.stops[cursor.stops.length - 1] = Object.assign(stop, { stop_sequence: cursor.stops.length });
+        }
+      }
+      else {
+        cursor.stops.push(stop);
+      }
+    }
+
+    cursor.prevRow = row;
+  }
+
+  private flush(cursor: Cursor): void {
+    if (cursor.prevRow) {
+      this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
+      cursor.prevRow = undefined;
+      cursor.stops = [];
+    }
   }
 
   private createSchedule(row: ScheduleStopTimeRow, stops: StopTime[]): Schedule {
@@ -204,3 +245,7 @@ const routeTypeIndex: { [trainCategory: string]: RouteType } = {
   "XC": RouteType.Rail,
   "SS": RouteType.Ferry
 };
+
+function newCursor(): Cursor {
+  return {stops: [], departureHour: 4};
+}

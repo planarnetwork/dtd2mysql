@@ -788,9 +788,19 @@ to a package.
 
 ### Epic C — Storage decoupling and one-shot
 
-**C1 · `TimetableSource` interface** *(depends A6, A8)*
+**C1 · `TimetableSource` interface** *(depends A6, A8)* — **done**
 Interface in `libs/gtfs`. `MySqlTimetableSource` in `apps/dtd2mysql` produces byte-identical output
 to today's `CIFRepository`. The ordering contract documented and asserted.
+
+The contract is: rows for one schedule contiguous and in stop sequence, schedules `stp_indicator`
+DESC so a cancellation or overlay follows the record it replaces. `ScheduleBuilder` groups on `id`
+changing, so a source that interleaves two schedules emits two trains carrying each other's stops -
+there is a test that pins exactly that, because it is the failure a second source will hit first.
+
+`ScheduleBuilder.load` takes any iterable in that order, which is what a source that is not a
+database query needs. Its per-run state moved into a cursor at the same time: the MySQL source loads
+passenger schedules and z-trains into one builder concurrently, and a shared cursor would have
+spliced the two streams together.
 
 **C2 · `CifFileSource` — one-shot** *(depends C1, A5)* — **closes #115**
 Read MCA/MSN/ALF/ZTR from the zip via `feed-parser`. A CIF file is already grouped by schedule, so
