@@ -703,9 +703,22 @@ Header and footer comment records rejected by `MultiRecordFile` before field par
 the header line yields zero records. The `["S"]` hack removed.
 
 The `["S"]` on `cate_interchange_status` was doing two jobs — surviving the `S` of `FILE-SPEC` and
-standing in for the field's null characters. Removing it outright made a blank throw and a `9`
-parse as null, dropping 16 interchange times from `transfers.txt`. It is `[" "]` now; the feed
-contains no blanks in that field (values 0, 1, 2, 3, 9), so nothing else moves.
+standing in for the field's null characters. Dropping the argument falls back to `IntField`'s
+default of `[" ", "*", "9"]`, and **`9` is a value this field takes**, not an absence: it marks a
+subsidiary location. Parsing it as null took those stations out of
+`WHERE cate_interchange_status IS NOT NULL` and **16 interchange times out of `transfers.txt`**.
+
+The four possible configurations, since this is easy to get wrong:
+
+| `nullChars` | blank | `9` |
+|---|---|---|
+| `["S"]` (before) | throws | 9 |
+| `[]` | throws | 9 |
+| default `[" ", "*", "9"]` | null | null |
+| `[" "]` (now) | null | 9 |
+
+`[" "]` is deliberately narrower than the default. The feed contains no blanks in that field
+(values are 0, 1, 2, 3 and 9), so nothing else moves. `MSN.spec.ts` pins both the blank and the `9`.
 
 **B10 · Zero eastings project to the South Atlantic**
 `00000` treated as absent, not zero — `IntField` gains an explicit sentinel list so an all-zero

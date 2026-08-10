@@ -5,9 +5,11 @@ const physicalStation = new FixedWidthRecord(
   "physical_station",
   ["tiploc_code"], {
     "station_name": new TextField(5, 26),
-    // Blank where a station is not an interchange. The list used to be ["S"],
-    // which was there to survive the S of FILE-SPEC in the header record rather
-    // than to describe the data, and it made a blank throw and a 9 a number.
+    // Blank where a station is not an interchange, and 9 where it is a
+    // subsidiary location. Deliberately narrower than IntField's default of
+    // [" ", "*", "9"]: 9 is a value this field takes, not an absence. The list
+    // used to be ["S"], which was there to survive the S of FILE-SPEC in the
+    // header rather than to describe the data, and it made a blank throw.
     "cate_interchange_status": new IntField(35, 1, true, [" "]),
     "tiploc_code": new TextField(36, 7),
     "crs_reference_code": new TextField(43, 3, true),
@@ -33,14 +35,17 @@ const alias = new FixedWidthRecord(
  * The file opens with a record that begins with A, like every station, and holds
  * the file specification rather than a place. Read as a station it becomes a
  * stop with a name of "F", a code of "PEC=05" and coordinates in the South
- * Atlantic, so it is rejected before any field is parsed. The footer says
- * "End of File" and is not a station either.
+ * Atlantic, so it is rejected before any field is parsed.
+ *
+ * The footer is excluded by its own first character already, since "E" is not a
+ * record type. It is named here anyway so this one place says what the file
+ * wraps its records in.
  */
-const isStation = (line: string) => !line.includes("FILE-SPEC") && !line.startsWith("End of File");
+const isRecord = (line: string) => !line.includes("FILE-SPEC") && !line.startsWith("End of File");
 
 const MSN = new MultiRecordFile({
   "A": physicalStation,
   "L": alias
-}, 0, 1, isStation);
+}, 0, 1, isRecord);
 
 export default MSN;

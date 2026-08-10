@@ -48,8 +48,10 @@ export class BuildFeed {
     const associationsP = this.repository.getAssociations(range);
     const scheduleResultsP = this.repository.getSchedules(range);
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt", by("from_stop_id", "to_stop_id"));
-    const stops = await this.repository.getStops();
-    const stopsP = this.copy(stops, "stops.txt", by("stop_id"));
+    // Awaited at copyTrips rather than here, so the queries below still start
+    // before the stops come back.
+    const stopsQ = this.repository.getStops();
+    const stopsP = this.copy(stopsQ, "stops.txt", by("stop_id"));
     const agencyP = this.copy(agencies, "agency.txt", by("agency_id"));
     const fixedLinksP = this.copy(
       this.repository.getFixedLinks(),
@@ -70,7 +72,7 @@ export class BuildFeed {
 
     const calendarP = this.copy(calendars, "calendar.txt", by("service_id"));
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", by("service_id", "date"));
-    const tripsP = this.copyTrips(schedules, serviceIds, names(stops));
+    const tripsP = this.copyTrips(schedules, serviceIds, names(await stopsQ));
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -157,16 +159,24 @@ export class BuildFeed {
       .filter(schedule => schedule.stopTimes.length > 1)
       .sort((a, b) => a.tripId < b.tripId ? -1 : a.tripId > b.tripId ? 1 : 0);
 
+    const unknown = new Map<string, number>();
+
     for (const schedule of written) {
-      const destination = stopNames.get(schedule.destination) ?? schedule.destination;
+      const name = stopNames.get(schedule.destination);
+
+      if (name === undefined) {
+        unknown.set(schedule.destination, (unknown.get(schedule.destination) ?? 0) + 1);
+      }
 
       trips.write(schedule.toTrip(
         serviceIds[schedule.calendar.id],
         routeIds[schedule.routeShortName],
-        destination
+        name ?? schedule.destination
       ));
       schedule.stopTimes.forEach(r => stopTimes.write(r));
     }
+
+    report(unknown);
 
     trips.end();
     stopTimes.end();
@@ -198,6 +208,29 @@ export class BuildFeed {
  */
 function names(stops: Stop[]): Map<string, string> {
   return new Map(stops.map(stop => [stop.stop_id, stop.stop_name]));
+}
+
+/**
+ * A trip ending at a stop that stops.txt does not describe keeps the CRS code as
+ * its headsign, which is the best available answer but hides the real problem:
+ * the stop times reference a stop that is not in the feed, which a GTFS
+ * validator reads as a broken foreign key. Say so rather than let a three letter
+ * code pass for a place name.
+ */
+function report(unknown: Map<string, number>): void {
+  if (unknown.size === 0) {
+    return;
+  }
+
+  const codes = [...unknown.entries()]
+    .sort(([a], [b]) => a < b ? -1 : 1)
+    .map(([code, trips]) => `${code} (${trips})`)
+    .join(", ");
+
+  console.warn(
+    `${unknown.size} destination(s) are not in stops.txt, so their trips are named after the ` +
+    `CRS code: ${codes}. The stop times referencing them are dangling.`
+  );
 }
 
 /**

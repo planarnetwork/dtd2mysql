@@ -140,11 +140,32 @@ describe("the feed the mini fixture produces", () => {
     expect(columns("stops.txt").find(s => s.stop_id === "4/0")).to.equal(undefined);
   });
 
-  it("names a trip after where it is going", () => {
+  it("names every trip after the stop it ends at", () => {
+    const names = new Map(columns("stops.txt").map(s => [s.stop_id, s.stop_name]));
+    const last = new Map<string, {sequence: number, stop: string}>();
+
+    for (const stopTime of columns("stop_times.txt")) {
+      const sequence = Number(stopTime.stop_sequence);
+      const seen = last.get(stopTime.trip_id);
+
+      if (!seen || sequence > seen.sequence) {
+        last.set(stopTime.trip_id, {sequence, stop: stopTime.stop_id});
+      }
+    }
+
+    const trips = columns("trips.txt");
+
+    expect(trips.length).to.be.greaterThan(0);
+
+    for (const trip of trips) {
+      expect(trip.trip_headsign).to.equal(names.get(last.get(trip.trip_id)!.stop));
+    }
+  });
+
+  it("does not put the TUID in the headsign, which is where it used to be", () => {
     const trips = columns("trips.txt");
 
     expect(trips.every(t => t.trip_headsign !== t.trip_id.split("_")[0])).to.equal(true);
-    expect(trips.some(t => t.trip_headsign.length > 3)).to.equal(true);
   });
 
   it("claims nothing about wheelchairs or bicycles", () => {
