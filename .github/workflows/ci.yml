@@ -1,9 +1,9 @@
 name: Test
 
 on:
+  # Every pull request, not only the ones targeting master, so a branch stacked
+  # on another branch is still tested.
   pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
