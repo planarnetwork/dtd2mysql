@@ -46,10 +46,14 @@ export class BuildFeed {
 
     const associationsP = this.repository.getAssociations(range);
     const scheduleResultsP = this.repository.getSchedules(range);
-    const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
-    const stopsP = this.copy(this.repository.getStops(), "stops.txt");
-    const agencyP = this.copy(agencies, "agency.txt");
-    const fixedLinksP = this.copy(this.repository.getFixedLinks(), "links.txt");
+    const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt", by("from_stop_id", "to_stop_id"));
+    const stopsP = this.copy(this.repository.getStops(), "stops.txt", by("stop_id"));
+    const agencyP = this.copy(agencies, "agency.txt", by("agency_id"));
+    const fixedLinksP = this.copy(
+      this.repository.getFixedLinks(),
+      "links.txt",
+      by("from_stop_id", "to_stop_id", "mode", "start_date", "start_time")
+    );
 
     const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
 
@@ -62,8 +66,8 @@ export class BuildFeed {
 
     const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
 
-    const calendarP = this.copy(calendars, "calendar.txt");
-    const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt");
+    const calendarP = this.copy(calendars, "calendar.txt", by("service_id"));
+    const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", by("service_id", "date"));
     const tripsP = this.copyTrips(schedules, serviceIds);
 
     // Every file has to be opened before the output can be asked whether it has
@@ -83,14 +87,22 @@ export class BuildFeed {
   }
 
   /**
-   * Map SQL records to a file
+   * Write rows to a file, in the order the key says.
+   *
+   * Every file is sorted before it is written, so no output depends on the
+   * order a source happened to return its rows in. The key for each file is at
+   * the call site.
    */
-  private async copy(results: object[] | Promise<object[]>, filename: string): Promise<void> {
+  private async copy(
+    results: object[] | Promise<object[]>,
+    filename: string,
+    key: (a: any, b: any) => number
+  ): Promise<void> {
     const rows = await results;
     const output = this.output.open(`${this.baseDir}/${filename}`);
 
     console.log("Writing " + filename);
-    rows.forEach(row => output.write(row));
+    [...rows].sort(key).forEach(row => output.write(row));
     output.end();
 
     return finished(output);
@@ -104,24 +116,35 @@ export class BuildFeed {
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
     const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
-    const routes: { [routeShortName: string]: Route } = {};
+
+    // A trip needs a route before it can be written, and a route's number comes
+    // from where its name sorts rather than from which trip reached it first.
+    const routes = new Map<string, Route>();
 
     for (const schedule of schedules) {
-      if (schedule.stopTimes.length <= 1) {
-        continue;
+      if (schedule.stopTimes.length > 1 && !routes.has(schedule.routeShortName)) {
+        routes.set(schedule.routeShortName, schedule.toRoute());
       }
-
-      const route = schedule.toRoute();
-      routes[route.route_short_name] = routes[route.route_short_name] || route;
-      const routeId = routes[route.route_short_name].route_id;
-      const serviceId = serviceIds[schedule.calendar.id];
-
-      trips.write(schedule.toTrip(serviceId, routeId));
-      schedule.stopTimes.forEach(r => stopTimes.write(r));
     }
 
-    for (const route of Object.values(routes)) {
-      routeFile.write(route);
+    const routeIds: { [routeShortName: string]: number } = {};
+    let routeId = 0;
+
+    for (const name of [...routes.keys()].sort()) {
+      routeIds[name] = ++routeId;
+      routeFile.write({...routes.get(name)!, route_id: routeId});
+    }
+
+    // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
+    // by (trip_id, stop_sequence) with it, because a schedule's stops are
+    // contiguous and already in sequence.
+    const written = schedules
+      .filter(schedule => schedule.stopTimes.length > 1)
+      .sort((a, b) => a.tripId < b.tripId ? -1 : a.tripId > b.tripId ? 1 : 0);
+
+    for (const schedule of written) {
+      trips.write(schedule.toTrip(serviceIds[schedule.calendar.id], routeIds[schedule.routeShortName]));
+      schedule.stopTimes.forEach(r => stopTimes.write(r));
     }
 
     trips.end();
@@ -146,4 +169,18 @@ export class BuildFeed {
     return schedules.filter(schedule => !schedule.calendar.isEmpty);
   }
 
+}
+
+/**
+ * Sort by the named fields, in order.
+ */
+function by(...fields: string[]): (a: any, b: any) => number {
+  return (a, b) => {
+    for (const field of fields) {
+      if (a[field] < b[field]) return -1;
+      if (a[field] > b[field]) return 1;
+    }
+
+    return 0;
+  };
 }

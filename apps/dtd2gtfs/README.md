@@ -68,8 +68,8 @@ or take it from wherever you already keep it.
 ## What it produces
 
 `agency.txt`, `stops.txt`, `transfers.txt`, `links.txt`, `routes.txt`, `trips.txt`, `stop_times.txt`,
-`calendar.txt` and `calendar_dates.txt`. Output matches what `dtd2mysql --gtfs` produces from the
-same feed files.
+`calendar.txt` and `calendar_dates.txt`. Output is byte-identical to what `dtd2mysql --gtfs`
+produces from the same feed files, and the same input and `--today` always produce the same bytes.
 
 A build that finds no schedules in the window fails rather than writing an empty feed.
 

@@ -11,7 +11,7 @@ dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip gtfs.zip
 ```
 
-`dtd2gtfs` builds the same GTFS feed straight from the DTD files with no database at all.
+`dtd2gtfs` builds the same feed - byte for byte - straight from the DTD files with no database.
 It is not published yet; run it from a clone with `yarn workspace dtd2gtfs run start build
 --source RJTTF918.ZIP --out gtfs.zip`.
 
