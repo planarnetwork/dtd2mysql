@@ -53,6 +53,24 @@ export class MySqlTimetableSource implements TimetableSource {
   }
 
   /**
+   * The last file ImportFeedCommand recorded. A missing table or an empty log
+   * both mean the same thing here as they do to LogTableFeedCursor: nothing is
+   * known, so say nothing rather than guess.
+   */
+  public async getFeedVersion(): Promise<string | null> {
+    try {
+      const [[log]] = await this.db.query<{filename: string | null}>(
+        "SELECT filename FROM log ORDER BY id DESC LIMIT 1"
+      );
+
+      return log?.filename ?? null;
+    }
+    catch (err) {
+      return null;
+    }
+  }
+
+  /**
    * Return all the stops with some configurable long/lat applied
    */
   public async getStops(): Promise<Stop[]> {

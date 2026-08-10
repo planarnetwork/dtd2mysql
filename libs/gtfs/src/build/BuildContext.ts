@@ -9,6 +9,13 @@
 export interface BuildContext {
   readonly today: Temporal.PlainDate;
   readonly range: Temporal.Duration;
+
+  /**
+   * Whether to write links.txt as well as transfers.txt. The links moved into
+   * transfers.txt, and the file is kept behind `--links` for one minor version
+   * so anyone reading it has somewhere to go first.
+   */
+  readonly links: boolean;
 }
 
 /**
@@ -123,6 +130,7 @@ export function buildContext(argv: string[], env: NodeJS.ProcessEnv = process.en
 
   return {
     today: today ? Temporal.PlainDate.from(today) : Temporal.Now.plainDateISO(),
-    range: parseRange(range ?? "3 MONTH")
+    range: parseRange(range ?? "3 MONTH"),
+    links: argv.includes("--links") || env.GTFS_LINKS === "1"
   };
 }

@@ -24,6 +24,12 @@ export interface TimetableSource {
   getTransfers(): Promise<Transfer[]>;
 
   /**
+   * Which DTD feed this was built from, for feed_info.feed_version - the
+   * filename of the most recent one applied, or null if the source cannot say.
+   */
+  getFeedVersion(): Promise<string | null>;
+
+  /**
    * Every station, with coordinates
    */
   getStops(): Promise<Stop[]>;

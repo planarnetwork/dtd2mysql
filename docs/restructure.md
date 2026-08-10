@@ -636,15 +636,37 @@ the throw two lines down), catching throws in the result listener so a bad row f
 loudly, and teaching `addLateNightServices` that `stopTimes[0]` may not exist. Added the
 `ScheduleBuilder` spec, which did not exist.
 
-**B1 · Emit `feed_info.txt`** *(coordinate with B14)*
-Written by the build; `feed_version` from the source DTD filename; start and end dates from the
-actual min/max of emitted calendars, not the requested range.
+**B1 · Emit `feed_info.txt`** *(coordinate with B14)* — **done**
+Written by the build; `feed_version` from the source DTD filename, which both sources can supply -
+the file list for `CifFileSource`, the `log` table for the database.
 
-**B2 · Replace `links.txt` with `transfers.txt`**
+The dates are **not** the min/max of the emitted calendars, which is what this ticket asked for and
+would have been wrong in both directions. GTFS defines them as the first and last day the feed is
+*complete* for. The earliest calendar start is routinely years back, because a schedule that began
+in 2021 and still runs carries its real start date, and the feed does not describe 2021 - anything
+that ended before the build date was never queried. The latest end is routinely 2099 for the mirror
+of the same reason. So it is the build window, with the end pulled in when the data runs out first,
+which is the only case where the calendars have something to say.
+
+**B2 · Replace `links.txt` with `transfers.txt`** — **done**
 Fixed links emitted as `transfers.txt` rows (`transfer_type=2` plus `min_transfer_time`), merged
-with the existing station interchange rows. Time and day-of-week windows GTFS cannot express are
-documented in `stop_desc` or dropped with a logged count. `links.txt` kept behind a flag for one
-minor version, then removed. `config/gtfs/import.ts` updated. Blocks E2.
+with the station interchange rows. `links.txt` is behind `--links`/`GTFS_LINKS=1` for one minor
+version. `import.ts` swaps the `links` load for `feed_info`; the `links` table stays for anyone
+using the flag.
+
+**8,514 link rows describe 2,406 pairs.** The ALF holds one record per time window and day pattern -
+only 148 rows are unrestricted - and `transfers.txt` has no time or day dimension at all, so the
+windows are dropped and the count logged. The transfer is then offered at hours the link is not
+really available. That is the cost of expressing it at all, and the flag is the migration path.
+The mode goes too: TUBE, WALK, BUS and the rest have no field.
+
+Where several links describe one pair the shortest wins, because `min_transfer_time` is the minimum
+the transfer needs and the fastest of several ways of making it is exactly that.
+
+"Documented in `stop_desc`" from the original ticket was dropped: `stop_desc` is on stops and cannot
+say anything per-pair.
+
+Feed effect: `transfers.txt` 3,054 -> 5,460 rows, `links.txt` gone by default.
 
 **B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1, and **done** there.*
 
@@ -666,9 +688,46 @@ output whether it has finished, because `copy` only opens its file once its quer
 So `--gtfs-zip` has been capable of publishing a truncated feed whenever the flush outran the sleep.
 The directory output was never affected: the process stays alive until the streams drain.
 
-**B6 · GTFS validator in CI** *(depends B1, B2)*
-The mini fixture builds a feed in CI and runs the MobilityData `gtfs-validator` jar. Fails on any
-error, prints warnings. Baseline of accepted notices committed.
+**B6 · GTFS validator in CI** *(depends B1, B2)* — **done**
+A `validate` job builds the mini fixture and runs MobilityData `gtfs-validator` 8.0.1, pinned rather
+than latest so the accepted list only moves when somebody moves it. Any ERROR fails.
+`validator-baseline.json` holds the accepted notice codes with a reason each; a new code fails, and
+so does an accepted one that stops occurring, so the list cannot rot.
+
+**The mini fixture has zero errors.** Eleven accepted warnings and infos, each with a reason - the
+`714` route type the validator does not know, upper-case MSN names, transfers that really are 36 km
+now the tube links are in there.
+
+**The full feed does not, and the job does not cover it** - it needs a 70 MB source and does not
+belong in a PR check. Running it by hand against `RJTTF918` found three errors:
+
+| | | |
+|---|---:|---|
+| `foreign_key_violation` | 36 | the `QHA`/`ZUX` stop times - B15 |
+| `point_near_origin` | 2 | `QBN`/`QBS` at 0,0 - B10 put them there deliberately |
+| `stop_time_with_arrival_before_previous_departure_time` | 4 | **new, see B24 and B25** |
+
+That gap is real: a green PR check does not mean the published feed validates. Whoever does E2's
+nightly should run the validator there.
+
+**B24 · A joined trip visits a station twice with time going backwards** — *found by B6*
+
+`G38297_G38968` and two more dates of it. The stops run CDF 08:06, BGN, PYL, PTA 09:12, NTH 09:20,
+then **SWA at 09:12**, NTH 09:24, PTA 09:31, back through PYL and BGN to CDF 10:39, and on to
+Manchester. The Swansea portion is spliced into the middle of the Cardiff-Manchester service rather
+than joined at the association point, so the trip doubles back and one arrival precedes the previous
+departure.
+
+Three of the four validator errors of this kind are this one train on three dates, so it is one
+association handled wrongly rather than a broad fault. #121 fixed B18, B20 and B21 in this area and
+this survives all three. Needs a failing test at the `applyAssociations` level before any fix.
+
+**B25 · A z-train arrives before it left** — *found by B6*
+
+`Z03536`: LPY 15:38, LJL arrive 16:00 depart **16:12**, LPY arrive **16:09**. The last arrival is
+three minutes before the departure that precedes it. One train, so either the ZTR record is
+internally inconsistent or the departure is being read from the wrong field. Check the raw ZTR line
+before assuming it is ours.
 
 **B7 · Stop asserting wheelchair accessibility** — **done**
 `wheelchair_accessible: 0` until D11 supplies real data. `bikes_allowed: 0` documented in code as
@@ -1422,10 +1481,10 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**82 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
-B4–B13 batch). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3 and B10–B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
-out of this pass, leaving **47 in scope**.
+**84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
+B4–B13 batch; B24 and B25 were found by B6's validator on its first run). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
+C1–C3, B1, B2, B6 and B10–B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
+out of this pass, leaving **46 in scope**.
 
 ---
 
