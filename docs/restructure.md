@@ -648,7 +648,7 @@ minor version, then removed. `config/gtfs/import.ts` updated. Blocks E2.
 
 **B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1, and **done** there.*
 
-**B4 · Handle an empty `schedule` table**
+**B4 · Handle an empty `schedule` table** — **done**
 Clear error naming the missing import step instead of `TypeError`.
 
 **B5 · Remove the zip race** — **done**
@@ -670,18 +670,42 @@ The directory output was never affected: the process stays alive until the strea
 The mini fixture builds a feed in CI and runs the MobilityData `gtfs-validator` jar. Fails on any
 error, prints warnings. Baseline of accepted notices committed.
 
-**B7 · Stop asserting wheelchair accessibility**
-`wheelchair_accessible: 0` until D5 supplies real data. `bikes_allowed: 0` documented in code as
+**B7 · Stop asserting wheelchair accessibility** — **done**
+`wheelchair_accessible: 0` until D11 supplies real data. `bikes_allowed: 0` documented in code as
 "no information", not "no bikes", so it is not mistaken for a fact later.
 
-**B8 · `trip_headsign` should be the destination**
+`0` is GTFS for *no accessibility information*, not *no access* — that is `2`, which the feed never
+emits. So this removes a claim rather than making the opposite one.
+
+The removed claim was `1` on all 276,048 trips. RVAR compliance was mandatory for every mainline
+rail vehicle by 2020-01-01, so `1` is defensible for a train; 23% of trips are not trains:
+
+| `route_type` | trips | RVAR |
+|---|---:|---|
+| 2 Rail | 209,023 | yes |
+| 1 Subway | 4,340 | yes |
+| 714 Replacement bus | 54,610 | no |
+| 3 Bus | 6,939 | no |
+| 4 Ferry | 1,136 | no |
+
+Inferring `1` from `route_type` was considered and rejected: it is a regulatory assumption encoded
+in code, and the case it gets wrong — a rail replacement coach — is the one where a false `1`
+strands somebody. D11 sources it instead. Note that the trip flag is only half the question:
+end-to-end access also needs `stops.wheelchair_boarding`, which is D5.
+
+**B8 · `trip_headsign` should be the destination** — **done**
 Currently the TUID. Destination station name is available from existing stop data with no external
 source. TUID stays available via `trip_short_name`/`trip_id`. D9 later extends this to
 "Destination via X".
 
-**B9 · MSN header parsed as a station**
+**B9 · MSN header parsed as a station** — **done**
 Header and footer comment records rejected by `MultiRecordFile` before field parsing. Test asserts
 the header line yields zero records. The `["S"]` hack removed.
+
+The `["S"]` on `cate_interchange_status` was doing two jobs — surviving the `S` of `FILE-SPEC` and
+standing in for the field's null characters. Removing it outright made a blank throw and a `9`
+parse as null, dropping 16 interchange times from `transfers.txt`. It is `[" "]` now; the feed
+contains no blanks in that field (values 0, 1, 2, 3, 9), so nothing else moves.
 
 **B10 · Zero eastings project to the South Atlantic**
 `00000` treated as absent, not zero — `IntField` gains an explicit sentinel list so an all-zero
@@ -720,9 +744,9 @@ placeholders. The fixture in T4 must include one so this stays true.
 terminates here", not "platform 3" — so with B8 giving the trip headsign a real value for the first
 time, leaving the platform there would have overridden it at every call.
 
-The platform is dropped rather than moved: `stops.platform_code` needs the station hierarchy, which
-is F3. `StopTime.stop_headsign` is typed `null` rather than `Platform`, so putting something back
-there is a deliberate act.
+The platform is dropped from `stop_headsign` rather than moved: `stops.platform_code` needs the
+station hierarchy, which is F3. `StopTime.stop_headsign` is typed `null` rather than `Platform`, so
+putting something back there is a deliberate act. B23 restores the data itself.
 
 **B14 · Calendar fragments lying entirely in the past** — **superseded by #121**
 `applyOverlays` called `ScheduleCalendar.divideAround` to split a base schedule around an overlay.
@@ -852,6 +876,33 @@ The fix is to restore the counters the way `setLastScheduleId` does for BS, or t
 ids and let the unique keys carry the identity. It moves the T10 baseline, so it rebaselines under
 T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
 racing.
+
+**B23 · Preserve the platform as a producer extension column** *(depends B13)*
+
+B13 took the platform out of `stop_headsign` and nothing carries it, so the export loses a field the
+feed supplies. The data is not gone — `stop_time.platform` in the database, the `LI`/`LO`/`LT`
+records in the CIF — only the GTFS output drops it. **3,823 distinct station-platform pairs across
+1,314 stations.**
+
+GTFS has no platform field on `stop_times.txt`, and the spec's model for platforms is a stop:
+`location_type=0` with a `parent_station` and a `platform_code`. That is F3, and it is not an
+acceptable answer here — it takes `stops.txt` from 3,109 rows to roughly 6,932 and breaks every
+consumer that joins on a three-letter code unless it walks `parent_station`.
+
+So: a **producer extension column `platform_code` on `stop_times.txt`**. The spec allows producers
+to add fields it does not define and requires consumers to ignore columns they do not recognise, so
+this costs one column, keeps one row per stop time, fragments nothing, and gives anyone who wants
+platforms a direct read.
+
+Two alternatives rejected. `stop_headsign` is B13's whole point — it means "this service terminates
+here", and with B8 putting a real destination in `trip_headsign` a platform there would override it
+at every call. A bespoke `platforms.txt` keyed by trip and sequence is the same column behind a
+join, and B2 is deleting `links.txt` precisely to stop shipping files nobody reads.
+
+Being honestly non-standard in a column with no defined meaning beats misusing a field that has one.
+The column survives F3 as the station-level fallback, since F3 ships behind a flag with CRS-only
+stops as the default for at least one release. Golden fixture asserts the column, so B13's removal
+and this restoration are both visible in the diff.
 
 B7 to B22 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
@@ -1062,6 +1113,56 @@ TUID/RSID with an unmatched-rate report. Falls back to B8's plain destination on
 Per-service or per-TOC bike policy mapped to `bikes_allowed` 1/2. Services with no source data stay
 at `0`. Coverage report by operator, since this will be patchy and the website should say so.
 
+**D11 · Vehicle wheelchair accessibility** *(depends D1, C5)*
+`trips.wheelchair_accessible` from real data, replacing B7's `0`. Distinct from D5, which supplies
+`stops.wheelchair_boarding` — station step-free access and vehicle capacity are different questions
+and a rider needs both, so B7's original forward reference to D5 was wrong.
+
+Source from the Rail Data Marketplace — <https://raildata.org.uk/dataProducts?textSearch=wheelchair>
+— reusing D5's RDM token and disk cache. Product selection at implementation time; the catalogue is
+behind a JS app and has not been read.
+
+The value is per *vehicle*, and the feed has trips, so the mapping depends on what the product is
+keyed by. Where nothing resolves, trips stay at `0` rather than inheriting a mode-level guess.
+Coverage report by operator, as D10.
+
+**D12 · `@gb-rail/enrich-station-groups` — `areas.txt` and `stop_areas.txt`** *(depends D1)*
+
+RDG group stations: four-digit NLC groups such as `1072` "London Terminals" covering Euston,
+Waterloo, King's Cross and 15 others. Useful for journey planning and required for honest fares.
+
+GTFS has no station-of-stations — `parent_station` is forbidden on a `location_type=1` station, and
+the hierarchy is exactly one level, so groups cannot be modelled as nesting. **`areas.txt` +
+`stop_areas.txt`** (Fares v2) is the right structure and not a workaround: an area is a flat set of
+arbitrary stops with no nesting rules and no exclusivity, so a station can sit in London Terminals
+and a travelcard zone at once, and group stations are a ticketing construct to begin with.
+
+`transfers.txt` is the wrong tool for this — it asserts you can walk between the stops, which is
+false for Euston and Waterloo.
+
+The NLC identity is already in the **timetable** feed: the MCA `TI` record carries `nalco`, whose
+first four digits are the NLC. It lines up with the fares UIC exactly — `70` + NLC + check digit:
+
+```
+EUSTON  144400 N  EUS   ←→  7014440
+WATRLOO 559800 Q  WAT   ←→  7055980
+```
+
+What the timetable feed lacks is *membership*. The fares feed has it and it is already parsed and
+imported — `location_group` (816 rows) and `location_group_member` (1,384 rows; 740 groups with
+members, 540 distinct CRS, 537 resolving to a TIPLOC). But the file source reads `RJTT*` only, so
+taking membership from `RJFA` would make the database and file sources disagree and break the
+byte-identity check that T9 relies on. An enricher keeps both sources equal and is the plan of
+record; RDM is expected to publish a group-stations product, to be confirmed at implementation time.
+
+Two things to get right. **58 groups have more than one date range** — select the row valid at the
+build date or `area_id` duplicates. And the table mixes true station groups with travelcard zones
+(`LONDON ZONES 1-3`) and bus groups (`HEATHROW BUS`); all are legitimate fare areas, so emit all and
+make the kind legible in `area_name` rather than silently filtering.
+
+Coordinate with F5, which scopes `networks`/`areas` from the routeing guide. D12 owns group
+stations and lands first; F5 extends the same two files.
+
 ### Epic E — Publishing
 
 **E8 · Fix the npm release pipeline** — *do this first*
@@ -1203,7 +1304,7 @@ only, no feed changes — a data-quality signal for the site.
 ## 5. Sequencing
 
 ```
-E8, T14  →  B1,B2,B4,B5,B7..B21  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
+E8, T14  →  B1,B2,B4,B5,B7..B23  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
                                    ↓
                                   A1  →  A2,A6  →  A3,A5,A7  →  A8
                                                                     ↓
@@ -1219,8 +1320,10 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**79 tickets** listed (B22 was found while building C2). B3 is absorbed into T1, B0 and B5 are done, B14, B16, B18, B20 and B21 are
-resolved by #121, and A4 and C4 are deferred out of this pass, leaving 69 in scope.
+**82 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
+B4–B13 batch). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
+C1–C3 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred out of this
+pass, leaving **50 in scope**.
 
 ---
 
