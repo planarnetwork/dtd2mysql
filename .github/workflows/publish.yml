@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
     - uses: actions/checkout@v5
       with:
@@ -23,6 +24,8 @@ jobs:
         node-version: 26.x
         cache: npm
         registry-url: 'https://registry.npmjs.org'
+    - name: Ensure npm supports trusted publishing
+      run: npm install -g npm@latest
     - run: npm ci
     - run: npm test
     - name: Configure git
@@ -43,5 +46,3 @@ jobs:
         npm version patch -m "Bump version to %s [skip ci]"
         git push --follow-tags
         npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
