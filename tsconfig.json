@@ -8,9 +8,7 @@
   },
   "include": [
     "apps/*/src",
-    "apps/*/test",
     "libs/*/src",
-    "libs/*/test",
     "*.mts"
   ]
 }

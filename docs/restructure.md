@@ -22,6 +22,13 @@ Two deliberate departures from §2:
   bundled into its tarball with esbuild, so nothing new appears on npm and installing
   `dtd2mysql` pulls nothing from the scope. Making a library public later is one field in
   its manifest and one external in the bundle command.
+
+The root has two tsconfigs. `tsconfig.json` is what tsx, vitest and the editor read, and it
+matches every source file in the workspace; `tsconfig.build.json` holds the project
+references `tsc -b` walks. One file cannot do both: tsx takes a file's compiler options from
+the nearest tsconfig whose `include` matches it, and a solution file matches nothing, so the
+libraries would be compiled with the wrong kind of decorator whenever a command was run from
+the repository root.
 Issues: [#119](https://github.com/planarnetwork/dtd2mysql/issues/119) (external data),
 [#115](https://github.com/planarnetwork/dtd2mysql/issues/115) (one-shot GTFS),
 [#116](https://github.com/planarnetwork/dtd2mysql/issues/116) (other databases — deferred, see C4),
