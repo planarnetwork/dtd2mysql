@@ -18,3 +18,4 @@ dist/
 # local e2e baseline work (feeds, snapshots, credentials)
 .env.local
 data/
+bundle/

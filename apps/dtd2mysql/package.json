@@ -2,10 +2,9 @@
   "name": "dtd2mysql",
   "version": "6.6.14",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./bundle/index.js",
   "files": [
-    "dist",
+    "bundle",
     "bin"
   ],
   "bin": "bin/dtd2mysql.sh",
@@ -14,7 +13,9 @@
     "test": "vitest run",
     "start": "yarn build && tsx ./src/index.ts",
     "gtfs": "yarn build && tsx ./src/index.ts --gtfs",
-    "gtfs-zip": "yarn build && tsx ./src/index.ts --gtfs-zip"
+    "gtfs-zip": "yarn build && tsx ./src/index.ts --gtfs-zip",
+    "prepack": "yarn build && yarn bundle",
+    "bundle": "esbuild src/index.ts --bundle --platform=node --target=node26 --format=cjs --outfile=bundle/index.js --external:adm-zip --external:byline --external:csv-write-stream --external:memoized-class-decorator --external:mysql2 --external:proj4 --external:ssh2"
   },
   "repository": {
     "type": "git",
@@ -40,19 +41,25 @@
     "node": ">=26"
   },
   "dependencies": {
+    "adm-zip": "0.6.0",
+    "byline": "5.0.0",
+    "csv-write-stream": "2.0.0",
+    "memoized-class-decorator": "1.6.1",
+    "mysql2": "3.23.0",
+    "proj4": "2.20.9",
+    "ssh2": "1.17.0"
+  },
+  "devDependencies": {
     "@gb-rail/dtd-schema": "workspace:^",
     "@gb-rail/dtd-source": "workspace:^",
     "@gb-rail/feed-parser": "workspace:^",
     "@gb-rail/gtfs": "workspace:^",
     "@gb-rail/gtfs-output": "workspace:^",
-    "adm-zip": "0.6.0",
-    "byline": "5.0.0",
-    "memoized-class-decorator": "1.6.1",
-    "mysql2": "3.23.0",
-    "proj4": "2.20.9"
-  },
-  "devDependencies": {
     "@types/adm-zip": "0.5.8",
-    "@types/byline": "4.2.36"
+    "@types/byline": "4.2.36",
+    "@types/csv-write-stream": "2.0.3",
+    "@types/ssh2": "1.15.5",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
   }
 }

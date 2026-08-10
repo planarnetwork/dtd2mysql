@@ -30,9 +30,9 @@ export interface TimetableSource {
   /**
    * Passenger schedules and z-trains within the given range.
    *
-   * `range` is a MySQL interval expression such as "3 MONTH". It is the only
-   * part of this interface that still leaks the storage engine; ticket T1
-   * replaces it with a date window derived from an injected clock.
+   * `range` is a MySQL interval expression such as "3 MONTH". It is the one
+   * part of this interface that leaks the storage engine; ticket T1 replaces it
+   * with a date window derived from an injected clock.
    */
   getSchedules(range: string): Promise<ScheduleResults>;
 
@@ -88,7 +88,7 @@ export interface ScheduleStopTimeRow {
 
 /**
  * Station name, coordinate and accessibility overrides applied on top of
- * whatever the source knows. Ticket D7 retires the hardcoded copy of this.
+ * whatever the source knows. Ticket D7 replaces this with an enricher.
  */
 export type StationCoordinates = {
   [crs: string]: {

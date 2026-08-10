@@ -2,11 +2,9 @@
  * Remembers which feed file was processed last, so a download picks up where the
  * previous one stopped.
  *
- * This used to be a `SELECT * FROM log` inside DownloadCommand, which tied the
- * download path to MySQL. A one-shot GTFS build has no database, so the cursor
- * becomes something the caller supplies: the storage apps back it with their log
- * table, and a one-shot build uses NO_CURSOR and takes the latest full refresh
- * every time.
+ * The caller supplies it, because not every caller has somewhere to remember it:
+ * the storage apps back it with their log table, and a build with no database
+ * uses NO_CURSOR and takes the latest full refresh every time.
  */
 export interface FeedCursor {
 

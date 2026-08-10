@@ -22,19 +22,16 @@ import {LogTableFeedCursor} from "./source/LogTableFeedCursor";
 import {MySqlTimetableSource} from "./source/MySqlTimetableSource";
 
 /**
- * Composition root for the dtd2mysql CLI.
+ * Composition root for the dtd2mysql CLI: it resolves a flag to the command that
+ * implements it, and owns the two connection pools everything else shares.
  *
- * This is what used to be Container.ts. The wiring is the same; what has gone is
- * the pair of `require('mysql2')` calls hidden inside memoized getters. Both
- * pools are created here, from static imports, exactly once.
- *
- * They are still created lazily rather than at module load, because
- * `dtd2mysql --help` must work without DATABASE_NAME set.
+ * The pools are created on first use rather than at module load, because
+ * `dtd2mysql --help` has to work without DATABASE_NAME set.
  */
 
 /**
- * Remember the first result for a given argument, so asking for the same
- * command twice - which `--get-fares` does - gets the same instance.
+ * Remember the first result for a given argument, so asking for the same command
+ * twice - which `--get-fares` does - gets the same instance.
  */
 function once<A, R>(fn: (arg: A) => R): (arg: A) => R {
   const results = new Map<A, R>();
@@ -69,9 +66,8 @@ export function databaseConfiguration(): DatabaseConfiguration {
 
 /**
  * DatabaseConfiguration types `password` as `string | null` while mysql2 types it
- * as `string | undefined`. null is what the driver has been given since this code
- * was written, and it accepts it; the mismatch was invisible while the pools came
- * from an untyped require().
+ * as `string | undefined`. The driver accepts null, and null is what an unset
+ * DATABASE_PASSWORD resolves to.
  */
 function poolOptions(): mysql.PoolOptions {
   return databaseConfiguration() as unknown as mysql.PoolOptions;
@@ -167,9 +163,8 @@ async function getDownloadAndProcessCommand(
 /**
  * Resolve a CLI flag to the command that implements it.
  *
- * An unrecognised flag falls through to the help text and exits zero. That is
- * the existing behaviour and ticket T11 pins it, so it is deliberate rather
- * than an oversight.
+ * An unrecognised flag prints the help text and exits zero. That is deliberate,
+ * and ticket T11 pins it.
  */
 export const getCommand = once(async (type: string): Promise<CLICommand> => {
   switch (type) {

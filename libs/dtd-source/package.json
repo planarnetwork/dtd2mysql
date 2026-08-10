@@ -1,6 +1,7 @@
 {
   "name": "@gb-rail/dtd-source",
   "version": "0.0.0",
+  "private": true,
   "description": "Download and sequencing of the DTD feed files from the RSP SFTP server",
   "license": "GPL-3.0",
   "repository": {
@@ -15,12 +16,6 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "publishConfig": {
-    "access": "public"
   },
   "scripts": {
     "build": "tsc -b"

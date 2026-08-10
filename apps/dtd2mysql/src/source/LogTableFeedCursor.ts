@@ -10,9 +10,8 @@ interface LogEntry {
 /**
  * The last processed file as recorded by ImportFeedCommand in the log table.
  *
- * This is the query DownloadCommand used to run inline. A missing table or an
- * empty log both mean "start from the most recent full refresh", which is why
- * the error is swallowed rather than reported.
+ * A missing table and an empty log both mean "start from the most recent full
+ * refresh", which is why the error is swallowed rather than reported.
  */
 export class LogTableFeedCursor implements FeedCursor {
 

@@ -32,6 +32,8 @@ jobs:
         with:
           node-version: 26.x
           registry-url: 'https://registry.npmjs.org'
+      # The upload is done by the npm CLI rather than yarn, because trusted
+      # publishing over OIDC is an npm feature.
       - name: Ensure npm supports trusted publishing
         run: npm install -g npm@latest
       - uses: actions/cache@v4
@@ -45,7 +47,7 @@ jobs:
 
       # Pending changesets become a "Version Packages" pull request. Merging it
       # is what triggers the publish below, so the version bump and the publish
-      # can no longer come apart: a failed publish leaves nothing tagged.
+      # cannot come apart: a failed publish leaves nothing tagged.
       - uses: changesets/action@v1
         with:
           version: yarn changeset version

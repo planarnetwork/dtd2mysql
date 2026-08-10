@@ -22,11 +22,14 @@ This is a monorepo. The published CLI is one workspace among several:
 | Package | Published as | What it is |
 |---|---|---|
 | `apps/dtd2mysql` | `dtd2mysql` | The command line tool |
-| `libs/feed-parser` | `@gb-rail/feed-parser` | Declarative fixed-width and CSV record parsing |
-| `libs/dtd-schema` | `@gb-rail/dtd-schema` | Record layouts for the fares, timetable, routeing and NFM64 feeds |
-| `libs/dtd-source` | `@gb-rail/dtd-source` | SFTP download and feed sequencing |
-| `libs/gtfs` | `@gb-rail/gtfs` | GTFS entities, the transit model, the transforms and the build |
-| `libs/gtfs-output` | `@gb-rail/gtfs-output` | Writers: a directory of text files, or a zip |
+| `libs/feed-parser` | — | Declarative fixed-width and CSV record parsing |
+| `libs/dtd-schema` | — | Record layouts for the fares, timetable, routeing and NFM64 feeds |
+| `libs/dtd-source` | — | SFTP download and feed sequencing |
+| `libs/gtfs` | — | GTFS entities, the transit model, the transforms and the build |
+| `libs/gtfs-output` | — | Writers: a directory of text files, or a zip |
+
+`dtd2mysql` is the only package published. The libraries are internal and bundled into
+its tarball, so installing it pulls nothing from the `@gb-rail` scope.
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the
 workspaces resolve to that output, so `yarn build` has to happen before anything runs;
@@ -45,12 +48,9 @@ yarn install
 yarn test
 ```
 
-Yarn 4 is used and its release bundle is committed, so there is nothing to install first —
-`yarn` works straight after a clone as long as Node 26 is on the path.
-
-Anything that should reach a user needs a changeset: run `yarn changeset`, pick the
-packages and the bump type, and commit the file it writes. A pull request with no
-changeset publishes nothing, which is the right answer for documentation and CI changes.
+Anything that should reach a user needs a changeset: run `yarn changeset`, pick the bump
+type, and commit the file it writes. A pull request with no changeset publishes nothing,
+which is the right answer for documentation and CI changes.
 
 If you would like to send a pull request please write your contribution in TypeScript and
 if possible, add a test.

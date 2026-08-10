@@ -20,9 +20,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.version }}
-      # yarn ships in the repository, so there is nothing to install first. The
-      # cache is the project-level .yarn/cache, which is why enableGlobalCache is
-      # off in .yarnrc.yml.
       - uses: actions/cache@v4
         with:
           path: .yarn/cache
@@ -35,6 +32,10 @@ jobs:
       # Each workspace is a vitest project named after its package, so a failure
       # names the package rather than the repository.
       - run: yarn vitest run
+      # The CLI has to work from the repository root as well as from its own
+      # directory: tsx takes its compiler options from the nearest tsconfig whose
+      # include matches the file.
+      - run: yarn tsx apps/dtd2mysql/src/index.ts --help
 
   package:
     runs-on: ubuntu-latest
@@ -49,6 +50,14 @@ jobs:
           key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           restore-keys: yarn-${{ runner.os }}-
       - run: yarn install --immutable
-      # Tests run against source, so main/types/bin/files breakage is invisible
-      # to them. This installs the built tarball into a clean directory instead.
-      - run: ./scripts/pack-smoke-test.sh
+      # Tests run against source, so main, bin and files breakage is invisible to
+      # them. Install the tarball into a clean directory and run the CLI from it.
+      - name: Install the packaged tarball and run it
+        run: |
+          yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/dtd2mysql.tgz"
+          mkdir -p "$RUNNER_TEMP/install" && cd "$RUNNER_TEMP/install"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "$RUNNER_TEMP/dtd2mysql.tgz"
+          ./node_modules/.bin/dtd2mysql --help | tee help.txt
+          grep -q "Usage: dtd2mysql" help.txt
+          grep -q -- "--gtfs-zip" help.txt

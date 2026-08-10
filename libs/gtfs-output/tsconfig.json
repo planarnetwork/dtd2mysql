@@ -4,10 +4,15 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "references": [
     {
       "path": "../gtfs"
     }
+  ],
+  "exclude": [
+    "**/*.spec.ts"
   ]
 }

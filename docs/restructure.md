@@ -6,17 +6,22 @@ Status: Epic A landed; everything else proposal.
 exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
 written, as decided in §2. Nothing from Epics B, C, D, E or F is in yet.
 
-The move was verified rather than asserted: `scripts/verify-against-master.sh` builds the
-feed from master and from the restructured tree against the same database on the same day
-and diffs them. Every output file is byte-identical, `--help` is unchanged, the same set
-of CLI flags is handled, and the same 119 tests exist and pass. Two consecutive runs of
-the same code on the same day are byte-identical, so that comparison distinguishes a real
+The move was verified rather than asserted. Building the feed from master and from the
+restructured tree against the same database on the same day gives byte-identical output in
+every file, with the same CLI surface and the same 119 tests. Two consecutive runs of the
+same code on the same day are byte-identical, so that comparison distinguishes a real
 change from noise.
 
-One deliberate departure from the move map: the `GTFSOutput` *interface* lives in
-`libs/gtfs`, not `libs/gtfs-output`. The build orchestrator writes through it and the
-dependency graph runs `gtfs-output → gtfs`, so putting it in `gtfs-output` would invert
-that edge. `FileOutput` and the zip command are in `gtfs-output` as planned.
+Two deliberate departures from §2:
+
+- The `GTFSOutput` *interface* lives in `libs/gtfs`, not `libs/gtfs-output`. The build
+  orchestrator writes through it and the dependency graph runs `gtfs-output → gtfs`, so
+  putting it in `gtfs-output` would invert that edge. `FileOutput` and the zip command are
+  in `gtfs-output` as planned.
+- **`dtd2mysql` is the only published package.** The `@gb-rail` libraries are private and
+  bundled into its tarball with esbuild, so nothing new appears on npm and installing
+  `dtd2mysql` pulls nothing from the scope. Making a library public later is one field in
+  its manifest and one external in the bundle command.
 Issues: [#119](https://github.com/planarnetwork/dtd2mysql/issues/119) (external data),
 [#115](https://github.com/planarnetwork/dtd2mysql/issues/115) (one-shot GTFS),
 [#116](https://github.com/planarnetwork/dtd2mysql/issues/116) (other databases — deferred, see C4),
@@ -224,7 +229,7 @@ Yarn 4 (Berry) with `nodeLinker: node-modules` — tsx, vitest and `ssh2` are al
 PnP buys nothing here.
 
 - Workspace deps via `"@gb-rail/gtfs": "workspace:^"`.
-- Libs get `"publishConfig": { "access": "public" }`; apps publish bare.
+- Libs are private and bundled into the app that needs them; apps publish bare.
 - The existing `allowScripts` block is `@lavamoat/allow-scripts` config. Under Yarn 4 it becomes
   `dependenciesMeta.<pkg>.built` in the root manifest with `enableScripts: false` in `.yarnrc.yml`.
 - TypeScript project references with `composite: true`, so
@@ -758,7 +763,13 @@ resolved once in the composition root, not via `require()` inside a memoized get
 
 **A9 · Changesets and release pipeline** *(depends A8)* — **done**
 `publish.yml` replaced. `yarn workspaces foreach --topological npm publish` gated on a changeset.
-Libs public under `@gb-rail`, apps bare. Dry-run on PRs.
+Dry-run on PRs.
+
+Revised: the libraries are **not** published. They are private, and `apps/dtd2mysql` bundles
+them into a single file with esbuild, so the published tarball is the CLI and nothing else -
+four files, and the only runtime dependencies are the npm packages the libraries themselves
+pull in. The cost is that deep imports into `dtd2mysql/dist/...` no longer resolve; the
+`types` field goes with them, having pointed at a file that was never emitted.
 
 **A10 · CI for workspaces** *(depends A1)* — **done**
 `yarn install --immutable`, `.yarn/cache` cached, tests run per workspace with failures attributed

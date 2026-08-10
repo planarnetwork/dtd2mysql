@@ -32,8 +32,7 @@ export interface FileProvider {
 
 /**
  * Whatever consumes a downloaded feed file. The storage apps pass their
- * ImportFeedCommand; a one-shot build passes something that never touches a
- * database, which is the point of keeping the type structural.
+ * ImportFeedCommand; a build with no database passes something else.
  */
 export interface FeedProcessor {
   doImport(filename: string): Promise<any>;
