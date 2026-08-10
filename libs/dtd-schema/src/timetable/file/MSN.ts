@@ -14,10 +14,13 @@ const physicalStation = new FixedWidthRecord(
     "tiploc_code": new TextField(36, 7),
     "crs_reference_code": new TextField(43, 3, true),
     "crs_code": new TextField(49, 3, true),
-    // The actual easting is (easting - 10000) * 100
-    "easting": new IntField(52, 5, true),
+    // The actual easting is (easting - 10000) * 100. An all-zero field is the
+    // feed saying it has no coordinate, not a coordinate of zero: unwound and
+    // projected it lands in the South Atlantic, which is where 43 CIE stations
+    // have been sitting.
+    "easting": new IntField(52, 5, true, [" ", "0"]),
     // The actual northing is (northing - 60000) * 100
-    "northing": new IntField(58, 5, true),
+    "northing": new IntField(58, 5, true, [" ", "0"]),
     "minimum_change_time": new IntField(63, 2, false, [])
   },
   ["crs_code"]
