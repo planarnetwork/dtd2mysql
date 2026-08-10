@@ -19,6 +19,8 @@ import {
   TimetableSource,
   toFixedLinks,
   toStop,
+  withoutPlaceholders,
+  reportDroppedStops,
   Transfer
 } from "@gb-rail/gtfs";
 
@@ -71,21 +73,34 @@ export class MySqlTimetableSource implements TimetableSource {
    * disagree, which is how that was found.
    */
   public async getStops(): Promise<Stop[]> {
-    const [results] = await this.db.query<StationRecord>(`
-      SELECT crs_code, tiploc_code, station_name, cate_interchange_status, easting, northing
-      FROM (
-        SELECT *, ROW_NUMBER() OVER (
-          PARTITION BY crs_code ORDER BY cate_interchange_status <=> 9, tiploc_code
-        ) AS preference
-        FROM physical_station
-        WHERE crs_code IS NOT NULL
-      ) ranked
-      WHERE preference = 1
-      ORDER BY crs_code
-    `);
+    const {stops} = await this.stations();
 
-    return results.map(row => toStop(row, this.stationCoordinates));
+    return stops;
   }
+
+  /**
+   * Every station as a stop, with the operator placeholders taken out and their
+   * codes kept so getSchedules can drop the stop times that call at them. Held
+   * as a promise because both callers want it and neither runs first.
+   */
+  private stations(): Promise<{stops: Stop[], dropped: Set<string>}> {
+    return this.stationsQ ??= this.db
+      .query<StationRecord>(`
+        SELECT crs_code, tiploc_code, station_name, cate_interchange_status, easting, northing
+        FROM (
+          SELECT *, ROW_NUMBER() OVER (
+            PARTITION BY crs_code ORDER BY cate_interchange_status <=> 9
+          ) AS preference
+          FROM physical_station
+          WHERE crs_code IS NOT NULL
+        ) ranked
+        WHERE preference = 1
+        ORDER BY crs_code
+      `)
+      .then(([results]) => withoutPlaceholders(results.map(row => toStop(row, this.stationCoordinates))));
+  }
+
+  private stationsQ?: Promise<{stops: Stop[], dropped: Set<string>}>;
 
   /**
    * Return the schedules and z trains. These queries probably require some explanation:
@@ -100,7 +115,8 @@ export class MySqlTimetableSource implements TimetableSource {
    * more trains than replacement buses.
    */
   public async getSchedules(range: DateRange): Promise<ScheduleResults> {
-    const scheduleBuilder = new ScheduleBuilder();
+    const {dropped} = await this.stations();
+    const scheduleBuilder = new ScheduleBuilder(dropped);
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
 
     if (!lastSchedule) {
@@ -149,6 +165,8 @@ export class MySqlTimetableSource implements TimetableSource {
         ORDER BY stop_id
       `, window))
     ]);
+
+    reportDroppedStops(scheduleBuilder.dropped);
 
     return scheduleBuilder.results;
   }

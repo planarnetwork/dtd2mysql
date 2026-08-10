@@ -45,6 +45,8 @@ export type {ScheduleResults} from "./build/ScheduleBuilder";
 // The source SPI
 export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";
 export {toStop} from "./source/StationRecord";
+export {isPlaceholder, withoutPlaceholders, reportDroppedStops} from "./source/Placeholder";
+export {BOUNDS, inBounds} from "./source/Bounds";
 export type {StationRecord} from "./source/StationRecord";
 export {toFixedLinks} from "./source/FixedLinkRecord";
 export type {FixedLinkRecord} from "./source/FixedLinkRecord";

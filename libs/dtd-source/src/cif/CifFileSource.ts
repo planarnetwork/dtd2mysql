@@ -17,6 +17,8 @@ import {
   TimetableSource,
   toFixedLinks,
   toStop,
+  withoutPlaceholders,
+  reportDroppedStops,
   Transfer,
   TransferType
 } from "@gb-rail/gtfs";
@@ -61,11 +63,23 @@ export class CifFileSource implements TimetableSource {
    * SELECT crs_code, ... FROM physical_station WHERE crs_code IS NOT NULL GROUP BY crs_code
    */
   public async getStops(): Promise<Stop[]> {
-    const {stations} = await this.loadReference();
+    const {stops} = await this.stops_();
 
-    return groupByCrs(stations.rows.filter(row => row.crs_code !== null), true)
-      .map(row => toStop(stationRecord(row), this.stationCoordinates));
+    return stops;
   }
+
+  /**
+   * Every station as a stop, with the operator placeholders taken out and their
+   * codes kept so the schedule read can drop the stop times calling at them.
+   */
+  private stops_(): Promise<{stops: Stop[], dropped: Set<string>}> {
+    return this.stopsQ ??= this.loadReference().then(({stations}) => withoutPlaceholders(
+      groupByCrs(stations.rows.filter(row => row.crs_code !== null), true)
+        .map(row => toStop(stationRecord(row), this.stationCoordinates))
+    ));
+  }
+
+  private stopsQ?: Promise<{stops: Stop[], dropped: Set<string>}>;
 
   /**
    * SELECT crs_code, crs_code, 2, minimum_change_time * 60 FROM physical_station
@@ -201,6 +215,7 @@ export class CifFileSource implements TimetableSource {
    */
   private async readTimetable(range: DateRange): Promise<Timetable> {
     const {stations} = await this.loadReference();
+    const {dropped} = await this.stops_();
     const crsByTiploc = new Map<string, string>();
 
     for (const row of stations.rows) {
@@ -212,7 +227,7 @@ export class CifFileSource implements TimetableSource {
     const mca = timetable["MCA"] as MultiRecordFile;
     const cfa = timetable["CFA"] as MultiRecordFile;
     const ztr = timetable["ZTR"] as MultiRecordFile;
-    const loader = new ScheduleLoader(range, crsByTiploc);
+    const loader = new ScheduleLoader(range, crsByTiploc, dropped);
 
     for (const source of this.sources) {
       const zip = new FeedZip(source);
@@ -232,6 +247,8 @@ export class CifFileSource implements TimetableSource {
         zip.close();
       }
     }
+
+    reportDroppedStops(loader.droppedStops);
 
     return loader.results();
   }
@@ -260,9 +277,14 @@ class ScheduleLoader {
   private scheduleId = 0;
   private zScheduleId = 0;
 
+  // Summed across builders because there is one per schedule here, unlike the
+  // MySQL source which streams every schedule through a single builder.
+  public droppedStops = 0;
+
   constructor(
     private readonly range: DateRange,
-    private readonly crsByTiploc: Map<string, string>
+    private readonly crsByTiploc: Map<string, string>,
+    private readonly exclude: ReadonlySet<string>
   ) {}
 
   public readTimetableLine(file: MultiRecordFile, line: string): void {
@@ -409,8 +431,9 @@ class ScheduleLoader {
       return;
     }
 
-    const builder = new ScheduleBuilder();
+    const builder = new ScheduleBuilder(this.exclude);
     builder.load(pending.zTrain ? this.zTrainRows(pending) : this.scheduleRows(pending));
+    this.droppedStops += builder.dropped;
 
     const [schedule] = builder.results.schedules;
 

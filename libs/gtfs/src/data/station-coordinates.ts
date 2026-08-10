@@ -13612,8 +13612,8 @@ export const stationCoordinates: StationCoordinates = {
   },
   "TCR": {
     "stop_name": "Tottenham Court Road (Elizabeth line)",
-    "stop_lat": -0.1306,
-    "stop_lon": 51.5163,
+    "stop_lat": 51.5163,
+    "stop_lon": -0.1306,
     "wheelchair_boarding": 0
   },
   "TDU": {
