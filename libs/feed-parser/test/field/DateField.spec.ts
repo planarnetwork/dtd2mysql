@@ -1,6 +1,6 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import {DateField, ShortDateField} from "../../../src/feed/field/DateField";
+import {DateField, ShortDateField} from "../../src/field/DateField";
 
 describe("DateField", () => {
 

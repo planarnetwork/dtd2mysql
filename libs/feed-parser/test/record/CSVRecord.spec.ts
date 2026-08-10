@@ -1,10 +1,10 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import {DoubleField} from "../../../src/feed/field/DoubleField";
-import {TextField} from "../../../src/feed/field/TextField";
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
-import {DateField} from "../../../src/feed/field/DateField";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {DoubleField} from "../../src/field/DoubleField";
+import {TextField} from "../../src/field/TextField";
+import {CSVRecord} from "../../src/record/CSVRecord";
+import {DateField} from "../../src/field/DateField";
+import {RecordAction} from "../../src/record/Record";
 
 describe("CSVRecord", () => {
 

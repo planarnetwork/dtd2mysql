@@ -1,10 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {DateField, FixedWidthRecord, IntField, MultiRecordFile, RecordAction, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
 
 const supplement = new FixedWidthRecord(
   "supplement",

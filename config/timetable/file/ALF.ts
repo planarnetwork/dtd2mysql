@@ -1,14 +1,7 @@
 
-import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {TimeField} from "../../../src/feed/field/TimeField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {BooleanField, DateField, FieldMap, FieldValue, IntField, ParsedRecord, Record, RecordAction, SingleRecordFile, TextField, TimeField, VariableLengthText} from "@gb-rail/feed-parser";
 
 import memoize from "memoized-class-decorator";
-import {Record, FieldMap, ParsedRecord, RecordAction} from "../../../src/feed/record/Record";
-import {FieldValue} from "../../../src/feed/field/Field";
 
 /**
  * Short format DTD date (e.g. 31/05/2017)

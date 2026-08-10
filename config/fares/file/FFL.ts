@@ -1,10 +1,5 @@
 
-import {TextField} from "../../../src/feed/field/TextField";
-import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {DateField, FixedWidthRecord, IntField, MultiRecordFile, RecordAction, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
 
 const flowFixedWidthRecord = new FixedWidthRecord(
   "flow",

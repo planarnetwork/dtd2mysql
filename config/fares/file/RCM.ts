@@ -1,9 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {DateField} from "../../../src/feed/field/DateField";
-import {TextField} from "../../../src/feed/field/TextField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
+import {DateField, FixedWidthRecord, IntField, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const record = new FixedWidthRecord(
   "railcard_minimum_fare",

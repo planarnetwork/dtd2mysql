@@ -1,10 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {BooleanField, DateField, FixedWidthRecord, IntField, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const record = new FixedWidthRecord(
   "railcard",

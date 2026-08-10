@@ -1,11 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {BooleanField, DateField, FixedWidthRecord, IntField, RecordAction, SingleRecordFile, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
 
 const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
   "non_derivable_fare_override",

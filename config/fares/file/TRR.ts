@@ -1,9 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {IntField} from "../../../src/feed/field/IntField";
+import {DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const rover = new FixedWidthRecord(
   "rover",

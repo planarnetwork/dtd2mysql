@@ -1,6 +1,4 @@
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
+import {CSVRecord, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const stationGroup = new CSVRecord(
   "station_group",

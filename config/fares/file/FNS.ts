@@ -1,9 +1,4 @@
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {IntField, ZeroFillIntField} from "../../../src/feed/field/IntField";
-import {TextField} from "../../../src/feed/field/TextField";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {DateField} from "../../../src/feed/field/DateField";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {DateField, FixedWidthRecord, IntField, RecordAction, SingleRecordFile, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
 
 const discountFixedWidthRecord = new FixedWidthRecord(
   "non_standard_discount",

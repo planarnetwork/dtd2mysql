@@ -1,9 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {BooleanField, DateField, FixedWidthRecord, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const record = new FixedWidthRecord(
   "toc_specific_ticket",

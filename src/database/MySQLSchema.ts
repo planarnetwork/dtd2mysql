@@ -1,15 +1,7 @@
 
 
 import {DatabaseConnection} from "./DatabaseConnection";
-import {Field} from "../feed/field/Field";
-import {Record} from "../feed/record/Record";
-import {TextField, VariableLengthText} from "../feed/field/TextField";
-import {IntField, ZeroFillIntField} from "../feed/field/IntField";
-import {BooleanField} from "../feed/field/BooleanField";
-import {DateField, NullDateField, ShortDateField} from "../feed/field/DateField";
-import {TimeField} from "../feed/field/TimeField";
-import {DoubleField} from "../feed/field/DoubleField";
-import {ForeignKeyField} from "../feed/field/ForeignKeyField";
+import {BooleanField, DateField, DoubleField, Field, ForeignKeyField, IntField, NullDateField, Record, ShortDateField, TextField, TimeField, VariableLengthText, ZeroFillIntField} from "@gb-rail/feed-parser";
 
 export class MySQLSchema {
 

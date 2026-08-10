@@ -1,13 +1,7 @@
 import * as chai from "chai";
 import {DatabaseConnection} from "../../src/database/DatabaseConnection";
 import {MySQLSchema} from "../../src/database/MySQLSchema";
-import {FixedWidthRecord} from "../../src/feed/record/FixedWidthRecord";
-import {IntField, ZeroFillIntField} from "../../src/feed/field/IntField";
-import {TextField, VariableLengthText} from "../../src/feed/field/TextField";
-import {DateField} from "../../src/feed/field/DateField";
-import {TimeField} from "../../src/feed/field/TimeField";
-import {BooleanField} from "../../src/feed/field/BooleanField";
-import {DoubleField} from "../../src/feed/field/DoubleField";
+import {BooleanField, DateField, DoubleField, FixedWidthRecord, IntField, TextField, TimeField, VariableLengthText, ZeroFillIntField} from "@gb-rail/feed-parser";
 import {describe, it, expect} from 'vitest';
 
 describe("MySQLSchema", () => {

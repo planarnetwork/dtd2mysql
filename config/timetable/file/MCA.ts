@@ -1,14 +1,5 @@
 
-import {FixedWidthRecord, RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
-import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
-import {ShortDateField} from "../../../src/feed/field/DateField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
-import {TimeField} from "../../../src/feed/field/TimeField";
-import {MultiFormatRecord} from "../../../src/feed/record/MultiFormatRecord";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {BooleanField, FixedWidthRecord, ForeignKeyField, IntField, MultiFormatRecord, MultiRecordFile, RecordAction, RecordWithManualIdentifier, ShortDateField, TextField, TimeField, VariableLengthText} from "@gb-rail/feed-parser";
 
 export const tiplocInsert = new FixedWidthRecord(
   "tiploc",

@@ -1,8 +1,5 @@
 
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
+import {BooleanField, CSVRecord, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const record = new CSVRecord(
   "london_station",

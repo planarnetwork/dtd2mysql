@@ -1,9 +1,5 @@
 
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {TimeField} from "../../../src/feed/field/TimeField";
+import {DateField, FixedWidthRecord, SingleRecordFile, TextField, TimeField} from "@gb-rail/feed-parser";
 
 const record = new FixedWidthRecord(
   "advance_ticket",

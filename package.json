@@ -15,10 +15,11 @@
   ],
   "bin": "bin/dtd2mysql.sh",
   "scripts": {
+    "build": "tsc -b",
     "test": "vitest run",
     "watch-test": "vitest",
     "start": "tsx ./src/index.ts",
-    "prepublishOnly": "tsc -p ./ --outDir dist/",
+    "prepublishOnly": "tsc -b",
     "gtfs": "tsx ./src/index.ts --gtfs",
     "gtfs-zip": "tsx ./src/index.ts --gtfs-zip"
   },
@@ -45,6 +46,7 @@
     "node": ">=26"
   },
   "dependencies": {
+    "@gb-rail/feed-parser": "workspace:^",
     "adm-zip": "0.6.0",
     "byline": "5.0.0",
     "csv-write-stream": "2.0.0",
@@ -59,6 +61,7 @@
     "@types/csv-write-stream": "2.0.3",
     "@types/node": "26.1.1",
     "@types/ssh2": "1.15.5",
+    "chai": "6.2.2",
     "tsx": "4.23.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"

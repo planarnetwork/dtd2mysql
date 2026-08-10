@@ -2,7 +2,7 @@ import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
 import {DatabaseConnection} from "../../src/database/DatabaseConnection";
 import {MySQLTable} from "../../src/database/MySQLTable";
-import {RecordAction} from "../../src/feed/record/Record";
+import {RecordAction} from "@gb-rail/feed-parser";
 
 describe("MySQLTable", () => {
 

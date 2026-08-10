@@ -1,6 +1,4 @@
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
+import {FixedWidthRecord, SingleRecordFile, TextField, VariableLengthText} from "@gb-rail/feed-parser";
 
 const record = new FixedWidthRecord(
   "permitted_route",

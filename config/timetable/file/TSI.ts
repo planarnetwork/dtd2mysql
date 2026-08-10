@@ -1,7 +1,4 @@
-import {TextField} from "../../../src/feed/field/TextField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
+import {CSVRecord, IntField, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const TSI = new SingleRecordFile(
     new CSVRecord('toc_interchange', ['crs', 'from_toc', 'to_toc'], {

@@ -1,10 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {BooleanField, DateField, FixedWidthRecord, MultiRecordFile, RecordAction, TextField} from "@gb-rail/feed-parser";
 
 
 const location = new FixedWidthRecord(

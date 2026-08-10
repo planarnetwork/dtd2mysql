@@ -1,0 +1,37 @@
+{
+  "name": "@gb-rail/feed-parser",
+  "version": "0.0.0",
+  "description": "Declarative fixed-width and CSV record parsing for the GB rail data feeds",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/feed-parser"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "memoized-class-decorator": "1.6.1"
+  }
+}

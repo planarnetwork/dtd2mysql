@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
-import {RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
+import {ForeignKeyField} from "../../src/field/ForeignKeyField";
+import {RecordWithManualIdentifier} from "../../src/record/FixedWidthRecord";
 
 describe("ForeignKeyField", () => {
 

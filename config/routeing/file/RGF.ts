@@ -1,10 +1,4 @@
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
-import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {BooleanField, CSVRecord, DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField, VariableLengthText} from "@gb-rail/feed-parser";
 
 const easement = new FixedWidthRecord(
   "easement",

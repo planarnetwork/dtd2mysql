@@ -1,5 +1,5 @@
 
-import {FeedFile} from "../src/feed/file/FeedFile";
+import {FeedFile} from "@gb-rail/feed-parser";
 import fares from "./fares";
 import routeing from "./routeing";
 import timetable from "./timetable";

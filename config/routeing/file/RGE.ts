@@ -1,6 +1,4 @@
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
+import {FixedWidthRecord, SingleRecordFile, TextField, VariableLengthText} from "@gb-rail/feed-parser";
 
 const record = new FixedWidthRecord(
   "easement_text",

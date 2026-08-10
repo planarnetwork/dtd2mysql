@@ -187,6 +187,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@gb-rail/feed-parser@workspace:^, @gb-rail/feed-parser@workspace:libs/feed-parser":
+  version: 0.0.0-use.local
+  resolution: "@gb-rail/feed-parser@workspace:libs/feed-parser"
+  dependencies:
+    memoized-class-decorator: "npm:1.6.1"
+  languageName: unknown
+  linkType: soft
+
 "@isaacs/fs-minipass@npm:^4.0.0":
   version: 4.0.1
   resolution: "@isaacs/fs-minipass@npm:4.0.1"
@@ -700,7 +708,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chai@npm:^6.2.2":
+"chai@npm:6.2.2, chai@npm:^6.2.2":
   version: 6.2.2
   resolution: "chai@npm:6.2.2"
   checksum: 10c0/e6c69e5f0c11dffe6ea13d0290936ebb68fcc1ad688b8e952e131df6a6d5797d5e860bc55cef1aca2e950c3e1f96daf79e9d5a70fb7dbaab4e46355e2635ed53
@@ -770,6 +778,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "dtd2mysql@workspace:."
   dependencies:
+    "@gb-rail/feed-parser": "workspace:^"
     "@types/adm-zip": "npm:0.5.8"
     "@types/byline": "npm:4.2.36"
     "@types/csv-write-stream": "npm:2.0.3"
@@ -777,6 +786,7 @@ __metadata:
     "@types/ssh2": "npm:1.15.5"
     adm-zip: "npm:0.6.0"
     byline: "npm:5.0.0"
+    chai: "npm:6.2.2"
     csv-write-stream: "npm:2.0.0"
     memoized-class-decorator: "npm:1.6.1"
     mysql2: "npm:3.23.0"

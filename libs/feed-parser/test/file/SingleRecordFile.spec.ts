@@ -1,10 +1,10 @@
 import * as chai from "chai";
 import {describe, it, expect} from 'vitest';
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {IntField} from "../../../src/feed/field/IntField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {TextField} from "../../../src/feed/field/TextField";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
+import {FixedWidthRecord} from "../../src/record/FixedWidthRecord";
+import {IntField} from "../../src/field/IntField";
+import {DateField} from "../../src/field/DateField";
+import {TextField} from "../../src/field/TextField";
+import {SingleRecordFile} from "../../src/file/SingleRecordFile";
 
 describe("SingleRecordFile", () => {
   const field = new IntField(0, 4);

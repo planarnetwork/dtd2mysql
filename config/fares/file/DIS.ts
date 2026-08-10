@@ -1,9 +1,4 @@
-import {TextField} from "../../../src/feed/field/TextField";
-import {DateField} from "../../../src/feed/field/DateField";
-import {IntField} from "../../../src/feed/field/IntField";
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
+import {BooleanField, DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const statusDiscount = new FixedWidthRecord(
   "status_discount",

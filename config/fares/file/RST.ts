@@ -1,12 +1,5 @@
 
-import {FixedWidthRecord} from "../../../src/feed/record/FixedWidthRecord";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {ZeroFillIntField} from "../../../src/feed/field/IntField";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
-import {TimeField} from "../../../src/feed/field/TimeField";
-import {DateField, NullDateField} from "../../../src/feed/field/DateField";
-import {RecordAction} from "../../../src/feed/record/Record";
+import {BooleanField, DateField, FixedWidthRecord, MultiRecordFile, NullDateField, RecordAction, TextField, TimeField, ZeroFillIntField} from "@gb-rail/feed-parser";
 
 const dates = new FixedWidthRecord(
   "restriction_date",

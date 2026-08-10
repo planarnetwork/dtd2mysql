@@ -1,8 +1,5 @@
 
-import {CSVRecord} from "../../../src/feed/record/CSVRecord";
-import {SingleRecordFile} from "../../../src/feed/file/SingleRecordFile";
-import {TextField} from "../../../src/feed/field/TextField";
-import {DoubleField} from "../../../src/feed/field/DoubleField";
+import {CSVRecord, DoubleField, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
 
 const record = new CSVRecord(
   "station_link",

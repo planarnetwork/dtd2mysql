@@ -1,12 +1,5 @@
 
-import {FixedWidthRecord, RecordWithManualIdentifier} from "../../../src/feed/record/FixedWidthRecord";
-import {TextField, VariableLengthText} from "../../../src/feed/field/TextField";
-import {MultiRecordFile} from "../../../src/feed/file/MultiRecordFile";
-import {BooleanField} from "../../../src/feed/field/BooleanField";
-import {ShortDateField} from "../../../src/feed/field/DateField";
-import {ForeignKeyField} from "../../../src/feed/field/ForeignKeyField";
-import {TimeField} from "../../../src/feed/field/TimeField";
-import {MultiFormatRecord} from "../../../src/feed/record/MultiFormatRecord";
+import {BooleanField, FixedWidthRecord, ForeignKeyField, MultiFormatRecord, MultiRecordFile, RecordWithManualIdentifier, ShortDateField, TextField, TimeField, VariableLengthText} from "@gb-rail/feed-parser";
 
 
 const schedule = new RecordWithManualIdentifier(

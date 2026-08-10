@@ -1,24 +1,16 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "nodenext",
-    "module": "nodenext",
-    "target": "es2025",
-    "sourceMap": true,
-    "experimentalDecorators": true,
-    "strict": true,
-    "declaration": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "lib": [
-      "esnext"
-    ],
-    "types": [
-      "node"
-    ]
+    "rootDir": ".",
+    "outDir": "dist"
   },
-  "exclude": [
-    "node_modules",
-    "test/",
-    "dist/"
+  "include": [
+    "src",
+    "config"
+  ],
+  "references": [
+    {
+      "path": "./libs/feed-parser"
+    }
   ]
 }
