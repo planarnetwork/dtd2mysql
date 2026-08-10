@@ -8,10 +8,10 @@ import {CifFileSource} from "./CifFileSource";
 /**
  * A feed small enough to reason about, built the way the real one is laid out.
  *
- * Ticket T4 builds a fixture by slicing a real feed, which is what covers the
- * pathological records. This covers the mapping: that each field lands where the
- * SQL puts it, that the records combine the way the importer combines them, and
- * that a second zip revises the first.
+ * A slice of a real feed is what will cover the pathological records. This
+ * covers the mapping: that each field lands where the SQL puts it, that the
+ * records combine the way the importer combines them, and that a second zip
+ * revises the first.
  */
 function at(...fields: [number, string][]): string {
   let line = "";

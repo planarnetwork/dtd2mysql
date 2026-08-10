@@ -25,8 +25,8 @@ export interface StationRecord {
  *
  * The coordinates are OSGB eastings and northings held in a form that has to be
  * undone before projecting - `(easting - 10000) * 100` - and then overlaid with
- * whatever `station-coordinates.ts` says. Ticket D3 deletes both halves of that:
- * NaPTAN becomes the coordinate source and the projection goes with it.
+ * whatever `station-coordinates.ts` says. Both halves go when the coordinates
+ * come from a source that has them in WGS84 already.
  *
  * The property order matters. csv-write-stream takes the column order from the
  * first row it is given, so this is what fixes the order of stops.txt.
