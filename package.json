@@ -16,12 +16,12 @@
   "bin": "bin/dtd2mysql.sh",
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run",
+    "test": "yarn build && vitest run",
     "watch-test": "vitest",
-    "start": "tsx ./src/index.ts",
+    "start": "yarn build && tsx ./src/index.ts",
     "prepublishOnly": "tsc -b",
-    "gtfs": "tsx ./src/index.ts --gtfs",
-    "gtfs-zip": "tsx ./src/index.ts --gtfs-zip"
+    "gtfs": "yarn build && tsx ./src/index.ts --gtfs",
+    "gtfs-zip": "yarn build && tsx ./src/index.ts --gtfs-zip"
   },
   "repository": {
     "type": "git",

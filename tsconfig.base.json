@@ -16,13 +16,6 @@
     ],
     "types": [
       "node"
-    ],
-    // Workspace packages resolve to their TypeScript source at runtime (see the
-    // `exports` field in each manifest) so nothing has to be built to run a
-    // command or a test. tsc is pointed at the built declarations instead, which
-    // is what `references` and `tsc -b` need to work incrementally.
-    "paths": {
-      "@gb-rail/*": ["./libs/*/dist/index.d.ts"]
-    }
+    ]
   }
 }
