@@ -2,6 +2,7 @@ import {Association} from "../model/Association";
 import {CRS, Stop} from "../entity/Stop";
 import {FixedLink} from "../entity/FixedLink";
 import {RSID, STP, TUID} from "../model/OverlayRecord";
+import {DateRange} from "../build/BuildContext";
 import {ScheduleResults} from "../build/ScheduleBuilder";
 import {Transfer} from "../entity/Transfer";
 
@@ -28,18 +29,16 @@ export interface TimetableSource {
   getStops(): Promise<Stop[]>;
 
   /**
-   * Passenger schedules and z-trains within the given range.
-   *
-   * `range` is a MySQL interval expression such as "3 MONTH". It is the one
-   * part of this interface that leaks the storage engine; ticket T1 replaces it
-   * with a date window derived from an injected clock.
+   * Passenger schedules and z-trains that are live at some point in the window.
    */
-  getSchedules(range: string): Promise<ScheduleResults>;
+  getSchedules(range: DateRange): Promise<ScheduleResults>;
 
   /**
-   * Associations - splits, joins and next/previous workings
+   * Associations - splits, joins and next/previous workings - live at some
+   * point in the window. The same window as getSchedules: an association whose
+   * dates fall outside it cannot join anything that is in it.
    */
-  getAssociations(): Promise<Association[]>;
+  getAssociations(range: DateRange): Promise<Association[]>;
 
   /**
    * Fixed links: the walking, tube and bus interchanges from ALF and FLF

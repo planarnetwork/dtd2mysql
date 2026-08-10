@@ -1,4 +1,5 @@
 import {TimetableSource} from "../source/TimetableSource";
+import {BuildContext, dateRange} from "./BuildContext";
 import {Schedule} from "../model/Schedule";
 import {agencies} from "../data/agency";
 import {Association} from "../model/Association";
@@ -18,7 +19,8 @@ export class BuildFeed {
 
   public constructor(
     private readonly repository: TimetableSource,
-    private readonly output: GTFSOutput
+    private readonly output: GTFSOutput,
+    private readonly context: BuildContext
   ) {}
 
   /**
@@ -31,12 +33,11 @@ export class BuildFeed {
       throw new Error(`Output path ${this.baseDir} does not exist.`);
     }
 
-    if (Object.hasOwn(process.env, "GTFS_RANGE")) {
-      console.log(`Using GTFS_RANGE = ${process.env.GTFS_RANGE}\n`);
-    }
-    const range = process.env.GTFS_RANGE || "3 MONTH";
+    const range = dateRange(this.context);
 
-    const associationsP = this.repository.getAssociations();
+    console.log(`Building ${range.from} to ${range.to}\n`);
+
+    const associationsP = this.repository.getAssociations(range);
     const scheduleResultsP = this.repository.getSchedules(range);
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");

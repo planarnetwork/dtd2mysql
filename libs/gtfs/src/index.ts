@@ -36,6 +36,8 @@ export {mergeSchedules} from "./transform/MergeSchedules";
 
 // The build orchestrator
 export {BuildFeed} from "./build/BuildFeed";
+export {buildContext, dateRange, option, parseRange} from "./build/BuildContext";
+export type {BuildContext, DateRange} from "./build/BuildContext";
 export type {GTFSOutput} from "./build/GTFSOutput";
 export {ScheduleBuilder} from "./build/ScheduleBuilder";
 export type {ScheduleResults} from "./build/ScheduleBuilder";

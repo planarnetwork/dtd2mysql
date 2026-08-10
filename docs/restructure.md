@@ -1,6 +1,6 @@
 # Restructure plan
 
-Status: Epic A landed; everything else proposal.
+Status: Epic A landed, Epic C in progress; everything else proposal.
 
 **Epic A is done.** The tree is a Yarn 4 monorepo of one app and five libraries, built
 exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
@@ -412,10 +412,21 @@ These matter as much as the tests:
 
 Gates everything else. T2 and T3 are required by the nightly build (E2) regardless.
 
-**T1 · Inject a clock; remove `CURDATE()`**
+**T1 · Inject a clock; remove `CURDATE()`** — **done**
 `BuildContext.today: Temporal.PlainDate` threaded through the three range-filtered queries;
 `--today` CLI flag and config key; nightly passes the real date, tests pin `2025-09-02`. Subsumes
 B3: all three queries derive their window from one value.
+
+`BuildContext` carries `today` and `range`; `dateRange` turns the two into a `from`/`to` window and
+`TimetableSource` takes that window rather than a MySQL interval string, so the SQL is parameterised
+rather than interpolated. `--today`/`--range` on the command line beat `GTFS_TODAY`/`GTFS_RANGE`,
+which beat the real date and three months. `parseRange` still reads the `3 MONTH` form GTFS_RANGE
+has always used and refuses anything it cannot parse, rather than passing it to the driver.
+
+With the defaults the output is byte-identical to before. The B3 half is measurable on the current
+feed: at `6 MONTH` the old code pulled 93,348 extra schedules while dropping the **846 associations**
+that belong with them. No z-trains fall in that band in this feed, so replacement buses happen not to
+be affected today - the mechanism was still wrong.
 
 **T2 · Deterministic identifiers** *(partly delivered by #121)*
 `route_id` and `service_id` no longer depend on MySQL auto-increment ordering. `route_id` is
@@ -546,7 +557,7 @@ with the existing station interchange rows. Time and day-of-week windows GTFS ca
 documented in `stop_desc` or dropped with a logged count. `links.txt` kept behind a flag for one
 minor version, then removed. `config/gtfs/import.ts` updated. Blocks E2.
 
-**B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1.*
+**B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1, and **done** there.*
 
 **B4 · Handle an empty `schedule` table**
 Clear error naming the missing import step instead of `TypeError`.

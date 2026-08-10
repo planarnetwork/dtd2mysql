@@ -7,6 +7,7 @@ import {
   AssociationType,
   CRS,
   DateIndicator,
+  DateRange,
   Duration,
   FixedLink,
   ScheduleBuilder,
@@ -82,18 +83,19 @@ export class MySqlTimetableSource implements TimetableSource {
   /**
    * Return the schedules and z trains. These queries probably require some explanation:
    *
-   * The first query selects the stop times for all passenger services between now and + 3 months. It's important that
+   * The first query selects the stop times for all passenger services live in the window. It's important that
    * the stop time location is mapped to physical stations to avoid getting fake CRS codes from the tiploc data.
    *
-   * The second query selects all the z-trains (usually replacement buses) within three months. They already use CRS
+   * The second query selects the z-trains (usually replacement buses) over the same window. They already use CRS
    * codes as the location so avoid the disaster above.
    *
-   * The argument range is a mysql expression like '3 MONTH'.
-   *   It is NOT SANITIZED so it cannot be untrusted user input.
+   * Both windows come from the same DateRange. They used to differ: the passenger query interpolated GTFS_RANGE
+   * while this one and getAssociations hardcoded INTERVAL 3 MONTH.
    */
-  public async getSchedules(range: string): Promise<ScheduleResults> {
+  public async getSchedules(range: DateRange): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+    const window = [range.to.toString(), range.from.toString()];
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -113,11 +115,11 @@ export class MySqlTimetableSource implements TimetableSource {
         (
           stop_time.id IS NULL OR crs_code IS NOT NULL
         )
-        AND runs_from < CURDATE() + INTERVAL ${range}
-        AND runs_to >= CURDATE()
+        AND runs_from < ?
+        AND runs_to >= ?
         AND scheduled_pass_time is null
         ORDER BY stp_indicator DESC, id, stop_id
-      `)),
+      `, window)),
       scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
           ${lastSchedule.id} + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
@@ -128,10 +130,10 @@ export class MySqlTimetableSource implements TimetableSource {
         FROM z_schedule
         LEFT JOIN z_schedule_extra ON z_schedule.id = z_schedule_extra.schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
-        WHERE runs_from < CURDATE() + INTERVAL 3 MONTH
-        AND runs_to >= CURDATE()
+        WHERE runs_from < ?
+        AND runs_to >= ?
         ORDER BY stop_id
-      `))
+      `, window))
     ]);
 
     return scheduleBuilder.results;
@@ -140,7 +142,7 @@ export class MySqlTimetableSource implements TimetableSource {
   /**
    * Get associations
    */
-  public async getAssociations(): Promise<Association[]> {
+  public async getAssociations(range: DateRange): Promise<Association[]> {
     const [results] = await this.db.query<AssociationRow>(`
       SELECT 
         a.id AS id, base_uid, assoc_uid, crs_code, assoc_date_ind, assoc_cat,
@@ -148,10 +150,10 @@ export class MySqlTimetableSource implements TimetableSource {
         start_date, end_date, stp_indicator
       FROM association a
       JOIN tiploc ON assoc_location = tiploc_code
-      WHERE start_date < CURDATE() + INTERVAL 3 MONTH
-      AND end_date >= CURDATE()
+      WHERE start_date < ?
+      AND end_date >= ?
       ORDER BY stp_indicator DESC, id
-    `);
+    `, [range.to.toString(), range.from.toString()]);
 
     return results.map(row => new Association(
       row.id,
