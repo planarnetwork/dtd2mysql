@@ -720,16 +720,55 @@ The four possible configurations, since this is easy to get wrong:
 `[" "]` is deliberately narrower than the default. The feed contains no blanks in that field
 (values are 0, 1, 2, 3 and 9), so nothing else moves. `MSN.spec.ts` pins both the blank and the `9`.
 
-**B10 · Zero eastings project to the South Atlantic**
-`00000` treated as absent, not zero — `IntField` gains an explicit sentinel list so an all-zero
-fixed-width numeric field parses to null. `stop_lat`/`stop_lon` are required in GTFS, so the 46
-affected stops are real places that need real coordinates: 43 CIE stations, `SOS` Stromness, and
-`QBN`/`QBS` Blackpool bus-tram. Seed `overrides.yaml` — the same file D7 introduces. A stop that
-still has no coordinate after overrides fails the build rather than emitting a placeholder. Test
-covers a CIE station.
+**B10 · Zero eastings project to the South Atlantic** — **done**
 
-NaPTAN is GB-only and will not cover the 43 CIE stations; a compatible source for Irish stations is
-to be identified at implementation time.
+The ticket assumed all 46 affected stops were "real places that need real coordinates", which is why
+it was blocked on finding an Irish source. They are not. **43 of the 46 need no coordinate, because
+nothing in the feed goes there:**
+
+| | stop times | fixed links | outcome |
+|---|---:|---:|---|
+| 43 CIE stations, easting `00000` | 0 | 0 | not published |
+| `QBN`/`QBS` Blackpool bus-tram | 0 | 4 each | published at the default |
+| `HVH` Hoek van Holland | 12 | 0 | correct already, exempt from the bounds |
+
+The Irish stations are in the MSN because they are ticketable, but no train in the feed calls at one.
+Their entire footprint is a row in `stops.txt` and a self-referencing row in `transfers.txt`. So no
+Irish coordinate source is needed to close this.
+
+What it does:
+
+1. An all-zero fixed-width coordinate field parses as absent - the MSN schema gives `easting` and
+   `northing` a nullChars list rather than `IntField` gaining a mechanism, since `nullValues`
+   already repeats the character to the field width.
+2. A coordinate that survives parsing but cannot be a place is also absent. `19500` unwinds to an
+   easting of 950,000, well past the eastern edge of the National Grid, and lands in the North Sea.
+   That is only visible after projecting, so `toStop` checks the projected point against `Bounds.ts`
+   and nulls it if it fails. `HVH` is the one documented exemption.
+3. A stop with no coordinate that nothing references is not published, and its transfer goes with it.
+4. A stop with no coordinate that something does reference is published at `NOWHERE` - 0,0 - and
+   named in a warning. Null Island rather than a plausible centroid: a validator flags it and nobody
+   mistakes it for a survey, where a national centre point would hide exactly what needs finding.
+
+`stops.txt` is therefore written after the schedules and links are known, because whether an
+unlocated station is published depends on whether anything references it.
+
+Feed effect: stops 3,097 -> 3,054, transfers 3,109 -> 3,054, trips and stop times unchanged. Three
+stops remain outside the bounds: `HVH`, which is right, and `QBN`/`QBS` at 0,0 awaiting an override.
+Both sources byte identical.
+
+This also fixed a dangling reference B12 left behind: the twelve placeholder stops were removed from
+`stops.txt` but their self-transfers were not, and the transfer filter here takes them out. The mini
+fixture caught it when the golden was regenerated.
+
+**`SOS` Stromness survives all of it.** It is at 50.80, -3.05 - Devon, not Orkney - from a northing
+of `61009` where it should be `70091`: the encoder divided by 1,000 instead of 100, and `1009` is
+visible in both. It is in bounds, has no sentinel, and nothing references it, so none of the three
+rules touches it. It needs a hand-written override, and it is the standing reminder that the bounds
+check catches coordinates that are impossible, not ones that are merely wrong.
+
+NaPTAN is GB-only and will not cover the 43 CIE stations. That no longer blocks anything: they come
+back the moment a source can locate them, and `QBN`/`QBS` are GB so D3 covers those two.
 
 **B11 · TCR latitude and longitude are transposed** — **done**
 `libs/gtfs/src/data/station-coordinates.ts` had `stop_lat: -0.1306, stop_lon: 51.5163`, placing
@@ -1352,8 +1391,8 @@ parallel by different people without touching the core.
 
 **82 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3, B11 and B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
-out of this pass, leaving **48 in scope**.
+C1–C3 and B10–B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
+out of this pass, leaving **47 in scope**.
 
 ---
 

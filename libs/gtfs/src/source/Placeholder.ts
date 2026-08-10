@@ -1,5 +1,4 @@
 import {Stop} from "../entity/Stop";
-import {inBounds} from "./Bounds";
 
 /**
  * `CH ORIGIN`, `XC DESTINATION` and the rest: one pair per operator, in the MSN
@@ -12,8 +11,7 @@ import {inBounds} from "./Bounds";
  *
  * - the name, which no real station has;
  * - a `CATZ` TIPLOC, which 121 stations have, most of them real CIE stations;
- * - a coordinate outside the feed's bounds, which 59 stations have today,
- *   including every CIE station until B10 gives them real ones.
+ * - no usable coordinate, which 45 stations have, including every CIE station.
  *
  * A `Q` CRS prefix is not one of the signals. 38 stations have it and most are
  * real.
@@ -23,7 +21,7 @@ const name = /^[A-Z]+ (ORIGIN|DESTINATION)$/;
 export function isPlaceholder(stop: Stop): boolean {
   return name.test(stop.stop_name)
     && stop.stop_code.startsWith("CATZ")
-    && !inBounds(stop.stop_lat, stop.stop_lon);
+    && stop.stop_lat === null;
 }
 
 /**

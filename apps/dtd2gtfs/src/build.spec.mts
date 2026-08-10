@@ -178,11 +178,28 @@ describe("the feed the mini fixture produces", () => {
     expect(columns("stop_times.txt").every(s => s.stop_headsign === "")).to.equal(true);
   });
 
-  it("puts a CIE station in the sea, because its eastings are zero", () => {
-    const cie = columns("stops.txt").find(s => s.stop_name.includes("(CIE"));
+  it("does not publish a station it cannot locate and nothing calls at", () => {
+    // The CIE stations have an all-zero easting and northing, which used to
+    // project into the South Atlantic. No train in the feed calls at one, so
+    // rather than invent a coordinate for a place nothing goes, they are left
+    // out until a source can locate them.
+    const zeroEasting = columns("stops.txt").filter(s => s.stop_name.includes("(CIE"));
 
-    expect(cie).to.not.equal(undefined);
-    expect(Number(cie!.stop_lat)).to.be.lessThan(0);
+    expect(zeroEasting).to.deep.equal([]);
+  });
+
+  it("gives every published stop a coordinate", () => {
+    const stops = columns("stops.txt");
+
+    expect(stops.length).to.be.greaterThan(0);
+    expect(stops.every(s => s.stop_lat !== "" && s.stop_lon !== "")).to.equal(true);
+  });
+
+  it("leaves no transfer pointing at a stop it does not publish", () => {
+    const published = new Set(columns("stops.txt").map(s => s.stop_id));
+    const dangling = columns("transfers.txt").filter(t => !published.has(t.from_stop_id));
+
+    expect(dangling).to.deep.equal([]);
   });
 
   it("carries the replacement buses and the ferry from the ZTR", () => {
