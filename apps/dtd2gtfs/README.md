@@ -22,8 +22,8 @@ global from Node 26 onwards.
 ```
 dtd2gtfs build [OPTIONS]
 
-  --source FILE        a DTD timetable zip. Repeat it to apply a full refresh and
-                       then its incrementals, in order
+  --source PATH        a DTD timetable zip, or a directory of them. Repeat it to
+                       combine sources
   --out PATH           where to write. A path ending .zip produces a zip, anything
                        else a directory of text files (defaults to ./gtfs.zip)
   --range RANGE        how far ahead to build, e.g. "3 months" (defaults to '3 MONTH')
@@ -40,6 +40,19 @@ dtd2gtfs build \
   --source RJTTC920.ZIP \
   --out gtfs.zip --range "6 months"
 ```
+
+Or point it at the directory you download into and let it work that out:
+
+```
+dtd2gtfs build --source ./feeds --out gtfs.zip --range "6 months"
+```
+
+A directory contributes every `RJTTFxxx.ZIP` and `RJTTCxxx.ZIP` it holds, ordered by sequence
+number and starting at the most recent full refresh — anything before that refresh is superseded
+by it. The fares, routeing and NFM64 feeds are ignored, so a directory holding all four is fine.
+
+Note that this is not the same as sorting by filename: as text every `RJTTC` sorts before every
+`RJTTF`, which would put the refresh after the incrementals that amend it.
 
 `--today` exists so a build can be reproduced. Without it the feed is a function of the day it ran
 and cannot be compared to yesterday's.

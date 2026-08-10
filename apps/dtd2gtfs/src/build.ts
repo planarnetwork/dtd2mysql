@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import {BuildFeed, buildContext, option, options, stationCoordinates} from "@gb-rail/gtfs";
-import {CifFileSource} from "@gb-rail/dtd-source";
+import {CifFileSource, timetableFeeds} from "@gb-rail/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-rail/gtfs-output";
 
 /**
@@ -11,17 +11,17 @@ import {FileOutput, OutputGTFSZipCommand} from "@gb-rail/gtfs-output";
  * produces what importing them in that order and then exporting would.
  */
 export async function build(argv: string[]): Promise<void> {
-  const sources = options(argv, "source");
   const out = option(argv, "out") ?? "./gtfs.zip";
+  const given = options(argv, "source");
 
-  if (sources.length === 0) {
-    throw new Error("No feed to build from. Pass at least one --source RJTTFxxx.ZIP.");
+  if (given.length === 0) {
+    throw new Error("No feed to build from. Pass at least one --source RJTTFxxx.ZIP or --source DIR.");
   }
 
-  for (const source of sources) {
-    if (!fs.existsSync(source)) {
-      throw new Error(`Source ${source} does not exist.`);
-    }
+  const sources = timetableFeeds(given);
+
+  if (sources.length === 0) {
+    throw new Error(`No timetable feed found in ${given.join(", ")}. Expected files named RJTTFxxx.ZIP or RJTTCxxx.ZIP.`);
   }
 
   const context = buildContext(argv);

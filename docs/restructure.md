@@ -881,8 +881,14 @@ It is private for now, along with the libraries: `dtd2mysql` is the only thing o
 is a decision to take once there is a nightly feed to point people at (E2 and E4), not a side effect
 of the code existing.
 
-`--source` repeats, so a refresh and its incrementals are applied in order. `--out` writes a zip or
-a directory depending on the extension, and `--today` and `--range` come from T1's build context.
+`--source` takes a zip or a directory and repeats, `--out` writes a zip or a directory depending on
+the extension, and `--today` and `--range` come from T1's build context.
+
+A directory contributes every `RJTTFxxx.ZIP` and `RJTTCxxx.ZIP` in it, ordered by sequence number
+and starting at the most recent full refresh. Ordering by sequence is not the same as ordering by
+filename - as text every `RJTTC` sorts before every `RJTTF`, which would apply the refresh after the
+incrementals that amend it - and starting at the last refresh matters because a directory that feeds
+are downloaded into accumulates more than one cycle. E2 wants the same rule.
 
 **C5 · Rail Data Marketplace credential path** *(depends A5)*
 The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; tokens now come from Rail Data
