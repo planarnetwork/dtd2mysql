@@ -1,48 +1,57 @@
-name: Publish to NPM
+name: Release
 
 on:
   push:
     branches: [ master ]
+    # A documentation-only commit must not attempt a release.
+    paths:
+      - 'apps/**'
+      - 'libs/**'
+      - '.changeset/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/publish.yml'
 
 concurrency:
   group: publish-npm
   cancel-in-progress: false
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
+      # npm trusted publishing
       id-token: write
     steps:
-    - uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
-    - name: Use Node.js
-      uses: actions/setup-node@v5
-      with:
-        node-version: 26.x
-        cache: npm
-        registry-url: 'https://registry.npmjs.org'
-    - name: Ensure npm supports trusted publishing
-      run: npm install -g npm@latest
-    - run: npm ci
-    - run: npm test
-    - name: Configure git
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-    - name: Verify tree is clean
-      run: |
-        if [ -n "$(git status --porcelain)" ]; then
-          echo "Working tree is dirty, refusing to release:"
-          git status --porcelain
-          git diff
-          exit 1
-        fi
-    - name: Bump version and publish
-      run: |
-        git pull --rebase origin master
-        npm version patch -m "Bump version to %s [skip ci]"
-        git push --follow-tags
-        npm publish
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26.x
+          registry-url: 'https://registry.npmjs.org'
+      - name: Ensure npm supports trusted publishing
+        run: npm install -g npm@latest
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: yarn vitest run
+
+      # Pending changesets become a "Version Packages" pull request. Merging it
+      # is what triggers the publish below, so the version bump and the publish
+      # can no longer come apart: a failed publish leaves nothing tagged.
+      - uses: changesets/action@v1
+        with:
+          version: yarn changeset version
+          publish: yarn release
+          commit: 'Version packages'
+          title: 'Version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

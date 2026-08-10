@@ -20,6 +20,35 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.version }}
-          cache: npm
-      - run: npm ci
-      - run: npm test
+      # yarn ships in the repository, so there is nothing to install first. The
+      # cache is the project-level .yarn/cache, which is why enableGlobalCache is
+      # off in .yarnrc.yml.
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      # tsc -b walks the project references in dependency order, so a type error
+      # is reported against the package that contains it.
+      - run: yarn build
+      # Each workspace is a vitest project named after its package, so a failure
+      # names the package rather than the repository.
+      - run: yarn vitest run
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      # Tests run against source, so main/types/bin/files breakage is invisible
+      # to them. This installs the built tarball into a clean directory instead.
+      - run: ./scripts/pack-smoke-test.sh
