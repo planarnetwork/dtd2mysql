@@ -809,9 +809,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dtd2mysql@workspace:.":
+"dtd2mysql@workspace:apps/dtd2mysql":
   version: 0.0.0-use.local
-  resolution: "dtd2mysql@workspace:."
+  resolution: "dtd2mysql@workspace:apps/dtd2mysql"
   dependencies:
     "@gb-rail/dtd-schema": "workspace:^"
     "@gb-rail/dtd-source": "workspace:^"
@@ -820,25 +820,11 @@ __metadata:
     "@gb-rail/gtfs-output": "workspace:^"
     "@types/adm-zip": "npm:0.5.8"
     "@types/byline": "npm:4.2.36"
-    "@types/csv-write-stream": "npm:2.0.3"
-    "@types/node": "npm:26.1.1"
-    "@types/ssh2": "npm:1.15.5"
     adm-zip: "npm:0.6.0"
     byline: "npm:5.0.0"
-    chai: "npm:6.2.2"
-    csv-write-stream: "npm:2.0.0"
     memoized-class-decorator: "npm:1.6.1"
     mysql2: "npm:3.23.0"
     proj4: "npm:2.20.9"
-    ssh2: "npm:1.17.0"
-    tsx: "npm:4.23.1"
-    typescript: "npm:7.0.2"
-    vitest: "npm:^4.1.10"
-  dependenciesMeta:
-    esbuild@0.28.2:
-      built: true
-    ssh2@1.17.0:
-      built: true
   bin:
     dtd2mysql: bin/dtd2mysql.sh
   languageName: unknown
@@ -1000,6 +986,23 @@ __metadata:
   conditions: os=darwin
   languageName: node
   linkType: hard
+
+"gb-rail@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "gb-rail@workspace:."
+  dependencies:
+    "@types/node": "npm:26.1.1"
+    chai: "npm:6.2.2"
+    tsx: "npm:4.23.1"
+    typescript: "npm:7.0.2"
+    vitest: "npm:^4.1.10"
+  dependenciesMeta:
+    esbuild@0.28.2:
+      built: true
+    ssh2@1.17.0:
+      built: true
+  languageName: unknown
+  linkType: soft
 
 "generate-function@npm:^2.3.1":
   version: 2.3.1

@@ -121,9 +121,30 @@ Issues and PRs are very welcome. To get the project set up run
 
 ```
 git clone git@github.com:planarnetwork/dtd2mysql
-npm install --dev
-npm test
+yarn install
+yarn test
 ```
+
+Yarn 4 is used and its release bundle is committed, so there is nothing to install
+first - `yarn` works straight after a clone as long as Node 26 is on the path.
+
+### Repository layout
+
+This is a monorepo. The published CLI is one workspace among several:
+
+```
+apps/dtd2mysql        the CLI - published as `dtd2mysql`
+libs/feed-parser      declarative fixed-width and CSV record parsing
+libs/dtd-schema       the record layouts for the four DTD feeds
+libs/dtd-source       SFTP download and feed sequencing
+libs/gtfs             GTFS entities, the transit model, the transforms and the build
+libs/gtfs-output      writers: a directory of text files, or a zip
+```
+
+Libraries publish under the `@gb-rail` scope and never depend on an app. Each
+package builds to its own `dist/` and workspaces resolve to that output, so
+`yarn build` (or any script that runs code) has to happen before the CLI will
+start; `tsc -b` makes it incremental.
 
 If you would like to send a pull request please write your contribution in TypeScript and if possible, add a test.
 

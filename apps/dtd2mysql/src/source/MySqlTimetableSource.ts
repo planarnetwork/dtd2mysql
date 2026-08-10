@@ -1,7 +1,7 @@
 
 import proj4 from 'proj4';
 import {Pool} from "mysql2";
-import {DatabaseConnection} from "../../database/DatabaseConnection";
+import {DatabaseConnection} from "../database/DatabaseConnection";
 import {
   Association,
   AssociationType,
@@ -22,7 +22,7 @@ import {
 /**
  * Provide access to the CIF/TTIS data in a vaguely GTFS-ish shape.
  */
-export class CIFRepository implements TimetableSource {
+export class MySqlTimetableSource implements TimetableSource {
 
   constructor(
     private readonly db: DatabaseConnection,

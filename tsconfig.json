@@ -1,13 +1,5 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "dist"
-  },
-  "include": [
-    "src",
-    "config"
-  ],
+  "files": [],
   "references": [
     {
       "path": "./libs/feed-parser"
@@ -16,13 +8,16 @@
       "path": "./libs/dtd-schema"
     },
     {
+      "path": "./libs/dtd-source"
+    },
+    {
       "path": "./libs/gtfs"
     },
     {
       "path": "./libs/gtfs-output"
     },
     {
-      "path": "./libs/dtd-source"
+      "path": "./apps/dtd2mysql"
     }
   ]
 }

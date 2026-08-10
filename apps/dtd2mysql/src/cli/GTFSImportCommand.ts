@@ -2,8 +2,8 @@
 import {CLICommand} from "./CLICommand";
 import {execSync} from "child_process";
 import {DatabaseConfiguration} from "../database/DatabaseConnection";
-import {schema} from "../../config/gtfs/schema";
-import {importSQL} from "../../config/gtfs/import";
+import {schema} from "../gtfs/schema";
+import {importSQL} from "../gtfs/import";
 
 
 export class GTFSImportCommand implements CLICommand {
