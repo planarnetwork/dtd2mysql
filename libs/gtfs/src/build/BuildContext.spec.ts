@@ -94,7 +94,8 @@ describe("dateRange", () => {
   it("runs from the build date to the build date plus the range", () => {
     const range = dateRange({
       today: Temporal.PlainDate.from("2025-09-02"),
-      range: parseRange("3 MONTH")
+      range: parseRange("3 MONTH"),
+      links: false
     });
 
     expect(range.from.toString()).to.equal("2025-09-02");
@@ -105,10 +106,29 @@ describe("dateRange", () => {
     // MySQL: '2025-08-31' + INTERVAL 1 MONTH = '2025-09-30'
     const range = dateRange({
       today: Temporal.PlainDate.from("2025-08-31"),
-      range: parseRange("1 MONTH")
+      range: parseRange("1 MONTH"),
+      links: false
     });
 
     expect(range.to.toString()).to.equal("2025-09-30");
+  });
+
+});
+
+describe("buildContext links", () => {
+
+  const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
+
+  it("does not write links.txt unless asked", () => {
+    expect(buildContext(argv(), {}).links).to.equal(false);
+  });
+
+  it("writes it for --links", () => {
+    expect(buildContext(argv("--links"), {}).links).to.equal(true);
+  });
+
+  it("writes it for GTFS_LINKS=1", () => {
+    expect(buildContext(argv(), {GTFS_LINKS: "1"}).links).to.equal(true);
   });
 
 });

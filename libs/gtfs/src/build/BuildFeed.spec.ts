@@ -95,6 +95,7 @@ class FakeSource implements TimetableSource {
 
   async getStops() { return this.stops; }
   async getTransfers() { return this.transfers; }
+  async getFeedVersion() { return "RJTTF001.ZIP"; }
   async getFixedLinks() { return this.links; }
   async getAssociations(_: DateRange): Promise<Association[]> { return []; }
   async end() {}
@@ -115,7 +116,8 @@ function* ids(): IterableIterator<number> {
 
 const context: BuildContext = {
   today: Temporal.PlainDate.from("2024-01-01"),
-  range: parseRange("3 MONTH")
+  range: parseRange("3 MONTH"),
+  links: true
 };
 
 async function build(source: TimetableSource): Promise<MemoryOutput> {
@@ -194,7 +196,9 @@ describe("BuildFeed ordering", () => {
     ));
 
     expect(files["stops.txt"].map(s => s.stop_id)).to.deep.equal(["SEV", "TON"]);
-    expect(files["transfers.txt"].map(t => t.from_stop_id)).to.deep.equal(["SEV", "TON"]);
+    // The two self transfers and the two links, as one file
+    expect(files["transfers.txt"].map(t => [t.from_stop_id, t.to_stop_id]))
+      .to.deep.equal([["SEV", "SEV"], ["SEV", "TON"], ["TON", "SEV"], ["TON", "TON"]]);
     expect(files["links.txt"].map(l => [l.from_stop_id, l.to_stop_id]))
       .to.deep.equal([["SEV", "TON"], ["TON", "SEV"]]);
   });

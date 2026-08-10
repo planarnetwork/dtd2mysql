@@ -47,6 +47,42 @@ jobs:
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
       - run: yarn tsx apps/dtd2gtfs/src/index.ts --help
 
+  # The mini fixture is built and held to the MobilityData validator. Separate
+  # from unit because it needs a JVM and a 40 MB jar, and because a validator
+  # release adding a notice should not read as the tests breaking.
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      VALIDATOR_VERSION: 8.0.1
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      # Pinned rather than latest, so the accepted notice list only moves when
+      # somebody moves it.
+      - uses: actions/cache@v4
+        id: validator
+        with:
+          path: gtfs-validator.jar
+          key: gtfs-validator-${{ env.VALIDATOR_VERSION }}
+      - if: steps.validator.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL -o gtfs-validator.jar \
+            "https://github.com/MobilityData/gtfs-validator/releases/download/v$VALIDATOR_VERSION/gtfs-validator-$VALIDATOR_VERSION-cli.jar"
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: node apps/dtd2gtfs/dist/validate.mjs gtfs-validator.jar
+
   package:
     runs-on: ubuntu-latest
     steps:

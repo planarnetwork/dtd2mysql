@@ -57,7 +57,7 @@ beforeAll(async () => {
 describe("the mini fixture", () => {
 
   const files = [
-    "agency.txt", "stops.txt", "transfers.txt", "links.txt",
+    "agency.txt", "stops.txt", "transfers.txt", "feed_info.txt",
     "routes.txt", "trips.txt", "stop_times.txt", "calendar.txt", "calendar_dates.txt"
   ];
 

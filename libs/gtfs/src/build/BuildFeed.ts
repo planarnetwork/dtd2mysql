@@ -12,6 +12,8 @@ import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
 import {CRS, Stop} from "../entity/Stop";
 import {locate} from "../source/Located";
+import {createFeedInfo} from "../transform/CreateFeedInfo";
+import {mergeTransfers} from "../transform/MergeTransfers";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
@@ -52,12 +54,15 @@ export class BuildFeed {
     const stopsQ = this.repository.getStops();
     const fixedLinksQ = this.repository.getFixedLinks();
     const transfersQ = this.repository.getTransfers();
+    const versionQ = this.repository.getFeedVersion();
     const agencyP = this.copy(agencies, "agency.txt", by("agency_id"));
-    const fixedLinksP = this.copy(
-      fixedLinksQ,
-      "links.txt",
-      by("from_stop_id", "to_stop_id", "mode", "start_date", "start_time")
-    );
+    const fixedLinksP = this.context.links
+      ? this.copy(
+        fixedLinksQ,
+        "links.txt",
+        by("from_stop_id", "to_stop_id", "mode", "start_date", "start_time")
+      )
+      : Promise.resolve();
 
     const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
 
@@ -75,7 +80,7 @@ export class BuildFeed {
     const published = new Set(stops.map(stop => stop.stop_id));
     const stopsP = this.copy(stops, "stops.txt", by("stop_id"));
     const transfersP = this.copy(
-      (await transfersQ).filter(transfer => published.has(transfer.from_stop_id)),
+      mergeTransfers(await transfersQ, await fixedLinksQ, published),
       "transfers.txt",
       by("from_stop_id", "to_stop_id")
     );
@@ -84,6 +89,11 @@ export class BuildFeed {
 
     const calendarP = this.copy(calendars, "calendar.txt", by("service_id"));
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", by("service_id", "date"));
+    const feedInfoP = this.copy(
+      [createFeedInfo(calendars, calendarDates, range, await versionQ)],
+      "feed_info.txt",
+      by("feed_publisher_name")
+    );
     const tripsP = this.copyTrips(schedules, serviceIds, names(stops));
 
     // Every file has to be opened before the output can be asked whether it has
@@ -96,7 +106,8 @@ export class BuildFeed {
       calendarP,
       calendarDatesP,
       tripsP,
-      fixedLinksP
+      fixedLinksP,
+      feedInfoP
     ]);
 
     await Promise.all([this.repository.end(), this.output.end()]);

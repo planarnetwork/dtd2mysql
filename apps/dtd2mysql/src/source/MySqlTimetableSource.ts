@@ -53,6 +53,24 @@ export class MySqlTimetableSource implements TimetableSource {
   }
 
   /**
+   * The last file ImportFeedCommand recorded. A missing table or an empty log
+   * both mean the same thing here as they do to LogTableFeedCursor: nothing is
+   * known, so say nothing rather than guess.
+   */
+  public async getFeedVersion(): Promise<string | null> {
+    try {
+      const [[log]] = await this.db.query<{filename: string | null}>(
+        "SELECT filename FROM log ORDER BY id DESC LIMIT 1"
+      );
+
+      return log?.filename ?? null;
+    }
+    catch (err) {
+      return null;
+    }
+  }
+
+  /**
    * Return all the stops with some configurable long/lat applied.
    *
    * One row per CRS, preferring a TIPLOC that describes the station itself.
@@ -62,15 +80,15 @@ export class MySqlTimetableSource implements TimetableSource {
    * the station's CRS without being the place a passenger stands. Reading has
    * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
    *
-   * `GROUP BY crs_code` alone keeps whichever row came first, which published
-   * the subsidiary TIPLOC as `stop_code` for 75 stations. Ordering a derived
-   * table does not fix it - MariaDB is free to ignore that - so the row is
-   * chosen explicitly.
+   * Grouping alone keeps whichever row came first, which published the
+   * subsidiary TIPLOC as `stop_code` for 75 stations. Ordering a derived table
+   * does not fix it - MariaDB is free to ignore that - so the row is chosen
+   * explicitly.
    *
    * The TIPLOC itself breaks the tie, because some stations have nothing else
    * to separate them: Westbury's TIPLOCs are all rated 9. Falling back to the
    * order rows happen to arrive in makes this source and the file source
-   * disagree, which is how that was found.
+   * disagree.
    */
   public async getStops(): Promise<Stop[]> {
     const {stops} = await this.stations();

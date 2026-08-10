@@ -13,6 +13,9 @@ Build a GTFS feed from the DTD timetable feed, with no database
   --range RANGE              how far ahead to build, e.g. "3 months"
                              (defaults to '3 MONTH')
   --today YYYY-MM-DD         the date to build for (defaults to the current date)
+  --links                    also write links.txt. The fixed links are in
+                             transfers.txt now; this is here for one release for
+                             anyone still reading the old file
 
 For example:
 

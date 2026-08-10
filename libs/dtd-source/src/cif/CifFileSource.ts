@@ -23,6 +23,7 @@ import {
   TransferType
 } from "@gb-rail/gtfs";
 import {FeedZip} from "./FeedZip";
+import {basename} from "node:path";
 import {charColumns, MemoryTable, Row} from "./MemoryTable";
 import {additionalFixedLink, associationRow, AssociationRow, fixedLink, integer, stationRecord} from "./Rows";
 
@@ -62,6 +63,15 @@ export class CifFileSource implements TimetableSource {
   /**
    * SELECT crs_code, ... FROM physical_station WHERE crs_code IS NOT NULL GROUP BY crs_code
    */
+  /**
+   * The last feed given, which is the most recent one applied.
+   */
+  public async getFeedVersion(): Promise<string | null> {
+    const last = this.sources[this.sources.length - 1];
+
+    return last === undefined ? null : basename(last);
+  }
+
   public async getStops(): Promise<Stop[]> {
     const {stops} = await this.stops_();
 
