@@ -26,8 +26,9 @@ export interface FixedLinkRecord {
 /**
  * A fixed link is walkable both ways, so each record becomes two rows.
  *
- * Ticket B2 replaces links.txt with transfers.txt, at which point this is where
- * the change goes.
+ * They are written to links.txt, which is a file of this project's own invention
+ * rather than anything GTFS defines. Moving them into transfers.txt is a change
+ * that belongs here.
  */
 export function toFixedLinks(row: FixedLinkRecord): [FixedLink, FixedLink] {
   return [

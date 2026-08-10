@@ -87,7 +87,8 @@ export interface ScheduleStopTimeRow {
 
 /**
  * Station name, coordinate and accessibility overrides applied on top of
- * whatever the source knows. Ticket D7 replaces this with an enricher.
+ * whatever the source knows. Hardcoded today, with no provenance and no way to
+ * update it.
  */
 export type StationCoordinates = {
   [crs: string]: {

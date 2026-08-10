@@ -49,6 +49,6 @@ export type {StationRecord} from "./source/StationRecord";
 export {toFixedLinks} from "./source/FixedLinkRecord";
 export type {FixedLinkRecord} from "./source/FixedLinkRecord";
 
-// Data that belongs in an enricher - ticket D7
+// Data that belongs in a source with a provenance rather than in the library
 export {agencies} from "./data/agency";
 export {stationCoordinates} from "./data/station-coordinates";
