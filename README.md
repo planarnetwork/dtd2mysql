@@ -24,8 +24,8 @@ This is a monorepo. The published CLI is one workspace among several:
 
 | Package | Published as | What it is |
 |---|---|---|
-<<<<<<< HEAD
-| `apps/dtd2mysql` | `dtd2mysql` | The command line tool |
+| `apps/dtd2mysql` | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
+| `apps/dtd2gtfs` | — | Build a GTFS feed straight from the DTD files, no database |
 | `libs/feed-parser` | — | Declarative fixed-width and CSV record parsing |
 | `libs/dtd-schema` | — | Record layouts for the fares, timetable, routeing and NFM64 feeds |
 | `libs/dtd-source` | — | SFTP download and feed sequencing |
@@ -34,15 +34,6 @@ This is a monorepo. The published CLI is one workspace among several:
 
 `dtd2mysql` is the only package published. Everything else is internal, and the libraries
 are bundled into its tarball, so installing it pulls nothing from the `@gb-rail` scope.
-=======
-| `apps/dtd2mysql` | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
-| `apps/dtd2gtfs` | — | Build a GTFS feed straight from the DTD files, no database |
-| `libs/feed-parser` | `@gb-rail/feed-parser` | Declarative fixed-width and CSV record parsing |
-| `libs/dtd-schema` | `@gb-rail/dtd-schema` | Record layouts for the fares, timetable, routeing and NFM64 feeds |
-| `libs/dtd-source` | `@gb-rail/dtd-source` | SFTP download and feed sequencing |
-| `libs/gtfs` | `@gb-rail/gtfs` | GTFS entities, the transit model, the transforms and the build |
-| `libs/gtfs-output` | `@gb-rail/gtfs-output` | Writers: a directory of text files, or a zip |
->>>>>>> d87659f (C2, C3: build a GTFS feed with no database)
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the
 workspaces resolve to that output, so `yarn build` has to happen before anything runs;
