@@ -2,9 +2,9 @@
  * Everything about a build that is not the data: which day it is being built for,
  * and how far ahead it reaches.
  *
- * The clock is a value rather than a call to CURDATE() so that the same feed can
- * be regenerated tomorrow and compared to the one generated today. Without that
- * the output is a function of the day it ran and no baseline means anything.
+ * The clock is a value so that the same feed can be regenerated tomorrow and
+ * compared to the one generated today. Read it from the system and the output
+ * becomes a function of the day it ran, and no baseline means anything.
  */
 export interface BuildContext {
   readonly today: Temporal.PlainDate;
@@ -14,10 +14,9 @@ export interface BuildContext {
 /**
  * The window a build covers: `from` inclusive, `to` exclusive.
  *
- * Every date-filtered query derives its window from this one value. Two of them
- * used to hardcode INTERVAL 3 MONTH while the third interpolated GTFS_RANGE, so
- * GTFS_RANGE=6 MONTH produced six months of trains with three months of
- * replacement buses and associations.
+ * Every date-filtered query derives its window from this one value, so a build
+ * cannot end up with six months of trains and three months of the associations
+ * that join them together.
  */
 export interface DateRange {
   readonly from: Temporal.PlainDate;
@@ -43,8 +42,8 @@ const units: { [unit: string]: "days" | "weeks" | "months" | "years" } = {
 };
 
 /**
- * Read a range written the way GTFS_RANGE has always been written, which is a
- * MySQL interval expression: "3 MONTH", "6 months", "28 days".
+ * Read a range in the form GTFS_RANGE takes, which is a MySQL interval
+ * expression: "3 MONTH", "6 months", "28 days".
  */
 export function parseRange(text: string): Temporal.Duration {
   const parsed = /^\s*(\d+)\s+([a-z]+)\s*$/i.exec(text);

@@ -31,16 +31,14 @@ const timetable = config.timetable;
 /**
  * A TimetableSource that reads the DTD feed files directly, with no database.
  *
- * The storage app imports the feed into MySQL and queries it back;
- * MySqlTimetableSource's SQL is the specification this implements. Where the two
- * disagree the SQL is right, because it is what has been shipping - which is why
- * the MySQL semantics that look like accidents are reproduced deliberately and
- * commented rather than tidied up:
+ * MySqlTimetableSource's SQL is the specification. Three of its behaviours come
+ * from MySQL rather than from the feed, and each is reproduced here with the
+ * query it belongs to:
  *
  *  - a CHAR column loses its trailing spaces and a VARCHAR does not (MemoryTable)
  *  - GROUP BY crs_code returns the first row inserted for that code
- *  - UNION dedupes the fixed links, which is the only reason importing the same
- *    ALF three times does not triple links.txt
+ *  - UNION deduplicates the fixed links, so importing the same ALF three times
+ *    does not triple links.txt
  *
  * Feeds are applied in the order given, so a full refresh followed by its
  * incrementals produces what importing them in that order would.
@@ -255,8 +253,8 @@ export class CifFileSource implements TimetableSource {
  * Accumulates one schedule at a time.
  *
  * Only the finished Schedule objects are kept, never the raw rows: a three month
- * window is nearly three million stop time rows and holding those as well as the
- * schedules built from them roughly doubles peak memory for no benefit.
+ * window is nearly three million stop time rows, and holding those as well as
+ * the schedules built from them roughly doubles peak memory for no benefit.
  */
 class ScheduleLoader {
 

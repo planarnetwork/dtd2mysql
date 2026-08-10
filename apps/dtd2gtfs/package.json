@@ -1,13 +1,8 @@
 {
   "name": "dtd2gtfs",
   "version": "0.0.0",
+  "private": true,
   "description": "Build a GTFS feed from the GB rail DTD timetable feed, with no database",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "bin"
-  ],
   "bin": "bin/dtd2gtfs.sh",
   "scripts": {
     "build": "tsc -b",
@@ -18,13 +13,6 @@
     "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
     "directory": "apps/dtd2gtfs"
   },
-  "keywords": [
-    "gb",
-    "rail",
-    "gtfs",
-    "timetable",
-    "dtd"
-  ],
   "author": "Linus Norton",
   "license": "GPL-3.0",
   "bugs": {

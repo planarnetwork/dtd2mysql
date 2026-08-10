@@ -8,8 +8,8 @@ import {finished} from "node:stream/promises";
 /**
  * A DTD feed zip, read one file at a time.
  *
- * Entries are extracted to a temporary directory rather than decompressed into
- * memory: the MCA in a full refresh is 650 MB and seven million lines, and
+ * Entries are extracted to a temporary directory instead of being decompressed
+ * into memory: the MCA in a full refresh is 650 MB and seven million lines, and
  * holding either the buffer or the split array costs more than the build it is
  * feeding.
  */

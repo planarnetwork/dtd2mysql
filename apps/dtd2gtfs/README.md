@@ -3,8 +3,13 @@
 Build a GTFS feed from the British rail DTD timetable feed. No database, one command.
 
 ```
-npm install -g dtd2gtfs
 dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
+```
+
+Not published yet. From a clone:
+
+```
+yarn workspace dtd2gtfs run start build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
 ## Requirements
@@ -58,7 +63,7 @@ Building three months of the whole GB network takes around 45 seconds and 5 GB o
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This package is
+[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is
 `apps/dtd2gtfs` in that repository.
 
 ## License

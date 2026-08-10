@@ -72,8 +72,8 @@ export class MySqlTimetableSource implements TimetableSource {
    * The second query selects the z-trains (usually replacement buses) over the same window. They already use CRS
    * codes as the location so avoid the disaster above.
    *
-   * Both windows come from the same DateRange. They used to differ: the passenger query interpolated GTFS_RANGE
-   * while this one and getAssociations hardcoded INTERVAL 3 MONTH.
+   * Both windows come from the same DateRange, so a range longer than the default does not produce
+   * more trains than replacement buses.
    */
   public async getSchedules(range: DateRange): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();

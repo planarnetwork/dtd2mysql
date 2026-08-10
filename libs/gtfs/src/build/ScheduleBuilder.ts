@@ -14,10 +14,10 @@ const notAdvertised = "N ";
 /**
  * Where a run of rows for one schedule is accumulated.
  *
- * This is per-run rather than per-builder because the MySQL source loads the
- * passenger schedules and the z-trains concurrently into the same builder. Two
- * interleaved streams sharing one cursor would splice each other's stop times
- * into the wrong trains.
+ * One per run, not one per builder: the MySQL source loads the passenger
+ * schedules and the z-trains concurrently into the same builder, and two
+ * interleaved streams sharing a cursor would splice each other's stop times into
+ * the wrong trains.
  */
 interface Cursor {
   stops: StopTime[];
@@ -102,9 +102,8 @@ export class ScheduleBuilder {
     }
 
     // The origin's departure hour decides whether a later stop has rolled over
-    // midnight. It is taken from the first row of every schedule including the
-    // first one in the run - which the streaming path used to miss, leaving the
-    // first schedule of each query on the default of 4.
+    // midnight, so it is taken from the first row of every schedule - including
+    // the first schedule in the run.
     if (startsSchedule) {
       cursor.departureHour = row.public_arrival_time
         ? parseInt(row.public_arrival_time.substr(0, 2), 10)

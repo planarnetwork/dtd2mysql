@@ -483,13 +483,15 @@ baseline it needs already exists.
 Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; normalised-identical
 or fails with a per-file diff.
 
-`scripts/verify-against-master.sh` does the pinned-commit half and asserts byte-identity, which is
-stronger than the normalised diff this ticket asked for and is what Epic A was held to.
-`scripts/compare-feeds.mjs` does the normalised half, which is what comparing two *sources* needs:
-`route_id` and `service_id` are counters assigned during the build, so the same timetable arriving
-in a different order gets different numbers for the same thing. It resolves every reference to what
-it points at and then compares. T2 and T3 make the identifiers and the row order deterministic, at
-which point the normalising half can go.
+The pinned-commit half exists and asserts byte-identity, which is stronger than the normalised diff
+this ticket asked for and is what Epic A was held to. The normalised half also exists, and is what
+comparing two *sources* needs: `route_id` and `service_id` are counters assigned during the build,
+so the same timetable arriving in a different order gets different numbers for the same thing.
+Resolving every reference to what it points at before comparing removes that. T2 and T3 make the
+identifiers and the row order deterministic, at which point the normalising half can go.
+
+Neither is committed. Both want a database and a feed, so they live alongside the gitignored `data/`
+rather than in the repository.
 
 **T8 · Rebaseline protocol** *(depends T5)*
 `yarn test:e2e --update` regenerates the mini golden, and the `data/snapshot-*.sh` scripts
@@ -864,9 +866,13 @@ so F1's sharding helps both equally. Only the finished Schedules are kept - each
 rows become a Schedule as soon as its stops end and are then dropped, because holding 2.9 million of
 them as well roughly doubles it.
 
-**C3 · `apps/dtd2gtfs`** *(depends C2, A7)* — **done**
+**C3 · `apps/dtd2gtfs`** *(depends C2, A7)* — **done, not published**
 `dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
-the tree. Published bare.
+the tree.
+
+It is private for now, along with the libraries: `dtd2mysql` is the only thing on npm. Publishing it
+is a decision to take once there is a nightly feed to point people at (E2 and E4), not a side effect
+of the code existing.
 
 `--source` repeats, so a refresh and its incrementals are applied in order. `--out` writes a zip or
 a directory depending on the extension, and `--today` and `--range` come from T1's build context.

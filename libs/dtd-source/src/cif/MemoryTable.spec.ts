@@ -1,6 +1,6 @@
 import {describe, it, expect} from "vitest";
 import {FixedWidthRecord, RecordAction, TextField, VariableLengthText} from "@gb-rail/feed-parser";
-import {charColumns, MemoryTable} from "../../src/cif/MemoryTable";
+import {charColumns, MemoryTable} from "./MemoryTable";
 
 const record = new FixedWidthRecord(
   "thing",
