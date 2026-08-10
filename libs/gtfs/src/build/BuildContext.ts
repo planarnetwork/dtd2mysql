@@ -78,6 +78,26 @@ export function option(argv: string[], name: string): string | undefined {
 }
 
 /**
+ * Read every `--name value` and `--name=value` from argv, for options that can
+ * be given more than once.
+ */
+export function options(argv: string[], name: string): string[] {
+  const flag = `--${name}`;
+  const values: string[] = [];
+
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === flag && argv[i + 1] !== undefined) {
+      values.push(argv[i + 1]);
+    }
+    else if (argv[i].startsWith(`${flag}=`)) {
+      values.push(argv[i].slice(flag.length + 1));
+    }
+  }
+
+  return values;
+}
+
+/**
  * Resolve the build context from the command line and the environment.
  *
  * `--today` wins over GTFS_TODAY, which wins over the real date; `--range` wins

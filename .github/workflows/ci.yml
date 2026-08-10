@@ -32,10 +32,19 @@ jobs:
       # Each workspace is a vitest project named after its package, so a failure
       # names the package rather than the repository.
       - run: yarn vitest run
+<<<<<<< HEAD
       # The CLI has to work from the repository root as well as from its own
       # directory: tsx takes its compiler options from the nearest tsconfig whose
       # include matches the file.
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
+=======
+      # Both CLIs run from the repository root as well as from their own
+      # directory. tsx picks its compiler options from the nearest tsconfig that
+      # matches the file, and a root config that matched nothing once left the
+      # libraries compiled with the wrong kind of decorator.
+      - run: yarn tsx apps/dtd2mysql/src/index.ts --help
+      - run: yarn tsx apps/dtd2gtfs/src/index.ts --help
+>>>>>>> d87659f (C2, C3: build a GTFS feed with no database)
 
   package:
     runs-on: ubuntu-latest

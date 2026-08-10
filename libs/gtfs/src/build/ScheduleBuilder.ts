@@ -94,10 +94,18 @@ export class ScheduleBuilder {
   }
 
   private processRow(cursor: Cursor, row: ScheduleStopTimeRow): void {
-    if (cursor.prevRow && cursor.prevRow.id !== row.id) {
+    const startsSchedule = !cursor.prevRow || cursor.prevRow.id !== row.id;
+
+    if (cursor.prevRow && startsSchedule) {
       this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
       cursor.stops = [];
+    }
 
+    // The origin's departure hour decides whether a later stop has rolled over
+    // midnight. It is taken from the first row of every schedule including the
+    // first one in the run - which the streaming path used to miss, leaving the
+    // first schedule of each query on the default of 4.
+    if (startsSchedule) {
       cursor.departureHour = row.public_arrival_time
         ? parseInt(row.public_arrival_time.substr(0, 2), 10)
         : row.public_departure_time ? parseInt(row.public_departure_time.substr(0, 2), 10) : 4;

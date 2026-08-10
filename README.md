@@ -5,15 +5,23 @@
 Tools for the British rail fares, routeing and timetable feeds: importing them into a
 database, and converting the timetable to GTFS.
 
+Just the GTFS feed, no database:
+
+```
+npm install -g dtd2gtfs
+dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
+```
+
+Or the whole thing — fares, routeing guide and timetable, in MySQL:
+
 ```
 npm install -g dtd2mysql
 dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip gtfs.zip
 ```
 
-**[Full command line documentation is in `apps/dtd2mysql`](apps/dtd2mysql/README.md)** —
-every flag, the environment variables each one needs, and the caveats worth knowing about
-the data.
+Full command line documentation: **[`apps/dtd2mysql`](apps/dtd2mysql/README.md)** for the importer,
+**[`apps/dtd2gtfs`](apps/dtd2gtfs/README.md)** for the one-shot build.
 
 ## Packages
 
@@ -21,6 +29,7 @@ This is a monorepo. The published CLI is one workspace among several:
 
 | Package | Published as | What it is |
 |---|---|---|
+<<<<<<< HEAD
 | `apps/dtd2mysql` | `dtd2mysql` | The command line tool |
 | `libs/feed-parser` | — | Declarative fixed-width and CSV record parsing |
 | `libs/dtd-schema` | — | Record layouts for the fares, timetable, routeing and NFM64 feeds |
@@ -30,6 +39,15 @@ This is a monorepo. The published CLI is one workspace among several:
 
 `dtd2mysql` is the only package published. The libraries are internal and bundled into
 its tarball, so installing it pulls nothing from the `@gb-rail` scope.
+=======
+| `apps/dtd2mysql` | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
+| `apps/dtd2gtfs` | `dtd2gtfs` | Build a GTFS feed straight from the DTD files, no database |
+| `libs/feed-parser` | `@gb-rail/feed-parser` | Declarative fixed-width and CSV record parsing |
+| `libs/dtd-schema` | `@gb-rail/dtd-schema` | Record layouts for the fares, timetable, routeing and NFM64 feeds |
+| `libs/dtd-source` | `@gb-rail/dtd-source` | SFTP download and feed sequencing |
+| `libs/gtfs` | `@gb-rail/gtfs` | GTFS entities, the transit model, the transforms and the build |
+| `libs/gtfs-output` | `@gb-rail/gtfs-output` | Writers: a directory of text files, or a zip |
+>>>>>>> d87659f (C2, C3: build a GTFS feed with no database)
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the
 workspaces resolve to that output, so `yarn build` has to happen before anything runs;
@@ -37,6 +55,21 @@ workspaces resolve to that output, so `yarn build` has to happen before anything
 
 Where this is going, and why it is shaped like this, is written up in
 [`docs/restructure.md`](docs/restructure.md).
+
+## Checking a change did not change the feed
+
+Two scripts, both needing `.env.local` and an imported feed:
+
+```
+scripts/verify-against-master.sh          # every output file byte-identical to master
+scripts/compare-sources.sh <db> <today> <zip>...   # database build vs file build
+```
+
+The first builds the feed from a pinned commit and from the working tree against the same
+database on the same day and diffs them; the GTFS build filters on the current date, so the
+two runs have to happen on the same day until ticket T1's `--today` is used throughout. The
+second checks the two sources agree, comparing content rather than bytes because `route_id`
+and `service_id` are counters assigned in whatever order the schedules arrived.
 
 ## Contributing
 

@@ -1,23 +1,16 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./libs/feed-parser"
-    },
-    {
-      "path": "./libs/dtd-schema"
-    },
-    {
-      "path": "./libs/dtd-source"
-    },
-    {
-      "path": "./libs/gtfs"
-    },
-    {
-      "path": "./libs/gtfs-output"
-    },
-    {
-      "path": "./apps/dtd2mysql"
-    }
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true
+  },
+  "include": [
+    "apps/*/src",
+    "apps/*/test",
+    "libs/*/src",
+    "libs/*/test",
+    "*.mts"
   ]
 }

@@ -21,9 +21,16 @@
     "build": "tsc -b"
   },
   "dependencies": {
+    "@gb-rail/dtd-schema": "workspace:^",
+    "@gb-rail/feed-parser": "workspace:^",
+    "@gb-rail/gtfs": "workspace:^",
+    "adm-zip": "0.6.0",
+    "byline": "5.0.0",
     "ssh2": "1.17.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "0.5.8",
+    "@types/byline": "4.2.36",
     "@types/ssh2": "1.15.5"
   }
 }

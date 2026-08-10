@@ -24,10 +24,17 @@ export class BuildFeed {
   ) {}
 
   /**
-   * Turn the timetable feed into GTFS files
+   * The dtd2mysql CLI takes the output directory as a positional argument
    */
   public async run(argv: string[]): Promise<void> {
-    this.baseDir = argv[3] || ".";
+    return this.build(argv[3] || ".");
+  }
+
+  /**
+   * Turn the timetable feed into GTFS files
+   */
+  public async build(baseDir: string): Promise<void> {
+    this.baseDir = baseDir;
 
     if (!fs.existsSync(this.baseDir)) {
       throw new Error(`Output path ${this.baseDir} does not exist.`);

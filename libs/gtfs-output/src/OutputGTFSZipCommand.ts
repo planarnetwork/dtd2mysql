@@ -16,21 +16,27 @@ export class OutputGTFSZipCommand {
    * Create the text files and then zip them up using a CLI command that hopefully exists.
    */
   public async run(argv: string[]): Promise<void> {
-    const filename = argv[3] || "./gtfs.zip";
+    return this.build(argv[3] || "./gtfs.zip");
+  }
+
+  /**
+   * Create the text files and then zip them up using a CLI command that hopefully exists.
+   */
+  public async build(filename: string): Promise<void> {
 
     if (fs.existsSync(filename)) {
       fs.unlinkSync(filename);
     }
     
-    argv[3] = fs.mkdtempSync(path.join(os.tmpdir(), "gtfs"));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "gtfs"));
 
-    await this.command.run(argv);
+    await this.command.build(directory);
 
     // when node tells you it's finished writing a file, it's lying.
     setTimeout(() => {
       console.log("Writing " + filename);
-      processSpawnResult(spawnSync('zip', ['-jr', filename, argv[3]]));
-      fs.rmSync(argv[3], {recursive: true});
+      processSpawnResult(spawnSync('zip', ['-jr', filename, directory]));
+      fs.rmSync(directory, {recursive: true});
     }, 1000);
   }
 
