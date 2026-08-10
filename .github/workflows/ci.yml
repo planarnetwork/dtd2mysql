@@ -17,6 +17,12 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v5
+      # A conflict marker in a workflow file makes it unparseable, which GitHub
+      # reports as a run that failed before any job started - easy to read as the
+      # workflow simply not triggering.
+      - name: No conflict markers
+        run: |
+          ! git grep -n -E '^(<<<<<<< |=======$|>>>>>>> )' -- . ':!*.spec.ts'
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.version }}
