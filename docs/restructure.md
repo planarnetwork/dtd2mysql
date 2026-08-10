@@ -309,11 +309,16 @@ now with evidence.
 `CURDATE()`, no clock. That makes the database snapshot usable as a comparison target immediately,
 and it is the half that guards the largest contract.
 
-*In principle*, because one thing is unverified: `trip_id`/`route_id`/`service_id` all derive from
+*In principle*, because one thing is unverified: `route_id` and `service_id` derive from
 `schedule.id`, a MySQL auto-increment. `MySQLTable` buffers 5,000-row batches and flushes them
 through a connection *pool*, so insert ordering is not guaranteed by construction even if it holds
 in practice. T2 has to establish this by re-importing into a fresh database and diffing the hashes,
 before any of it can be trusted.
+
+`trip_id` is no longer among them. [#121](https://github.com/planarnetwork/dtd2mysql/pull/121)
+makes it `TUID_runsFrom_runsTo`, a function of the CIF record rather than of insert order, and
+removes the calendar tightening and division that used to move the date range after the fact. That
+is a third of T2 delivered by a different route than T2 describes — see the ticket.
 
 **The GTFS build is not reproducible.** It filters on `CURDATE()`, so its output is a function of
 the day it runs and cannot be regenerated tomorrow. T1 must land before a GTFS baseline means
@@ -324,7 +329,7 @@ anything beyond same-day comparison.
 **Layer 0 — Determinism.** Inject a clock (T1), pin the identifiers (T2), sort the output (T3).
 Nothing above works without these.
 
-**Layer 1 — Unit.** Pure functions in `libs/gtfs`. 104 tests today.
+**Layer 1 — Unit.** Pure functions in `libs/gtfs`. 104 tests today, 118 on #121.
 
 **Layer 2 — Mini-fixture e2e.** *Every PR.* The workhorse, and what makes Epic A safe.
 
@@ -343,6 +348,14 @@ zip**, so a behaviour change appears as a readable diff in review. It must delib
 - schedules starting and expiring at the window boundary
 - reversed date ranges (#117) and an all-zero day mask (B16)
 - a CIE station with zero eastings, and the MSN header record
+- a permanent and an overlay over an **identical date range** with different stopping patterns, so
+  the trip ID decision in §6.6 stays deliberate
+- a schedule cancelled **while its association is also cancelled** — the shape B18 fabricated
+  service from
+- **two associations for the same pair of TUIDs at different locations**, the only remaining path
+  to a duplicate trip ID
+- an all-permanent source with **overlapping records**, which `z_schedule` is and the CIF timetable
+  is not (B19)
 
 **Layer 3 — Import equivalence.** *The one that actually protects dtd2mysql.* Import each of the
 four feeds with pre-refactor code at a pinned commit, snapshot, repeat with refactored code, assert
@@ -383,11 +396,15 @@ Gates everything else. T2 and T3 are required by the nightly build (E2) regardle
 `--today` CLI flag and config key; nightly passes the real date, tests pin `2025-09-02`. Subsumes
 B3: all three queries derive their window from one value.
 
-**T2 · Deterministic identifiers**
-`trip_id`/`route_id`/`service_id` no longer depend on MySQL auto-increment ordering. Derive schedule
-identity from a stable key (`train_uid` + `stp_indicator` + `runs_from` + occurrence) and assign
-integer ids in the build from a canonical sort. Same input plus same `--today` produces the same ids
-across engines and across runs. Test: import twice into fresh databases, assert identical output.
+**T2 · Deterministic identifiers** *(partly delivered by #121)*
+`route_id` and `service_id` no longer depend on MySQL auto-increment ordering. `route_id` is
+`schedule.id`; `service_id` is a counter incremented in iteration order in `createCalendar`. Assign
+both in the build from a canonical sort. Same input plus same `--today` produces the same ids across
+engines and across runs. Test: import twice into fresh databases, assert identical output.
+
+`trip_id` is already done, by a different mechanism than this ticket assumed: #121 makes it the
+string `TUID_runsFrom_runsTo` rather than an integer from a sort, which needs no global ordering at
+all. The STP indicator is deliberately **not** in the key — see §6.6.
 
 **T3 · Canonical output ordering** *(depends T2)*
 Every output file sorted by a declared key before writing — `stops` by `stop_id`, `trips` by
@@ -409,7 +426,7 @@ Track A invariants plus Track B normalised diff against the T10 baseline. Runs n
 `full-e2e` label. Runtime and peak RSS recorded per run, feeding E2's sizing and F1's targets.
 
 No defect allowlist is needed: the baseline captures current behaviour including the known bugs, so
-B7 to B14 each rebaseline under T8 as they land, and the rebaseline diff *is* the evidence the fix
+B7 to B20 each rebaseline under T8 as they land, and the rebaseline diff *is* the evidence the fix
 did what it claimed.
 
 **Instruments the discard paths.** Every place the pipeline drops data reports a count: schedules
@@ -572,17 +589,21 @@ trip headsign at a stop — it means "this service terminates here", not "platfo
 to `stops.platform_code` on the platform-level stop (F3), or is dropped from `stop_times` if F3 has
 not landed. Coordinate with B8, which gives `trip_headsign` a real value for the first time.
 
-**B14 · Calendar fragments lying entirely in the past**
-`applyOverlays` calls `ScheduleCalendar.divideAround` to split a base schedule around an overlay.
-The query filters on the *original* schedule's `runs_to`, so a resulting fragment can fall wholly
-before the build date. `isEmpty` is `runsFrom > runsTo`, which catches reversed ranges (#117) but
-not expired ones, so those fragments survive: 32 calendars in the reference output end before the
+**B14 · Calendar fragments lying entirely in the past** — **superseded by #121**
+`applyOverlays` called `ScheduleCalendar.divideAround` to split a base schedule around an overlay.
+The query filters on the *original* schedule's `runs_to`, so a resulting fragment could fall wholly
+before the build date. `isEmpty` was `runsFrom > runsTo`, which catches reversed ranges (#117) but
+not expired ones, so those fragments survived: 32 calendars in the reference output ended before the
 generation date, the earliest starting 2021-01-03.
 
-Harmless to a consumer in isolation, but it interacts with B1 — `feed_start_date` computed from
-`min(calendar.start_date)` would report 2021 for a feed covering autumn 2025, which is actively
-misleading. Drop calendars ending before the build date, log the count, and make B1 derive its
-window from what remains.
+#121 deletes `divideAround` and the date tightening in `clone`, so no fragment is created and no
+calendar range moves after the fact. Measured on a 3 month build: **41 → 1**. The mechanism this
+ticket describes no longer exists.
+
+What survives is the B1 coupling, which the residual case still trips: `feed_start_date` computed
+from `min(calendar.start_date)` reports the earliest calendar rather than the coverage window. B1
+must derive its window from calendars that have not expired, and log the count dropped. Retained
+rather than closed because the T10 baseline moves when #121 lands and T8 wants the reason recorded.
 
 **B15 · Z-train stop times reference stops that do not exist**
 34 rows in `stop_times.txt` point at `QHA` (31) and `ZUX` (3), which appear in `z_stop_time` but not
@@ -592,11 +613,17 @@ passes `location AS crs_code` straight through. The comment in `getSchedules` cl
 the published feed. Either emit a stop for these locations or drop the stop times, and log the
 count. D4 (CORPUS) may resolve the mapping properly.
 
-**B16 · Calendars with no days set**
+**B16 · Calendars with no days set** — **superseded by #121**
 `service_id 101` in the current build has all seven day flags zero, runs 20260222–20991231, is
 attached to a live trip and has no `calendar_dates` entries — a service that can never run.
-`ScheduleCalendar.isEmpty` tests only `runsFrom > runsTo`, so an all-zero mask survives the filter
-that #117 added. Extend `isEmpty`, or filter in `createCalendar`.
+`ScheduleCalendar.isEmpty` tested only `runsFrom > runsTo`, so an all-zero mask survived the filter
+that #117 added.
+
+#121 takes the ticket's first option: `isEmpty` now walks the range looking for a day the service
+actually runs, so an all-zero mask and a fully-excluded calendar both report empty. Measured on a
+3 month build: **1 → 0**. Note the cost — `isEmpty` is now O(range) rather than O(1), and it is
+called per overlay application. It short-circuits on the first running day, so only genuinely empty
+calendars pay the full scan, and build wall clock moved from 30s to 36s.
 
 **B17 · Download commands never exit**
 `DownloadCommand.run` closes the SFTP connection but never the database pool, so the process hangs
@@ -604,7 +631,43 @@ after the transfer completes. Harmless interactively, fatal for a scheduled job 
 until the workflow timeout. Ties in with A5's `FeedCursor`, which removes the database from the
 download path entirely.
 
-B7 to B17 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
+**B18 · Associations fabricate service outside a schedule's validity** — **fixed by #121**
+`Association.apply` looped the association's exclude days and cloned the associated schedule onto
+each one with `assoc.calendar.clone(excludeDay, excludeDay)`, with no check that the date falls
+inside the schedule's own range. `clone` built a calendar on a date the schedule never ran, and the
+`isEmpty` guard could not catch it because the range was not reversed. Instrumented on a 3 month
+build it fires **154 times across 11 TUIDs**, and `mergeSchedules` then glued the fabricated days
+into ranges — `G38655` was emitted as a trip running 20260817–20260828, exactly the window its `C`
+record cancels.
+
+Net effect: **22 date/TUID pairs running on dates a cancellation covers**, plus one where no record
+covers the date at all. #121 replaces the whole mechanism, applying association exclusions as
+exclude days on the associated schedule. This is the largest single behaviour change in the T10
+rebaseline and the reason the diff is not empty.
+
+**B19 · STP indicator constants never match the feed**
+`STP.Permanent` is `"Previous"` and `STP.New` is `"Next"`, since `94b2834`. The feed carries `P` and
+`N`, so neither constant has ever matched. Only `Cancellation = "C"` works. The single place it
+mattered — `if (schedule.stp !== STP.Permanent)` in `applyOverlays`, guarding "perms don't overlap"
+— has therefore been dead since it was written.
+
+**The guard has to stay dead, and this is the load-bearing part.** `z_schedule` is entirely
+permanent records and has **537 overlapping pairs**; the CIF timetable has none. Correcting the
+constants without also removing the guard makes permanent records skip overlay application, and the
+overlapping z-trains then run twice — 89 duplicated service-days when tried. Fix the constants,
+delete the guard, and keep a fixture case for an all-permanent overlapping source.
+
+**B20 · The merge step conflates records differing only in activity codes** — **fixed by #121**
+`mergeSchedules` grouped by `Schedule.hash`, which covers stop id, arrival and departure time and
+the day mask, but **not** `pickup_type`/`drop_off_type`. Two CIF records with identical timings and
+different activities merged into one trip carrying the first record's activity codes. 90 trips in a
+3 month build are affected — for example `L80807` at `VIR`, where a `U` (pick up only) record is
+published with drop-off permitted.
+
+#121 removes the merge step entirely, so each record keeps its own activities. That is also where
+its trip count increase comes from — see E2.
+
+B7 to B20 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
 
 ### Epic A — Monorepo migration
@@ -793,6 +856,13 @@ the validator, runs T6's Track A invariants against the day's build, and fails t
 violation or on a swing over 5% in trip count versus the previous build. A published feed that fails
 referential integrity must never reach a release.
 
+*The 5% gate and #121 collide.* Removing the merge step is a **+19% step change** in trip count
+(229,898 → 273,539 on a 3 month build; stop times +21%, 16 MB → 20 MB zipped) because consecutive
+CIF records with the same stopping pattern are no longer collapsed into one trip. Whichever lands
+second trips the other. Either #121 ships before the gate exists, or the gate needs a documented
+one-off reset. The size is worth revisiting separately: merging by calendar *after* ids are assigned
+would recover most of it without destabilising them.
+
 *Risk:* `ubuntu-latest` is 4 vCPU / 16 GB and every `Schedule` is currently materialised in memory.
 Ship at a three-month horizon initially; raise after F1.
 
@@ -897,7 +967,7 @@ only, no feed changes — a data-quality signal for the site.
 ## 5. Sequencing
 
 ```
-E8, T14  →  B1,B2,B4,B5,B7..B17  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
+E8, T14  →  B1,B2,B4,B5,B7..B20  →  T1,T2,T3  →  T4,T5,T9,T11..T13  →  T10  →  T6,T6b,T7
                                    ↓
                                   A1  →  A2,A6  →  A3,A5,A7  →  A8
                                                                     ↓
@@ -913,8 +983,8 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**74 tickets** listed. B3 is absorbed into T1, B0 is done, and A4 and C4 are deferred out
-of this pass, leaving 70 in scope.
+**77 tickets** listed. B3 is absorbed into T1, B0 is done, B14, B16, B18 and B20 are resolved by
+#121, and A4 and C4 are deferred out of this pass, leaving 69 in scope.
 
 ---
 
@@ -946,6 +1016,22 @@ of this pass, leaving 70 in scope.
    `apps/dtd2mysql` verbatim so the patch rebases onto a rename. #116 and `dtd2postgres` (C4) are
    deferred with it. T6b is promoted, because it is what makes the incoming patch reviewable — see
    §2.
+6. **`trip_id` is `TUID_runsFrom_runsTo`, without the STP indicator** (#121). Including the
+   indicator would make the key the full CIF identity and guarantee uniqueness, but it also means a
+   withdrawn overlay reads as one trip vanishing and another appearing. Leaving it out means the
+   permanent that resurfaces keeps the id, so a client sees an amended timetable — which is the more
+   useful signal, and the one a consumer can act on. The cost is accepted: where an overlay covers
+   only *part* of a permanent schedule there is no way in GTFS to say "this trip replaces that one",
+   so the excluded dates are simply absent. NeTEx can express it; GTFS cannot.
+
+   Uniqueness is not at risk in practice. `schedule` and `z_schedule` both carry
+   `UNIQUE KEY (train_uid, runs_from, stp_indicator)`, and no `train_uid` appears in both, so two
+   base schedules can only share an id when a permanent and an overlay share a date range — and the
+   overlay supersedes the permanent, so one of them drops out. The only path that can still collide
+   is two associations for the same pair of TUIDs over the same dates, which exists in the feed but
+   is defective data: `P55949`/`P55776` are recorded as dividing at both Horsham and Barnham, and a
+   pair divides once. `mergeSchedules` suffixes rather than throwing, so bad data cannot fail a
+   build.
 
 ---
 
