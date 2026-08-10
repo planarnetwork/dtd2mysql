@@ -1,6 +1,6 @@
 # Restructure plan
 
-Status: Epic A and Epic C landed, T1 to T3 done; everything else proposal.
+Status: Epic A and Epic C landed, T1 to T5 done; everything else proposal.
 
 **Epic A is done.** The tree is a Yarn 4 monorepo of one app and five libraries, built
 exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
@@ -494,15 +494,43 @@ two sources proves they agree - it does not prove either is a function of its in
 comparing them is `diff` rather than a script that resolves every identifier to what it points at.
 The normalising half of T7 can go, and the T10 baselines become a plain byte comparison.
 
-**T4 · Fixture slice tool** *(depends T1)*
-`yarn fixture:slice --tuids <file> --out fixtures/mini` extracts BS/BX/LO/LI/LT/CR for the given
-TUIDs plus the transitive association closure, the referenced MSN A-records **including the header
-line**, and matching ALF/FLF/ZTR/TSI rows into a valid `RJTTF001.ZIP`. Output under 2 MB. Reuses the
-connected-component code F1 needs.
+**T4 · Fixture slice tool** *(depends T1)* — **done, tool not committed**
+Extracts BS/BX/LO/LI/LT/CR for the given TUIDs plus the transitive association closure, the
+referenced MSN A-records **including the header line**, and matching ALF/FLF/ZTR rows into a valid
+`RJTTF001.ZIP`. **88 KB**, against a 2 MB budget.
 
-**T5 · Mini fixture, committed golden, PR job** *(depends T2, T3, T4)*
-Fixture and golden text files committed; `yarn test:e2e` builds and diffs; wired into `ci.yml`.
+The slicer itself is not in the repository. It needs a real refresh to cut from, which is not
+committed either, and it runs once per fixture rather than on every build. What is committed is its
+output and, in `apps/dtd2gtfs/fixtures/mini/README.md`, the seeds and the source feed it came from,
+so the same slice can be cut again.
+
+**T5 · Mini fixture, committed golden, PR job** *(depends T2, T3, T4)* — **done, partly**
+Fixture and golden text files committed; the build runs and diffs on every pull request.
 Every case in the Layer 2 list has a named test asserting the specific behaviour, not just the diff.
+
+`apps/dtd2gtfs/src/build.spec.ts` builds the fixture at a pinned `--today` and compares all nine
+files against the committed golden, byte for byte - which T3 is what makes readable. It runs in the
+ordinary test job: the file source needs no database, so this is the first end-to-end coverage the
+build has had in CI at all. `UPDATE_GOLDEN=1 yarn vitest run` takes a change.
+
+Alongside the diff are the Track A invariants, cheap enough to run here rather than waiting for T6:
+referential integrity for stops, routes and services, two stops per trip minimum, no calendar ending
+before it starts, times moving forward within a trip, unique trip IDs.
+
+**Named cases covered**: the STP stack, an overlay excluding its days from the permanent, a
+cancellation inside the window and one that ends before it, a service departing after midnight, the
+MSN header parsing as a station, a `(CIE` station projecting into the South Atlantic, z-trains for
+each route type.
+
+**Not covered yet**: the activity codes named individually, a single-stop schedule, a calendar that
+empties after overlays, the window boundaries, a reversed date range, an all-zero day mask, two
+associations for one pair at different locations, an all-permanent overlapping source. The fixture's
+README lists them.
+
+One case cannot be covered from this feed: **a schedule with no stop times that is not a
+cancellation**. There are none. All **46,497** zero-stop BS records in `RJTTF918.MCA` carry `stp=C`,
+where having no stops is correct - so the 6,560 the B0 note attributes to the feed are the
+cancellations, not a separate population.
 
 **T6 · Full-feed harness** *(depends T5, T9, T10)*
 Track A invariants plus Track B normalised diff against the T10 baseline. Runs nightly and on the

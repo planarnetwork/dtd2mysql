@@ -8,7 +8,9 @@ export function project(name: string) {
   return defineProject({
     test: {
       name,
-      include: ["src/**/*.spec.ts"]
+      // .mts for a test that needs import.meta, which a package emitting
+      // CommonJS cannot use in a .ts file
+      include: ["src/**/*.spec.ts", "src/**/*.spec.mts"]
     }
   });
 }
