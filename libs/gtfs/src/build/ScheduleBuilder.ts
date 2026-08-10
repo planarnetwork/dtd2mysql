@@ -37,6 +37,25 @@ interface Cursor {
 export class ScheduleBuilder {
   private readonly schedules: Schedule[] = [];
   private maxId: number = 0;
+  private droppedStops: number = 0;
+
+  /**
+   * `exclude` holds the CRS codes of stations that are not places - see
+   * Placeholder. Their stop times are dropped here rather than at the source
+   * because the z-train query takes its stop id straight from the ZTR location
+   * and never meets physical_station, and every affected trip is a z-train.
+   */
+  constructor(private readonly exclude: ReadonlySet<string> = new Set()) {}
+
+  /**
+   * How many stop times were dropped for calling at a station that is not a
+   * place. Reported rather than left silent: it is the only visible effect on
+   * services, and a jump in it means the match has started catching something
+   * it should not.
+   */
+  public get dropped(): number {
+    return this.droppedStops;
+  }
 
   private getTripId(row: ScheduleStopTimeRow) {
     return tripId(row.train_uid, new ScheduleCalendar(
@@ -114,7 +133,10 @@ export class ScheduleBuilder {
     // column null, because getSchedules keeps them with `stop_time.id IS NULL`. There is
     // no stop to build from that row, and the schedule is dropped later on when it turns
     // out to have fewer than two stops.
-    if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
+    if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null && this.exclude.has(row.crs_code)) {
+      this.droppedStops++;
+    }
+    else if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
       const stop = this.createStop(row, cursor.stops.length + 1, cursor.departureHour);
 
       if (cursor.prevRow && cursor.prevRow.id === row.id && row.crs_code === cursor.prevRow.crs_code) {

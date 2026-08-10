@@ -731,26 +731,43 @@ covers a CIE station.
 NaPTAN is GB-only and will not cover the 43 CIE stations; a compatible source for Irish stations is
 to be identified at implementation time.
 
-**B11 · TCR latitude and longitude are transposed**
-`config/gtfs/station-coordinates.ts:13613` has `stop_lat: -0.1306, stop_lon: 51.5163`, placing
-Tottenham Court Road in the Indian Ocean. Fix the entry, and add a validation test over the whole
-override file asserting every entry falls within the GB bounding box (or an explicit allowlist for
-genuinely non-GB stops such as `HVH` Hoek van Holland). The same assertion carries over to
+**B11 · TCR latitude and longitude are transposed** — **done**
+`libs/gtfs/src/data/station-coordinates.ts` had `stop_lat: -0.1306, stop_lon: 51.5163`, placing
+Tottenham Court Road in the Indian Ocean. Fixed, and `station-coordinates.spec.ts` now checks all
+2,594 entries against `Bounds.ts`. TCR was the only one outside. The same assertion carries over to
 `overrides.yaml` in D7.
 
-**B12 · Drop fictional TOC origin/destination placeholders**
+No allowlist was needed. `HVH` Hoek van Holland is genuinely outside the box but takes its
+coordinates from the MSN projection rather than an override, so it never reaches this file. The box
+covers Ireland because the CIE stations will need it once B10 gives them coordinates.
+
+**B12 · Drop fictional TOC origin/destination placeholders** — **done**
 Twelve MSN records are TOC placeholders, not places — `CH ORIGIN`/`CH DESTINATION` and the
-equivalents for EMR, Northern, SWR, TransPennine and CrossCountry. They currently appear as stops
-in the North Sea and 22 trips call at them.
+equivalents for EMR, Northern, SWR, TransPennine and CrossCountry. They appeared as stops in the
+North Sea, from an easting of 18999 or 19500 against a northing of 69999.
 
 Matched by the `<TOC> ORIGIN` / `<TOC> DESTINATION` name pattern in combination with a `CATZ` TIPLOC
 and an invalid coordinate — **not** by `Q` CRS prefix or `CATZ` TIPLOC prefix alone, either of which
 would delete real stations (see §3). Excluded from `stops.txt`, stop times dropped, count logged.
 
-All 22 affected trips have exactly two stops and both are placeholders, so each trip drops to zero
-stops and is removed in full by the existing `stopTimes.length <= 1` filter. No trip is left
-partially truncated. All 22 originate in ZTR, which is consistent with their being replacement-bus
-placeholders. The fixture in T4 must include one so this stays true.
+Measured on the three month window from 2026-08-10 rather than the 22 first counted, which was a
+different window: **18 trips, 36 stop times**. Every one of the 18 has exactly two stops and both
+are placeholders, so each drops to zero stops and is removed whole by the existing
+`stopTimes.length > 1` filter - no trip is left truncated. All 18 are z-trains, consistent with
+their being replacement-bus placeholders.
+
+That z-train origin is why the exclusion lives in `ScheduleBuilder` rather than in the queries: the
+passenger query joins `physical_station` and could have filtered there, but the z-train query takes
+its stop id straight from the ZTR location and never meets that table.
+
+The match is checked against the data it has to survive. The name pattern alone happens to be exact
+today, and the other two signals are there so it stays safe: 121 stations have a `CATZ` TIPLOC,
+mostly real CIE stations, and 59 are outside the bounds, which is every CIE station until B10
+lands. Either signal alone deletes real places.
+
+Feed effect: stops 3,109 -> 3,097, trips 276,048 -> 276,030, stop times 2,868,101 -> 2,868,065.
+Both sources byte identical. The mini fixture carries `QXO`/`QXD` and two trips calling at them, so
+the golden shows the removal.
 
 **B13 · Platform number is in the wrong field** — **done**
 `stop_headsign` is null. It overrides the trip headsign at a stop — it means "this service
@@ -1335,8 +1352,8 @@ parallel by different people without touching the core.
 
 **82 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred out of this
-pass, leaving **50 in scope**.
+C1–C3, B11 and B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
+out of this pass, leaving **48 in scope**.
 
 ---
 
