@@ -14,6 +14,7 @@ import {CRS, Stop} from "../entity/Stop";
 import {locate} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {mergeTransfers} from "../transform/MergeTransfers";
+import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
@@ -84,6 +85,8 @@ export class BuildFeed {
       "transfers.txt",
       by("from_stop_id", "to_stop_id")
     );
+
+    dropUnknownStops(schedules, published);
 
     const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
 

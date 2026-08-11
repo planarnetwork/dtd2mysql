@@ -94,7 +94,22 @@ class FakeSource implements TimetableSource {
     private readonly links: FixedLink[] = []
   ) {}
 
-  async getStops() { return this.stops; }
+  /**
+   * The stops the test declared, or one for every stop its schedules call at if
+   * it declared none. B15 drops calls at stops the feed does not publish, and
+   * most of these tests are about ordering rather than about stops - they would
+   * otherwise end up with no stop times at all. A test that does declare stops
+   * gets exactly those, including the deliberately malformed ones.
+   */
+  async getStops() {
+    if (this.stops.length > 0) {
+      return this.stops;
+    }
+
+    const called = this.schedules.flatMap(s => s.stopTimes.map(stopTime => stopTime.stop_id));
+
+    return [...new Set(called)].sort().map(stop);
+  }
   async getTransfers() { return this.transfers; }
   async getFeedVersion() { return "RJTTF001.ZIP"; }
   async getFixedLinks() { return this.links; }
