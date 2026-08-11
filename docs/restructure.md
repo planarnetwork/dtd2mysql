@@ -1372,12 +1372,32 @@ Nothing in the structure has to move when it is picked up: `dtd2postgres` slots 
 
 ### Epic D — Enrichment (#119)
 
-**D1 · `Enricher` SPI, `MutableFeed`, provenance** *(depends A6)*
-`MutableFeed` gives indexed access to stops, trips and routes post-core-build. Every write records
-`(entity, field, value, enricher_id, priority)`; higher priority wins and the loser is retained in
-`provenance.json`. `EnrichmentReport` carries matched, unmatched and conflict counts, reusing T6's
-report format so the mini fixture can assert enricher behaviour without network access. **Not
-last-writer-wins.**
+**D1 · `Enricher` SPI, `MutableFeed`, provenance** *(depends A6)* — **done**
+
+`MutableFeed` indexes the feed and is writable only through `set`, so every change has an author and
+a priority and nothing can quietly overwrite something better. `Provenance` keeps the winning write
+and every write that lost, which is what makes "the coordinate is wrong" answerable: NaPTAN said
+this, OSM said that, NaPTAN won because it is 50 and OSM is 30.
+
+**Not last-writer-wins**, and tested as such: the same enrichers in either order produce the same
+feed. Order dependence here would be the same class of defect as the route numbering that depended
+on which trip arrived first, and it would be far harder to notice.
+
+Equal priority is a real conflict. It cannot be resolved on merit, so it resolves on enricher id -
+arbitrary but stable - and is **counted**, because a conflict count above zero means two sources are
+fighting over a field and somebody has to decide which should outrank the other. Agreement at equal
+priority is not a conflict.
+
+`EnrichmentReport` carries matched, unmatched and conflicts. `unmatched` is the number an enricher
+is tempted not to report and the one that matters: a source matching 12 stations of 3,000 has added
+noise, and nothing else would say so.
+
+**Only the stops are offered to an enricher.** Trips and routes stream straight to their files
+rather than being held, and materialising 276,000 trips to enrich a handful is the wrong trade until
+something needs it - D9 is the first that will, and it can pay for it then.
+
+The build takes an empty enricher list until D2 wires the config, and produces a byte identical feed
+with one. `provenance.json` is written only when an enricher ran.
 
 **D2 · Build config format and CLI wiring** *(depends D1, C3)*
 `gtfs.config.yaml` selecting source, today, range, licence tier, enrichers (with per-enricher
@@ -1651,11 +1671,12 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
 B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23 and E8, the last of those across master and Epic A. B14, B16,
+B7–B9, B10–B13, B15, B17, B22, B23, D1, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
+those across master and Epic A. B14, B16,
 B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
 B25 are investigated and closed as source data the feed reports rather than corrects.
 
-That leaves **37 in scope** — 36 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **28 in scope** — 27 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---

@@ -13,6 +13,9 @@ import {Route} from "../entity/Route";
 import {CRS, Stop, TIPLOC} from "../entity/Stop";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
+import {enrich, provenanceFile} from "../enrich/Enrich";
+import {MutableFeed} from "../enrich/MutableFeed";
+import {Enricher} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
@@ -28,7 +31,12 @@ export class BuildFeed {
   public constructor(
     private readonly repository: TimetableSource,
     private readonly output: GTFSOutput,
-    private readonly context: BuildContext
+    private readonly context: BuildContext,
+    /**
+     * Sources of detail the DTD does not carry. Empty until D2 wires the config
+     * that selects them, and the build is the same feed as before when it is.
+     */
+    private readonly enrichers: readonly Enricher[] = []
   ) {}
 
   /**
@@ -91,6 +99,17 @@ export class BuildFeed {
       stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
     );
     const called = dropUnknownStops(schedules, new Set(stations.keys()));
+    // Only the stops are offered to an enricher. Trips and routes are streamed
+    // straight to their files rather than held, and materialising 276,000 trips
+    // to enrich a handful is the wrong trade until something needs it - D9 is
+    // the first that will.
+    const feed = new MutableFeed(stops, [], []);
+    const reports = this.enrichers.length > 0 ? await enrich(feed, this.enrichers) : [];
+    const provenanceP = reports.length > 0
+      ? this.copy([provenanceFile(feed, reports)], "provenance.json", () => 0)
+      : Promise.resolve();
+
+
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", by("stop_id"));
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, await fixedLinksQ, map(stations, stop => stop.stop_id)),
@@ -125,7 +144,8 @@ export class BuildFeed {
       calendarDatesP,
       tripsP,
       fixedLinksP,
-      feedInfoP
+      feedInfoP,
+      provenanceP
     ]);
 
     await Promise.all([this.repository.end(), this.output.end()]);

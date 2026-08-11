@@ -1,0 +1,15 @@
+---
+"dtd2mysql": patch
+---
+
+Add the seam external data sources plug into.
+
+The core build turns the DTD into GTFS and nothing else. Real coordinates,
+step-free access and station groups come from elsewhere, each with its own
+licence and its own idea of what a station is. An enricher is one of those
+sources, and it writes through a ledger: every change has an author and a
+declared priority, higher priority wins whatever order they ran in, and every
+write that lost is kept in `provenance.json` so "why does the feed say that" has
+an answer.
+
+No enricher is configured yet, so the feed is unchanged.

@@ -2,6 +2,7 @@ import {describe, it, expect} from "vitest";
 import {Writable} from "stream";
 import {BuildFeed} from "./BuildFeed";
 import {BuildContext, DateRange, parseRange} from "./BuildContext";
+import {Enricher} from "../enrich/Enricher";
 import {GTFSOutput} from "./GTFSOutput";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {Association} from "../model/Association";
@@ -140,10 +141,10 @@ const context: BuildContext = {
   links: true
 };
 
-async function build(source: TimetableSource): Promise<MemoryOutput> {
+async function build(source: TimetableSource, enrichers: Enricher[] = []): Promise<MemoryOutput> {
   const output = new MemoryOutput();
 
-  await new BuildFeed(source, output, context).build(".");
+  await new BuildFeed(source, output, context, enrichers).build(".");
 
   return output;
 }
@@ -285,6 +286,71 @@ describe("BuildFeed ordering", () => {
 
   it("refuses to write a feed with no schedules in it", async () => {
     await expect(build(new FakeSource([]))).rejects.toThrow(/No schedules run between/);
+  });
+
+});
+
+describe("BuildFeed with an enricher", () => {
+
+  /**
+   * The seam, exercised end to end. An enricher that only knows about one stop -
+   * which is the realistic case, since no external source covers the whole
+   * network - and reports the ones it could not place.
+   */
+  const namer: Enricher = {
+    id: "test-namer",
+    priority: 50,
+    async enrich(feed) {
+      const known = ["TON", "NOWHERE"];
+      let matched = 0;
+      let unmatched = 0;
+
+      for (const id of known) {
+        const target = feed.stop(id);
+
+        if (target) {
+          feed.set(target, "stop_name", `${id} renamed`, this);
+          matched++;
+        }
+        else {
+          unmatched++;
+        }
+      }
+
+      return {enricher: this.id, matched, unmatched, conflicts: 0};
+    }
+  };
+
+  it("changes the feed the enricher touched", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON"), stop("SEV")]), [namer]);
+    const renamed = files["stops.txt"].find(s => s.stop_id === "TON");
+
+    expect(renamed.stop_name).to.equal("TON renamed");
+    expect(files["stops.txt"].find(s => s.stop_id === "SEV").stop_name).to.equal("SEV");
+  });
+
+  it("does not put the provenance bookkeeping in stops.txt", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON")]), [namer]);
+
+    expect(Object.keys(files["stops.txt"][0])).to.not.contain("located");
+  });
+
+  it("records who wrote what, and what the enricher could not place", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON"), stop("SEV")]), [namer]);
+    const [provenance] = files["provenance.json"];
+
+    expect(provenance.enrichers).to.deep.equal([
+      {id: "test-namer", matched: 1, unmatched: 1, conflicts: 0}
+    ]);
+    expect(provenance.fields).to.deep.equal([
+      {entity: "stop", id: "TON", field: "stop_name", value: "TON renamed", by: "test-namer", overruled: []}
+    ]);
+  });
+
+  it("writes no provenance when nothing enriched", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON")]));
+
+    expect(files["provenance.json"]).to.equal(undefined);
   });
 
 });
