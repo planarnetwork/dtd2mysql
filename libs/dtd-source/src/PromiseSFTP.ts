@@ -1,16 +1,63 @@
 import {Client, ClientSFTPCallback, ConnectConfig, FileEntry, SFTPWrapper, TransferOptions} from "ssh2";
 import { promisify } from "util";
+import {FeedCredentials} from "./Credentials";
+import {FeedTransport} from "./FeedTransport";
+
+/**
+ * The DTD host is old and negotiates none of the defaults a current ssh2 offers,
+ * so the acceptable algorithms are named explicitly. Removing any of these
+ * without testing against the real host will fail at the handshake.
+ */
+const ALGORITHMS: ConnectConfig["algorithms"] = {
+  kex: [
+    "diffie-hellman-group1-sha1",
+    "ecdh-sha2-nistp256",
+    "ecdh-sha2-nistp384",
+    "ecdh-sha2-nistp521",
+    "diffie-hellman-group-exchange-sha256",
+    "diffie-hellman-group14-sha1"
+  ],
+  cipher: [
+    "3des-cbc",
+    "aes128-ctr",
+    "aes192-ctr",
+    "aes256-ctr",
+    "aes128-gcm",
+    "aes128-gcm@openssh.com",
+    "aes256-gcm",
+    "aes256-gcm@openssh.com"
+  ],
+  serverHostKey: [
+    "ssh-dss",
+    "ssh-rsa",
+    "ecdsa-sha2-nistp256",
+    "ecdsa-sha2-nistp384",
+    "ecdsa-sha2-nistp521"
+  ],
+  hmac: [
+    "hmac-sha2-256",
+    "hmac-sha2-512",
+    "hmac-sha1"
+  ]
+} as ConnectConfig["algorithms"];
 
 
 /**
  * Wrapper around the ssh2 client
  */
-export class PromiseSFTP {
+export class PromiseSFTP implements FeedTransport {
 
   constructor(sftp: SFTPWrapper, client: Client) {
     this.readdir = promisify(sftp.readdir.bind(sftp));
     this.fastGet = promisify(sftp.fastGet.bind(sftp));
     this.end = client.end.bind(client);
+  }
+
+  /**
+   * Connect with the credentials the environment supplies.
+   */
+  public static open(credentials: FeedCredentials): Promise<PromiseSFTP> {
+    return PromiseSFTP.connect({...credentials, algorithms: ALGORITHMS});
   }
 
   /**

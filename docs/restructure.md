@@ -1311,11 +1311,26 @@ filename - as text every `RJTTC` sorts before every `RJTTF`, which would apply t
 incrementals that amend it - and starting at the last refresh matters because a directory that feeds
 are downloaded into accumulates more than one cycle. E2 wants the same rule.
 
-**C5 · Rail Data Marketplace credential path** *(depends A5)*
-The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; tokens now come from Rail Data
-Marketplace (`raildata.org.uk`). The SFTP host still serves files but credential issuance has moved.
-`dtd-source` transport becomes pluggable (SFTP today, RDM API when needed); credentials resolved
-from env in one place; README updated.
+**C5 · Rail Data Marketplace credential path** *(depends A5)* — **done**
+The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; an account now comes from a Rail
+Data Marketplace subscription (`raildata.org.uk`). The SFTP host still serves the files, so nothing
+about the transport changed - only where the username and password are obtained, which is the part
+that was undocumented and unfindable.
+
+`FeedTransport` is the seam: list and fetch, which is all downloading a feed needs. `DownloadCommand`
+depends on it rather than on `PromiseSFTP`, so an RDM API implementation can arrive without touching
+the command. `PromiseSFTP` implements it and now owns the algorithm list, which was sitting in
+`container.ts` - 30 lines of ssh2 negotiation detail in a wiring file, where the comment explaining
+why it cannot be deleted had nowhere to live.
+
+`feedCredentials()` resolves the environment in one place and **fails with an explanation rather
+than at the handshake**: a missing variable now says the credentials come from raildata.org.uk and
+not from the retired portal, which is where someone reading a bare authentication failure would
+otherwise go looking. `apps/dtd2mysql/README.md` says the same.
+
+Deliberately not done: an RDM API transport. Nothing needs one - the SFTP host serves the files -
+and writing a second implementation against an API this project does not yet call would be guessing
+at its shape. The seam is the deliverable.
 
 **C4 · `apps/dtd2postgres`** — **deferred, not in this pass** — **would close #116**
 Postgres `Storage` (DDL generation, `COPY`-based bulk load) and `PostgresTimetableSource`, plus a
@@ -1609,8 +1624,8 @@ parallel by different people without touching the core.
 
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3, B1, B2, B6, B10–B12, B15 and B17 — B14, B16, B18, B19, B20 and B21 are resolved by #121, and A4 and C4 are deferred
-out of this pass, leaving **43 in scope**.
+C1–C3, C5, B1, B2, B6, B10–B12, B15, B17, B22 and B23 — B14, B16, B18, B19, B20 and B21 are resolved by #121, and A4 and C4 are deferred
+out of this pass, leaving **39 in scope**.
 
 ---
 

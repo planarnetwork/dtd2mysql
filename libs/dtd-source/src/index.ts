@@ -1,4 +1,7 @@
 export {PromiseSFTP} from "./PromiseSFTP";
+export {DTD_HOST, feedCredentials} from "./Credentials";
+export type {FeedCredentials} from "./Credentials";
+export type {FeedTransport} from "./FeedTransport";
 export {NO_CURSOR} from "./FeedCursor";
 export type {FeedCursor} from "./FeedCursor";
 export {DownloadCommand} from "./DownloadCommand";

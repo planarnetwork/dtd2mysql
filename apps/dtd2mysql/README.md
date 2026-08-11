@@ -77,6 +77,12 @@ SFTP_PASSWORD=dtd_password
 SFTP_HOSTNAME=dtd_hostname (this will default to dtd.atocrsp.org)
 ```
 
+**Where the credentials come from changed in early 2026.** The National Rail open data portal at
+`opendata.nationalrail.co.uk` was retired; an account for the Timetable and Fares feeds now comes
+from a subscription on [Rail Data Marketplace](https://raildata.org.uk). The SFTP host is unchanged
+and still serves the files - only issuance moved - so an existing setup keeps working and a new one
+starts at RDM rather than at the old portal.
+
 There is a command for each feed
 
 ```

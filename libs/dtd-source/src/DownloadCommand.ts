@@ -1,4 +1,4 @@
-import {PromiseSFTP} from "./PromiseSFTP";
+import {FeedTransport} from "./FeedTransport";
 import {FeedCursor} from "./FeedCursor";
 import { FileEntry } from "ssh2";
 
@@ -6,7 +6,7 @@ export class DownloadCommand {
 
   constructor(
     private readonly cursor: FeedCursor,
-    private readonly sftp: PromiseSFTP,
+    private readonly transport: FeedTransport,
     private readonly directory: string
   ) {}
 
@@ -16,7 +16,7 @@ export class DownloadCommand {
   public async run(argv: string[]): Promise<string[]> {
     const outputDirectory = argv[3] || "/tmp/";
     const [remoteFiles, lastProcessedFile] = await Promise.all([
-      this.sftp.readdir(this.directory),
+      this.transport.readdir(this.directory),
       this.cursor.getLastProcessedFile()
     ]);
 
@@ -31,14 +31,14 @@ export class DownloadCommand {
 
     try {
       await Promise.all(
-        files.map(f => this.sftp.fastGet(this.directory + f, outputDirectory + f, { concurrency: 1 }))
+        files.map(f => this.transport.fastGet(this.directory + f, outputDirectory + f, { concurrency: 1 }))
       );
     }
     catch (err) {
       console.error(err);
     }
 
-    this.sftp.end();
+    this.transport.end();
 
     return files.map(filename => outputDirectory + filename);
   }
