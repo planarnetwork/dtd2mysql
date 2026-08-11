@@ -170,12 +170,12 @@ describe("CifFileSource", () => {
 
     expect(train.operator).to.equal("SE");
     expect(train.rsid).to.equal("SE000100");
-    // The stop id is the platform, not the station: the fixture's LO and LT put
-    // 1 and 3 in the platform field, so B23 gives each call a child stop.
-    expect(train.stopTimes.map(s => [s.stop_id, s.arrival_time, s.departure_time, s.stop_sequence]))
+    // The station, not the platform. The platform rides alongside and only
+    // becomes part of the stop id when stop_times.txt is written.
+    expect(train.stopTimes.map(s => [s.stop_id, s.platform, s.arrival_time, s.stop_sequence]))
       .to.deep.equal([
-        ["TON_1", "08:00:00", "08:00:00", 1],
-        ["SEV_3", "08:20:00", "08:20:00", 2]
+        ["TON", "1", "08:00:00", 1],
+        ["SEV", "3", "08:20:00", 2]
       ]);
   });
 
@@ -192,7 +192,7 @@ describe("CifFileSource", () => {
 
     const {schedules} = await source(feed).getSchedules(range);
 
-    expect(schedules[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["TON_1", "SEV_3"]);
+    expect(schedules[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["TON", "SEV"]);
   });
 
   it("leaves out a schedule that does not run in the window", async () => {
@@ -235,7 +235,7 @@ describe("CifFileSource", () => {
     const {schedules} = await source(refresh()).getSchedules(range);
     const [bus] = schedules.filter(s => s.tuid === "Z00001");
 
-    expect(bus.stopTimes.map(s => s.stop_id)).to.deep.equal(["TON_1", "SEV_3"]);
+    expect(bus.stopTimes.map(s => s.stop_id)).to.deep.equal(["TON", "SEV"]);
     expect(bus.operator).to.equal("ZZ");
   });
 

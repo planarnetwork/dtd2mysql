@@ -15,7 +15,7 @@ import {locate} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
-import {station, withPlatforms} from "../transform/Platforms";
+import {toStopTimeRow, withPlatforms} from "../transform/Platforms";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
@@ -80,10 +80,10 @@ export class BuildFeed {
     // references it.
     // Platforms are added before anything asks which stops the feed publishes,
     // because after this the stop times reference PAD_A rather than PAD.
-    const stops = locate(
-      withPlatforms(await stopsQ, schedules),
-      referenced(schedules, await fixedLinksQ)
-    );
+    // The stations are split here; the suffixed id is composed only when
+    // stop_times.txt is written, so nothing upstream of this sees it.
+    const {stops: withChildren, split} = withPlatforms(await stopsQ, schedules);
+    const stops = locate(withChildren, referenced(schedules, await fixedLinksQ));
     const published = new Set(stops.map(stop => stop.stop_id));
     const stopsP = this.copy(stops, "stops.txt", by("stop_id"));
     const transfersP = this.copy(
@@ -103,7 +103,7 @@ export class BuildFeed {
       "feed_info.txt",
       by("feed_publisher_name")
     );
-    const tripsP = this.copyTrips(schedules, serviceIds, names(stops));
+    const tripsP = this.copyTrips(schedules, serviceIds, names(stops), split);
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -147,7 +147,12 @@ export class BuildFeed {
   /**
    * trips.txt, stop_times.txt and routes.txt have interdependencies so they are written together
    */
-  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex, stopNames: Map<string, string>): Promise<any> {
+  private copyTrips(
+    schedules: Schedule[],
+    serviceIds: ServiceIdIndex,
+    stopNames: Map<string, string>,
+    split: ReadonlySet<CRS>
+  ): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
@@ -205,7 +210,7 @@ export class BuildFeed {
         routeIds[schedule.routeShortName],
         name ?? schedule.destination
       ));
-      schedule.stopTimes.forEach(r => stopTimes.write(r));
+      schedule.stopTimes.forEach(r => stopTimes.write(toStopTimeRow(r, split)));
     }
 
     report(unknown);
@@ -244,10 +249,7 @@ function referenced(schedules: Schedule[], links: FixedLink[]): Set<CRS> {
 
   for (const schedule of schedules) {
     for (const stopTime of schedule.stopTimes) {
-      // The station too: a call at a platform is a reason to keep its parent,
-      // and a station with no parent published is not a station.
       used.add(stopTime.stop_id);
-      used.add(station(stopTime.stop_id));
     }
   }
 

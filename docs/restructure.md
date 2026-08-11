@@ -1141,16 +1141,17 @@ whole.** The feed has 3,750 station-platform pairs and this publishes 729 of the
 means deciding what a call with no platform is - a station-level boarding facility, or a gap the
 source has to fill.
 
-Three things had to change with it, none of them obvious from the ticket:
+**The suffix belongs to the output, not to the model.** The first attempt composed `PAD_A` in
+`ScheduleBuilder`, which is upstream of overlays, associations and merges - so the domain saw stop
+ids that were no longer CRS codes, and **every association silently stopped applying**, because an
+association names a bare CRS. 56 fixture trips changed and some lost every stop. Route names split
+by platform too, 20 to 30 in the fixture, and headsigns read "Sevenoaks Platform 3".
 
-- **`origin` and `destination` are the station, not the platform.** They name the route and the
-  headsign, and neither should change because a train was moved. Left as the stop id they split
-  routes.txt from 20 to 30 in the fixture and made headsigns read "Sevenoaks Platform 3".
-- **`stopAt`, `before` and `after` match on the station.** An association names a bare CRS, so with
-  platform stop ids **every association silently stopped applying** - 56 fixture trips changed and
-  some lost every stop. The golden caught it; nothing else would have.
-- `stop_headsign` stays null. It means "this service terminates here", and B8 puts a real
-  destination in `trip_headsign` for it to override.
+Patching `stopAt`, `before`, `after`, `origin` and `destination` to compare stations made the
+symptoms go away and left the cause: a GTFS presentation detail had been pushed into the timetable
+model. `StopTime.platform` carries it instead, `stop_id` stays a CRS through every transform, and
+`toStopTimeRow` composes the id when `stop_times.txt` is written. Those five compensating changes
+are gone, and the feed is byte for byte what the first attempt produced.
 
 Feed effect: stops 3,054 -> 3,783. Trips, stop times, routes and transfers unchanged. Both sources
 byte identical.

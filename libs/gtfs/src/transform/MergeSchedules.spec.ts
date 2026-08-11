@@ -82,6 +82,7 @@ function stopTime(stop: string, tripId: string): StopTime {
     drop_off_type: 0,
     shape_dist_traveled: null,
     timepoint: 0,
+    platform: null,
   };
 }
 
