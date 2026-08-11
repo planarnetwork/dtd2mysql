@@ -20,6 +20,26 @@ jobs:
       # A conflict marker in a workflow file makes it unparseable, which GitHub
       # reports as a run that failed before any job started - easy to read as the
       # workflow simply not triggering.
+      # A baseline records current behaviour, so changing one is normal - but it
+      # has to be a decision. Without this the golden can be regenerated and
+      # committed without anybody reading the diff, which is the only thing that
+      # makes it worth committing as text.
+      - name: Baseline changes are explained
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          [ -n "$base" ] || exit 0
+          git fetch -q --depth=1 origin "$base" 2>/dev/null || true
+          changed=$(git diff --name-only "$base"...HEAD -- \
+            'apps/*/fixtures/*/golden/**' 'type-surface.json' || true)
+          [ -n "$changed" ] || exit 0
+          echo "Baselines changed:"; echo "$changed"
+          if ! git diff --name-only "$base"...HEAD -- 'apps/*/fixtures/BASELINE.md' | grep -q .; then
+            echo
+            echo "A baseline changed with no entry in apps/dtd2gtfs/fixtures/BASELINE.md."
+            echo "Say which ticket moved it and what the diff shows."
+            exit 1
+          fi
+
       - name: No conflict markers
         run: |
           ! git grep -n -E '^(<<<<<<< |=======$|>>>>>>> )' -- . ':!*.spec.ts'
@@ -46,6 +66,65 @@ jobs:
       # whose include matches the file.
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
       - run: yarn tsx apps/dtd2gtfs/src/index.ts --help
+
+  # Nothing above unit tests could run without a database, so every claim about
+  # the importer has been checked by hand. This is where that stops.
+  database:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:12
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
+          MARIADB_DATABASE: dtd2mysql_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DATABASE_HOSTNAME: 127.0.0.1
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: ""
+      DATABASE_NAME: dtd2mysql_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+      # The mini fixture is a real DTD zip, so importing it exercises the whole
+      # parse-and-insert path against a real MariaDB - the fixed width records,
+      # the generated ids B22 rewrote, and the schema DDL.
+      - name: Import the mini fixture
+        run: yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP
+      - name: Build a feed from the database
+        run: |
+          mkdir -p "$RUNNER_TEMP/from-db"
+          GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/from-db"
+      # The whole point of two sources: the same feed, whichever way it is read.
+      # This is the check that has been run by hand all through Epics A to C.
+      - name: The file source produces the same feed
+        run: |
+          mkdir -p "$RUNNER_TEMP/from-files"
+          yarn tsx apps/dtd2gtfs/src/index.ts build \
+            --source apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP \
+            --out "$RUNNER_TEMP/from-files" --today 2026-08-10
+          diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/from-files"
+      # Importing twice must land the same rows: B22 rewrote how every generated
+      # id is assigned, and the failure it fixed only appears on a second feed.
+      - name: Importing the same feed twice changes nothing
+        run: |
+          yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP
+          mkdir -p "$RUNNER_TEMP/twice"
+          GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/twice"
+          diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/twice"
 
   # The mini fixture is built and held to the MobilityData validator. Separate
   # from unit because it needs a JVM and a 40 MB jar, and because a validator
@@ -107,3 +186,20 @@ jobs:
           ./node_modules/.bin/dtd2mysql --help | tee help.txt
           grep -q "Usage: dtd2mysql" help.txt
           grep -q -- "--gtfs-zip" help.txt
+      # --help barely touches the bundle. Running a real command with no database
+      # loads the container, resolves every schema module and exercises the error
+      # path - which is what catches a files/main/bundle mistake that --help
+      # sails straight past.
+      - name: The packaged CLI runs a real command
+        run: |
+          cd "$RUNNER_TEMP/install"
+          set +e
+          DATABASE_HOSTNAME=127.0.0.1 DATABASE_PORT=1 \
+            ./node_modules/.bin/dtd2mysql --gtfs ./out > run.txt 2>&1
+          status=$?
+          set -e
+          cat run.txt
+          [ "$status" -eq 1 ] || { echo "expected exit 1, got $status"; exit 1; }
+          grep -qi "ECONNREFUSED\|connect" run.txt
+          # a stack trace here means the entry point lost its error handling
+          ! grep -q "at Object.<anonymous>" run.txt
