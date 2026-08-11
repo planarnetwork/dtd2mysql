@@ -19,5 +19,12 @@ dist/
 
 # local e2e baseline work (feeds, snapshots, credentials)
 .env.local
-data/
+# The feeds are large, current and perishable, and the GTFS snapshot keeps the
+# payload it fingerprinted. The scripts and the table fingerprints are the
+# reproducible part, so those are tracked - see data/README.md.
+data/feeds/
+data/snapshots/gtfs-*/
+data/*.log
+data/*.pid
+data/probe*
 bundle/
