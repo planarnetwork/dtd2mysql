@@ -730,7 +730,7 @@ belong in a PR check. Running it by hand against `RJTTF918` found three errors:
 That gap is real: a green PR check does not mean the published feed validates. Whoever does E2's
 nightly should run the validator there.
 
-**B24 · A joined trip visits a station twice with time going backwards** — *investigated; the source is inconsistent*
+**B24 · A joined trip visits a station twice with time going backwards** — *investigated; the source is inconsistent, and the feed reports it*
 
 `G38297`/`G38968`, a `JJ` join at Swansea, on three of the six dates the association covers.
 
@@ -747,11 +747,14 @@ Permanent pair is consistent** - arrive 09:03, depart 09:30 - and **the two over
 was moved 30 minutes later and the other 18 minutes earlier, so the train that joins now reaches
 Swansea 21 minutes after the train it joins has left. The join cannot happen as described.
 
-So there is nothing to fix in the parsing. What is still open is what to *emit*: today the build
-applies the association anyway and produces a trip that doubles back. Refusing a join whose timings
-cannot work - assoc arrival after base departure - and emitting the two trains separately would be
-defensible whoever is at fault, and would cost nothing when the data is right. That needs a failing
-test at the `applyAssociations` level first.
+**Decided: represent the data as it is.** The build applies the association and emits the trip that
+doubles back, because that is what the feed describes. Refusing a join whose timings cannot work was
+considered and rejected for the same reason B25 was left alone: the feed's job is to say what the
+source says, and a consumer that sees an impossible trip is seeing something true about the DTD.
+Fixing it here would hide the fault from whoever can correct it.
+
+It stays a validator error on the full feed - three of the four
+`stop_time_with_arrival_before_previous_departure_time` - and no code changes.
 
 **B25 · A z-train arrives before it left** — *found by B6; **the source is wrong, not us***
 
