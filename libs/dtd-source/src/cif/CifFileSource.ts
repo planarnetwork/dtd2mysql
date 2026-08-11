@@ -27,6 +27,12 @@ import {additionalFixedLink, associationRow, AssociationRow, fixedLink, integer,
 const timetable = config.timetable;
 
 /**
+ * The `cate_interchange_status` of a TIPLOC that is not the station itself -
+ * a junction or approach sharing its CRS. See groupByCrs.
+ */
+const SUBSIDIARY = 9;
+
+/**
  * A TimetableSource that reads the DTD feed files directly, with no database.
  *
  * MySqlTimetableSource's SQL is the specification. Three of its behaviours come
@@ -57,7 +63,7 @@ export class CifFileSource implements TimetableSource {
   public async getStops(): Promise<Stop[]> {
     const {stations} = await this.loadReference();
 
-    return groupByCrs(stations.rows.filter(row => row.crs_code !== null))
+    return groupByCrs(stations.rows.filter(row => row.crs_code !== null), true)
       .map(row => toStop(stationRecord(row), this.stationCoordinates));
   }
 
@@ -567,18 +573,41 @@ interface Overlaid {
  * GROUP BY crs_code keeps the first row inserted for each code, and returns the
  * groups in code order.
  */
-function groupByCrs(rows: Row[]): Row[] {
+/**
+ * One row per CRS, preferring a TIPLOC that describes the station itself.
+ *
+ * `cate_interchange_status` is the CATE interchange rating - 0 for a station
+ * that is not an interchange, 1 to 3 for how significant an interchange it is,
+ * and **9 for a subsidiary location**: a junction or an approach that shares the
+ * station's CRS without being the place a passenger stands. Reading has
+ * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
+ *
+ * Taking whichever row came first published the subsidiary TIPLOC as
+ * `stop_code` for 60 stations, Reading among them, because the order rows
+ * happen to arrive in is not a rule. Beyond the preference the first row still
+ * wins, so nothing else moves.
+ *
+ * `preferStation` is off for transfers, which want the minimum change time of
+ * whichever row the database would have grouped to. Changing that is a separate
+ * question from which TIPLOC to publish.
+ */
+function groupByCrs(rows: Row[], preferStation = false): Row[] {
   const groups = new Map<string, Row>();
 
   for (const row of rows) {
     const crs = String(row.crs_code);
+    const chosen = groups.get(crs);
 
-    if (!groups.has(crs)) {
+    if (chosen === undefined || (preferStation && subsidiary(chosen) && !subsidiary(row))) {
       groups.set(crs, row);
     }
   }
 
   return [...groups.values()].sort((a, b) => String(a.crs_code) < String(b.crs_code) ? -1 : 1);
+}
+
+function subsidiary(row: Row): boolean {
+  return row.cate_interchange_status === SUBSIDIARY;
 }
 
 /**

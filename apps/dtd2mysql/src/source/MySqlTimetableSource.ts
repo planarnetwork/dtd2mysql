@@ -51,13 +51,34 @@ export class MySqlTimetableSource implements TimetableSource {
   }
 
   /**
-   * Return all the stops with some configurable long/lat applied
+   * Return all the stops with some configurable long/lat applied.
+   *
+   * One row per CRS, preferring a TIPLOC that describes the station itself.
+   * `cate_interchange_status` is the CATE interchange rating - 0 for a station
+   * that is not an interchange, 1 to 3 for how significant an interchange it is,
+   * and **9 for a subsidiary location**: a junction or an approach that shares
+   * the station's CRS without being the place a passenger stands. Reading has
+   * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
+   *
+   * `GROUP BY crs_code` alone keeps whichever row came first, which published
+   * the subsidiary TIPLOC as `stop_code` for 60 stations. Ordering a derived
+   * table does not fix it - MariaDB is free to ignore that - so the row is
+   * chosen explicitly. Ties keep the original first-row behaviour, so nothing
+   * but those 60 moves, and the file source picks the same way, which is the
+   * only thing keeping the two sources in step.
    */
   public async getStops(): Promise<Stop[]> {
     const [results] = await this.db.query<StationRecord>(`
       SELECT crs_code, tiploc_code, station_name, cate_interchange_status, easting, northing
-      FROM physical_station WHERE crs_code IS NOT NULL
-      GROUP BY crs_code
+      FROM (
+        SELECT *, ROW_NUMBER() OVER (
+          PARTITION BY crs_code ORDER BY cate_interchange_status <=> 9
+        ) AS preference
+        FROM physical_station
+        WHERE crs_code IS NOT NULL
+      ) ranked
+      WHERE preference = 1
+      ORDER BY crs_code
     `);
 
     return results.map(row => toStop(row, this.stationCoordinates));
