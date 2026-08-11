@@ -1374,6 +1374,20 @@ Nothing in the structure has to move when it is picked up: `dtd2postgres` slots 
 
 **D1 · `Enricher` SPI, `MutableFeed`, provenance** *(depends A6)* — **done**
 
+**Fetch and apply are separate, and dependencies are separate from priority.** Fetching is slow and
+independent - a NaPTAN download, an API call, an OSM extract - so every enricher fetches at once and
+twelve of them is one download rather than twelve in a queue. It also lets a test drive `apply` from
+a fixture with no network, which is what the mini fixture needs, and gives caching one place to
+live. `fetch` therefore **cannot see another enricher's output**, or the feed at all; an enricher
+that wants to narrow what it fetches must fetch broadly and narrow in `apply`.
+
+`dependsOn` decides the order `apply` runs in, because OSM pathways cannot join platforms NaPTAN has
+not created yet. `priority` decides who wins a contested field. Conflating them - which the first
+attempt did, ordering by priority - produces an order that looks deliberate and is not. Everything
+that can be rejected is rejected before any fetch: an unknown dependency, a duplicate key, a cycle.
+A build that has downloaded four sources and then finds a circle has wasted the expensive part and
+left the feed half enriched.
+
 `MutableFeed` indexes the feed and is writable only through `set`, so every change has an author and
 a priority and nothing can quietly overwrite something better. `Provenance` keeps the winning write
 and every write that lost, which is what makes "the coordinate is wrong" answerable: NaPTAN said

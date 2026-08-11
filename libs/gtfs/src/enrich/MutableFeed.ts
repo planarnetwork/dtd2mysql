@@ -70,7 +70,7 @@ export class MutableFeed {
     const kind = entityKind(entity);
     const id = String(identify(entity));
     const applied = this.provenance.record(kind, id, String(field), {
-      enricher: by.id,
+      enricher: by.key,
       priority: by.priority,
       value
     });

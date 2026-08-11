@@ -135,6 +135,7 @@
     "minDate",
     "option",
     "options",
+    "order",
     "parseDuration",
     "parseRange",
     "provenanceFile",

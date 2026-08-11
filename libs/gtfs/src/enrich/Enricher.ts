@@ -8,31 +8,56 @@ import {MutableFeed} from "./MutableFeed";
  * points - comes from somewhere with its own licence, its own refresh cadence
  * and its own idea of what a station is. An enricher is one of those sources.
  *
- * `priority` decides who wins when two of them write the same field, and it is
- * declared rather than derived from the order they run in. Two enrichers that
- * disagree is the normal case, not an error: NaPTAN and OSM both have a
- * coordinate for Paddington and they are not the same coordinate.
+ * **Fetching and applying are separate** because they have nothing in common.
+ * Fetching is slow and I/O bound - a NaPTAN download, an API call, an OSM
+ * extract - so every enricher fetches at once. Applying is ordered and cheap.
+ * Splitting them is also what lets a test drive `apply` with a fixture instead
+ * of a network, and gives caching one place to live.
  */
-export interface Enricher {
+export interface Enricher<T = unknown> {
   /**
-   * Stable across runs and unique. It appears in provenance.json, so renaming
-   * one is a breaking change to anybody reading that file.
+   * Stable, unique, and shouted: `ACCESSIBILITY_INFO`. It appears in
+   * provenance.json and in `dependsOn`, so renaming one breaks both a config
+   * and anybody reading the output.
    */
-  readonly id: string;
+  readonly key: string;
 
   /**
-   * Higher wins. Ties are a conflict and are reported rather than resolved
-   * quietly - see Provenance.
+   * Enrichers whose output this one needs, by key. Decides the order `apply`
+   * runs in - OSM pathways cannot join platforms that NaPTAN has not created
+   * yet.
+   *
+   * Nothing to do with `priority`. This is "what has to exist first"; priority
+   * is "who wins when we disagree", and confusing the two produces an order
+   * that looks deliberate and is not.
+   */
+  readonly dependsOn: readonly string[];
+
+  /**
+   * Higher wins when two enrichers write the same field. Declared rather than
+   * positional, so the feed does not change when a config is reordered. Ties
+   * are a conflict and are reported rather than resolved quietly.
    */
   readonly priority: number;
 
   /**
-   * Who to credit. D8 builds attributions.txt from these, and gates a
+   * Who to credit. D8 builds attributions.txt from these, and keeps a
    * share-alike source out of the permissive tier.
    */
   readonly attribution?: Attribution;
 
-  enrich(feed: MutableFeed): Promise<EnrichmentReport>;
+  /**
+   * Get the data. Runs concurrently with every other enricher's fetch, so it
+   * **cannot see another enricher's output** - and cannot see the feed at all.
+   * An enricher that would like to fetch only what the feed needs should fetch
+   * broadly and narrow it in `apply`.
+   */
+  fetch(): Promise<T>;
+
+  /**
+   * Write it in, in dependency order.
+   */
+  apply(feed: MutableFeed, data: T): EnrichmentReport;
 }
 
 export interface Attribution {

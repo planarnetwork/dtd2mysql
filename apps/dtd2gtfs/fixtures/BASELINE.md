@@ -16,8 +16,8 @@ before committing it** - that is the whole value of the file being text.
 ## D1 · the enricher SPI
 
 `type-surface.json` gains the enrichment exports from `libs/gtfs`: `Enricher`, `EnrichmentReport`,
-`Attribution`, `MutableFeed`, `Provenance`, `Write`, `FieldHistory`, `enrich` and `provenanceFile`.
-No feed output changes - nothing runs an enricher yet.
+`Attribution`, `MutableFeed`, `Provenance`, `Write`, `FieldHistory`, `enrich`, `order` and
+`provenanceFile`. No feed output changes - nothing runs an enricher yet.
 
 This is the surface other packages implement against, so from here a rename is somebody else's
 build breaking, which is the reason the snapshot exists.

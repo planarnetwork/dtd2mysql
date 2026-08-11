@@ -297,11 +297,14 @@ describe("BuildFeed with an enricher", () => {
    * which is the realistic case, since no external source covers the whole
    * network - and reports the ones it could not place.
    */
-  const namer: Enricher = {
-    id: "test-namer",
+  const namer: Enricher<string[]> = {
+    key: "TEST_NAMER",
+    dependsOn: [],
     priority: 50,
-    async enrich(feed) {
-      const known = ["TON", "NOWHERE"];
+    async fetch() {
+      return ["TON", "NOWHERE"];
+    },
+    apply(feed, known) {
       let matched = 0;
       let unmatched = 0;
 
@@ -317,7 +320,7 @@ describe("BuildFeed with an enricher", () => {
         }
       }
 
-      return {enricher: this.id, matched, unmatched, conflicts: 0};
+      return {enricher: this.key, matched, unmatched, conflicts: 0};
     }
   };
 
@@ -340,10 +343,10 @@ describe("BuildFeed with an enricher", () => {
     const [provenance] = files["provenance.json"];
 
     expect(provenance.enrichers).to.deep.equal([
-      {id: "test-namer", matched: 1, unmatched: 1, conflicts: 0}
+      {id: "TEST_NAMER", matched: 1, unmatched: 1, conflicts: 0}
     ]);
     expect(provenance.fields).to.deep.equal([
-      {entity: "stop", id: "TON", field: "stop_name", value: "TON renamed", by: "test-namer", overruled: []}
+      {entity: "stop", id: "TON", field: "stop_name", value: "TON renamed", by: "TEST_NAMER", overruled: []}
     ]);
   });
 
