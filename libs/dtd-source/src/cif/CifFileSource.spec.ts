@@ -1,4 +1,5 @@
 import {describe, it, expect, beforeEach, afterEach} from "vitest";
+import {interchange} from "@gb-rail/gtfs";
 import AdmZip from "adm-zip";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -142,9 +143,9 @@ describe("CifFileSource", () => {
   it("turns the interchange time into a transfer", async () => {
     const transfers = await source(refresh()).getTransfers();
 
-    expect(transfers).to.deep.include({
-      from_stop_id: "TON", to_stop_id: "TON", transfer_type: 2, min_transfer_time: 300
-    });
+    // The extension columns B2 added are null on an interchange row: there is no
+    // fixed link to describe, only the time it takes to cross the station.
+    expect(transfers).to.deep.include(interchange("TON", 300));
   });
 
   it("emits a fixed link in both directions, in minutes converted to seconds", async () => {

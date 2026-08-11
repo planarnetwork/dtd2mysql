@@ -651,17 +651,31 @@ which is the only case where the calendars have something to say.
 **B2 · Replace `links.txt` with `transfers.txt`** — **done**
 Fixed links emitted as `transfers.txt` rows (`transfer_type=2` plus `min_transfer_time`), merged
 with the station interchange rows. `links.txt` is behind `--links`/`GTFS_LINKS=1` for one minor
-version. `import.ts` swaps the `links` load for `feed_info`; the `links` table stays for anyone
-using the flag.
+version. `import.ts` swaps the `links` load for `feed_info`; the `links` table stays for the flag.
 
-**8,514 link rows describe 2,406 pairs.** The ALF holds one record per time window and day pattern -
-only 148 rows are unrestricted - and `transfers.txt` has no time or day dimension at all, so the
-windows are dropped and the count logged. The transfer is then offered at hours the link is not
-really available. That is the cost of expressing it at all, and the flag is the migration path.
-The mode goes too: TUBE, WALK, BUS and the rest have no field.
+**The mode, window and days survive as producer extension columns**, not as deletions: `mode`,
+`start_time`, `end_time`, `start_date`, `end_date` and the seven day flags. GTFS has no field for a
+conditional transfer and no documented pattern for one - unlike platforms, where B23 uses the
+pattern the spec already defines - so extending is the honest move and the spec permits it. The
+validator raises `unknown_column` (INFO) for the twelve, which the baseline accepts.
 
-Where several links describe one pair the shortest wins, because `min_transfer_time` is the minimum
-the transfer needs and the fastest of several ways of making it is exactly that.
+**One row per pair, because more than one is invalid.** The primary key of `transfers.txt` is the
+stop pair; a repeat is a `duplicate_key` **error**, confirmed by feeding the validator a deliberate
+duplicate. The ALF holds one record per window and day pattern, so **8,514 records describe 2,406
+pairs** and the pair must be described once. Where several links describe a pair the row is their
+envelope: shortest `min_transfer_time`, every mode pipe separated (`TRANSFER|TUBE`), earliest start
+to latest end, and a day set if any of them runs on it. 2,114 of the 2,406 pairs have a single mode,
+so it is exact for those; for the rest the row says when the connection is available by *some*
+means, not by each. `--links` still writes the unsummarised records.
+
+Nothing here is about self transfers: `from_stop_id == to_stop_id` is the documented way to express
+an in-station interchange time, the feed has 3,054 of them, and the validator is happy with them.
+
+**A MySQL quirk surfaced doing it.** `getFixedLinks` is a `UNION`, and MySQL returns a TINYINT as a
+number from a plain select but as a **string** through a UNION. That was invisible while the rows
+went straight to `links.txt`, because `"1"` and `1` both write as `1`. The moment anything compared
+them, every day flag turned off - caught by the two sources disagreeing, not by a test. `flag()`
+coerces. Worth adding to the list of MySQL behaviours `CifFileSource` documents.
 
 "Documented in `stop_desc`" from the original ticket was dropped: `stop_desc` is on stops and cannot
 say anything per-pair.
@@ -693,6 +707,12 @@ A `validate` job builds the mini fixture and runs MobilityData `gtfs-validator` 
 than latest so the accepted list only moves when somebody moves it. Any ERROR fails.
 `validator-baseline.json` holds the accepted notice codes with a reason each; a new code fails, and
 so does an accepted one that stops occurring, so the list cannot rot.
+
+**The validator is given the fixture's build date with `-d`.** Several of its rules - feed expiry,
+`expired_calendar` - compare the feed to the real clock, so a fixture pinned to a fixed day starts
+raising notices simply because time passed. It did: a calendar ending 2026-08-10 became
+`expired_calendar` overnight. Pinning both clocks to the same day makes the check a function of the
+code rather than of the date it runs.
 
 **The mini fixture has zero errors.** Eleven accepted warnings and infos, each with a reason - the
 `714` route type the validator does not know, upper-case MSN names, transfers that really are 36 km

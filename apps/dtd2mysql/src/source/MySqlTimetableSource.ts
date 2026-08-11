@@ -18,6 +18,7 @@ import {
   Stop,
   TimetableSource,
   toFixedLinks,
+  interchange,
   toStop,
   withoutPlaceholders,
   reportDroppedStops,
@@ -39,7 +40,7 @@ export class MySqlTimetableSource implements TimetableSource {
    * Return the interchange time between each station
    */
   public async getTransfers(): Promise<Transfer[]> {
-    const [results] = await this.db.query<Transfer>(`
+    const [results] = await this.db.query<{from_stop_id: string, min_transfer_time: number}>(`
       SELECT 
         crs_code AS from_stop_id, 
         crs_code AS to_stop_id, 
@@ -49,7 +50,10 @@ export class MySqlTimetableSource implements TimetableSource {
       GROUP BY crs_code
     `);
 
-    return results;
+    // Through interchange() rather than returned as they come back: the rows
+    // have the four standard columns and Transfer now has twelve more, and the
+    // CSV writer takes its header from the first row it is given.
+    return results.map(row => interchange(row.from_stop_id, row.min_transfer_time));
   }
 
   /**
