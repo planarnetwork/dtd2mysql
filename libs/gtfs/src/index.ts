@@ -47,6 +47,7 @@ export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./s
 export {createFeedInfo} from "./transform/CreateFeedInfo";
 export {mergeTransfers, interchange} from "./transform/MergeTransfers";
 export {dropUnknownStops} from "./transform/DropUnknownStops";
+export {withPlatforms, platformStop, station} from "./transform/Platforms";
 export type {FeedInfo} from "./entity/FeedInfo";
 export {toStop} from "./source/StationRecord";
 export {isPlaceholder, withoutPlaceholders, reportDroppedStops} from "./source/Placeholder";

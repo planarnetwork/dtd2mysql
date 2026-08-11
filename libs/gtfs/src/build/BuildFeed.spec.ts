@@ -72,7 +72,7 @@ function schedule(id: number, tuid: string, from: string, to: string, operator: 
 
 const stop = (id: string): Stop => ({
   stop_id: id, stop_code: id, stop_name: id, stop_desc: "", stop_lat: 0, stop_lon: 0,
-  zone_id: 0, stop_url: "", location_type: 0, parent_station: "",
+  zone_id: 0, stop_url: "", location_type: 0, parent_station: null, platform_code: null,
   stop_timezone: "Europe/London", wheelchair_boarding: 0
 });
 

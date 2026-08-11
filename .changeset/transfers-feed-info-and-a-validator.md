@@ -25,3 +25,9 @@ Put the fixed links where GTFS expects them, say what the feed covers, and check
 - **The CLI exits when it is finished.** The download commands left a database
   pool open, so the process hung after the transfer completed - harmless at a
   prompt, fatal for a scheduled job.
+- **Platforms are stops.** A station trains call at by platform is now a
+  `location_type=1` station with a child stop per platform - `PAD_A`, with
+  `parent_station` and `platform_code` - which is the structure the GTFS
+  best practices describe. **`stop_times.stop_id` points at the platform, so
+  this breaks any consumer joining on a three-letter code.** A station is only
+  split where every call at it names a platform: 335 stations, 729 platforms.
