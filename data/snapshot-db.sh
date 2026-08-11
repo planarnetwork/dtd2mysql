@@ -16,13 +16,24 @@ PASS="${DATABASE_PASSWORD:-}"
 CONTAINER="${DB_CONTAINER:-}"
 mkdir -p "$OUT"
 
+# The MariaDB-named tools are not everywhere - a GitHub runner ships the MySQL
+# client and not mariadb-dump - and they are drop-in for what this needs.
+have() { command -v "$1" > /dev/null 2>&1; }
+
+tool_for() {
+  case "$1" in
+    mariadb) have mariadb && echo mariadb || echo mysql ;;
+    mariadb-dump) have mariadb-dump && echo mariadb-dump || echo mysqldump ;;
+  esac
+}
+
 client() {
   local tool="$1"; shift
 
   if [ -n "$CONTAINER" ]; then
     docker exec "$CONTAINER" "$tool" -u"$USER" ${PASS:+-p"$PASS"} "$@"
   else
-    "$tool" -h "$HOST" -u"$USER" ${PASS:+-p"$PASS"} "$@"
+    "$(tool_for "$tool")" -h "$HOST" -u"$USER" ${PASS:+-p"$PASS"} "$@"
   fi
 }
 
