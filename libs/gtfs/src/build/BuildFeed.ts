@@ -15,6 +15,7 @@ import {locate} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
+import {station, withPlatforms} from "../transform/Platforms";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
@@ -77,7 +78,12 @@ export class BuildFeed {
     // stops.txt is written after the schedules and the links are known, because
     // whether an unlocated station is published depends on whether anything
     // references it.
-    const stops = locate(await stopsQ, referenced(schedules, await fixedLinksQ));
+    // Platforms are added before anything asks which stops the feed publishes,
+    // because after this the stop times reference PAD_A rather than PAD.
+    const stops = locate(
+      withPlatforms(await stopsQ, schedules),
+      referenced(schedules, await fixedLinksQ)
+    );
     const published = new Set(stops.map(stop => stop.stop_id));
     const stopsP = this.copy(stops, "stops.txt", by("stop_id"));
     const transfersP = this.copy(
@@ -238,7 +244,10 @@ function referenced(schedules: Schedule[], links: FixedLink[]): Set<CRS> {
 
   for (const schedule of schedules) {
     for (const stopTime of schedule.stopTimes) {
+      // The station too: a call at a platform is a reason to keep its parent,
+      // and a station with no parent published is not a station.
       used.add(stopTime.stop_id);
+      used.add(station(stopTime.stop_id));
     }
   }
 

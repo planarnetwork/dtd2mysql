@@ -163,8 +163,8 @@ describe("ScheduleBuilder ordering contract", () => {
 
     const byId = new Map(builder.results.schedules.map(s => [s.id, s]));
 
-    expect(byId.get(1)!.stopTimes.map(s => s.stop_id)).to.deep.equal(["TBW", "TON"]);
-    expect(byId.get(500)!.stopTimes.map(s => s.stop_id)).to.deep.equal(["SEV", "ORP"]);
+    expect(byId.get(1)!.stopTimes.map(s => s.stop_id)).to.deep.equal(["TBW_1", "TON_1"]);
+    expect(byId.get(500)!.stopTimes.map(s => s.stop_id)).to.deep.equal(["SEV_1", "ORP_1"]);
   });
 
   it("numbers stop times in the order the rows arrive", () => {

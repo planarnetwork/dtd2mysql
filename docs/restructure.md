@@ -730,17 +730,28 @@ belong in a PR check. Running it by hand against `RJTTF918` found three errors:
 That gap is real: a green PR check does not mean the published feed validates. Whoever does E2's
 nightly should run the validator there.
 
-**B24 · A joined trip visits a station twice with time going backwards** — *found by B6*
+**B24 · A joined trip visits a station twice with time going backwards** — *investigated; the source is inconsistent*
 
-`G38297_G38968` and two more dates of it. The stops run CDF 08:06, BGN, PYL, PTA 09:12, NTH 09:20,
-then **SWA at 09:12**, NTH 09:24, PTA 09:31, back through PYL and BGN to CDF 10:39, and on to
-Manchester. The Swansea portion is spliced into the middle of the Cardiff-Manchester service rather
-than joined at the association point, so the trip doubles back and one arrival precedes the previous
-departure.
+`G38297`/`G38968`, a `JJ` join at Swansea, on three of the six dates the association covers.
 
-Three of the four validator errors of this kind are this one train on three dates, so it is one
-association handled wrongly rather than a broad fault. #121 fixed B18, B20 and B21 in this area and
-this survives all three. Needs a failing test at the `applyAssociations` level before any fix.
+Not a passing time read as an arrival - `scheduled_pass_time` is NULL on every row involved - and not
+an import fault. The raw MCA says it outright:
+
+```
+G38297 overlay 2026-09-27:  LTSWANSEA 0931 0933     arrives 09:33
+G38968 overlay 2026-09-27:  LOSWANSEA 0912 0912     departs 09:12
+```
+
+Both trains carry a Permanent record for 2026-09-20 to 2026-12-06 and a per-date Overlay. **The
+Permanent pair is consistent** - arrive 09:03, depart 09:30 - and **the two overlays are not**: one
+was moved 30 minutes later and the other 18 minutes earlier, so the train that joins now reaches
+Swansea 21 minutes after the train it joins has left. The join cannot happen as described.
+
+So there is nothing to fix in the parsing. What is still open is what to *emit*: today the build
+applies the association anyway and produces a trip that doubles back. Refusing a join whose timings
+cannot work - assoc arrival after base departure - and emitting the two trains separately would be
+defensible whoever is at fault, and would cost nothing when the data is right. That needs a failing
+test at the `applyAssociations` level first.
 
 **B25 · A z-train arrives before it left** — *found by B6; **the source is wrong, not us***
 
@@ -755,10 +766,10 @@ LTLPY---- 1609 1609      TF
 
 The feed says the bus leaves Liverpool James Street at 16:12 and reaches Lime Street at 16:09.
 
-That leaves a choice nobody has made yet, which is why this is still open. Publishing it is a
-validator error and a trip no journey planner can use. Dropping the trip loses a service that does
-run. Clamping the arrival to the departure invents a time, which B10 established this project does
-not do. **Decide before implementing**; the count is four stop times out of 2.87 million.
+**Decided: leave it.** The feed represents the source, and the source is what needs correcting.
+Clamping the arrival would invent a time, which B10 established this project does not do, and
+dropping the trip would lose a service that does run. It stays as a validator error on the full
+feed - four stop times out of 2.87 million - until it is fixed upstream.
 
 **B7 · Stop asserting wheelchair accessibility** — **done**
 `wheelchair_accessible: 0` until D11 supplies real data. `bikes_allowed: 0` documented in code as
@@ -1051,7 +1062,7 @@ ids and let the unique keys carry the identity. It moves the T10 baseline, so it
 T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
 racing.
 
-**B23 · Platforms as child stops** *(depends B13)* — *supersedes the extension-column approach*
+**B23 · Platforms as child stops** *(depends B13)* — **done**, no flag
 
 B13 took the platform out of `stop_headsign` and nothing carries it, so the export loses a field the
 feed supplies. The data is not gone — `stop_time.platform` in the database, the `LI`/`LO`/`LT`
@@ -1096,9 +1107,34 @@ pattern — worth revisiting, not worth special-casing first time.
 stops rather than becoming childless `location_type=1` rows.
 
 **This is a breaking change** for every consumer joining on a three-letter code, because
-`stop_times.stop_id` starts pointing at `PAD_A`. Same treatment F3 gets: behind a flag, CRS-only
-stops as the default for at least one release, and announced before the default flips.
-`transfers.txt` keeps referencing parent stations.
+`stop_times.stop_id` now points at `PAD_A`. Shipped without a flag, by decision. `transfers.txt`
+keeps referencing stations.
+
+**A station is only split when every call at it names a platform.** Once a station is
+`location_type=1` no stop time may reference it, so a station where some calls name a platform and
+some do not cannot be split without inventing a boarding facility for the ones that do not. Trying
+it produced **907 `location_with_unexpected_stop_time` errors**. Calls that did name a platform at a
+station left whole are rewritten back to the station, or they would point at a stop that was never
+created.
+
+That is a real limitation, not a detail: **335 stations split into 729 platforms, and 909 were left
+whole.** The feed has 3,750 station-platform pairs and this publishes 729 of them. Covering the rest
+means deciding what a call with no platform is - a station-level boarding facility, or a gap the
+source has to fill.
+
+Three things had to change with it, none of them obvious from the ticket:
+
+- **`origin` and `destination` are the station, not the platform.** They name the route and the
+  headsign, and neither should change because a train was moved. Left as the stop id they split
+  routes.txt from 20 to 30 in the fixture and made headsigns read "Sevenoaks Platform 3".
+- **`stopAt`, `before` and `after` match on the station.** An association names a bare CRS, so with
+  platform stop ids **every association silently stopped applying** - 56 fixture trips changed and
+  some lost every stop. The golden caught it; nothing else would have.
+- `stop_headsign` stays null. It means "this service terminates here", and B8 puts a real
+  destination in `trip_headsign` for it to override.
+
+Feed effect: stops 3,054 -> 3,783. Trips, stop times, routes and transfers unchanged. Both sources
+byte identical.
 
 Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying;
 a trip may reference a platform at one call and the station at the next, which is valid but should

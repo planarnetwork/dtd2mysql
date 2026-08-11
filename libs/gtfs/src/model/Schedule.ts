@@ -2,6 +2,7 @@ import {StopTime} from "../entity/StopTime";
 import {ScheduleCalendar} from "./ScheduleCalendar";
 import {Trip} from "../entity/Trip";
 import {Route, RouteType} from "../entity/Route";
+import {station} from "../transform/Platforms";
 import {AgencyID} from "../entity/Agency";
 import {CRS} from "../entity/Stop";
 import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
@@ -40,12 +41,18 @@ export class Schedule implements OverlayRecord {
     return tripId(this.tuid, this.calendar);
   }
 
+  /**
+   * The station, not the platform. A stop id is `PAD_A` once B23 splits a
+   * station into boarding facilities, and where a train starts and ends is a
+   * place - it names the route and the headsign, neither of which should change
+   * because a train was moved to a different platform.
+   */
   public get origin(): CRS {
-    return this.stopTimes[0].stop_id;
+    return station(this.stopTimes[0].stop_id);
   }
 
   public get destination(): CRS {
-    return this.stopTimes[this.stopTimes.length - 1].stop_id;
+    return station(this.stopTimes[this.stopTimes.length - 1].stop_id);
   }
 
   /**
@@ -139,15 +146,15 @@ export class Schedule implements OverlayRecord {
   }
 
   public before(location: CRS): StopTime[] {
-    return this.stopTimes.slice(0, this.stopTimes.findIndex(s => s.stop_id === location));
+    return this.stopTimes.slice(0, this.stopTimes.findIndex(s => station(s.stop_id) === location));
   }
 
   public after(location: CRS): StopTime[] {
-    return this.stopTimes.slice(this.stopTimes.findIndex(s => s.stop_id === location) + 1);
+    return this.stopTimes.slice(this.stopTimes.findIndex(s => station(s.stop_id) === location) + 1);
   }
 
   public stopAt(location: CRS): StopTime | undefined {
-    return <StopTime>this.stopTimes.find(s => s.stop_id === location);
+    return <StopTime>this.stopTimes.find(s => station(s.stop_id) === location);
   }
 
 }

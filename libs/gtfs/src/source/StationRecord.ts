@@ -74,6 +74,7 @@ export function toStop(row: StationRecord, overrides: StationCoordinates): Stop 
     stop_url: null,
     location_type: null,
     parent_station: null,
+    platform_code: null,
     stop_timezone: row.station_name.includes("(CIE") ? "Europe/Dublin" : "Europe/London",
     wheelchair_boarding: 0,
     stop_lon,
