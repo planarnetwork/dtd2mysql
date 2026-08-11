@@ -2,7 +2,7 @@ import AdmZip from "adm-zip";
 import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "@gb-rail/dtd-schema";
-import {FeedFile, MultiRecordFile, RecordWithManualIdentifier} from "@gb-rail/feed-parser";
+import {FeedFile, MultiRecordFile, Record as FeedRecord} from "@gb-rail/feed-parser";
 import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
@@ -56,9 +56,7 @@ export class ImportFeedCommand implements CLICommand {
       await this.createLastProcessedSchema();
     }
 
-    if (this.files["CFA"] instanceof MultiRecordFile) {
-      await this.setLastScheduleId();
-    }
+    await this.restoreIdCounters();
 
     await Promise.all(
       fs.readdirSync(this.tmpFolder)
@@ -96,15 +94,40 @@ export class ImportFeedCommand implements CLICommand {
   }
 
   /**
-   * Set the last schedule ID in the CFA record
+   * Continue every generated id from where the database left off.
+   *
+   * A record that makes its own id counts from zero on each run, and `id` is the
+   * primary key, so `INSERT IGNORE` silently drops every row whose id an earlier
+   * feed already used. Only the `schedule` counter was ever restored, which is
+   * why an incremental's schedules landed and their stop times did not: 5,354
+   * schedules from the two reference incrementals had no stop times at all, and
+   * the incrementals' ZTR was discarded whole.
+   *
+   * Every record with a counter is restored, not the ones that were noticed. The
+   * name of a record is the name of its table, so there is nothing to keep in
+   * step. A full refresh drops the tables first, so the max is null and this is
+   * a no-op.
    */
-  private async setLastScheduleId(): Promise<void> {
-    const [[lastSchedule]] = await this.db.query<{id : number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
-    const lastId = lastSchedule ? lastSchedule.id : 0;
-    const cfaFile = this.files["CFA"] as MultiRecordFile;
-    const bsRecord = cfaFile.records["BS"] as RecordWithManualIdentifier;
+  private async restoreIdCounters(): Promise<void> {
+    const counted = Object.values(this.files)
+      .flatMap(file => file.recordTypes)
+      .filter((record): record is FeedRecord & {lastId: number} => "lastId" in record);
 
-    bsRecord.lastId = lastId;
+    const seen = new Set<string>();
+
+    await Promise.all(counted.map(async record => {
+      if (seen.has(record.name)) {
+        return;
+      }
+
+      seen.add(record.name);
+
+      const [[row]] = await this.db.query<{id: number | null}>(
+        `SELECT MAX(id) AS id FROM \`${record.name}\``
+      );
+
+      record.lastId = row?.id ?? 0;
+    }));
   }
 
   private async removeOrphanStopTimes() {
