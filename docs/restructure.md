@@ -1078,11 +1078,32 @@ against the same three zips read as files:
 `agency`, `calendar`, `calendar_dates`, `routes`, `stops`, `transfers` and `feed_info` are now byte
 identical across the two sources on the three-zip feed, which they never were.
 
-**The residual 27 are all z-trains** - `Z04870` onwards, from the incrementals' ZTR - and they are a
-different fault from this one, not a leftover of it. The counters are right; these rows are being
-dropped on a *unique key* collision rather than an id collision, so where an incremental revises a
-z-train the revision is ignored and the original stands. That wants `REPLACE` semantics, or a delete
-before insert, and its own ticket. It moves the T10 baseline, so it rebaselines under T8.
+**The residual 27 are all z-trains** - `Z04870` onwards, from the incrementals' ZTR. They collide on
+the *unique key* rather than on an id: an incremental reissues a z-train with the same `train_uid`,
+`runs_from` and `stp_indicator`, and `INSERT IGNORE` keeps the original.
+
+**`REPLACE` was tried and is not the answer.** It looks obviously right - applying feeds in order
+should mean the later one wins - and it fixed 19 of the 27. But it broke agreement on the other 8,
+because the file source does not apply those revisions either:
+
+```
+cif has  Z04870_20260723_20991231     the original from RJTTF918
+db then  Z04870_20260723_20271231     the revision from RJTTC919
+```
+
+Both sources previously kept the original and agreed. `REPLACE` made the database take the revision
+and the file source not, turning 27 one-way differences into 8 two-way ones and pulling
+`calendar.txt` and `calendar_dates.txt` out of agreement as well. Reverted.
+
+So the open question is not "how do we make the revision win" but **which source is right about
+these 27**, and that has to be settled against the DTD specification for a reissued ZTR record
+before either side changes. The database is the specification everywhere else in this project, which
+argues for changing the file source - but the file source applies 19 of the revisions and not the
+other 8, so it is not consistent with itself either. Needs its own ticket and a proper look.
+
+The orphan cleanup added while trying `REPLACE` is kept: `z_stop_time` rows whose `z_schedule` is
+gone were never deleted, and it now runs for every import rather than only when a CFA is present.
+It moves the T10 baseline, so it rebaselines under T8.
 
 **B23 · Platforms as child stops** *(depends B13)* — **done**, no flag
 
