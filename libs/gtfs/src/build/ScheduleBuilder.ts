@@ -5,7 +5,6 @@ import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
 import {StopTime} from "../entity/StopTime";
 import {agencies} from "../data/agency";
-import {platformStop} from "../transform/Platforms";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
@@ -222,7 +221,7 @@ export class ScheduleBuilder {
       trip_id: this.getTripId(row),
       arrival_time: arrival,
       departure_time: departure,
-      stop_id: platformStop(row.crs_code, row.platform),
+      stop_id: row.crs_code,
       stop_sequence: stopId,
       // Not the platform. stop_headsign overrides the trip headsign at a stop -
       // it means "this service terminates here", not "platform 3". The platform
@@ -231,7 +230,8 @@ export class ScheduleBuilder {
       pickup_type: coordinatedDropOff || pickup,
       drop_off_type: coordinatedDropOff || dropOff,
       shape_dist_traveled: null,
-      timepoint: 1
+      timepoint: 1,
+      platform: row.platform
     };
   }
 

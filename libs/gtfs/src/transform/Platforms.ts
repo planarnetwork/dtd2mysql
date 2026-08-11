@@ -1,4 +1,5 @@
 import {CRS, Stop} from "../entity/Stop";
+import {StopTime} from "../entity/StopTime";
 import {Schedule} from "../model/Schedule";
 
 /**
@@ -15,77 +16,48 @@ import {Schedule} from "../model/Schedule";
 const PLATFORM = /^([0-9]{1,2}[A-Z]?|[A-Z])$/;
 
 /**
- * The stop a call belongs to: the platform where the feed names one, otherwise
- * the station.
- */
-export function platformStop(crs: CRS, platform: string | null): CRS {
-  return platform !== null && PLATFORM.test(platform) ? `${crs}_${platform}` : crs;
-}
-
-/**
- * Split a station into the station and the platforms trains actually call at.
+ * The stations that become `location_type=1`, and the platforms beneath them.
  *
  * The GTFS best practice for a station with several boarding facilities is the
  * structure the spec already defines: the station is `location_type=1`, each
  * platform is `location_type=0` with `parent_station` pointing at it, and the
- * child's name identifies both. A producer extension column would have expressed
- * none of that and every consumer would have needed bespoke code to read it.
+ * child's name identifies both.
  *
- * Only platforms that are called at become stops, so `stops.txt` does not fill
- * with boarding facilities nothing uses. A station where no call names a
- * platform stays a plain stop rather than becoming a childless station.
+ * **A station is only split when every call at it names a platform.** Once it is
+ * `location_type=1` no stop time may reference it, so a station where some calls
+ * name a platform and some do not cannot be split without inventing a boarding
+ * facility for the ones that do not - 907 `location_with_unexpected_stop_time`
+ * errors when tried.
+ *
+ * Nothing here touches a stop time. The suffixed id belongs to stop_times.txt
+ * and is composed by `stopId` when the file is written, so overlays,
+ * associations and merges only ever see the CRS. Doing it earlier broke every
+ * association in the feed, because an association names a bare CRS.
  */
-export function withPlatforms(stations: Stop[], schedules: Schedule[]): Stop[] {
+export function withPlatforms(stations: Stop[], schedules: Schedule[]): {stops: Stop[], split: Set<CRS>} {
   const byId = new Map(stations.map(station => [station.stop_id, station]));
   const used = new Map<CRS, Set<string>>();
   const unplatformed = new Set<CRS>();
 
   for (const schedule of schedules) {
     for (const stopTime of schedule.stopTimes) {
-      const split = stopTime.stop_id.indexOf("_");
+      const platform = stopTime.platform;
 
-      if (split === -1) {
+      if (platform === null || !PLATFORM.test(platform)) {
         unplatformed.add(stopTime.stop_id);
-        continue;
       }
-
-      const parent = stopTime.stop_id.slice(0, split);
-      const platform = stopTime.stop_id.slice(split + 1);
-
-      if (!byId.has(parent)) {
-        continue;
+      else if (byId.has(stopTime.stop_id)) {
+        (used.get(stopTime.stop_id) ?? used.set(stopTime.stop_id, new Set()).get(stopTime.stop_id)!).add(platform);
       }
-
-      (used.get(parent) ?? used.set(parent, new Set()).get(parent)!).add(platform);
     }
   }
 
-  // A station is only split when every call at it names a platform. Once a
-  // station is location_type=1 no stop time may reference it, so a station where
-  // some calls name a platform and some do not cannot be split without either
-  // inventing a boarding facility for the calls that do not, or emitting a stop
-  // time against a station - which is `location_with_unexpected_stop_time`, and
-  // 907 calls hit it before this rule existed.
-  const whole = new Set<CRS>();
+  let whole = 0;
 
   for (const parent of [...used.keys()]) {
     if (unplatformed.has(parent)) {
       used.delete(parent);
-      whole.add(parent);
-    }
-  }
-
-  // The calls that did name a platform at a station left whole have to go back
-  // to the station, or they reference a stop that was never created.
-  if (whole.size > 0) {
-    for (const schedule of schedules) {
-      for (const stopTime of schedule.stopTimes) {
-        const parent = station(stopTime.stop_id);
-
-        if (whole.has(parent)) {
-          stopTime.stop_id = parent;
-        }
-      }
+      whole++;
     }
   }
 
@@ -111,19 +83,36 @@ export function withPlatforms(stations: Stop[], schedules: Schedule[]): Stop[] {
   if (platforms.length > 0) {
     console.log(
       `Split ${used.size} stations into ${platforms.length} platforms; ` +
-      `${whole.size} were left whole because not every call at them names one`
+      `${whole} were left whole because not every call at them names one`
     );
   }
 
-  return [...stations, ...platforms];
+  return {stops: [...stations, ...platforms], split: new Set(used.keys())};
 }
 
 /**
- * The station a stop belongs to, which is itself unless it is a platform.
- * transfers.txt references stations, never platforms.
+ * The stop id a call is written against: the platform beneath the station where
+ * the station was split, the station itself otherwise.
  */
-export function station(stop: CRS): CRS {
-  const split = stop.indexOf("_");
+export function stopId(stopTime: StopTime, split: ReadonlySet<CRS>): CRS {
+  return split.has(stopTime.stop_id) ? `${stopTime.stop_id}_${stopTime.platform}` : stopTime.stop_id;
+}
 
-  return split === -1 ? stop : stop.slice(0, split);
+/**
+ * stop_times.txt as it is written: the platform decides the stop id and is not
+ * a column of its own.
+ */
+export function toStopTimeRow(stopTime: StopTime, split: ReadonlySet<CRS>) {
+  return {
+    trip_id: stopTime.trip_id,
+    arrival_time: stopTime.arrival_time,
+    departure_time: stopTime.departure_time,
+    stop_id: stopId(stopTime, split),
+    stop_sequence: stopTime.stop_sequence,
+    stop_headsign: stopTime.stop_headsign,
+    pickup_type: stopTime.pickup_type,
+    drop_off_type: stopTime.drop_off_type,
+    shape_dist_traveled: stopTime.shape_dist_traveled,
+    timepoint: stopTime.timepoint
+  };
 }

@@ -46,7 +46,8 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
   pickup_type: 0,
   drop_off_type: 0,
   shape_dist_traveled: null,
-  timepoint: 1
+  timepoint: 1,
+    platform: null
 });
 
 function schedule(id: number, tuid: string, from: string, to: string, operator: string, stops: string[]): Schedule {

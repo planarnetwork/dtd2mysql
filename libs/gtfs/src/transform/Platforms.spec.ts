@@ -1,47 +1,70 @@
 import {describe, it, expect} from "vitest";
-import {platformStop, station} from "./Platforms";
+import {stopId, withPlatforms} from "./Platforms";
+import {Stop} from "../entity/Stop";
+import {StopTime} from "../entity/StopTime";
+import {Schedule} from "../model/Schedule";
 
-describe("platformStop", () => {
+const stop = (id: string): Stop => ({
+  stop_id: id, stop_code: id, stop_name: id, stop_desc: "", stop_lat: 51, stop_lon: -1,
+  zone_id: 0, stop_url: "", location_type: 0, parent_station: null, platform_code: null,
+  stop_timezone: "Europe/London", wheelchair_boarding: 0
+});
 
-  it("makes a child stop of a numbered platform", () => {
-    expect(platformStop("PAD", "1")).to.equal("PAD_1");
-    expect(platformStop("WAT", "13")).to.equal("WAT_13");
+const call = (id: string, platform: string | null): StopTime => ({
+  trip_id: "T", arrival_time: "10:00:00", departure_time: "10:00:00", stop_id: id,
+  stop_sequence: 1, stop_headsign: null, pickup_type: 0, drop_off_type: 0,
+  shape_dist_traveled: null, timepoint: 1, platform
+});
+
+const train = (...calls: StopTime[]) => ({stopTimes: calls}) as Schedule;
+
+describe("withPlatforms", () => {
+
+  it("splits a station every call names a platform at", () => {
+    const {stops, split} = withPlatforms([stop("PAD")], [train(call("PAD", "1"), call("PAD", "A"))]);
+
+    expect(split.has("PAD")).to.equal(true);
+    expect(stops.map(s => [s.stop_id, s.location_type, s.parent_station, s.platform_code])).to.deep.equal([
+      ["PAD", 1, null, null],
+      ["PAD_1", 0, "PAD", "1"],
+      ["PAD_A", 0, "PAD", "A"]
+    ]);
   });
 
-  it("makes a child stop of a lettered platform", () => {
-    expect(platformStop("PAD", "A")).to.equal("PAD_A");
-    expect(platformStop("PAD", "3A")).to.equal("PAD_3A");
+  it("leaves a station whole when a call names no platform", () => {
+    // Splitting it would make the station location_type=1, and the call with no
+    // platform would then be a stop time against a station, which is an error.
+    const {stops, split} = withPlatforms([stop("PAD")], [train(call("PAD", "1"), call("PAD", null))]);
+
+    expect(split.has("PAD")).to.equal(false);
+    expect(stops.map(s => s.stop_id)).to.deep.equal(["PAD"]);
   });
 
-  it("leaves a call at the station when no platform is given", () => {
-    expect(platformStop("PAD", null)).to.equal("PAD");
-    expect(platformStop("PAD", "")).to.equal("PAD");
+  it("leaves a station whole when a call names a running line", () => {
+    // DF is Down Fast: which track the train takes, not somewhere to stand.
+    const {split} = withPlatforms([stop("PAD")], [train(call("PAD", "1"), call("PAD", "DF"))]);
+
+    expect(split.has("PAD")).to.equal(false);
   });
 
-  it("leaves a call at the station when the value is a running line", () => {
-    // DF is Down Fast, UM Up Main, DPL Down Platform Loop. They say which track
-    // the train takes, not where a passenger stands, and 45 of the 3,750
-    // station-platform pairs in the feed are these.
-    for (const line of ["DF", "UM", "DM", "DPL", "UGL", "SGL", "TL", "UWB"]) {
-      expect(platformStop("PAD", line)).to.equal("PAD");
-    }
-  });
+  it("names the platform in the child's name", () => {
+    const paddington = {...stop("PAD"), stop_name: "London Paddington"};
+    const {stops} = withPlatforms([paddington], [train(call("PAD", "12"))]);
 
-  it("leaves BAY at the station, which is a real designation and a known loss", () => {
-    expect(platformStop("PAD", "BAY")).to.equal("PAD");
+    expect(stops[1].stop_name).to.equal("London Paddington Platform 12");
   });
 
 });
 
-describe("station", () => {
+describe("stopId", () => {
 
-  it("finds the station a platform belongs to", () => {
-    expect(station("PAD_A")).to.equal("PAD");
-    expect(station("WAT_13")).to.equal("WAT");
+  it("writes a call at a split station against its platform", () => {
+    expect(stopId(call("PAD", "A"), new Set(["PAD"]))).to.equal("PAD_A");
   });
 
-  it("leaves a station alone", () => {
-    expect(station("PAD")).to.equal("PAD");
+  it("writes a call at a station left whole against the station", () => {
+    expect(stopId(call("PAD", "A"), new Set())).to.equal("PAD");
+    expect(stopId(call("PAD", null), new Set())).to.equal("PAD");
   });
 
 });
