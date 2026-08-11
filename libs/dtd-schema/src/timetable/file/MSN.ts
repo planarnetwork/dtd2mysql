@@ -7,9 +7,8 @@ const physicalStation = new FixedWidthRecord(
     "station_name": new TextField(5, 26),
     // Blank where a station is not an interchange, and 9 where it is a
     // subsidiary location. Deliberately narrower than IntField's default of
-    // [" ", "*", "9"]: 9 is a value this field takes, not an absence. The list
-    // used to be ["S"], which was there to survive the S of FILE-SPEC in the
-    // header rather than to describe the data, and it made a blank throw.
+    // [" ", "*", "9"]: 9 is a value this field takes, not an absence, and
+    // treating it as one drops those stations out of transfers.txt.
     "cate_interchange_status": new IntField(35, 1, true, [" "]),
     "tiploc_code": new TextField(36, 7),
     "crs_reference_code": new TextField(43, 3, true),

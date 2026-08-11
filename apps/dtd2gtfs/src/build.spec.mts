@@ -161,7 +161,7 @@ describe("the feed the mini fixture produces", () => {
     }
   });
 
-  it("does not put the TUID in the headsign, which is where it used to be", () => {
+  it("does not put the TUID in the headsign", () => {
     const trips = columns("trips.txt");
 
     expect(trips.every(t => t.trip_headsign !== t.trip_id.split("_")[0])).to.equal(true);
