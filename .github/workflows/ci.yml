@@ -97,10 +97,6 @@ jobs:
           path: .yarn/cache
           key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           restore-keys: yarn-${{ runner.os }}-
-      # mariadb-client, not the MySQL client the runner ships: a fingerprint is
-      # a hash of mariadb-dump's output, so the baseline and the check have to
-      # be cut with the same tool.
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq mariadb-client
       - run: yarn install --immutable
       - run: yarn build
       # The mini fixture is a real DTD zip, so importing it exercises the whole
@@ -123,22 +119,6 @@ jobs:
           diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/from-files"
       # Importing twice must land the same rows: B22 rewrote how every generated
       # id is assigned, and the failure it fixed only appears on a second feed.
-      # T6b in miniature: fingerprint the database and assert it against a
-      # committed baseline. The full four-feed version needs the reference feeds
-      # and runs on a schedule; this one runs on every PR because the fixture is
-      # in the repository.
-      - name: The import matches its fingerprint
-        run: |
-          mkdir -p "$RUNNER_TEMP/fingerprint"
-          data/snapshot-db.sh "$RUNNER_TEMP/fingerprint"
-          if [ -f data/snapshots/db-mini/tables.tsv ]; then
-            diff -u data/snapshots/db-mini/tables.tsv "$RUNNER_TEMP/fingerprint/tables.tsv"
-            diff -u data/snapshots/db-mini/schema.sql "$RUNNER_TEMP/fingerprint/schema.sql"
-          else
-            echo "No committed fingerprint for the mini fixture yet"
-            exit 1
-          fi
-
       - name: Importing the same feed twice changes nothing
         run: |
           yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP

@@ -24,6 +24,7 @@ dist/
 # reproducible part, so those are tracked - see data/README.md.
 data/feeds/
 data/snapshots/gtfs-*/
+data/snapshots/db-mini/
 data/*.log
 data/*.pid
 data/probe*

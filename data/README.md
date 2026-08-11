@@ -36,6 +36,12 @@ have. The script refuses to run without it. A `mariadb-dump` *version* change ca
 without any data changing; that is a rebaseline under T8 like any other, and the diff will show it
 as every table at once, which is the tell.
 
+**So a fingerprint is only comparable within one environment.** A baseline cut here will not match
+one cut on a GitHub runner even with identical data - tried it, and every table hash differed while
+every row count matched, which is the signature. That is why `verify-import.sh` is run on demand
+against the reference feeds rather than on every pull request: the per-PR job proves the import
+works by building the feed two ways and diffing, which needs no baseline at all.
+
 Baselines here were cut with:
 
 ```
