@@ -31,3 +31,9 @@ Put the fixed links where GTFS expects them, say what the feed covers, and check
   best practices describe. **`stop_times.stop_id` points at the platform, so
   this breaks any consumer joining on a three-letter code.** A station is only
   split where every call at it names a platform: 335 stations, 729 platforms.
+- **An incremental's stop times and z-trains reach the database.** Records that
+  generate their own id counted from zero on every import, and since `id` is the
+  primary key, `INSERT IGNORE` silently dropped every row an earlier feed had
+  already numbered - so an incremental's schedules landed and their stop times
+  did not. Every counter is now continued from the table, not just the one for
+  schedules.

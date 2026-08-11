@@ -1035,7 +1035,7 @@ with no Horsham association in the window. Either those target records outside i
 on a `C` is sometimes incidental, in which case they should still be cancelling Barnham. Unresolved,
 and the fixture case in §3 should pin whichever reading is right.
 
-**B22 · The incrementals' stop times and z-trains never reach the database** — *found while building C2*
+**B22 · The incrementals' stop times and z-trains never reach the database** — **done**, bar 27 trips
 
 `ImportFeedCommand.setLastScheduleId` restores the BS record's id counter from the database before
 processing a CFA, and it is the only counter it restores. `stop_time`, `z_schedule` and
@@ -1057,10 +1057,29 @@ This is the entire difference between the two sources. Building the same three z
 the database build does not have and 85 whose calendars differ because a later ZTR revised them.
 Against a database holding only the full refresh the two agree exactly - see C2.
 
-The fix is to restore the counters the way `setLastScheduleId` does for BS, or to stop generating
-ids and let the unique keys carry the identity. It moves the T10 baseline, so it rebaselines under
-T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
-racing.
+**Done, all but 27 trips.** `setLastScheduleId` is now `restoreIdCounters`, which walks every record
+in every file being imported, finds the ones that generate an id, and continues each from
+`MAX(id)` on its own table. The name of a record is the name of its table, so there is nothing to
+keep in step as records are added - the previous code restored exactly one counter and had no way to
+notice the others existed.
+
+Measured by importing `RJTTF918`, `RJTTC919` and `RJTTC920` into an empty database and building
+against the same three zips read as files:
+
+| | before | after |
+|---|---:|---:|
+| trips the file source has and the database does not | 6,140 | **27** |
+| trips the database has and the file source does not | - | **0** |
+| files that differ, of nine | 3 | **2** |
+
+`agency`, `calendar`, `calendar_dates`, `routes`, `stops`, `transfers` and `feed_info` are now byte
+identical across the two sources on the three-zip feed, which they never were.
+
+**The residual 27 are all z-trains** - `Z04870` onwards, from the incrementals' ZTR - and they are a
+different fault from this one, not a leftover of it. The counters are right; these rows are being
+dropped on a *unique key* collision rather than an id collision, so where an incremental revises a
+z-train the revision is ignored and the original stands. That wants `REPLACE` semantics, or a delete
+before insert, and its own ticket. It moves the T10 baseline, so it rebaselines under T8.
 
 **B23 · Platforms as child stops** *(depends B13)* — **done**, no flag
 
