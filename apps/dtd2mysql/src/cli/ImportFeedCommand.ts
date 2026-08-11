@@ -64,9 +64,7 @@ export class ImportFeedCommand implements CLICommand {
         .map(filename => this.processFile(filename))
     );
 
-    if (this.files["CFA"] instanceof MultiRecordFile) {
-      await this.removeOrphanStopTimes();
-    }
+    await this.removeOrphanStopTimes();
 
     await this.updateLastFile(zipName);
     fs.rmSync(this.tmpFolder, { recursive: true });
@@ -130,9 +128,18 @@ export class ImportFeedCommand implements CLICommand {
     }));
   }
 
+  /**
+   * Stop times whose schedule is gone.
+   *
+   * A z-train that a later feed revises is REPLACEd, which means the old row is
+   * deleted and the new one takes a new id - so the stop times that pointed at
+   * the old id belong to nothing. The same is true of a schedule an incremental
+   * withdraws.
+   */
   private async removeOrphanStopTimes() {
     return Promise.all([
       this.db.query("DELETE FROM stop_time WHERE schedule NOT IN (SELECT id FROM schedule)"),
+      this.db.query("DELETE FROM z_stop_time WHERE z_schedule NOT IN (SELECT id FROM z_schedule)"),
       this.db.query("DELETE FROM schedule_extra WHERE schedule NOT IN (SELECT id FROM schedule)")
     ]);
   }
