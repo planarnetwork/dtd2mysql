@@ -8,7 +8,7 @@ import {BOUNDS, inBounds} from "../source/Bounds";
  * put Tottenham Court Road in the Indian Ocean, and it went unnoticed because
  * the only way to see it was to plot the feed.
  *
- * The same assertion carries over to overrides.yaml when D7 replaces this file.
+ * The same assertion should carry over to whatever replaces this file.
  */
 describe("stationCoordinates", () => {
 

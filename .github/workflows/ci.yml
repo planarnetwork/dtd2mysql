@@ -101,15 +101,15 @@ jobs:
       - run: yarn build
       # The mini fixture is a real DTD zip, so importing it exercises the whole
       # parse-and-insert path against a real MariaDB - the fixed width records,
-      # the generated ids B22 rewrote, and the schema DDL.
+      # the generated ids and the schema DDL.
       - name: Import the mini fixture
         run: yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP
       - name: Build a feed from the database
         run: |
           mkdir -p "$RUNNER_TEMP/from-db"
           GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/from-db"
-      # The whole point of two sources: the same feed, whichever way it is read.
-      # This is the check that has been run by hand all through Epics A to C.
+      # The whole point of having two sources: the same feed, whichever way the
+      # timetable is read.
       - name: The file source produces the same feed
         run: |
           mkdir -p "$RUNNER_TEMP/from-files"
@@ -117,8 +117,8 @@ jobs:
             --source apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP \
             --out "$RUNNER_TEMP/from-files" --today 2026-08-10
           diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/from-files"
-      # Importing twice must land the same rows: B22 rewrote how every generated
-      # id is assigned, and the failure it fixed only appears on a second feed.
+      # Importing twice must land the same rows. Records that generate their own
+      # id are the risk here, and a collision only shows on a second import.
       - name: Importing the same feed twice changes nothing
         run: |
           yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP

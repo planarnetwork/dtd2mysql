@@ -1,10 +1,7 @@
 #!/bin/bash
-# T6b: import the feeds and assert the database is what the baseline says.
+# Import the feeds and assert the database is what the baseline says.
 #
-# The check the importer never had. Every claim made about it so far - B22 most
-# of all, which rewrote how every generated id is assigned - was verified by
-# importing zips by hand and reading two outputs side by side. This does it in
-# one command and answers yes or no.
+# The alternative is importing by hand and reading two outputs side by side.
 #
 # Usage: data/verify-import.sh <baseline-dir> [feed.ZIP ...]
 #   data/verify-import.sh data/snapshots/db-RJTTF918-C920 \
@@ -61,9 +58,9 @@ done
 
 if [ "$failed" -ne 0 ]; then
   echo
-  echo "The import changed. If that was the point, rebaseline under T8:"
+  echo "The import changed. If that was the point, take a new baseline:"
   echo "  data/snapshot-db.sh $BASELINE"
-  echo "and add an entry to apps/dtd2gtfs/fixtures/BASELINE.md saying which ticket and why."
+  echo "and add an entry to apps/dtd2gtfs/fixtures/BASELINE.md saying what changed and why."
   exit 1
 fi
 

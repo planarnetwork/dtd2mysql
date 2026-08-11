@@ -230,8 +230,8 @@ export const commands: {[flag: string]: () => CLICommand | Promise<CLICommand>} 
 
 /**
  * An unknown flag prints help and exits 0, which is friendly for a typo and
- * silent for a dropped entry - a cron job would simply stop importing. T11
- * asserts the map and the README agree, in both directions.
+ * silent for a dropped entry - a cron job would simply stop importing. The
+ * spec asserts the map and the README agree, in both directions.
  */
 export const getCommand = once(async (type: string): Promise<CLICommand> =>
   commands.hasOwnProperty(type) ? commands[type]() : new ShowHelpCommand()

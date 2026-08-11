@@ -2,7 +2,7 @@
 # Build a GTFS feed from the current database and fingerprint it.
 # Usage: data/snapshot-gtfs.sh <output-dir>
 #
-# GTFS_TODAY pins the build date (T1), so this is reproducible on any day. The
+# GTFS_TODAY pins the build date, so this is reproducible on any day. The
 # raw feed is kept alongside the fingerprint so a later comparison does not have
 # to rebuild - which is why data/snapshots/gtfs-* is gitignored and the
 # db-* fingerprints are not.

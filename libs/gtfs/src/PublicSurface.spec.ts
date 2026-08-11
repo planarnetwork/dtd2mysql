@@ -5,12 +5,9 @@ import * as path from "node:path";
 /**
  * What the workspace libraries export, pinned.
  *
- * T13 asked for this against the published package, which no longer has a type
- * surface: Epic A bundles `dtd2mysql` and it ships no `types`. The surface that
- * matters now is the libraries', because D1 turns `libs/gtfs` into an SPI that
- * enrichers written elsewhere implement - the plan expects them "picked up in
- * parallel by different people" - and at that point a renamed export is
- * somebody else's build breaking.
+ * `dtd2mysql` is bundled and ships no `types`, so it has no type surface of its
+ * own. These do: enrichers are written as separate packages against `libs/gtfs`,
+ * which makes a renamed export somebody else's build breaking.
  *
  * So a removed or renamed export is a decision, recorded here, rather than a
  * side effect of tidying an import.
