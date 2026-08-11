@@ -1311,11 +1311,16 @@ filename - as text every `RJTTC` sorts before every `RJTTF`, which would apply t
 incrementals that amend it - and starting at the last refresh matters because a directory that feeds
 are downloaded into accumulates more than one cycle. E2 wants the same rule.
 
-**C5 · Rail Data Marketplace credential path** *(depends A5)*
-The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; tokens now come from Rail Data
-Marketplace (`raildata.org.uk`). The SFTP host still serves files but credential issuance has moved.
-`dtd-source` transport becomes pluggable (SFTP today, RDM API when needed); credentials resolved
-from env in one place; README updated.
+**C5 · Rail Data Marketplace credential path** *(depends A5)* — **not in this pass**
+The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; an account now comes from a Rail
+Data Marketplace subscription (`raildata.org.uk`). The SFTP host still serves the files, so nothing
+about the transport has changed and downloads work as they always did - only where the username and
+password are obtained has moved, and anyone with credentials already is unaffected.
+
+Deferred with C4. It was built once and closed unmerged (#132): a `FeedTransport` seam so
+`DownloadCommand` does not depend on the SFTP client, credentials resolved in one place, and an
+error naming raildata.org.uk instead of failing at the handshake. Worth picking that up from the
+closed PR rather than starting again if it is ever wanted.
 
 **C4 · `apps/dtd2postgres`** — **deferred, not in this pass** — **would close #116**
 Postgres `Storage` (DDL generation, `COPY`-based bulk load) and `PostgresTimetableSource`, plus a
@@ -1608,9 +1613,14 @@ Everything in D and F is independently shippable once D1 exists, so enrichers ca
 parallel by different people without touching the core.
 
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
-B4–B13 batch; B24 and B25 were found by B6's validator on its first run). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3, B1, B2, B6, B10–B12, B15 and B17 — B14, B16, B18, B19, B20 and B21 are resolved by #121, and A4 and C4 are deferred
-out of this pass, leaving **43 in scope**.
+B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
+
+B3 is absorbed into T1. **31 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
+B7–B9, B10–B13, B15, B17, B22 and B23. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4
+and C5 are deferred out of this pass. B24 and B25 are investigated and closed as source data the
+feed reports rather than corrects.
+
+That leaves **39 in scope**, all of them in D, E, F or the remainder of T.
 
 ---
 
