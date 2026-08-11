@@ -16,6 +16,7 @@ import {
   STP,
   TimetableSource,
   toFixedLinks,
+  interchange,
   toStop,
   withoutPlaceholders,
   reportDroppedStops,
@@ -95,12 +96,7 @@ export class CifFileSource implements TimetableSource {
     const {stations} = await this.loadReference();
 
     return groupByCrs(stations.rows.filter(row => row.cate_interchange_status !== null))
-      .map(row => ({
-        from_stop_id: row.crs_code as string,
-        to_stop_id: row.crs_code as string,
-        transfer_type: TransferType.MinTime,
-        min_transfer_time: integer(row, "minimum_change_time") * 60
-      }));
+      .map(row => interchange(row.crs_code as string, integer(row, "minimum_change_time") * 60));
   }
 
   /**

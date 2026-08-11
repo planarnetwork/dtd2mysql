@@ -15,7 +15,8 @@
     "missing_feed_contact_email_and_url": "no contact address to publish yet",
     "big_gap_in_service": "the fixture is a slice of a refresh, so its services are sparse",
     "service_extends_far_in_the_future": "a calendar running to 2099 in the source",
-    "service_window_outside_feed_period": "same calendars, against the three month build window"
+    "service_window_outside_feed_period": "same calendars, against the three month build window",
+    "unknown_column": "the twelve producer extension columns B2 added to transfers.txt, which the spec permits and the validator does not know"
   },
   "accepted": [
     "big_gap_in_service",
@@ -28,6 +29,7 @@
     "stop_without_stop_time",
     "transfer_distance_above_2_km",
     "transfer_distance_too_large",
-    "unexpected_enum_value"
+    "unexpected_enum_value",
+    "unknown_column"
   ]
 }

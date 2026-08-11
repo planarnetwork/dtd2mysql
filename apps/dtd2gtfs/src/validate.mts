@@ -18,6 +18,15 @@ const jar = process.argv[2];
 const fixtures = path.join(import.meta.dirname, "..", "fixtures", "mini");
 const baselineFile = path.join(fixtures, "validator-baseline.json");
 
+/**
+ * The date the fixture is built for, and the date the validator judges it
+ * against. Both, or the check drifts: several rules - feed expiry, expired
+ * calendars - compare the feed to the real clock, so a fixture pinned to a fixed
+ * day starts raising new notices simply because time passed, and one day the
+ * whole feed reads as historic. -d pins the validator's today to the feed's.
+ */
+const TODAY = "2026-08-10";
+
 if (!jar || !fs.existsSync(jar)) {
   throw new Error(`Pass the path to gtfs-validator-<version>-cli.jar. Got ${jar ?? "nothing"}.`);
 }
@@ -29,10 +38,11 @@ await build([
   "node", "dtd2gtfs", "build",
   "--source", path.join(fixtures, "RJTTF001.ZIP"),
   "--out", feed,
-  "--today", "2026-08-10"
+  "--today", TODAY
 ]);
 
-execFileSync("java", ["-jar", jar, "-i", feed, "-o", out], {stdio: "inherit"});
+// -svu because a validator release should not change the result of a pinned run
+execFileSync("java", ["-jar", jar, "-i", feed, "-o", out, "-d", TODAY, "-svu"], {stdio: "inherit"});
 
 interface Notice {
   code: string;

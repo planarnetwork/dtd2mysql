@@ -11,7 +11,8 @@ import {RouteType} from "../entity/Route";
 import {STP} from "../model/OverlayRecord";
 import {StopTime} from "../entity/StopTime";
 import {Stop} from "../entity/Stop";
-import {Transfer, TransferType} from "../entity/Transfer";
+import {Transfer} from "../entity/Transfer";
+import {interchange} from "../transform/MergeTransfers";
 import {FixedLink} from "../entity/FixedLink";
 import {TimetableSource} from "../source/TimetableSource";
 
@@ -76,7 +77,7 @@ const stop = (id: string): Stop => ({
 });
 
 const transfer = (from: string, to: string): Transfer =>
-  ({from_stop_id: from, to_stop_id: to, transfer_type: TransferType.MinTime, min_transfer_time: 300});
+  ({...interchange(from, 300), to_stop_id: to});
 
 const link = (from: string, to: string): FixedLink => ({
   from_stop_id: from, to_stop_id: to, mode: "WALK", duration: 300,
