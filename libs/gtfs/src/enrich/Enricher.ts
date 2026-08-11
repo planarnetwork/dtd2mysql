@@ -27,9 +27,9 @@ export interface Enricher<T = unknown> {
    * runs in - OSM pathways cannot join platforms that NaPTAN has not created
    * yet.
    *
-   * Nothing to do with `priority`. This is "what has to exist first"; priority
-   * is "who wins when we disagree", and confusing the two produces an order
-   * that looks deliberate and is not.
+   * Nothing to do with `priority`. This is what has to exist first; priority is
+   * who wins a contested field. Ordering by priority produces a run order that
+   * looks deliberate and is not.
    */
   readonly dependsOn: readonly string[];
 
@@ -41,8 +41,8 @@ export interface Enricher<T = unknown> {
   readonly priority: number;
 
   /**
-   * Who to credit. D8 builds attributions.txt from these, and keeps a
-   * share-alike source out of the permissive tier.
+   * Who to credit. attributions.txt is built from these, and a share-alike
+   * source is kept out of the permissive tier.
    */
   readonly attribution?: Attribution;
 
@@ -65,8 +65,8 @@ export interface Attribution {
   readonly licence: string;
   readonly url?: string;
   /**
-   * Whether the licence obliges the whole feed to carry it. D8 keeps these out
-   * of the permissive build rather than discovering the obligation later.
+   * Whether the licence obliges the whole feed to carry it. These are kept out
+   * of the permissive build rather than the obligation being discovered later.
    */
   readonly shareAlike: boolean;
 }

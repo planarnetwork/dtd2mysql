@@ -58,7 +58,7 @@ export class MutableFeed {
 
   /**
    * Every station, by the code a rider would recognise, so a source keyed on
-   * CRS does not have to know about the platform children B23 introduced.
+   * CRS does not have to know that a station may have platforms beneath it.
    */
   public get stations(): Stop[] {
     return this.stops.filter(stop => stop.parent_station === null);

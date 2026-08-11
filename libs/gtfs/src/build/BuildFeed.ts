@@ -33,8 +33,8 @@ export class BuildFeed {
     private readonly output: GTFSOutput,
     private readonly context: BuildContext,
     /**
-     * Sources of detail the DTD does not carry. Empty until D2 wires the config
-     * that selects them, and the build is the same feed as before when it is.
+     * Sources of detail the DTD does not carry. Empty produces the same feed as
+     * a build with no enrichment at all.
      */
     private readonly enrichers: readonly Enricher[] = []
   ) {}
@@ -101,8 +101,7 @@ export class BuildFeed {
     const called = dropUnknownStops(schedules, new Set(stations.keys()));
     // Only the stops are offered to an enricher. Trips and routes are streamed
     // straight to their files rather than held, and materialising 276,000 trips
-    // to enrich a handful is the wrong trade until something needs it - D9 is
-    // the first that will.
+    // to enrich a handful is the wrong trade until something needs it.
     const feed = new MutableFeed(stops, [], []);
     const reports = this.enrichers.length > 0 ? await enrich(feed, this.enrichers) : [];
     const provenanceP = reports.length > 0

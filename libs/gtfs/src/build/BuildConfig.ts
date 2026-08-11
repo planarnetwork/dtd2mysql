@@ -22,9 +22,9 @@ export interface BuildConfig {
 }
 
 /**
- * Which sources a build is allowed to draw on. D8 produces one artifact per
- * tier and fails a build that mixes a share-alike source into the permissive
- * one, rather than discovering the obligation after publishing.
+ * Which sources a build is allowed to draw on. One artifact is produced per
+ * tier, and a build that mixes a share-alike source into the permissive one
+ * fails rather than the obligation being discovered after publishing.
  */
 export type Licence = "permissive" | "full";
 
