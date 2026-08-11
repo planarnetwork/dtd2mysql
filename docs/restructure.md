@@ -1452,23 +1452,36 @@ Measured against the feed before writing anything, and it changes the design:
 
 - **NaPTAN keys rail stations on TIPLOC, not CRS.** `ATCOCode` is `9100` plus the TIPLOC -
   `9100ABDARE` - so the join is `stop_code`, not `stop_id`. There are 2,715 `RLY` records.
-- **2,568 of our 3,054 stations match. 486 do not**, and they are two unrelated problems wearing one
-  number:
-  - *A different TIPLOC for the same station.* `ABA` Aberdare is `ABDARAR` in our feed and `ABDARE`
-    in NaPTAN. A CRS has several TIPLOCs and `GROUP BY crs_code` keeps whichever came first, so the
-    one we publish is not reliably the one anybody else uses. **The enricher cannot fix this alone**:
-    it can only see the TIPLOC that survived the grouping. Matching properly needs every TIPLOC for
-    a CRS, which means the source has to offer them - a change to `TimetableSource`, or D4's CORPUS
-    mapping, which exists for exactly this.
-  - *Stops that are not railway stations.* `ABF` Ashurst Bald Faced Stag, `AER` Aberaeron Alban
-    Square, `ALG` Aldeburgh-Bus 64, `AMM` Abraham Moss Metrolink. `RLY` will never contain these
-    and no amount of matching will help; they need `BCT`, `MET` and the rest.
+- **The TIPLOC we publish is often the wrong one, and there is a rule for picking the right one.**
+  A CRS can have several TIPLOCs and `GROUP BY crs_code` keeps whichever came first. `ABA` Aberdare
+  has `ABDARAR` with `cate_interchange_status = 9` and `ABDARE` with `0`; NaPTAN uses `ABDARE`, and
+  the feed publishes `ABDARAR`.
+
+  **9 marks a subsidiary location.** Preferring any other value picks the right TIPLOC: tested
+  across all 156 CRS codes that have more than one, it **fixes 60 and breaks none**, taking the
+  NaPTAN match from 2,568 to 2,628. 186 rows carry a 9.
+
+  This is a defect in its own right, not a NaPTAN matching detail: `stop_code` is rider-facing and
+  60 stations publish the subsidiary code. **Fix it in `getStops` in both sources** - and note the
+  two currently pick by different mechanisms, MySQL's `GROUP BY` first-row against the file source's
+  insertion order, so the tie-break has to stay identical or they diverge. It moves the golden.
+
+  It also depends on B9's `[" "]`: with `IntField`'s default null characters a 9 parses as null and
+  subsidiary rows become indistinguishable.
+
+- **481 still unmatched, and they are not railway stations.** 328 are named as bus, coach, tram,
+  ferry, airport or CIE stops, and most of the remaining 153 are London Underground (`ZAT` Acton
+  Town, `ZBS` Baker Street), Tyne and Wear Metro, heritage lines and more bus stops whose names do
+  not say so. `RLY` will never hold these. **They are left unenriched**, which is the right answer:
+  their coordinates want `BCT`, `MET` and the other NaPTAN stop types, not a better match against
+  this one.
+
 - 14 of the matches are `Status: inactive`. Taking a coordinate from a closed record is probably
   right and should be a deliberate choice, not an accident of not looking.
 
-So D3 splits: the coordinate work is straightforward once the TIPLOC question is settled, and the
-TIPLOC question is D4's. Doing D3 first would build a matcher that reports 486 failures it cannot
-act on.
+So the order is: fix the TIPLOC selection first, then the coordinates are a straightforward match on
+`stop_code` with the non-rail stops reported and skipped. D4's CORPUS mapping is no longer a
+prerequisite - the feed already carries what is needed to choose correctly.
 
 NaPTAN also carries `RSE` (4,543 station entrances) and `RPL` (rail platforms, ATCO form
 `9100ZZTYKKH1`). Extracting those is F3's dependency, and it means the station hierarchy is
