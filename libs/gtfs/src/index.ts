@@ -52,7 +52,7 @@ export type {FeedInfo} from "./entity/FeedInfo";
 export {toStop} from "./source/StationRecord";
 export {isPlaceholder, withoutPlaceholders, reportDroppedStops} from "./source/Placeholder";
 export {BOUNDS, inBounds} from "./source/Bounds";
-export {locate, NOWHERE} from "./source/Located";
+export {locate, NOWHERE, toStopRow} from "./source/Located";
 export type {StationRecord} from "./source/StationRecord";
 export {toFixedLinks} from "./source/FixedLinkRecord";
 export type {FixedLinkRecord} from "./source/FixedLinkRecord";

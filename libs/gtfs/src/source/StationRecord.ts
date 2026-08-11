@@ -2,6 +2,7 @@ import proj4 from "proj4";
 import {Stop} from "../entity/Stop";
 import {StationCoordinates} from "./TimetableSource";
 import {inBounds} from "./Bounds";
+import {NOWHERE} from "./Located";
 
 proj4.defs(
   "EPSG:27700",
@@ -38,17 +39,19 @@ const outsideBounds = new Set(["HVH"]);
  * the eastern edge of the National Grid, and lands in the North Sea. Neither is
  * a coordinate, and inventing one for either is worse than saying so.
  */
-function located(row: StationRecord): [number | null, number | null] {
+function position(row: StationRecord): {stop_lon: number, stop_lat: number, located: boolean} {
   if (row.easting === null || row.northing === null) {
-    return [null, null];
+    return {...NOWHERE, located: false};
   }
 
-  const [lon, lat] = proj4("EPSG:27700", "EPSG:4326", [
+  const [stop_lon, stop_lat] = proj4("EPSG:27700", "EPSG:4326", [
     (row.easting - 10000) * 100,
     (row.northing - 60000) * 100
   ]);
 
-  return inBounds(lat, lon) || outsideBounds.has(row.crs_code) ? [lon, lat] : [null, null];
+  return inBounds(stop_lat, stop_lon) || outsideBounds.has(row.crs_code)
+    ? {stop_lon, stop_lat, located: true}
+    : {...NOWHERE, located: false};
 }
 
 /**
@@ -63,7 +66,7 @@ function located(row: StationRecord): [number | null, number | null] {
  * first row it is given, so this is what fixes the order of stops.txt.
  */
 export function toStop(row: StationRecord, overrides: StationCoordinates): Stop {
-  const [stop_lon, stop_lat] = located(row);
+  const {stop_lon, stop_lat, located} = position(row);
 
   return Object.assign({
     stop_id: row.crs_code,
@@ -78,6 +81,7 @@ export function toStop(row: StationRecord, overrides: StationCoordinates): Stop 
     stop_timezone: row.station_name.includes("(CIE") ? "Europe/Dublin" : "Europe/London",
     wheelchair_boarding: 0,
     stop_lon,
-    stop_lat
+    stop_lat,
+    located
   } as unknown as Stop, overrides[row.crs_code]);
 }

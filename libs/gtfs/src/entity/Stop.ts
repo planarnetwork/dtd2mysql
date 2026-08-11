@@ -4,13 +4,13 @@ export interface Stop {
   stop_code: TIPLOC;
   stop_name: string;
   stop_desc: string;
+  stop_lat: number;
+  stop_lon: number;
   /**
-   * Null between the source and the build only: a station the feed gives no
-   * usable coordinate for. Resolved by locate() before stops.txt is written, so
-   * nothing null ever reaches the feed.
+   * Whether the coordinate is the feed's or the default stood in for it. The
+   * source knows; nothing downstream could tell from the numbers.
    */
-  stop_lat: number | null;
-  stop_lon: number | null;
+  located: boolean;
   zone_id: number;
   stop_url: string;
   location_type: 0 | 1;
