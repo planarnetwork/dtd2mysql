@@ -11,7 +11,7 @@ import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
 import {CRS, Stop} from "../entity/Stop";
-import {locate} from "../source/Located";
+import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
@@ -85,16 +85,15 @@ export class BuildFeed {
     const {stops: withChildren, split} = withPlatforms(await stopsQ, schedules);
     const stops = locate(withChildren, referenced(schedules, await fixedLinksQ));
     const published = new Set(stops.map(stop => stop.stop_id));
-    const stopsP = this.copy(stops, "stops.txt", by("stop_id"));
+    const called = dropUnknownStops(schedules, published);
+    const stopsP = this.copy(stops.map(toStopRow), "stops.txt", by("stop_id"));
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, await fixedLinksQ, published),
       "transfers.txt",
       by("from_stop_id", "to_stop_id")
     );
 
-    dropUnknownStops(schedules, published);
-
-    const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
+    const [calendars, calendarDates, serviceIds] = createCalendar(called);
 
     const calendarP = this.copy(calendars, "calendar.txt", by("service_id"));
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", by("service_id", "date"));
@@ -103,7 +102,7 @@ export class BuildFeed {
       "feed_info.txt",
       by("feed_publisher_name")
     );
-    const tripsP = this.copyTrips(schedules, serviceIds, names(stops), split);
+    const tripsP = this.copyTrips(called, serviceIds, names(stops), split);
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has

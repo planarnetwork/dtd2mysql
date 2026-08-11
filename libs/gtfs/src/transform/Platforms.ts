@@ -62,11 +62,12 @@ export function withPlatforms(stations: Stop[], schedules: Schedule[]): {stops: 
   }
 
   const platforms: Stop[] = [];
+  // A station that gains platforms becomes location_type=1. Returned as a new
+  // object rather than set on the caller's: nothing here owns the input.
+  const parents = stations.map(s => used.has(s.stop_id) ? {...s, location_type: 1 as const} : s);
 
   for (const [parent, names] of used) {
     const station = byId.get(parent)!;
-
-    station.location_type = 1;
 
     for (const platform of names) {
       platforms.push({
@@ -87,7 +88,7 @@ export function withPlatforms(stations: Stop[], schedules: Schedule[]): {stops: 
     );
   }
 
-  return {stops: [...stations, ...platforms], split: new Set(used.keys())};
+  return {stops: [...parents, ...platforms], split: new Set(used.keys())};
 }
 
 /**

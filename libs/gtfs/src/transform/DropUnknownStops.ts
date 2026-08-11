@@ -23,24 +23,28 @@ import {CRS} from "../entity/Stop";
 export function dropUnknownStops(schedules: Schedule[], published: ReadonlySet<CRS>): Schedule[] {
   const unknown = new Map<CRS, number>();
 
-  for (const schedule of schedules) {
+  // Only a schedule that loses a call is rebuilt. The feed is 2.87 million stop
+  // times and 36 of them are dropped, so copying every schedule to avoid
+  // mutating 36 would be the expensive way round.
+  const result = schedules.map(schedule => {
     if (schedule.stopTimes.every(stop => published.has(stop.stop_id))) {
-      continue;
+      return schedule;
     }
 
-    const kept = schedule.stopTimes.filter(stop => {
-      if (published.has(stop.stop_id)) {
-        return true;
-      }
+    const kept = schedule.stopTimes
+      .filter(stop => {
+        if (published.has(stop.stop_id)) {
+          return true;
+        }
 
-      unknown.set(stop.stop_id, (unknown.get(stop.stop_id) ?? 0) + 1);
+        unknown.set(stop.stop_id, (unknown.get(stop.stop_id) ?? 0) + 1);
 
-      return false;
-    });
+        return false;
+      })
+      .map((stop, i) => ({...stop, stop_sequence: i + 1}));
 
-    schedule.stopTimes.length = 0;
-    schedule.stopTimes.push(...kept.map((stop, i) => ({...stop, stop_sequence: i + 1})));
-  }
+    return schedule.clone(schedule.calendar, schedule.id, kept);
+  });
 
   if (unknown.size > 0) {
     const codes = [...unknown.entries()]
@@ -51,5 +55,5 @@ export function dropUnknownStops(schedules: Schedule[], published: ReadonlySet<C
     console.log(`Dropped ${[...unknown.values()].reduce((a, b) => a + b)} calls at stops the feed does not declare: ${codes}`);
   }
 
-  return schedules;
+  return result;
 }

@@ -49,14 +49,15 @@ export class Schedule implements OverlayRecord {
   }
 
   /**
-   * Clone the current record with the new calendar and id.
+   * Clone the current record with the new calendar and id, and optionally a
+   * different set of calls.
    *
    * The stop times are copied because callers shift the times of a clone in place.
    */
-  public clone(calendar: ScheduleCalendar, scheduleId: number): Schedule {
+  public clone(calendar: ScheduleCalendar, scheduleId: number, stopTimes: StopTime[] = this.stopTimes): Schedule {
     return new Schedule(
       scheduleId,
-      this.stopTimes.map(st => Object.assign({}, st)),
+      stopTimes.map(st => Object.assign({}, st)),
       this.tuid,
       this.rsid,
       calendar,

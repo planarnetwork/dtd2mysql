@@ -6,8 +6,9 @@ const stop = (id: string, code: string, name: string, lat: number | null, lon: n
   stop_id: id,
   stop_code: code,
   stop_name: name,
-  stop_lat: lat,
-  stop_lon: lon
+  stop_lat: lat ?? 0,
+  stop_lon: lon ?? 0,
+  located: lat !== null
 }) as Stop;
 
 // As they appear in the feed today: a CATZ TIPLOC and no usable coordinate,
