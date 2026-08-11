@@ -552,11 +552,12 @@ page.
 The Layer 3 test, and the one that actually protects dtd2mysql. Import each of the four feeds,
 fingerprint all 80 tables with `snapshot-db.sh`, and assert the hashes match a committed baseline.
 
-Promoted because the storage layer is about to be rewritten by an incoming database-agnostic patch
-(§2, A4). This harness is what makes that patch reviewable — it answers "did the rewrite change what
-lands in the database?" with a yes or no rather than an opinion. It is not restructure-specific and
-does not depend on any of Epic A, so it can be built now and handed to the patch author. The
-baseline it needs already exists.
+Promoted originally because the storage layer was about to be rewritten by an incoming
+database-agnostic patch. **That patch is deferred, so the original reason is gone** - and the need
+is larger than it was. B22 rewrote how every generated id is assigned during import, and it was
+verified by importing three zips by hand and diffing two builds. This harness is what turns that
+into something the repository asserts. It does not depend on any of Epic A and the baseline it needs
+already exists.
 
 **T7 · Old-vs-new equivalence harness** *(depends T2, T3)* — **partly done**
 Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; normalised-identical
@@ -617,11 +618,21 @@ rather than an accident. The package ships `types`, so library consumers exist.
 
 **T14 · MariaDB service container in CI**
 `ci.yml` has no database, so nothing above Layer 1 can run there. Add a MariaDB service, wire up
-`docker-compose.yml`, and make Layer 2 and Layer 5 run on every PR. Prerequisite for Epic A.
+`docker-compose.yml`, and make Layer 2 and Layer 5 run on every PR.
+
+Written as a prerequisite for Epic A, which then shipped without it. That is the point rather than a
+correction: **every database claim in Epic A, B and C was verified by hand** - a container started
+locally, feeds imported by hand, two builds diffed at the shell. None of it is in the repository, so
+nothing catches a regression in the importer. B22 changed what 6,140 trips look like and the only
+evidence it worked lives in a pull request description.
 
 ### Epic B — Correctness
 
-Land on master before the restructure, so the move is a pure refactor with green tests either side.
+Planned to land on master before the restructure, so the move would be a pure refactor with green
+tests either side. It did not happen that way: A and C landed first and B stacked on top of them,
+which means the refactor was verified against behaviour that then changed underneath it. The
+byte-comparison against the pre-refactor baseline is what stood in for the green-tests-either-side
+this sequencing was meant to provide.
 
 **B0 · GTFS build hangs on schedules with no stop times** — **done**, `3d8f218`
 `getSchedules` keeps schedules with no stop time records via `stop_time.id IS NULL`. Those arrive as
@@ -1454,21 +1465,29 @@ stations and lands first; F5 extends the same two files.
 
 ### Epic E — Publishing
 
-**E8 · Fix the npm release pipeline** — *do this first*
-Publishing has been broken since 2025-12-02: npm has 6.6.3 while git carries tags through v6.6.9.
-`npm publish` fails with `404 Not Found - PUT .../dtd2mysql`, which is npm's response to an
-*unauthorised* publish rather than a missing package. The `NPM_TOKEN` secret needs regenerating.
+**E8 · Fix the npm release pipeline** — **done**, in two halves
 
-Two defects beyond the expired token:
+Publishing had been broken since 2025-12-02: npm had 6.6.3 while git carried tags through v6.6.9,
+and `npm publish` returned `404 Not Found - PUT .../dtd2mysql`, which is npm's answer to an
+*unauthorised* publish rather than a missing package.
 
-- `npm version patch` and `git push --follow-tags` run **before** `npm publish`, so every failed run
-  still burns a version number and pushes a tag. Six phantom versions exist as tags but were never
-  published. Reorder, or roll back the bump on failure.
-- The workflow triggers on every push to `master` with no path filter, so a documentation-only
-  commit attempts a release. Add a path filter, and gate the workflow while Epic A is in flight — a
-  half-migrated master must not ship.
+**The authorisation half is fixed on master.** `7398148` dropped the `NPM_TOKEN` secret for trusted
+publishing over OIDC, so the credential is minted per run and the publish carries a provenance
+attestation. It works: **6.6.14 and 6.6.15 are on npm**. The registry still shows the gap - 6.6.3
+straight to 6.6.14 - which is the ten phantom versions the broken runs burned.
 
-Until this is fixed, no fix reaches users, including B0.
+**The other two defects are fixed by Epic A**, in the workflow that replaces this one:
+
+- `npm version patch` and `git push --follow-tags` ran **before** `npm publish`, so a failed run
+  still burned a version and pushed a tag. Master still has that order; the monorepo's Release
+  workflow hands both to `changesets/action`, which opens a "Version Packages" pull request instead
+  of bumping in place, so there is no window where a tag exists for a version that was never
+  published.
+- The workflow triggered on every push to `master` with no path filter, so a documentation commit
+  attempted a release. The replacement filters on `apps/**`, `libs/**`, `.changeset/**` and the
+  manifests.
+
+So E8 closes when the stack merges. Nothing more to do for it.
 
 **E1 · Create the `gb-rail-gtfs` data repo**
 A year of daily releases would bury the npm tags, and DTD credentials should not sit in a repo that
@@ -1615,12 +1634,13 @@ parallel by different people without touching the core.
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
-B3 is absorbed into T1. **31 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22 and B23. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4
-and C5 are deferred out of this pass. B24 and B25 are investigated and closed as source data the
+B3 is absorbed into T1. **32 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
+B7–B9, B10–B13, B15, B17, B22, B23 and E8. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass, and E8 is
+fixed across master and Epic A. B24 and B25 are investigated and closed as source data the
 feed reports rather than corrects.
 
-That leaves **39 in scope**, all of them in D, E, F or the remainder of T.
+That leaves **38 in scope** - 37 untouched and T7 partly done - all of them in D, E, F or the
+remainder of T.
 
 ---
 
