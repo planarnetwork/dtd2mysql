@@ -78,12 +78,44 @@ function poolOptions(): mysql.PoolOptions {
  * release(), which a pool does not have. Nothing calls release() on the pool.
  */
 const getDatabaseConnection = once((_: null): DatabaseConnection =>
-  mysqlPromise.createPool(poolOptions()) as unknown as DatabaseConnection
+  track(mysqlPromise.createPool(poolOptions()) as unknown as DatabaseConnection)
 );
 
 const getDatabaseStream = once((_: null): mysql.Pool =>
-  mysql.createPool(poolOptions())
+  track(mysql.createPool(poolOptions()))
 );
+
+/**
+ * Every pool this container has actually created.
+ *
+ * An open pool keeps the event loop alive, so a command that does not close one
+ * leaves the process hanging after its work is done - harmless at a prompt,
+ * fatal for a scheduled job, which waits for the workflow timeout instead of
+ * finishing. The download commands were the ones that never closed it; closing
+ * from here covers all of them rather than the one that was noticed.
+ */
+const pools: {end(...args: any[]): any}[] = [];
+
+function track<T extends {end(...args: any[]): any}>(pool: T): T {
+  pools.push(pool);
+
+  return pool;
+}
+
+export async function closeConnections(): Promise<void> {
+  // A command that closes its own pool - the GTFS build does - has already been
+  // here, and mysql2 throws on a second close. Nothing to report either way.
+  await Promise.all(pools.map(async pool => {
+    try {
+      await pool.end();
+    }
+    catch (err) {
+      return undefined;
+    }
+  }));
+
+  pools.length = 0;
+}
 
 const databaseConnection = () => getDatabaseConnection(null);
 const databaseStream = () => getDatabaseStream(null);

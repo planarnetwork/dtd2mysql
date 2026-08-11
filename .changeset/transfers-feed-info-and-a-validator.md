@@ -17,3 +17,11 @@ Put the fixed links where GTFS expects them, say what the feed covers, and check
 - **CI runs the MobilityData validator** over the mini fixture and fails on any
   error. The accepted warnings are committed with a reason each, so a new one
   fails the build and a fixed one has to be taken off the list.
+- **The feed no longer points at stops it does not declare.** 36 calls named
+  `QHA` and `ZUX`, which appear in the z-train stop times and nowhere else in
+  the feed - no name, no coordinate, nothing to publish a stop from. The calls
+  are dropped and counted; the 31 trips that had nothing left are dropped with
+  them.
+- **The CLI exits when it is finished.** The download commands left a database
+  pool open, so the process hung after the transfer completed - harmless at a
+  prompt, fatal for a scheduled job.

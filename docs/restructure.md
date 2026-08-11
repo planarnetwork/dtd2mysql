@@ -742,12 +742,23 @@ Three of the four validator errors of this kind are this one train on three date
 association handled wrongly rather than a broad fault. #121 fixed B18, B20 and B21 in this area and
 this survives all three. Needs a failing test at the `applyAssociations` level before any fix.
 
-**B25 · A z-train arrives before it left** — *found by B6*
+**B25 · A z-train arrives before it left** — *found by B6; **the source is wrong, not us***
 
-`Z03536`: LPY 15:38, LJL arrive 16:00 depart **16:12**, LPY arrive **16:09**. The last arrival is
-three minutes before the departure that precedes it. One train, so either the ZTR record is
-internally inconsistent or the departure is being read from the wrong field. Check the raw ZTR line
-before assuming it is ours.
+`Z03536`: LPY 15:38, LJL arrive 16:00 depart **16:12**, LPY arrive **16:09**. The raw ZTR settles
+it - nothing is being read from the wrong field:
+
+```
+LOLPY---- 1538 1538
+LILJL---- 1600 1612      16001612
+LTLPY---- 1609 1609      TF
+```
+
+The feed says the bus leaves Liverpool James Street at 16:12 and reaches Lime Street at 16:09.
+
+That leaves a choice nobody has made yet, which is why this is still open. Publishing it is a
+validator error and a trip no journey planner can use. Dropping the trip loses a service that does
+run. Clamping the arrival to the departure invents a time, which B10 established this project does
+not do. **Decide before implementing**; the count is four stop times out of 2.87 million.
 
 **B7 · Stop asserting wheelchair accessibility** — **done**
 `wheelchair_accessible: 0` until D11 supplies real data. `bikes_allowed: 0` documented in code as
@@ -912,13 +923,19 @@ from `min(calendar.start_date)` reports the earliest calendar rather than the co
 must derive its window from calendars that have not expired, and log the count dropped. Retained
 rather than closed because the T10 baseline moves when #121 lands and T8 wants the reason recorded.
 
-**B15 · Z-train stop times reference stops that do not exist**
-34 rows in `stop_times.txt` point at `QHA` (31) and `ZUX` (3), which appear in `z_stop_time` but not
-in `physical_station`. `getStops` only emits rows from `physical_station`, while the z-train query
-passes `location AS crs_code` straight through. The comment in `getSchedules` claims ZTR locations
-"already use CRS codes so avoid the disaster above" — they do not. Referential integrity failure in
-the published feed. Either emit a stop for these locations or drop the stop times, and log the
-count. D4 (CORPUS) may resolve the mapping properly.
+**B15 · Z-train stop times reference stops that do not exist** — **done**
+
+36 calls pointed at `QHA` (31) and `ZUX` (5). Emitting a stop for them was the other option in the
+ticket and is not available: they are in `z_stop_time` and **nowhere else** - not `physical_station`,
+not even `tiploc` - so there is no name and no coordinate to build one from. D4 may map them later.
+
+So the calls go, and the count is logged. Every affected trip had two stops, so 31 fall to one call
+and are dropped whole by the existing filter; a trip from a real station to a station that does not
+exist was never usable. Sequence numbers are rewritten after a call is removed - GTFS only asks that
+they increase, but a renumbered trip reads like one that never had the problem.
+
+Feed effect: trips 276,030 -> 275,999, stop times 2,868,065 -> 2,867,998. **`foreign_key_violation`
+is gone from the validator.**
 
 **B16 · Calendars with no days set** — **superseded by #121**
 `service_id 101` in the current build has all seven day flags zero, runs 20260222–20991231, is
@@ -932,11 +949,16 @@ actually runs, so an all-zero mask and a fully-excluded calendar both report emp
 called per overlay application. It short-circuits on the first running day, so only genuinely empty
 calendars pay the full scan, and build wall clock moved from 30s to 36s.
 
-**B17 · Download commands never exit**
-`DownloadCommand.run` closes the SFTP connection but never the database pool, so the process hangs
-after the transfer completes. Harmless interactively, fatal for a scheduled job — E2 would hang
-until the workflow timeout. Ties in with A5's `FeedCursor`, which removes the database from the
-download path entirely.
+**B17 · Download commands never exit** — **done**
+`DownloadCommand.run` closed the SFTP connection but never the database pool, so the process hung
+after the transfer completed. Harmless interactively, fatal for a scheduled job - E2 would hang
+until the workflow timeout.
+
+A5 already took the database out of `DownloadCommand` itself; the pool it leaves open belongs to
+`LogTableFeedCursor`. Rather than have that one command close a pool it does not own, `container.ts`
+tracks the pools it creates and `index.ts` closes them when the command resolves. That covers every
+command, not just the one that was noticed, and a command that already closes its own pool - the
+GTFS build does - is tolerated rather than made to throw.
 
 **B18 · Associations fabricate service outside a schedule's validity** — **fixed by #121**
 `Association.apply` looped the association's exclude days and cloned the associated schedule onto
@@ -952,8 +974,12 @@ covers the date at all. #121 replaces the whole mechanism, applying association 
 exclude days on the associated schedule. This is the largest single behaviour change in the T10
 rebaseline and the reason the diff is not empty.
 
-**B19 · STP indicator constants never match the feed**
-`STP.Permanent` is `"Previous"` and `STP.New` is `"Next"`, since `94b2834`. The feed carries `P` and
+**B19 · STP indicator constants never match the feed** — **fixed by #121**
+`b12ad68` set the constants to `"P"` and `"N"` and removed the guard, which is both halves of what
+this ticket asked for. Verified rather than assumed: no production code references `STP.Permanent`
+any more, only specs. The rest of this entry is kept for the reasoning.
+
+`STP.Permanent` was `"Previous"` and `STP.New` was `"Next"`, since `94b2834`. The feed carries `P` and
 `N`, so neither constant has ever matched. Only `Cancellation = "C"` works. The single place it
 mattered — `if (schedule.stp !== STP.Permanent)` in `applyOverlays`, guarding "perms don't overlap"
 — has therefore been dead since it was written.
@@ -1503,8 +1529,8 @@ parallel by different people without touching the core.
 
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3, B1, B2, B6 and B10–B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
-out of this pass, leaving **46 in scope**.
+C1–C3, B1, B2, B6, B10–B12, B15 and B17 — B14, B16, B18, B19, B20 and B21 are resolved by #121, and A4 and C4 are deferred
+out of this pass, leaving **43 in scope**.
 
 ---
 
