@@ -27,7 +27,17 @@ export class MutableFeed {
     public readonly stops: Stop[],
     public readonly trips: Trip[],
     public readonly routes: Route[],
-    private readonly provenance: Provenance = new Provenance()
+    private readonly provenance: Provenance = new Provenance(),
+    /**
+     * Per enricher, the only fields it may write, from the config's `apply:`.
+     * An enricher with no entry is unrestricted.
+     *
+     * Enforced here rather than asked of the enricher, because an allowlist an
+     * enricher is trusted to honour is not an allowlist. It also means a source
+     * can be taken for the one thing it is good at - NaPTAN's coordinates
+     * without NaPTAN's station names - without forking it.
+     */
+    private readonly allowed: ReadonlyMap<string, ReadonlySet<string>> = new Map()
   ) {
     this.stopIndex = new Map(stops.map(stop => [stop.stop_id, stop]));
     this.tripIndex = new Map(trips.map(trip => [trip.trip_id, trip]));
@@ -67,6 +77,14 @@ export class MutableFeed {
     value: E[K],
     by: Enricher
   ): boolean {
+    const permitted = this.allowed.get(by.key);
+
+    if (permitted !== undefined && !permitted.has(String(field))) {
+      this.refusals++;
+
+      return false;
+    }
+
     const kind = entityKind(entity);
     const id = String(identify(entity));
     const applied = this.provenance.record(kind, id, String(field), {
@@ -85,6 +103,17 @@ export class MutableFeed {
   public get ledger(): Provenance {
     return this.provenance;
   }
+
+  /**
+   * Writes turned away by an `apply:` list. Reported, because a list that turns
+   * away everything an enricher does is a config that reads as enabling a
+   * source and does nothing.
+   */
+  public get refused(): number {
+    return this.refusals;
+  }
+
+  private refusals = 0;
 
 }
 

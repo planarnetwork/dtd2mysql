@@ -2,6 +2,7 @@ import {describe, it, expect} from "vitest";
 import {MutableFeed} from "./MutableFeed";
 import {enrich, order, provenanceFile} from "./Enrich";
 import {Enricher, EnrichmentReport} from "./Enricher";
+import {Provenance} from "./Provenance";
 import {Stop} from "../entity/Stop";
 
 const stop = (id: string, name = id): Stop => ({
@@ -233,6 +234,60 @@ describe("MutableFeed", () => {
     const withPlatform = new MutableFeed([stop("PAD"), platform], [], []);
 
     expect(withPlatform.stations.map(s => s.stop_id)).to.deep.equal(["PAD"]);
+  });
+
+});
+
+describe("an apply allowlist", () => {
+
+  const both = (key: string): Enricher<null> => ({
+    key,
+    dependsOn: [],
+    priority: 50,
+    async fetch() {
+      return null;
+    },
+    apply(feed): EnrichmentReport {
+      let matched = 0;
+
+      for (const target of feed.stops) {
+        feed.set(target, "stop_name", "renamed", this);
+        feed.set(target, "stop_desc", "described", this);
+        matched++;
+      }
+
+      return {enricher: key, matched, unmatched: 0, conflicts: 0};
+    }
+  });
+
+  it("takes a source for the one thing it is good at", async () => {
+    // NaPTAN has excellent coordinates and station names that are not the ones
+    // on the departure boards. There is no reason to accept both to get one.
+    const allowed = new Map([["PARTIAL", new Set(["stop_desc"])]]);
+    const restricted = new MutableFeed([stop("PAD")], [], [], new Provenance(), allowed);
+
+    await enrich(restricted, [both("PARTIAL")]);
+
+    expect(restricted.stop("PAD")!.stop_name).to.equal("PAD");
+    expect(restricted.stop("PAD")!.stop_desc).to.equal("described");
+  });
+
+  it("counts what it turned away", async () => {
+    const allowed = new Map([["PARTIAL", new Set(["stop_desc"])]]);
+    const restricted = new MutableFeed([stop("PAD")], [], [], new Provenance(), allowed);
+
+    await enrich(restricted, [both("PARTIAL")]);
+
+    expect(restricted.refused).to.equal(1);
+  });
+
+  it("leaves an enricher with no list alone", async () => {
+    const open = new MutableFeed([stop("PAD")], [], []);
+
+    await enrich(open, [both("OPEN")]);
+
+    expect(open.stop("PAD")!.stop_name).to.equal("renamed");
+    expect(open.refused).to.equal(0);
   });
 
 });

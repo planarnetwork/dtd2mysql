@@ -13,3 +13,7 @@ write that lost is kept in `provenance.json` so "why does the feed say that" has
 an answer.
 
 No enricher is configured yet, so the feed is unchanged.
+
+A build can also be described in a `gtfs.config.yaml` and run with
+`dtd2gtfs build --config`, which is how a nightly gets to differ from yesterday
+by a diff somebody approved rather than by an edited command line.

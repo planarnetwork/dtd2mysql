@@ -1413,10 +1413,32 @@ something needs it - D9 is the first that will, and it can pay for it then.
 The build takes an empty enricher list until D2 wires the config, and produces a byte identical feed
 with one. `provenance.json` is written only when an enricher ran.
 
-**D2 · Build config format and CLI wiring** *(depends D1, C3)*
-`gtfs.config.yaml` selecting source, today, range, licence tier, enrichers (with per-enricher
-options and `apply:` field allowlists) and extensions. `dtd2gtfs build --config`. Schema-validated;
-unknown enricher ids fail fast.
+**D2 · Build config format and CLI wiring** *(depends D1, C3)* — **done**
+`gtfs.config.yaml` selecting source, out, today, range, links, licence tier, enrichers and
+extensions. `dtd2gtfs build --config`. A flag given as well wins, so a config is a starting point
+rather than a commitment, and `today` and `range` reach `buildContext` the same way the environment
+does so precedence is decided in one place.
+
+**Validated by hand rather than by a schema library.** The errors are the reason the file exists -
+`must match schema #/enrichers` helps nobody at 3am when a nightly did not build. So an unknown
+option is named and the valid ones listed, a bad licence tier says which are allowed, and every
+message is prefixed with the file, because three configs in play makes an unattributed error a
+puzzle.
+
+**An unknown enricher fails immediately**, against the registry of what the build has, listing what
+is available. Left to run it would produce a feed quietly missing whatever that source was meant to
+add - indistinguishable from a source that matched nothing.
+
+**`apply:` is enforced in `MutableFeed.set`**, not asked of the enricher, because an allowlist an
+enricher is trusted to honour is not an allowlist. It exists so a source can be taken for the one
+thing it is good at: NaPTAN has excellent coordinates and station names that are not the ones on the
+departure boards, and there is no reason to accept both to get one. Refused writes are counted, so
+a list that turns away everything an enricher does is visible rather than a config that reads as
+enabling a source and does nothing.
+
+Enrichers are sorted by key when parsed, so the same config produces the same build however it was
+typed. `yaml` is a real dependency of `apps/dtd2gtfs` now; the validator itself takes a parsed object
+and has none, so it is testable without it.
 
 **D3 · `@gb-rail/enrich-naptan`** *(depends D1)*
 OGL. Accurate lat/lon for `RLY` stops (2,673 rail stations); **rail replacement bus stop points**
@@ -1685,12 +1707,12 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
 B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23, D1, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
+B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
 those across master and Epic A. B14, B16,
 B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
 B25 are investigated and closed as source data the feed reports rather than corrects.
 
-That leaves **28 in scope** — 27 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **27 in scope** — 26 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---

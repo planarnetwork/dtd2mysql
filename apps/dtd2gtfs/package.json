@@ -25,6 +25,7 @@
   "dependencies": {
     "@gb-rail/dtd-source": "workspace:^",
     "@gb-rail/gtfs": "workspace:^",
-    "@gb-rail/gtfs-output": "workspace:^"
+    "@gb-rail/gtfs-output": "workspace:^",
+    "yaml": "^2.9.0"
   }
 }
