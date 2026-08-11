@@ -34,6 +34,13 @@ extension columns. `feed_info.txt` is new.
 
 No change to the fixture, which has no dangling calls. Recorded so the absence is deliberate.
 
+## Reading publishes its junction rather than its station
+
+`stops.txt`: `RDG` gains `stop_code` `RDNGSTN` in place of `RDNGORJ`, and `stop_desc` 2 in place of
+9. A CRS can have several TIPLOCs and whichever arrived first used to win; a
+`cate_interchange_status` of 9 marks a subsidiary location, so the station is now preferred over the
+junction sharing its code. 75 stations change on the full feed, one in the fixture.
+
 ## B4, B7, B8, B9, B13 · things that are not true
 
 `trips.txt` gains real headsigns and loses the `wheelchair_accessible=1` claim. `stop_times.txt`
