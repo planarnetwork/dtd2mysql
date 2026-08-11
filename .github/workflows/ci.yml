@@ -97,6 +97,10 @@ jobs:
           path: .yarn/cache
           key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           restore-keys: yarn-${{ runner.os }}-
+      # mariadb-client, not the MySQL client the runner ships: a fingerprint is
+      # a hash of mariadb-dump's output, so the baseline and the check have to
+      # be cut with the same tool.
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq mariadb-client
       - run: yarn install --immutable
       - run: yarn build
       # The mini fixture is a real DTD zip, so importing it exercises the whole

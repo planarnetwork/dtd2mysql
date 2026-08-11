@@ -30,6 +30,18 @@ data/download.sh --download-nfm64
 
 ## Fingerprinting
 
+**The dump tool is part of the baseline.** A fingerprint is a hash of `mariadb-dump` output, so
+`mysqldump` is not a substitute - it formats rows differently and queries a table MariaDB does not
+have. The script refuses to run without it. A `mariadb-dump` *version* change can also move a hash
+without any data changing; that is a rebaseline under T8 like any other, and the diff will show it
+as every table at once, which is the tell.
+
+Baselines here were cut with:
+
+```
+mariadb-dump from 11.8.6-MariaDB, client 10.19 for debian-linux-gnu (x86_64)
+```
+
 `snapshot-db.sh` writes three files per snapshot: the schema DDL with the dump date stripped, a row
 count and content hash per table, and the column list. Every hash is taken over rows ordered by
 primary key, so it is stable regardless of storage order — that is the property the whole harness

@@ -16,16 +16,21 @@ PASS="${DATABASE_PASSWORD:-}"
 CONTAINER="${DB_CONTAINER:-}"
 mkdir -p "$OUT"
 
-# The MariaDB-named tools are not everywhere - a GitHub runner ships the MySQL
-# client and not mariadb-dump - and they are drop-in for what this needs.
-have() { command -v "$1" > /dev/null 2>&1; }
-
-tool_for() {
-  case "$1" in
-    mariadb) have mariadb && echo mariadb || echo mysql ;;
-    mariadb-dump) have mariadb-dump && echo mariadb-dump || echo mysqldump ;;
-  esac
-}
+# mariadb-dump specifically, not mysqldump. They are not interchangeable here:
+# a fingerprint is a hash of dump output, so two tools that format a row
+# differently produce different hashes for identical data, and a baseline cut
+# with one would never match a check run with the other. mysqldump also queries
+# information_schema.COLUMN_STATISTICS, which MariaDB does not have.
+if [ -z "${CONTAINER:-}" ]; then
+  for tool in mariadb mariadb-dump; do
+    command -v "$tool" > /dev/null 2>&1 || {
+      echo "$tool is needed and not on PATH." >&2
+      echo "A fingerprint is a hash of its output, so mysqldump is not a substitute." >&2
+      echo "  apt-get install mariadb-client   /   brew install mariadb" >&2
+      exit 1
+    }
+  done
+fi
 
 client() {
   local tool="$1"; shift
@@ -33,7 +38,7 @@ client() {
   if [ -n "$CONTAINER" ]; then
     docker exec "$CONTAINER" "$tool" -u"$USER" ${PASS:+-p"$PASS"} "$@"
   else
-    "$(tool_for "$tool")" -h "$HOST" -u"$USER" ${PASS:+-p"$PASS"} "$@"
+    "$tool" -h "$HOST" -u"$USER" ${PASS:+-p"$PASS"} "$@"
   fi
 }
 
