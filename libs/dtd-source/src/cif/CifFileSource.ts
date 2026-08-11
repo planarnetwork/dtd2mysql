@@ -583,9 +583,14 @@ interface Overlaid {
  * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
  *
  * Taking whichever row came first published the subsidiary TIPLOC as
- * `stop_code` for 60 stations, Reading among them, because the order rows
- * happen to arrive in is not a rule. Beyond the preference the first row still
- * wins, so nothing else moves.
+ * `stop_code` for 75 stations, Reading among them, because the order rows
+ * happen to arrive in is not a rule.
+ *
+ * The TIPLOC itself breaks the tie, because some stations have nothing else to
+ * separate them: Westbury's TIPLOCs are all rated 9, so the preference decides
+ * nothing and whatever remains has to be a property of the data rather than of
+ * the order it arrived in. The database and the file source read the rows in
+ * different orders, and a tie-break that depends on that makes them disagree.
  *
  * `preferStation` is off for transfers, which want the minimum change time of
  * whichever row the database would have grouped to. Changing that is a separate
@@ -598,7 +603,7 @@ function groupByCrs(rows: Row[], preferStation = false): Row[] {
     const crs = String(row.crs_code);
     const chosen = groups.get(crs);
 
-    if (chosen === undefined || (preferStation && subsidiary(chosen) && !subsidiary(row))) {
+    if (chosen === undefined || (preferStation && better(row, chosen))) {
       groups.set(crs, row);
     }
   }
@@ -608,6 +613,12 @@ function groupByCrs(rows: Row[], preferStation = false): Row[] {
 
 function subsidiary(row: Row): boolean {
   return row.cate_interchange_status === SUBSIDIARY;
+}
+
+function better(candidate: Row, chosen: Row): boolean {
+  return subsidiary(candidate) !== subsidiary(chosen)
+    ? !subsidiary(candidate)
+    : String(candidate.tiploc_code) < String(chosen.tiploc_code);
 }
 
 /**
