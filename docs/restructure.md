@@ -1440,12 +1440,35 @@ Enrichers are sorted by key when parsed, so the same config produces the same bu
 typed. `yaml` is a real dependency of `apps/dtd2gtfs` now; the validator itself takes a parsed object
 and has none, so it is testable without it.
 
-**D3 · `@gb-rail/enrich-naptan`** *(depends D1)*
-OGL. Accurate lat/lon for `RLY` stops (2,673 rail stations); **rail replacement bus stop points**
-from `BCT` for BR/BS services; NPTG locality for disambiguation; match report by CRS with the
-unmatched list surfaced. **The `(easting - 10000) * 100` OSGB fudge in `getStops()` is removed, not
-merely overridden** — NaPTAN becomes the primary coordinate source and the projection path is
-deleted along with `proj4` if nothing else needs it.
+**D3 · `@gb-rail/enrich-naptan`** *(depends D1)* — *investigated, not built*
+
+OGL. Accurate lat/lon for rail stops, rail replacement bus stop points from `BCT` for BR/BS
+services, NPTG locality for disambiguation, match report by CRS with the unmatched list surfaced.
+The `(easting - 10000) * 100` OSGB fudge in `toStop` is removed, not merely overridden - NaPTAN
+becomes the primary coordinate source and the projection path goes with it, along with `proj4` if
+nothing else needs it.
+
+Measured against the feed before writing anything, and it changes the design:
+
+- **NaPTAN keys rail stations on TIPLOC, not CRS.** `ATCOCode` is `9100` plus the TIPLOC -
+  `9100ABDARE` - so the join is `stop_code`, not `stop_id`. There are 2,715 `RLY` records.
+- **2,568 of our 3,054 stations match. 486 do not**, and they are two unrelated problems wearing one
+  number:
+  - *A different TIPLOC for the same station.* `ABA` Aberdare is `ABDARAR` in our feed and `ABDARE`
+    in NaPTAN. A CRS has several TIPLOCs and `GROUP BY crs_code` keeps whichever came first, so the
+    one we publish is not reliably the one anybody else uses. **The enricher cannot fix this alone**:
+    it can only see the TIPLOC that survived the grouping. Matching properly needs every TIPLOC for
+    a CRS, which means the source has to offer them - a change to `TimetableSource`, or D4's CORPUS
+    mapping, which exists for exactly this.
+  - *Stops that are not railway stations.* `ABF` Ashurst Bald Faced Stag, `AER` Aberaeron Alban
+    Square, `ALG` Aldeburgh-Bus 64, `AMM` Abraham Moss Metrolink. `RLY` will never contain these
+    and no amount of matching will help; they need `BCT`, `MET` and the rest.
+- 14 of the matches are `Status: inactive`. Taking a coordinate from a closed record is probably
+  right and should be a deliberate choice, not an accident of not looking.
+
+So D3 splits: the coordinate work is straightforward once the TIPLOC question is settled, and the
+TIPLOC question is D4's. Doing D3 first would build a matcher that reports 486 failures it cannot
+act on.
 
 NaPTAN also carries `RSE` (4,543 station entrances) and `RPL` (rail platforms, ATCO form
 `9100ZZTYKKH1`). Extracting those is F3's dependency, and it means the station hierarchy is
