@@ -143,8 +143,8 @@ describe("CifFileSource", () => {
   it("turns the interchange time into a transfer", async () => {
     const transfers = await source(refresh()).getTransfers();
 
-    // The extension columns B2 added are null on an interchange row: there is no
-    // fixed link to describe, only the time it takes to cross the station.
+    // The fixed link columns are null on an interchange row: there is no link to
+    // describe, only the time it takes to cross the station.
     expect(transfers).to.deep.include(interchange("TON", 300));
   });
 

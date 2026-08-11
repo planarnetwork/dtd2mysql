@@ -97,7 +97,7 @@ class FakeSource implements TimetableSource {
 
   /**
    * The stops the test declared, or one for every stop its schedules call at if
-   * it declared none. B15 drops calls at stops the feed does not publish, and
+   * it declared none. The build drops calls at stops it does not publish, and
    * most of these tests are about ordering rather than about stops - they would
    * otherwise end up with no stop times at all. A test that does declare stops
    * gets exactly those, including the deliberately malformed ones.

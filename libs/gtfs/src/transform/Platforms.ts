@@ -31,8 +31,9 @@ const PLATFORM = /^([0-9]{1,2}[A-Z]?|[A-Z])$/;
  *
  * Nothing here touches a stop time. The suffixed id belongs to stop_times.txt
  * and is composed by `stopId` when the file is written, so overlays,
- * associations and merges only ever see the CRS. Doing it earlier broke every
- * association in the feed, because an association names a bare CRS.
+ * associations and merges only ever see the CRS. **Keep it that way**: an
+ * association names a bare CRS, so a stop id carrying a platform stops every
+ * association matching, silently.
  */
 export function withPlatforms(stations: Stop[], schedules: Schedule[]): {stops: Stop[], split: Set<CRS>} {
   const byId = new Map(stations.map(station => [station.stop_id, station]));
