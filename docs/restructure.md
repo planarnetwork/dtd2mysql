@@ -1634,12 +1634,12 @@ parallel by different people without touching the core.
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
-B3 is absorbed into T1. **32 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23 and E8. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass, and E8 is
-fixed across master and Epic A. B24 and B25 are investigated and closed as source data the
-feed reports rather than corrects.
+B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
+B7–B9, B10–B13, B15, B17, B22, B23 and E8, the last of those across master and Epic A. B14, B16,
+B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
+B25 are investigated and closed as source data the feed reports rather than corrects.
 
-That leaves **38 in scope** - 37 untouched and T7 partly done - all of them in D, E, F or the
+That leaves **37 in scope** — 36 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
