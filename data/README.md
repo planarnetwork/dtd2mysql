@@ -28,6 +28,25 @@ data/download.sh --download-routeing
 data/download.sh --download-nfm64
 ```
 
+## Rail Data Marketplace
+
+`rdm-download.sh` pulls the files behind a data product. It needs a Bearer token copied out of the
+browser, because RDM's portal client requires an interactive authorization code flow - there is no
+password grant to script, and the token endpoint says so:
+`Unsupported Client Authentication Method!`.
+
+```
+RDM_TOKEN=... data/rdm-download.sh P-<product> DSP-<dataset> NLC data/rdm
+```
+
+The token lasts an hour. **The durable path is the product's own cloud delivery**, which pushes
+files to a bucket you own on a schedule and needs nobody logged in; this script is for getting
+started and for seeing what the files look like.
+
+The prefix is required rather than optional. A product holds more than one family of file - the
+location product carries 118 NLC snapshots and 3 passenger-consist logs - and they are dated
+independently, so the newest file overall is rarely the newest of the family you wanted.
+
 ## Fingerprinting
 
 **The dump tool is part of the baseline.** A fingerprint is a hash of `mariadb-dump` output, so

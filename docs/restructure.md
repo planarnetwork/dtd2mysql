@@ -1470,10 +1470,26 @@ enricher before believing it.
 `provenance.json` was being written through the CSV writer, so it came out as a column of
 `[object Object]`. `GTFSOutput` gains `write` for files that are documents rather than tables.
 
-**D4 · `@gb-rail/enrich-corpus`** *(depends D1)*
-OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
+**D4 · `@gb-rail/enrich-corpus`** *(depends D1)* — *source found, not built*
+TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
 `LEFT JOIN physical_station ON location = ps.tiploc_code` that currently drops stops. Count of
 recovered stop times reported. Blocks F3.
+
+**Network Rail's CORPUS is not the only source and not the easiest one.** It answers 401 without an
+account. The same mapping arrives on Rail Data Marketplace as weekly NLC snapshots - a 350 KB
+gzipped XML holding `NLCTiplocCode`, `NLCLocationCode`, `NLCCrsCode`, `NLCStanoxCode` and a
+description per row, which is every field this ticket needs.
+
+Getting at it is the awkward part. RDM has **no password grant** - its portal client requires an
+interactive authorization code flow, and the token endpoint answers
+`Unsupported Client Authentication Method!` - so nothing can log in unattended. `data/rdm-download.sh`
+takes a Bearer token copied from the browser, which lasts an hour and is enough to develop against.
+**The durable path is the product's cloud delivery**, which pushes files to a bucket on a schedule
+and needs no login at all; that is what a nightly should use.
+
+This also supplies what D3 could not: every TIPLOC for a CRS, rather than the one that survived
+grouping. That is the remaining half of the NaPTAN matching, and what D12 needs to join station
+groups on NLC.
 
 **D5 · `@gb-rail/enrich-knowledgebase`** *(depends D1, C5)*
 `wheelchair_boarding` from step-free access data, replacing B7's `0`. `stop_url`, `stop_desc`. Token
