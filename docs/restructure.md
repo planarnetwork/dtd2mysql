@@ -1488,10 +1488,27 @@ lift, stair and `wheelchair=*` attributes and `levels.txt`. Consumes a pre-built
 never the full GB pbf at build time. Because the nodes are OGL, `gtfs-slim.zip` can still carry the
 station hierarchy — only the pathway graph is tier-restricted.
 
-**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)*
+**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)* — *measured, awaiting review*
+
 Every station previously covered by the override is covered by an enricher or explicitly listed in a
 small documented `overrides.yaml` with a reason per entry. Agency list derives from live TOC
-reference data. Diff report of coordinate deltas over 100 m for review before merge.
+reference data.
+
+The measurement the ticket asks for is done and lives in `docs/coordinate-review.md`:
+
+- the override file has **2,594 entries** and NaPTAN covers **2,580** of them;
+- **14 are not covered** - Bond Street, Barking Riverside, Ashford International and others NaPTAN
+  either has no record for or ships with a blank position - and those keep an override until
+  something else covers them;
+- **125 differ by more than 100 metres**, out to 3.2 km at Eskbank.
+
+The large differences look like stations that moved or reopened - Eskbank and Laurencekirk are on
+reinstated lines, so the override is probably the older position - but that is a guess and the
+report exists so somebody decides rather than a script silently preferring one source. **Nothing is
+deleted until that review happens**: replacing 2,594 hand-checked coordinates on the strength of a
+99.5% match rate would be trading a known state for an unknown one.
+
+`agency.ts` is untouched and needs a live source identified.
 
 **D8 · Licence-tiered builds and `attributions.txt`** *(depends D1)*
 `attributions.txt` generated from enricher `attribution` fields. The `licence:` tier produces
