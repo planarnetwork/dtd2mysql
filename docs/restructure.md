@@ -1470,26 +1470,10 @@ enricher before believing it.
 `provenance.json` was being written through the CSV writer, so it came out as a column of
 `[object Object]`. `GTFSOutput` gains `write` for files that are documents rather than tables.
 
-**D4 · `@gb-rail/enrich-corpus`** *(depends D1)* — *source found, not built*
-TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
+**D4 · `@gb-rail/enrich-corpus`** *(depends D1)*
+OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
 `LEFT JOIN physical_station ON location = ps.tiploc_code` that currently drops stops. Count of
 recovered stop times reported. Blocks F3.
-
-**Network Rail's CORPUS is not the only source and not the easiest one.** It answers 401 without an
-account. The same mapping arrives on Rail Data Marketplace as weekly NLC snapshots - a 350 KB
-gzipped XML holding `NLCTiplocCode`, `NLCLocationCode`, `NLCCrsCode`, `NLCStanoxCode` and a
-description per row, which is every field this ticket needs.
-
-Getting at it is the awkward part. RDM has **no password grant** - its portal client requires an
-interactive authorization code flow, and the token endpoint answers
-`Unsupported Client Authentication Method!` - so nothing can log in unattended. `data/rdm-download.sh`
-takes a Bearer token copied from the browser, which lasts an hour and is enough to develop against.
-**The durable path is the product's cloud delivery**, which pushes files to a bucket on a schedule
-and needs no login at all; that is what a nightly should use.
-
-This also supplies what D3 could not: every TIPLOC for a CRS, rather than the one that survived
-grouping. That is the remaining half of the NaPTAN matching, and what D12 needs to join station
-groups on NLC.
 
 **D5 · `@gb-rail/enrich-knowledgebase`** *(depends D1, C5)*
 `wheelchair_boarding` from step-free access data, replacing B7's `0`. `stop_url`, `stop_desc`. Token
@@ -1712,9 +1696,21 @@ Remaining `stops.txt` changes:
 B23 broke the three-letter join once, with the ids it will keep. F3 adds stops rather than renaming
 them, so it needs no flag and no second break.
 
-**F4 · Splits and joins as transfers** *(depends C1)* — **closes #81**
+**F4 · Splits and joins as transfers** *(depends C1)* — **closes #81 and #80**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
-associations. #80 (joins at route start should not be processed) addressed in the same pass.
+associations, in place of concatenating the portions into one trip.
+
+**#80 is not a separate fix, it is the same change.** A join at the start of the base's route
+produces a service that doubles back - #80 reports `W04046` and `W03086` becoming a circular run
+round Kent, and B24 found `G38297`/`G38968` doing it at Swansea, where the base begins. Both are the
+concatenation: two services that share a unit are not one passenger journey, and GTFS has
+`transfer_type=4` for precisely that relationship. Emitting linked trips makes the shape
+unrepresentable rather than needing a rule to exclude it.
+
+**Expect a large change in trip count.** Every joined or split service currently emitted as one trip
+becomes two, so this collides with E2's 5% swing gate the same way #121 does, and wants the same
+treatment: land it before the gate exists, or reset the gate deliberately. It moves the golden and
+the T10 baseline.
 
 **F5 · GTFS-Fares v2** *(depends D1)*
 The fares and routeing feeds are already imported and discarded at GTFS time. Nobody publishes a GB
