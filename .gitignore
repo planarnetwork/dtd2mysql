@@ -23,7 +23,6 @@ dist/
 # payload it fingerprinted. The scripts and the table fingerprints are the
 # reproducible part, so those are tracked - see data/README.md.
 data/feeds/
-data/rdm/
 data/snapshots/gtfs-*/
 data/snapshots/db-mini/
 data/*.log

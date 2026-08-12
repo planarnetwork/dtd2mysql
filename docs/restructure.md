@@ -1604,27 +1604,46 @@ straight to 6.6.14 - which is the ten phantom versions the broken runs burned.
 
 So E8 closes when the stack merges. Nothing more to do for it.
 
-**E1 · Create the `gb-rail-gtfs` data repo**
-A year of daily releases would bury the npm tags, and DTD credentials should not sit in a repo that
-takes PRs. Secrets configured; feed workflows restricted to the default branch; no
-`pull_request_target` anywhere.
+**E1 · Publish from this repository**
+Originally a separate `gb-rail-gtfs` repo, on the grounds that a year of daily releases would bury
+the npm tags and that DTD credentials should not sit in a repo taking pull requests. **Decided
+against**: the feed is published from here.
 
-**E2 · Nightly build workflow** *(depends C3, B6, D8, E1)*
-`cron: '0 5 * * *'` plus `workflow_dispatch`. Downloads the latest full refresh and all subsequent
-incrementals with per-filename caching — deterministic, no stateful cursor to corrupt. Builds, runs
-the validator, runs T6's Track A invariants against the day's build, and fails the release on
-violation or on a swing over 5% in trip count versus the previous build. A published feed that fails
-referential integrity must never reach a release.
+Neither concern needs a second repository. Feed releases are tagged `feed-YYYY-MM-DD` and version
+releases `v6.6.x`, so they are distinguishable and filterable, and the `latest/download` link
+resolves by asset name regardless. Credentials are org secrets, which GitHub does not expose to a
+pull request from a fork; what makes that true is having no `pull_request_target` anywhere and
+keeping the feed workflows on the default branch, which is a rule to hold rather than a repository
+to create.
 
-*The 5% gate and #121 collide.* Removing the merge step is a **+19% step change** in trip count
-(229,898 → 273,539 on a 3 month build; stop times +21%, 16 MB → 20 MB zipped) because consecutive
-CIF records with the same stopping pattern are no longer collapsed into one trip. Whichever lands
-second trips the other. Either #121 ships before the gate exists, or the gate needs a documented
-one-off reset. The size is worth revisiting separately: merging by calendar *after* ids are assigned
-would recover most of it without destabilising them.
+What is actually needed: the credentials, which exist, and Pages enabled, which is not yet.
 
-*Risk:* `ubuntu-latest` is 4 vCPU / 16 GB and every `Schedule` is currently materialised in memory.
-Ship at a three-month horizon initially; raise after F1.
+**E2 · Nightly build workflow** *(depends C3, B6, E1)* — **written, never run**
+
+`cron: '0 5 * * *'` plus `workflow_dispatch`, in `.github/workflows/feed.yml`. Downloads the
+timetable with per-filename caching - the set of files to fetch is derived from what the server
+holds and what is already on disk, so there is no cursor to get out of step - builds, validates,
+compares with the last release and attaches the result to a `feed-YYYY-MM-DD` release.
+
+**Any validator ERROR stops the release.** A feed that fails referential integrity must not reach
+anybody, and it is cheaper to skip a night than to withdraw a feed. The full feed currently has two
+error types - `point_near_origin` for `QBN`/`QBS` and four stop times from B24 and B25 - **so the
+first real run will fail**, correctly. Those have to be resolved or explicitly accepted before a
+nightly can publish.
+
+**The 5% trip swing gate collides with #121 and F4.** Removing the merge step is a +19% step change,
+and F4 turns every joined service into two trips. Whichever lands second trips the gate. There is no
+previous release yet, so the comparison is skipped on the first run and the gate effectively starts
+from whatever ships first - which is the documented one-off reset, taken by default rather than by
+decision.
+
+Not verified beyond parsing: the credentials are organisation secrets that a repository token cannot
+read, so the download step has never executed. It fails immediately and says where credentials come
+from rather than failing at the SFTP handshake.
+
+The rule E1 replaced a whole repository with is enforced rather than written down: CI fails any
+workflow that gains a `pull_request_target` trigger, which is the thing that would run a fork's code
+with these secrets.
 
 **E3 · Weekly OSM rail extract** *(depends E1)*
 Separate weekly job pulls Geofabrik `great-britain-latest.osm.pbf`, filters to railway features, and
