@@ -1440,52 +1440,35 @@ Enrichers are sorted by key when parsed, so the same config produces the same bu
 typed. `yaml` is a real dependency of `apps/dtd2gtfs` now; the validator itself takes a parsed object
 and has none, so it is testable without it.
 
-**D3 · `@gb-rail/enrich-naptan`** *(depends D1)* — *investigated, not built*
+**D3 · `@gb-rail/enrich-naptan`** *(depends D1)* — **done**, coordinates only
 
-OGL. Accurate lat/lon for rail stops, rail replacement bus stop points from `BCT` for BR/BS
-services, NPTG locality for disambiguation, match report by CRS with the unmatched list surfaced.
-The `(easting - 10000) * 100` OSGB fudge in `toStop` is removed, not merely overridden - NaPTAN
-becomes the primary coordinate source and the projection path goes with it, along with `proj4` if
-nothing else needs it.
+OGL, so it is in the permissive tier. It joins on **TIPLOC, not CRS** - a NaPTAN rail record is
+`9100` and then the TIPLOC, which is `stop_code` here - which is why the station's own TIPLOC had to
+be published before this could work at all.
 
-Measured against the feed before writing anything, and it changes the design:
+**2,622 of 3,054 stations matched.** The 432 that did not are bus, coach, tram, ferry, Underground,
+Metro and heritage stops; NaPTAN's rail records cover railway stations and those live under other
+stop types. The report says so rather than leaving a number for somebody to chase.
 
-- **NaPTAN keys rail stations on TIPLOC, not CRS.** `ATCOCode` is `9100` plus the TIPLOC -
-  `9100ABDARE` - so the join is `stop_code`, not `stop_id`. There are 2,715 `RLY` records.
-- **The TIPLOC we publish is often the wrong one, and there is a rule for picking the right one.**
-  A CRS can have several TIPLOCs and `GROUP BY crs_code` keeps whichever came first. `ABA` Aberdare
-  has `ABDARAR` with `cate_interchange_status = 9` and `ABDARE` with `0`; NaPTAN uses `ABDARE`, and
-  the feed publishes `ABDARAR`.
+**Only coordinates.** NaPTAN's name for Aberdare is "Aberdare Rail Station" where the departure
+boards say "Aberdare", so taking the name as well is something to ask for through the config's
+`apply:` rather than to inflict.
 
-  **9 marks a subsidiary location.** Preferring any other value picks the right TIPLOC: tested
-  across all 156 CRS codes that have more than one, it **fixes 60 and breaks none**, taking the
-  NaPTAN match from 2,568 to 2,628. 186 rows carry a 9.
+Effect: the median station moves **2 metres** and the 90th percentile 78, which is the OSGB
+projection being roughly right all along; the tail is what matters, out to 3.8 km. `QBN`, `QBS` and
+`HVH` are still outside the bounds - the first two have no NaPTAN record and the third is correct.
 
-  This is a defect in its own right, not a NaPTAN matching detail: `stop_code` is rider-facing and
-  60 stations publish the subsidiary code. **Fix it in `getStops` in both sources** - and note the
-  two currently pick by different mechanisms, MySQL's `GROUP BY` first-row against the file source's
-  insertion order, so the tie-break has to stay identical or they diverge. It moves the golden.
+**Two things worth knowing before writing another enricher.**
 
-  It also depends on B9's `[" "]`: with `IntField`'s default null characters a 9 parses as null and
-  subsidiary rows become indistinguishable.
+NaPTAN ships rail records with the position left blank - Bond Street, Tottenham Court Road and
+Barking Riverside among them. `Number("")` is 0 rather than NaN, so the emptiness survived the
+finite check and three London stations were moved to the Gulf of Guinea, including the one whose
+coordinate had just been corrected by hand. **Nothing failed**: the run reported 2,628 happy
+matches. It was found by measuring how far each stop moved, which is now the thing to do to any
+enricher before believing it.
 
-- **481 still unmatched, and they are not railway stations.** 328 are named as bus, coach, tram,
-  ferry, airport or CIE stops, and most of the remaining 153 are London Underground (`ZAT` Acton
-  Town, `ZBS` Baker Street), Tyne and Wear Metro, heritage lines and more bus stops whose names do
-  not say so. `RLY` will never hold these. **They are left unenriched**, which is the right answer:
-  their coordinates want `BCT`, `MET` and the other NaPTAN stop types, not a better match against
-  this one.
-
-- 14 of the matches are `Status: inactive`. Taking a coordinate from a closed record is probably
-  right and should be a deliberate choice, not an accident of not looking.
-
-So the order is: fix the TIPLOC selection first, then the coordinates are a straightforward match on
-`stop_code` with the non-rail stops reported and skipped. D4's CORPUS mapping is no longer a
-prerequisite - the feed already carries what is needed to choose correctly.
-
-NaPTAN also carries `RSE` (4,543 station entrances) and `RPL` (rail platforms, ATCO form
-`9100ZZTYKKH1`). Extracting those is F3's dependency, and it means the station hierarchy is
-buildable entirely from OGL sources.
+`provenance.json` was being written through the CSV writer, so it came out as a column of
+`[object Object]`. `GTFSOutput` gains `write` for files that are documents rather than tables.
 
 **D4 · `@gb-rail/enrich-corpus`** *(depends D1)*
 OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
@@ -1743,12 +1726,12 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
 B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
+B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
 those across master and Epic A. B14, B16,
 B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
 B25 are investigated and closed as source data the feed reports rather than corrects.
 
-That leaves **27 in scope** — 26 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **26 in scope** — 25 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---

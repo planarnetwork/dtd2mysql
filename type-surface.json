@@ -17,6 +17,13 @@
     "Row",
     "timetableFeeds"
   ],
+  "enrich-naptan": [
+    "NAPTAN",
+    "NaptanEnricher",
+    "NaptanStop",
+    "naptanFromApi",
+    "parseNaptan"
+  ],
   "feed-parser": [
     "ActionMap",
     "BooleanField",

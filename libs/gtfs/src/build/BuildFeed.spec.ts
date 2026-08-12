@@ -33,6 +33,10 @@ class MemoryOutput implements GTFSOutput {
     }});
   }
 
+  public write(filename: string, contents: string): void {
+    this.files[filename.replace(/^.*\//, "")] = [JSON.parse(contents)];
+  }
+
   public end(): void {}
 
 }

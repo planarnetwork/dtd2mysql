@@ -1,0 +1,27 @@
+{
+  "name": "@gb-rail/enrich-naptan",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Station coordinates and names from NaPTAN",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/enrich-naptan"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@gb-rail/gtfs": "workspace:^",
+    "csv-parse": "^7.0.2"
+  }
+}

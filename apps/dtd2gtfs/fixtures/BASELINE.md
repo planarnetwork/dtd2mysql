@@ -17,8 +17,8 @@ before committing it** - that is the whole value of the file being text.
 
 `type-surface.json` gains the enrichment exports from `libs/gtfs`: `Enricher`, `EnrichmentReport`,
 `Attribution`, `MutableFeed`, `Provenance`, `Write`, `FieldHistory`, `enrich`, `order` and
-`provenanceFile`, plus `parseConfig`, `BuildConfig`, `EnricherConfig` and `Licence` from D2. No
-feed output changes - nothing runs an enricher yet.
+`provenanceFile`, plus the build config types. `GTFSOutput` also gains `write`, for files that are
+documents rather than tables. No feed output changes unless an enricher is configured.
 
 This is the surface other packages implement against, so from here a rename is somebody else's
 build breaking, which is the reason the snapshot exists.

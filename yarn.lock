@@ -451,6 +451,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-rail/enrich-naptan@workspace:^, @gb-rail/enrich-naptan@workspace:libs/enrich-naptan":
+  version: 0.0.0-use.local
+  resolution: "@gb-rail/enrich-naptan@workspace:libs/enrich-naptan"
+  dependencies:
+    "@gb-rail/gtfs": "workspace:^"
+    csv-parse: "npm:^7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-rail/feed-parser@workspace:^, @gb-rail/feed-parser@workspace:libs/feed-parser":
   version: 0.0.0-use.local
   resolution: "@gb-rail/feed-parser@workspace:libs/feed-parser"
@@ -1171,6 +1180,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"csv-parse@npm:^7.0.2":
+  version: 7.0.2
+  resolution: "csv-parse@npm:7.0.2"
+  checksum: 10c0/52ffaafbf7be37201ad782ec3eda37bc24ee0ec6e8967b5a68d5ad2973f10b4154fd11a5b90a002615ef98395c4cd699a13d13509b10067297795b9d3c9320e9
+  languageName: node
+  linkType: hard
+
 "csv-write-stream@npm:2.0.0":
   version: 2.0.0
   resolution: "csv-write-stream@npm:2.0.0"
@@ -1219,6 +1235,7 @@ __metadata:
   resolution: "dtd2gtfs@workspace:apps/dtd2gtfs"
   dependencies:
     "@gb-rail/dtd-source": "workspace:^"
+    "@gb-rail/enrich-naptan": "workspace:^"
     "@gb-rail/gtfs": "workspace:^"
     "@gb-rail/gtfs-output": "workspace:^"
     yaml: "npm:^2.9.0"

@@ -1,6 +1,9 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import {NaptanEnricher, naptanFromApi} from "@gb-rail/enrich-naptan";
 import {parse} from "yaml";
-import {BuildConfig, parseConfig} from "@gb-rail/gtfs";
+import {BuildConfig, Enricher, parseConfig} from "@gb-rail/gtfs";
 import {BuildFeed, buildContext, option, options, stationCoordinates} from "@gb-rail/gtfs";
 import {CifFileSource, timetableFeeds} from "@gb-rail/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-rail/gtfs-output";
@@ -43,7 +46,12 @@ export async function build(argv: string[]): Promise<void> {
 
   console.log(`Reading ${sources.join(", ")}`);
 
-  const feed = new BuildFeed(new CifFileSource(sources, stationCoordinates), new FileOutput(), context);
+  const feed = new BuildFeed(
+    new CifFileSource(sources, stationCoordinates),
+    new FileOutput(),
+    context,
+    registered(config)
+  );
 
   if (out.endsWith(".zip")) {
     return new OutputGTFSZipCommand(feed).build(out);
@@ -57,11 +65,35 @@ export async function build(argv: string[]): Promise<void> {
 }
 
 /**
- * The enrichers this build can run, by key. Empty until there is one - and an
- * empty registry is what makes an enricher named in a config fail immediately
- * with a list of what is available, rather than being ignored.
+ * The enrichers this build can run, by key.
+ *
+ * A config naming one that is not here fails immediately with a list of what
+ * is, rather than being ignored and producing a feed quietly missing whatever
+ * that source was for.
  */
-const REGISTERED: string[] = [];
+function registered(config: BuildConfig | undefined): Enricher[] {
+  const cache = path.join(os.tmpdir(), "gb-rail-enrichment");
+
+  const available: Enricher[] = [
+    new NaptanEnricher(naptanFromApi(cache))
+  ];
+
+  const wanted = new Map((config?.enrichers ?? []).map(e => [e.key, e]));
+
+  return available
+    .filter(enricher => wanted.has(enricher.key))
+    .map(enricher => {
+      const settings = wanted.get(enricher.key)!;
+
+      // A priority in the config outranks the enricher's own, which is how one
+      // source is made to win a field it would otherwise lose.
+      return settings.priority === undefined
+        ? enricher
+        : Object.assign(Object.create(Object.getPrototypeOf(enricher)), enricher, {priority: settings.priority});
+    });
+}
+
+const REGISTERED = ["NAPTAN"];
 
 function readConfig(path: string | undefined): BuildConfig | undefined {
   if (path === undefined) {

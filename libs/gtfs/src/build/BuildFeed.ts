@@ -104,9 +104,14 @@ export class BuildFeed {
     // to enrich a handful is the wrong trade until something needs it.
     const feed = new MutableFeed(stops, [], []);
     const reports = this.enrichers.length > 0 ? await enrich(feed, this.enrichers) : [];
+    // Written whole rather than through copy(): it is a document, and the CSV
+    // writer turns its nested arrays into `[object Object]`.
     const provenanceP = reports.length > 0
-      ? this.copy([provenanceFile(feed, reports)], "provenance.json", () => 0)
-      : Promise.resolve();
+      ? this.output.write(
+        `${this.baseDir}/provenance.json`,
+        JSON.stringify(provenanceFile(feed, reports), null, 2) + "\n"
+      )
+      : undefined;
 
 
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", by("stop_id"));
