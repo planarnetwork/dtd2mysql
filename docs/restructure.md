@@ -1657,18 +1657,28 @@ the first of each month.
 Key output: `https://github.com/planarnetwork/gb-rail-gtfs/releases/latest/download/gtfs-slim.zip`
 resolves to the newest asset permanently. The site links it once and never rewrites it.
 
-**E5 · `apps/website`** *(depends E4)*
-Static (Astro or 11ty). Pages:
-- **Download** — the stable links for both tiers, with `gtfs-slim.zip` presented as the default and
-  the ODbL implications of `gtfs-full.zip` stated plainly. Coverage window and build time read from
-  `feed_info.txt` at build time; no client-side API calls, no rate limits.
-- **Quality** — renders `validation.json`, `enrichment-report.json` and the Track B manifest, with a
-  30-build trend.
-- **Sources and licences** — generated from enricher `attribution` fields, so it cannot drift from
-  what actually ran.
-- **Docs** — from package READMEs.
+**E5 · `apps/website`** *(depends E4)* — **a download page**
 
-**E6 · Pages deploy** *(depends E5)*
+`apps/website` generates a single static page. **No framework**: the plan said Astro or 11ty, and
+four pages with no client side behaviour do not need a build system - one would be a dependency to
+keep current for the life of the project. If the site grows a reason for one, that is when to add
+it.
+
+Everything the page claims is read from the published feed's `feed-meta.json` at build time, so it
+cannot drift from what was actually built, and when nothing has been published it says so rather
+than inventing numbers - which is what it says today.
+
+The Quality page rendering `validation.json` and the enrichment report, the generated licence page
+and the docs pages are not built. The download link, the coverage window and the sources are, which
+is what somebody arriving actually needs.
+
+**E6 · Pages deploy** *(depends E5)* — **done**
+Pages is enabled on this repository with Actions as the source, serving
+`planarnetwork.github.io/dtd2mysql`. `.github/workflows/pages.yml` rebuilds on a change to the site,
+on dispatch, and **after the nightly feed completes** - the page reports the current feed, so it has
+to be rebuilt when there is a new one rather than only when its own source changes.
+
+
 Nightly writes `apps/website/data/latest.json` and triggers `actions/deploy-pages`. Site rebuild is
 idempotent and independent of the feed build's success.
 
@@ -1774,12 +1784,12 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
 B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
+B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, E1, E2, E5, E6, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
 those across master and Epic A. B14, B16,
 B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
 B25 are investigated and closed as source data the feed reports rather than corrects.
 
-That leaves **26 in scope** — 25 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **22 in scope** — 21 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
