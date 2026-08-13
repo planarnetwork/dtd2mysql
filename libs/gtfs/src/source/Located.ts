@@ -36,7 +36,7 @@ export function locate(stops: Stop[], referenced: ReadonlySet<CRS>): Stop[] {
       return true;
     }
 
-    if (!referenced.has(stop.stop_id)) {
+    if (!referenced.has(stop.crs)) {
       dropped.push(stop.stop_id);
 
       return false;
@@ -64,16 +64,19 @@ export function locate(stops: Stop[], referenced: ReadonlySet<CRS>): Stop[] {
 /**
  * stops.txt as it is written.
  *
- * `located` says whether the coordinate is the feed's or the default, which the
- * build needs and the file has no column for. It is projected out here rather
- * than deleted from the object, so the internal type can carry what the build
- * needs and the row stays exactly the GTFS columns - the same split
- * `toStopTimeRow` makes for the platform.
+ * `located`, `crs` and `tiploc` are what the build needs and the file has no
+ * column for. They are projected out here rather than deleted from the object,
+ * so the internal type can carry what the build needs and the row stays exactly
+ * the GTFS columns - the same split `toStopTimeRow` makes for the platform.
+ *
+ * `stop_code` is the CRS. GTFS defines it as the code a passenger sees, which
+ * CRS is - it is on the ticket and the departure board - and `stop_id` is a
+ * dataset key, which is why the ATCO code is there instead.
  */
 export function toStopRow(stop: Stop) {
   return {
     stop_id: stop.stop_id,
-    stop_code: stop.stop_code,
+    stop_code: stop.crs,
     stop_name: stop.stop_name,
     stop_desc: stop.stop_desc,
     zone_id: stop.zone_id,

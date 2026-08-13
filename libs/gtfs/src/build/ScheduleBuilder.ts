@@ -231,7 +231,8 @@ export class ScheduleBuilder {
       drop_off_type: coordinatedDropOff || dropOff,
       shape_dist_traveled: null,
       timepoint: 1,
-      platform: row.platform
+      platform: row.platform,
+      tiploc: row.tiploc
     };
   }
 

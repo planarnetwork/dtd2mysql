@@ -10,12 +10,13 @@ import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
-import {CRS, Stop} from "../entity/Stop";
+import {CRS, Stop, TIPLOC} from "../entity/Stop";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
-import {toStopTimeRow, withPlatforms} from "../transform/Platforms";
+import {toAgencyRow, toRouteRow} from "../transform/Noc";
+import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
@@ -57,7 +58,7 @@ export class BuildFeed {
     const fixedLinksQ = this.repository.getFixedLinks();
     const transfersQ = this.repository.getTransfers();
     const versionQ = this.repository.getFeedVersion();
-    const agencyP = this.copy(agencies, "agency.txt", by("agency_id"));
+    const agencyP = this.copy(agencies.map(toAgencyRow), "agency.txt", by("agency_id"));
     const fixedLinksP = this.context.links
       ? this.copy(
         fixedLinksQ,
@@ -78,17 +79,21 @@ export class BuildFeed {
     // stops.txt is written after the schedules and the links are known, because
     // whether an unlocated station is published depends on whether anything
     // references it.
-    // Platforms are added before anything asks which stops the feed publishes,
-    // because after this the stop times reference PAD_A rather than PAD.
-    // The stations are split here; the suffixed id is composed only when
+    // The boarding points are added before anything asks which stops the feed
+    // publishes, because a call references one of them rather than the station.
+    // Only the hierarchy is built here; a call's id is composed when
     // stop_times.txt is written, so nothing upstream of this sees it.
-    const {stops: withChildren, split} = withPlatforms(await stopsQ, schedules);
+    const withChildren = withStopPoints(await stopsQ, schedules);
     const stops = locate(withChildren, referenced(schedules, await fixedLinksQ));
-    const published = new Set(stops.map(stop => stop.stop_id));
-    const called = dropUnknownStops(schedules, published);
+    // Every index the build keeps is on the CRS code, because that is what a
+    // schedule, an association and a fixed link name a station by.
+    const stations = new Map(
+      stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
+    );
+    const called = dropUnknownStops(schedules, new Set(stations.keys()));
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", by("stop_id"));
     const transfersP = this.copy(
-      mergeTransfers(await transfersQ, await fixedLinksQ, published),
+      mergeTransfers(await transfersQ, await fixedLinksQ, map(stations, stop => stop.stop_id)),
       "transfers.txt",
       by("from_stop_id", "to_stop_id")
     );
@@ -102,7 +107,12 @@ export class BuildFeed {
       "feed_info.txt",
       by("feed_publisher_name")
     );
-    const tripsP = this.copyTrips(called, serviceIds, names(stops), split);
+    const tripsP = this.copyTrips(
+      called,
+      serviceIds,
+      map(stations, stop => stop.stop_name),
+      map(stations, stop => stop.tiploc)
+    );
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -149,8 +159,8 @@ export class BuildFeed {
   private copyTrips(
     schedules: Schedule[],
     serviceIds: ServiceIdIndex,
-    stopNames: Map<string, string>,
-    split: ReadonlySet<CRS>
+    stopNames: ReadonlyMap<CRS, string>,
+    tiplocs: ReadonlyMap<CRS, TIPLOC>
   ): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
@@ -185,7 +195,7 @@ export class BuildFeed {
 
     for (const name of [...routes.keys()].sort()) {
       routeIds[name] = ++routeId;
-      routeFile.write({...routes.get(name)!, route_id: routeId});
+      routeFile.write(toRouteRow({...routes.get(name)!, route_id: routeId}));
     }
 
     // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
@@ -209,7 +219,7 @@ export class BuildFeed {
         routeIds[schedule.routeShortName],
         name ?? schedule.destination
       ));
-      schedule.stopTimes.forEach(r => stopTimes.write(toStopTimeRow(r, split)));
+      schedule.stopTimes.forEach(r => stopTimes.write(toStopTimeRow(r, tiplocs)));
     }
 
     report(unknown);
@@ -261,11 +271,11 @@ function referenced(schedules: Schedule[], links: FixedLink[]): Set<CRS> {
 }
 
 /**
- * Where a trip is going, by the CRS code of the stop it ends at. A stop the feed
- * never described falls back to the code itself rather than to nothing.
+ * One property of every station, by CRS code - the name a headsign uses, the
+ * stop id a transfer references, the TIPLOC a call's id is built from.
  */
-function names(stops: Stop[]): Map<string, string> {
-  return new Map(stops.map(stop => [stop.stop_id, stop.stop_name]));
+function map<T>(stations: ReadonlyMap<CRS, Stop>, property: (stop: Stop) => T): ReadonlyMap<CRS, T> {
+  return new Map([...stations].map(([crs, stop]) => [crs, property(stop)]));
 }
 
 /**

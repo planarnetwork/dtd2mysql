@@ -86,6 +86,9 @@ export interface ScheduleStopTimeRow {
   scheduled_arrival_time: string | null,
   scheduled_departure_time: string | null,
   platform: string,
+  // The TIPLOC of the timing point, which the stop id is built from. Null where
+  // the source has none: a z-train's location is a CRS code already.
+  tiploc: string | null,
   activity: string,
   train_class: null | "S" | "B",
   reservations: null | "R" | "S" | "A"

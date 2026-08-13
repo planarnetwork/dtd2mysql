@@ -113,11 +113,11 @@ describe("CifFileSource", () => {
   it("reads the stations, one per CRS, in CRS order", async () => {
     const stops = await source(refresh()).getStops();
 
-    expect(stops.map(s => [s.stop_id, s.stop_code, s.stop_name]))
+    expect(stops.map(s => [s.stop_id, s.crs, s.tiploc, s.stop_name]))
       .to.deep.equal([
-        ["HLD", "HLDNBRO", "HILDENBOROUGH"],
-        ["SEV", "SEVNOKS", "SEVENOAKS"],
-        ["TON", "TONBDG", "TONBRIDGE"]
+        ["910GHLDNBRO", "HLD", "HLDNBRO", "HILDENBOROUGH"],
+        ["910GSEVNOKS", "SEV", "SEVNOKS", "SEVENOAKS"],
+        ["910GTONBDG", "TON", "TONBDG", "TONBRIDGE"]
       ]);
   });
 
@@ -133,7 +133,7 @@ describe("CifFileSource", () => {
       TON: {stop_name: "Tonbridge", stop_lat: 51.1926, stop_lon: 0.2661, wheelchair_boarding: 1}
     });
 
-    const tonbridge = (await overridden.getStops()).find(s => s.stop_id === "TON")!;
+    const tonbridge = (await overridden.getStops()).find(s => s.crs === "TON")!;
 
     expect(tonbridge.stop_name).to.equal("Tonbridge");
     expect(tonbridge.stop_lat).to.equal(51.1926);

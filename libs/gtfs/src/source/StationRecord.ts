@@ -3,6 +3,7 @@ import {Stop} from "../entity/Stop";
 import {StationCoordinates} from "./TimetableSource";
 import {inBounds} from "./Bounds";
 import {NOWHERE} from "./Located";
+import {stationId} from "../transform/Atco";
 
 proj4.defs(
   "EPSG:27700",
@@ -62,15 +63,18 @@ function position(row: StationRecord): {stop_lon: number, stop_lat: number, loca
  * whatever `station-coordinates.ts` says. Both halves go when the coordinates
  * come from a source that has them in WGS84 already.
  *
- * The property order matters. csv-write-stream takes the column order from the
- * first row it is given, so this is what fixes the order of stops.txt.
+ * The CRS and the TIPLOC are both kept: the CRS is what the build identifies a
+ * station by and what the file publishes as `stop_code`, and the TIPLOC is what
+ * the ATCO code is built from. The overrides are keyed on CRS, which is the code
+ * a person editing them has.
  */
 export function toStop(row: StationRecord, overrides: StationCoordinates): Stop {
   const {stop_lon, stop_lat, located} = position(row);
 
   return Object.assign({
-    stop_id: row.crs_code,
-    stop_code: row.tiploc_code,
+    stop_id: stationId(row.tiploc_code),
+    crs: row.crs_code,
+    tiploc: row.tiploc_code,
     stop_name: row.station_name,
     stop_desc: row.cate_interchange_status,
     zone_id: null,

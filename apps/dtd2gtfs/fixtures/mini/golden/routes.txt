@@ -1,21 +1,21 @@
 route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,route_color,route_url,route_desc
-1,AW,AW:POR->QBM:714,AW replacement bus service from POR to QBM,714,,,,Replacement bus. Standard class only. Reservation not possible
-2,CS,CS:ABD->EUS:2,CS train service from ABD to EUS,2,,,,Train. Standard class only. Reservation possible
-3,CS,CS:EDB->EUS:2,CS train service from EDB to EUS,2,,,,Train. Standard class only. Reservation possible
-4,CS,CS:EUS->ABD:2,CS train service from EUS to ABD,2,,,,Train. Standard class only. Reservation possible
-5,CS,CS:EUS->FTW:2,CS train service from EUS to FTW,2,,,,Train. Standard class only. Reservation possible
-6,CS,CS:EUS->INV:2,CS train service from EUS to INV,2,,,,Train. Standard class only. Reservation possible
-7,CS,CS:FTW->EUS:2,CS train service from FTW to EUS,2,,,,Train. Standard class only. Reservation possible
-8,CS,CS:GLC->EUS:2,CS train service from GLC to EUS,2,,,,Train. Standard class only. Reservation possible
-9,CS,CS:INV->EUS:2,CS train service from INV to EUS,2,,,,Train. Standard class only. Reservation possible
-10,EM,EM:DBY->EMA:3,EM bus service from DBY to EMA,3,,,,Bus. Standard class only. Reservation not possible
-11,EM,EM:WIR->WIR:2,EM train service from WIR to WIR,2,,,,Train. Standard class only. Reservation not possible
-12,GW,GW:PNZ->PAD:2,GW train service from PNZ to PAD,2,,,,Train. Standard class only. Reservation possible
-13,GW,GW:RDG->PAD:2,GW train service from RDG to PAD,2,,,,Train. Standard class only. Reservation not possible
-14,HX,HX:HWV->PAD:2,HX train service from HWV to PAD,2,,,,Train. First class available. Reservation possible
-15,LO,LO:HHY->NXG:2,LO train service from HHY to NXG,2,,,,Train. Standard class only. Reservation not possible
-16,LT,LT:RIC->AMR:1,LT underground service from RIC to AMR,1,,,,Underground. Standard class only. Reservation not possible
-17,QC,QC:LAR->LAR:4,QC boat service from LAR to LAR,4,,,,Boat. Standard class only. Reservation not possible
-18,TW,TW:APN->SUN:1,TW underground service from APN to SUN,1,,,,Underground. Standard class only. Reservation not possible
-19,ZZ,ZZ:STQ->STQ:3,ZZ bus service from STQ to STQ,3,,,,Bus. Standard class only. Reservation not possible
-20,ZZ,ZZ:STQ->STQ:4,ZZ boat service from STQ to STQ,4,,,,Boat. Standard class only. Reservation not possible
+1,=AW,AW:POR->QBM:714,AW replacement bus service from POR to QBM,714,,,,Replacement bus. Standard class only. Reservation not possible
+2,=CS,CS:ABD->EUS:2,CS train service from ABD to EUS,2,,,,Train. Standard class only. Reservation possible
+3,=CS,CS:EDB->EUS:2,CS train service from EDB to EUS,2,,,,Train. Standard class only. Reservation possible
+4,=CS,CS:EUS->ABD:2,CS train service from EUS to ABD,2,,,,Train. Standard class only. Reservation possible
+5,=CS,CS:EUS->FTW:2,CS train service from EUS to FTW,2,,,,Train. Standard class only. Reservation possible
+6,=CS,CS:EUS->INV:2,CS train service from EUS to INV,2,,,,Train. Standard class only. Reservation possible
+7,=CS,CS:FTW->EUS:2,CS train service from FTW to EUS,2,,,,Train. Standard class only. Reservation possible
+8,=CS,CS:GLC->EUS:2,CS train service from GLC to EUS,2,,,,Train. Standard class only. Reservation possible
+9,=CS,CS:INV->EUS:2,CS train service from INV to EUS,2,,,,Train. Standard class only. Reservation possible
+10,=EM,EM:DBY->EMA:3,EM bus service from DBY to EMA,3,,,,Bus. Standard class only. Reservation not possible
+11,=EM,EM:WIR->WIR:2,EM train service from WIR to WIR,2,,,,Train. Standard class only. Reservation not possible
+12,=GW,GW:PNZ->PAD:2,GW train service from PNZ to PAD,2,,,,Train. Standard class only. Reservation possible
+13,=GW,GW:RDG->PAD:2,GW train service from RDG to PAD,2,,,,Train. Standard class only. Reservation not possible
+14,=HX,HX:HWV->PAD:2,HX train service from HWV to PAD,2,,,,Train. First class available. Reservation possible
+15,=LO,LO:HHY->NXG:2,LO train service from HHY to NXG,2,,,,Train. Standard class only. Reservation not possible
+16,=LT,LT:RIC->AMR:1,LT underground service from RIC to AMR,1,,,,Underground. Standard class only. Reservation not possible
+17,=QC,QC:LAR->LAR:4,QC boat service from LAR to LAR,4,,,,Boat. Standard class only. Reservation not possible
+18,=TW,TW:APN->SUN:1,TW underground service from APN to SUN,1,,,,Underground. Standard class only. Reservation not possible
+19,=ZZ,ZZ:STQ->STQ:3,ZZ bus service from STQ to STQ,3,,,,Bus. Standard class only. Reservation not possible
+20,=ZZ,ZZ:STQ->STQ:4,ZZ boat service from STQ to STQ,4,,,,Boat. Standard class only. Reservation not possible

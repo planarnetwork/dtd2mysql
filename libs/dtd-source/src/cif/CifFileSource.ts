@@ -484,7 +484,10 @@ class ScheduleLoader {
         continue;
       }
 
-      rows.push({...common, ...stopColumns(stop, crs, rows.length + 1)} as unknown as ScheduleStopTimeRow);
+      rows.push({
+        ...common,
+        ...stopColumns(stop, crs, rows.length + 1, stop.location as string)
+      } as unknown as ScheduleStopTimeRow);
     }
 
     return rows;
@@ -515,7 +518,7 @@ class ScheduleLoader {
     };
 
     return stops.map((stop, index) =>
-      ({...common, ...stopColumns(stop, stop.location as string, index + 1)}) as ScheduleStopTimeRow
+      ({...common, ...stopColumns(stop, stop.location as string, index + 1, null)}) as ScheduleStopTimeRow
     );
   }
 
@@ -554,7 +557,7 @@ class ScheduleLoader {
 
 }
 
-function stopColumns(stop: Row, crs: string, sequence: number) {
+function stopColumns(stop: Row, crs: string, sequence: number, tiploc: string | null) {
   return {
     crs_code: crs,
     stop_id: sequence,
@@ -563,6 +566,7 @@ function stopColumns(stop: Row, crs: string, sequence: number) {
     scheduled_arrival_time: stop.scheduled_arrival_time,
     scheduled_departure_time: stop.scheduled_departure_time,
     platform: stop.platform,
+    tiploc,
     activity: stop.activity
   };
 }
@@ -575,6 +579,7 @@ const NO_STOP = {
   scheduled_arrival_time: null,
   scheduled_departure_time: null,
   platform: null,
+  tiploc: null,
   activity: null
 };
 

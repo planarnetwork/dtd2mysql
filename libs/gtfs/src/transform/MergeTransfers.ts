@@ -1,6 +1,6 @@
 import {Transfer, TransferType} from "../entity/Transfer";
 import {FixedLink} from "../entity/FixedLink";
-import {CRS} from "../entity/Stop";
+import {CRS, StopID} from "../entity/Stop";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 
@@ -27,24 +27,29 @@ const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
  * So the row says when the connection is available by *some* means, not when it
  * is available by each. 2,114 of the 2,406 pairs have a single mode and for
  * those it is exact. `--links` still writes the unsummarised records.
+ *
+ * Both sources describe a pair of stations by CRS, and that is what the merging
+ * works on. `stations` says which stations the feed publishes and what their
+ * stop ids are, so the rows come out referencing the station rather than any of
+ * the boarding points beneath it - an interchange is between stations.
  */
 export function mergeTransfers(
   transfers: Transfer[],
   links: FixedLink[],
-  published: ReadonlySet<CRS>
+  stations: ReadonlyMap<CRS, StopID>
 ): Transfer[] {
   const merged = new Map<string, Transfer>();
   const modes = new Map<string, Set<string>>();
   let summarised = 0;
 
   for (const transfer of transfers) {
-    if (published.has(transfer.from_stop_id) && published.has(transfer.to_stop_id)) {
+    if (stations.has(transfer.from_stop_id) && stations.has(transfer.to_stop_id)) {
       merged.set(key(transfer.from_stop_id, transfer.to_stop_id), transfer);
     }
   }
 
   for (const link of links) {
-    if (!published.has(link.from_stop_id) || !published.has(link.to_stop_id)) {
+    if (!stations.has(link.from_stop_id) || !stations.has(link.to_stop_id)) {
       continue;
     }
 
@@ -79,7 +84,11 @@ export function mergeTransfers(
     );
   }
 
-  return [...merged.values()];
+  return [...merged.values()].map(transfer => ({
+    ...transfer,
+    from_stop_id: stations.get(transfer.from_stop_id)!,
+    to_stop_id: stations.get(transfer.to_stop_id)!
+  }));
 }
 
 function fromLink(link: FixedLink): Transfer {

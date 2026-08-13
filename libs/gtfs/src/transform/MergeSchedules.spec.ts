@@ -83,6 +83,7 @@ function stopTime(stop: string, tripId: string): StopTime {
     shape_dist_traveled: null,
     timepoint: 0,
     platform: null,
+    tiploc: null,
   };
 }
 

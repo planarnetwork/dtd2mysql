@@ -1,5 +1,5 @@
 
-import {CRS} from "./Stop";
+import {CRS, TIPLOC} from "./Stop";
 
 export interface StopTime {
   trip_id: string;
@@ -23,6 +23,16 @@ export interface StopTime {
    * one. Null where the feed names none.
    */
   platform: string | null;
+  /**
+   * The timing point this call is at, which is what the stop id is built from -
+   * `9100` and the TIPLOC, so a call at Clapham Junction's West London platforms
+   * is `9100CLPHMJW3` rather than something named after the station's own TIPLOC.
+   * Carried and composed exactly as `platform` is, and not a column either.
+   *
+   * Null where the source has no TIPLOC to give: a z-train's location is a CRS
+   * code already. The station's own TIPLOC stands in for those.
+   */
+  tiploc: TIPLOC | null;
 }
 
 export type Platform = string;

@@ -39,7 +39,9 @@ export interface Transfer {
 }
 
 /**
- * 3 char CRS code (e.g. TBW)
+ * A station: the 3 char CRS code (e.g. `TBW`) as a source describes a transfer,
+ * and the station's ATCO code (`910GTONBDG`) once `mergeTransfers` has put the
+ * rows in the terms the feed publishes.
  */
 export type StopID = string;
 

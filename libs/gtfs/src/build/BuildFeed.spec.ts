@@ -47,7 +47,8 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
   drop_off_type: 0,
   shape_dist_traveled: null,
   timepoint: 1,
-    platform: null
+    platform: null,
+    tiploc: null
 });
 
 function schedule(id: number, tuid: string, from: string, to: string, operator: string, stops: string[]): Schedule {
@@ -71,8 +72,8 @@ function schedule(id: number, tuid: string, from: string, to: string, operator: 
   );
 }
 
-const stop = (id: string): Stop => ({
-  stop_id: id, stop_code: id, stop_name: id, stop_desc: "", stop_lat: 0, stop_lon: 0,
+const stop = (crs: string, tiploc: string): Stop => ({
+  stop_id: `910G${tiploc}`, crs, tiploc, stop_name: crs, stop_desc: "", stop_lat: 0, stop_lon: 0,
   zone_id: 0, stop_url: "", location_type: 0, parent_station: null, platform_code: null,
   stop_timezone: "Europe/London", wheelchair_boarding: 0, located: true
 });
@@ -109,7 +110,9 @@ class FakeSource implements TimetableSource {
 
     const called = this.schedules.flatMap(s => s.stopTimes.map(stopTime => stopTime.stop_id));
 
-    return [...new Set(called)].sort().map(stop);
+    // The TIPLOC a made up station gets is its CRS code, which is enough for the
+    // ids to be built from and to differ from each other.
+    return [...new Set(called)].sort().map(crs => stop(crs, crs));
   }
   async getTransfers() { return this.transfers; }
   async getFeedVersion() { return "RJTTF001.ZIP"; }
@@ -207,15 +210,20 @@ describe("BuildFeed ordering", () => {
   it("sorts the stops, transfers and links", async () => {
     const {files} = await build(new FakeSource(
       feed(),
-      [stop("TON"), stop("SEV")],
+      [stop("TON", "TONBDG"), stop("SEV", "SEVNOKS")],
       [transfer("TON", "TON"), transfer("SEV", "SEV")],
       [link("TON", "SEV"), link("SEV", "TON")]
     ));
 
-    expect(files["stops.txt"].map(s => s.stop_id)).to.deep.equal(["SEV", "TON"]);
-    // The two self transfers and the two links, as one file
+    // Each station, and the boarding point the calls with no platform are at
+    expect(files["stops.txt"].map(s => s.stop_id))
+      .to.deep.equal(["9100SEVNOKS", "9100TONBDG", "910GSEVNOKS", "910GTONBDG"]);
+    // The two self transfers and the two links, as one file, between stations
     expect(files["transfers.txt"].map(t => [t.from_stop_id, t.to_stop_id]))
-      .to.deep.equal([["SEV", "SEV"], ["SEV", "TON"], ["TON", "SEV"], ["TON", "TON"]]);
+      .to.deep.equal([
+        ["910GSEVNOKS", "910GSEVNOKS"], ["910GSEVNOKS", "910GTONBDG"],
+        ["910GTONBDG", "910GSEVNOKS"], ["910GTONBDG", "910GTONBDG"]
+      ]);
     expect(files["links.txt"].map(l => [l.from_stop_id, l.to_stop_id]))
       .to.deep.equal([["SEV", "TON"], ["TON", "SEV"]]);
   });
@@ -241,13 +249,14 @@ describe("BuildFeed ordering", () => {
   });
 
   it("puts a null ahead of a value rather than wherever it was found", async () => {
-    const named = stop("SEV");
-    const unnamed = {...stop("TON"), stop_id: null as unknown as string};
+    const named = stop("SEV", "SEVNOKS");
+    const unnamed = {...stop("XXX", "XXXXXX"), stop_id: null as unknown as string};
 
     const forwards = await build(new FakeSource(feed(), [named, unnamed]));
     const backwards = await build(new FakeSource(feed(), [unnamed, named]));
 
-    expect(forwards.files["stops.txt"].map(s => s.stop_id)).to.deep.equal([null, "SEV"]);
+    expect(forwards.files["stops.txt"].map(s => s.stop_id))
+      .to.deep.equal([null, "9100SEVNOKS", "910GSEVNOKS"]);
     expect(backwards.files["stops.txt"]).to.deep.equal(forwards.files["stops.txt"]);
   });
 

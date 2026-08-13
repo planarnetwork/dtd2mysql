@@ -16,7 +16,7 @@
     "service_extends_far_in_the_future": "a calendar running to 2099 in the source",
     "service_window_outside_feed_period": "same calendars, against the three month build window",
     "unknown_column": "the twelve producer extension columns B2 added to transfers.txt, which the spec permits and the validator does not know",
-    "stop_without_stop_time": "stations with no service inside the window, which are still real stations"
+    "unused_station": "stations with no service inside the window, so nothing calls at them and they have no boarding point beneath them. They are still real stations, and a station is location_type=1 whether or not the window happens to contain a call at it"
   },
   "accepted": [
     "big_gap_in_service",
@@ -26,10 +26,10 @@
     "route_short_name_too_long",
     "service_extends_far_in_the_future",
     "service_window_outside_feed_period",
-    "stop_without_stop_time",
     "transfer_distance_above_2_km",
     "transfer_distance_too_large",
     "unexpected_enum_value",
-    "unknown_column"
+    "unknown_column",
+    "unused_station"
   ]
 }

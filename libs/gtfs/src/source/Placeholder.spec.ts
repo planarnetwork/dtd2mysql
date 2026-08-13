@@ -2,9 +2,10 @@ import {describe, it, expect} from "vitest";
 import {isPlaceholder, withoutPlaceholders} from "./Placeholder";
 import {Stop} from "../entity/Stop";
 
-const stop = (id: string, code: string, name: string, lat: number | null, lon: number | null) => ({
-  stop_id: id,
-  stop_code: code,
+const stop = (crs: string, tiploc: string, name: string, lat: number | null, lon: number | null) => ({
+  stop_id: `910G${tiploc}`,
+  crs,
+  tiploc,
   stop_name: name,
   stop_lat: lat ?? 0,
   stop_lon: lon ?? 0,

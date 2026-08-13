@@ -1116,7 +1116,7 @@ The orphan cleanup added while trying `REPLACE` is kept: `z_stop_time` rows whos
 gone were never deleted, and it now runs for every import rather than only when a CFA is present.
 It moves the T10 baseline, so it rebaselines under T8.
 
-**B23 · Platforms as child stops** *(depends B13)* — **done**, no flag
+**B23 · Platforms as child stops, with NaPTAN identifiers** *(depends B13)* — **done**, no flag
 
 B13 took the platform out of `stop_headsign` and nothing carries it, so the export loses a field the
 feed supplies. The data is not gone — `stop_time.platform` in the database, the `LI`/`LO`/`LT`
@@ -1136,17 +1136,33 @@ pointing at it; and the child's name should identify both — their example is "
 with a child "Chicago Union Station Platform 19". A non-standard column expresses none of that, and
 every consumer would need bespoke code to read it. A child stop is understood by everything.
 
-| | station row | platform row |
-|---|---|---|
-| `stop_id` | `PAD` | `PAD_A` |
-| `stop_code` | TIPLOC (until F3 swaps it for CRS) | same |
-| `stop_name` | London Paddington | London Paddington Platform A |
-| `location_type` | `1` | `0` |
-| `parent_station` | — | `PAD` |
-| `platform_code` | — | `A` |
+**The ids are NaPTAN's, on review.** The first cut invented `PAD_A` under `PAD`, on the grounds that
+it needed no external data. @miklcct pointed out on #131 that it does not have to invent anything:
+the ATCO code for a rail stop is `9100` and the TIPLOC, the station's stop area is `910G` and the
+TIPLOC, and both are in the timetable already. A feed in those identifiers merges with the DfT's
+GTFS rather than sitting alongside it as a parallel universe of the same railway, so the id scheme
+that was F3's moves here — see the field layout decision in §6 — and the three-letter join breaks
+once rather than twice.
 
-`<CRS>_<platform>` needs no external data, which is what separates this from F3. The underscore
-matches the separator the trip ids already use.
+| | station row | boarding point | call with no platform |
+|---|---|---|---|
+| `stop_id` | `910GCLPHMJC` | `9100CLPHMJC15` | `9100CLPHMJC` |
+| `stop_code` | `CLJ` | `CLJ` | `CLJ` |
+| `stop_name` | Clapham Junction | Clapham Junction Platform 15 | Clapham Junction |
+| `location_type` | `1` | `0` | `0` |
+| `parent_station` | — | `910GCLPHMJC` | `910GCLPHMJC` |
+| `platform_code` | — | `15` | — |
+
+**A boarding point takes the TIPLOC of the timing point, not of the station.** Clapham Junction's
+West London and Main Line platforms are `9100CLPHMJW3` and `9100CLPHMJM11` under `910GCLPHMJC`,
+which is how NaPTAN names them and what the TIPLOC → CRS join the sources already do makes
+available: the call knows its own TIPLOC, and the CRS says which station it belongs to. A z-train's
+location is a CRS code rather than a TIPLOC, so those calls fall back to the station's own.
+
+`stop_code` becomes the CRS, on the station and on every stop beneath it. GTFS defines `stop_code`
+as the code a passenger sees, which CRS is — it is on the ticket and the departure board — and
+`stop_id` as a dataset key, which is what the ATCO code is. It also keeps the three-letter code in
+the feed rather than removing it.
 
 **What the data actually holds.** Measured on the database's public calls (4,034,934 rows, of which
 2,467,114 carry a platform) there are **3,750 station-platform pairs**. 3,705 are platform-shaped —
@@ -1157,26 +1173,28 @@ has to be filtered to `^[0-9]{1,2}[A-Z]?$|^[A-Z]$` before it becomes a stop; a c
 else references the station. `BAY` is a real designation and is a deliberate casualty of that
 pattern — worth revisiting, not worth special-casing first time.
 
-`stops.txt` goes from 3,054 rows to roughly 6,759. Stations with no platform anywhere stay plain
-stops rather than becoming childless `location_type=1` rows.
+**This is a breaking change** for every consumer joining on a three-letter code, because no id in
+the feed is one any more. Shipped without a flag, by decision. `transfers.txt` references stations,
+which are `910G` rows.
 
-**This is a breaking change** for every consumer joining on a three-letter code, because
-`stop_times.stop_id` now points at `PAD_A`. Shipped without a flag, by decision. `transfers.txt`
-keeps referencing stations.
-
-**A station is only split when every call at it names a platform.** Once a station is
+**Every call gets a boarding point, whether or not it names a platform.** Once a station is
 `location_type=1` no stop time may reference it, so a station where some calls name a platform and
-some do not cannot be split without inventing a boarding facility for the ones that do not. Trying
-it produced **907 `location_with_unexpected_stop_time` errors**. Calls that did name a platform at a
-station left whole are rewritten back to the station, or they would point at a stop that was never
-created.
+some do not needs somewhere for the others to point — splitting one regardless produced **907
+`location_with_unexpected_stop_time` errors**. The suffix-less `9100CLPHMJC` is that somewhere, and
+it is a stop in its own right rather than a workaround: it is what NaPTAN calls the station's access
+node.
 
-That is a real limitation, not a detail: **335 stations split into 729 platforms, and 909 were left
-whole.** The feed has 3,750 station-platform pairs and this publishes 729 of them. Covering the rest
-means deciding what a call with no platform is - a station-level boarding facility, or a gap the
-source has to fill.
+That is what makes the first cut's limitation go away. It could only split a station where *every*
+call named a platform — 335 stations, 729 platforms, out of 3,750 station-platform pairs — and the
+other 909 stations published none of theirs. Every station is now `location_type=1` and every pair
+is published: **3,097 stations with 6,139 boarding points**, `stops.txt` 3,054 rows → 9,193.
 
-**The suffix belongs to the output, not to the model.** The first attempt composed `PAD_A` in
+A station nothing calls at in the window is a childless `location_type=1` row, which the validator
+notes as `unused_station` (INFO, 87 in the fixture and 311 in the full feed). It is accepted in the
+baseline: whether a station has a boarding point should not depend on whether the three months the
+feed covers happen to contain a call at it.
+
+**The id belongs to the output, not to the model.** The first attempt composed `PAD_A` in
 `ScheduleBuilder`, which is upstream of overlays, associations and merges - so the domain saw stop
 ids that were no longer CRS codes, and **every association silently stopped applying**, because an
 association names a bare CRS. 56 fixture trips changed and some lost every stop. Route names split
@@ -1188,13 +1206,18 @@ model. `StopTime.platform` carries it instead, `stop_id` stays a CRS through eve
 `toStopTimeRow` composes the id when `stop_times.txt` is written. Those five compensating changes
 are gone, and the feed is byte for byte what the first attempt produced.
 
-Feed effect: stops 3,054 -> 3,783. Trips, stop times, routes and transfers unchanged. Both sources
+`StopTime.tiploc` joins it for the same reason, and `Stop` carries `crs` and `tiploc` as internal
+fields that `toStopRow` projects out. Every index the build keeps — which stations are published,
+what a trip's headsign is, which pair a transfer describes — is on the CRS, because that is what a
+schedule, an association and a fixed link name a station by.
+
+Feed effect: stops 3,054 -> 9,193. Trips, stop times, routes and transfers unchanged. Both sources
 byte identical.
 
-Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying;
-a trip may reference a platform at one call and the station at the next, which is valid but should
-be visible in the fixture; and the golden should show one station gaining children so B13's removal
-and this restoration both read in the diff.
+Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying, and
+the TIPLOC with it - which neither source was passing on, though both have it; and a trip may
+reference a platform at one call and the station's own boarding point at the next, which is valid
+and should be visible in the fixture.
 
 `stop_headsign` stays null. It means "this service terminates here", and B8 now puts a real
 destination in `trip_headsign` for it to override.
@@ -1556,37 +1579,30 @@ months. Unblocks raising E2's horizon.
 Geometry from Network Rail GIS track centrelines (OGL). `shape_dist_traveled` populated. Behind an
 `extensions:` flag, since it materially inflates feed size.
 
-**F3 · Station and platform hierarchy from NaPTAN** *(depends D3, D4, B23)* — **closes #69**
+**F3 · Station entrances and the rest of the node set from NaPTAN** *(depends D3, D4, B23)* —
+**closes #69**
 
-B23 builds the hierarchy from the timetable alone, with `<CRS>_<platform>` ids. F3 is the upgrade
-that needs external data: real ATCO ids, station entrances, and the `stop_id`/`stop_code` swap.
+**The ids and the field layout are no longer part of this.** B23 publishes the ATCO codes and moved
+CRS to `stop_code`, because neither needs NaPTAN: `9100` plus the TIPLOC is the ATCO code for a rail
+stop, and the timetable carries the TIPLOC. What is left is what genuinely needs the external node
+set.
 
-The current feed has `stop_id` and `stop_code` the wrong way round. GTFS defines `stop_code` as
-rider-facing text — which CRS is, since it appears on tickets and departure boards — while
-`stop_id` is a dataset-internal key. Today CRS is the `stop_id` and TIPLOC the `stop_code`.
+NaPTAN supplies it under OGL, so this does not depend on OSM: `RSE` (4,543 **station entrances**),
+and `RPL` (**rail platforms**) to check the platforms B23 derives against the ones NaPTAN records —
+a platform in the timetable that NaPTAN does not have, or the reverse, is a data quality signal
+worth reporting. OSM is then needed only for pathway *edges* and lift/stair attributes in D6, which
+materially reduces the ODbL exposure there.
 
-NaPTAN supplies the whole node set under OGL, so this does not depend on OSM: `RLY` (2,673 rail
-stations), `RSE` (4,543 **station entrances**) and `RPL` (**rail platforms**, ATCO form
-`9100ZZTYKKH1` — TIPLOC plus platform number). OSM is then needed only for pathway *edges* and
-lift/stair attributes in D6, which materially reduces the ODbL exposure there.
-
-Proposed `stops.txt`:
+Remaining `stops.txt` changes:
 
 | field | now | proposed |
 |---|---|---|
-| `stop_id` | CRS (`PAD`) | NaPTAN ATCO where available, else B23's `<CRS>_<platform>` |
-| `stop_code` | TIPLOC (`PADTON`) | **CRS** (`PAD`) |
-| `platform_code` | B23 sets it on platforms | unchanged |
 | `location_type` | B23 sets `1` and `0` | adds `2` entrance |
-| `parent_station` | B23 sets it on platforms | adds entrances |
+| `parent_station` | B23 sets it on boarding points | adds entrances |
 | `stop_desc` | `cate_interchange_status` | free text; interchange status is already carried by `transfers.txt` |
 
-Knock-on changes: `stop_times.stop_id` references the platform stop where known, falling back to
-the station; `transfers.txt` `from_stop_id`/`to_stop_id` reference parent stations.
-
-B23 already broke the three-letter join and carries the flag; F3 changes the ids again, from
-`PAD_A` to the ATCO form, so it needs the same treatment rather than inheriting B23's. Do not flip
-both defaults in one release.
+B23 broke the three-letter join once, with the ids it will keep. F3 adds stops rather than renaming
+them, so it needs no flag and no second break.
 
 **F4 · Splits and joins as transfers** *(depends C1)* — **closes #81**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
@@ -1660,10 +1676,21 @@ remainder of T.
    `overrides.yaml` (B10); the twelve TOC origin/destination placeholders are dropped with their
    stop times (B12); `HVH` needs no action; `2/0` is B9. A source for the Irish coordinates is to be
    identified when B10 is picked up.
-3. **Field layout** — CRS moves to `stop_code`, `stop_id` becomes the NaPTAN ATCO where available,
-   `platform_code` is introduced, and `location_type`/`parent_station` are populated. Full before
-   and after table in F3. Ships behind a flag with CRS-only stops as the default for at least one
-   release.
+3. **Field layout** — *revised, and landed in B23.* CRS moves to `stop_code`, `stop_id` becomes the
+   NaPTAN ATCO code, `platform_code` is introduced, and `location_type`/`parent_station` are
+   populated. Full before and after table under B23.
+
+   This was to wait for F3 and NaPTAN, behind a flag, with CRS-only stops as the default for a
+   release. Both parts are superseded. **The ATCO code needs no external data** — it is `9100` or
+   `910G` and a TIPLOC, and the timetable carries the TIPLOC — so there is nothing to wait for. And
+   **there is no flag**, for the same reason B23 has none: the alternative is to break the
+   three-letter join twice, once for `PAD_A` and again for the ATCO form, and a consumer would
+   rather be broken once. Raised by @miklcct in review of #131, and agreed.
+
+   `agency_id` moves with it, to the National Operator Catalogue form — `=SN`, `=AW`. A bare two
+   letter code is an airline in the NOC, and the equals sign is how it distinguishes a rail
+   operator. The point of both is the same: the feed can be merged with the DfT's bus and metro
+   data as it stands, rather than sitting beside it in identifiers only this project uses.
 4. **Tiers** — `gtfs-slim.zip` (OGL-compatible) and `gtfs-full.zip` (adds ODbL). No plain
    `gtfs.zip`; slim is the documented default (D8, E4, E5).
 5. **The storage layer is not touched** — no `libs/feed-storage`, and A4 is deferred. A

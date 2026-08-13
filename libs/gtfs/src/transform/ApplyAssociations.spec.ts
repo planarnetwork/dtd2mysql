@@ -96,6 +96,7 @@ export function stop(stopSequence: number, location: CRS, time: string): StopTim
     shape_dist_traveled: null,
     timepoint: 0,
     platform: null,
+    tiploc: null,
   };
 }
 
