@@ -5,8 +5,8 @@ import {Enricher, EnrichmentReport} from "./Enricher";
 import {Provenance} from "./Provenance";
 import {Stop} from "../entity/Stop";
 
-const stop = (id: string, name = id): Stop => ({
-  stop_id: id, stop_code: id, stop_name: name, stop_desc: "", stop_lat: 51, stop_lon: -1,
+const stop = (crs: string, name = crs): Stop => ({
+  stop_id: `910G${crs}`, crs, tiploc: crs, stop_name: name, stop_desc: "", stop_lat: 51, stop_lon: -1,
   zone_id: 0, stop_url: "", location_type: 0, parent_station: null, platform_code: null,
   stop_timezone: "Europe/London", wheelchair_boarding: 0, located: true
 });
@@ -180,7 +180,7 @@ describe("enrich", () => {
 
     await enrich(one, [renamer("LOW", 10, "wrong"), renamer("HIGH", 50, "right")]);
 
-    const [paddington] = one.ledger.entries().filter(e => e.id === "PAD");
+    const [paddington] = one.ledger.entries().filter(e => e.id === "910GPAD");
 
     expect(paddington.value).to.equal("right");
     expect(paddington.by).to.equal("HIGH");
@@ -217,7 +217,7 @@ describe("enrich", () => {
     const file = provenanceFile(one, reports);
 
     expect(file.fields.map(f => `${f.entity} ${f.id} ${f.field}`))
-      .to.deep.equal(["stop PAD stop_name", "stop WAT stop_name"]);
+      .to.deep.equal(["stop 910GPAD stop_name", "stop 910GWAT stop_name"]);
   });
 
 });
@@ -225,15 +225,15 @@ describe("enrich", () => {
 describe("MutableFeed", () => {
 
   it("finds a stop without walking the list", () => {
-    expect(feed().stop("WAT")?.stop_id).to.equal("WAT");
-    expect(feed().stop("XXX")).to.equal(undefined);
+    expect(feed().stop("910GWAT")?.stop_id).to.equal("910GWAT");
+    expect(feed().stop("910GXXX")).to.equal(undefined);
   });
 
   it("offers the stations without their platforms", () => {
-    const platform = {...stop("PAD_1"), parent_station: "PAD"};
+    const platform = {...stop("PAD"), stop_id: "9100PAD1", parent_station: "910GPAD"};
     const withPlatform = new MutableFeed([stop("PAD"), platform], [], []);
 
-    expect(withPlatform.stations.map(s => s.stop_id)).to.deep.equal(["PAD"]);
+    expect(withPlatform.stations.map(s => s.stop_id)).to.deep.equal(["910GPAD"]);
   });
 
 });
@@ -268,8 +268,8 @@ describe("an apply allowlist", () => {
 
     await enrich(restricted, [both("PARTIAL")]);
 
-    expect(restricted.stop("PAD")!.stop_name).to.equal("PAD");
-    expect(restricted.stop("PAD")!.stop_desc).to.equal("described");
+    expect(restricted.stop("910GPAD")!.stop_name).to.equal("PAD");
+    expect(restricted.stop("910GPAD")!.stop_desc).to.equal("described");
   });
 
   it("counts what it turned away", async () => {
@@ -286,7 +286,7 @@ describe("an apply allowlist", () => {
 
     await enrich(open, [both("OPEN")]);
 
-    expect(open.stop("PAD")!.stop_name).to.equal("renamed");
+    expect(open.stop("910GPAD")!.stop_name).to.equal("renamed");
     expect(open.refused).to.equal(0);
   });
 

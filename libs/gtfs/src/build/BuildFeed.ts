@@ -113,7 +113,6 @@ export class BuildFeed {
       )
       : undefined;
 
-
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", by("stop_id"));
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, await fixedLinksQ, map(stations, stop => stop.stop_id)),

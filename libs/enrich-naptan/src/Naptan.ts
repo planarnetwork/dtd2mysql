@@ -29,8 +29,9 @@ const ATTRIBUTION: Attribution = {
  * somewhere in the station car park. NaPTAN surveys them.
  *
  * **It joins on TIPLOC, not CRS.** A NaPTAN rail record is `9100` followed by
- * the TIPLOC - `9100ABDARE` - which is `stop_code` here. That is also why the
- * feed has to publish the station's own TIPLOC rather than whichever one a
+ * the TIPLOC - `9100ABDARE` - which is the id the feed publishes for the
+ * station's boarding point and `Stop.tiploc` internally. That is also why the
+ * feed has to carry the station's own TIPLOC rather than whichever one a
  * junction sharing its CRS happened to contribute.
  *
  * Only coordinates by default. NaPTAN's `CommonName` is "Aberdare Rail Station"
@@ -68,7 +69,7 @@ export class NaptanEnricher implements Enricher<readonly NaptanStop[]> {
     let inactive = 0;
 
     for (const station of feed.stations) {
-      const naptan = byTiploc.get(station.stop_code);
+      const naptan = byTiploc.get(station.tiploc);
 
       if (naptan === undefined) {
         unmatched++;

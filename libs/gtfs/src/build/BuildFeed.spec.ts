@@ -306,7 +306,7 @@ describe("BuildFeed with an enricher", () => {
     dependsOn: [],
     priority: 50,
     async fetch() {
-      return ["TON", "NOWHERE"];
+      return ["910GTONBDG", "NOWHERE"];
     },
     apply(feed, known) {
       let matched = 0;
@@ -329,33 +329,33 @@ describe("BuildFeed with an enricher", () => {
   };
 
   it("changes the feed the enricher touched", async () => {
-    const {files} = await build(new FakeSource(feed(), [stop("TON"), stop("SEV")]), [namer]);
-    const renamed = files["stops.txt"].find(s => s.stop_id === "TON");
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG"), stop("SEV", "SEVNOKS")]), [namer]);
+    const renamed = files["stops.txt"].find(s => s.stop_id === "910GTONBDG");
 
-    expect(renamed.stop_name).to.equal("TON renamed");
-    expect(files["stops.txt"].find(s => s.stop_id === "SEV").stop_name).to.equal("SEV");
+    expect(renamed.stop_name).to.equal("910GTONBDG renamed");
+    expect(files["stops.txt"].find(s => s.stop_id === "910GSEVNOKS").stop_name).to.equal("SEV");
   });
 
   it("does not put the provenance bookkeeping in stops.txt", async () => {
-    const {files} = await build(new FakeSource(feed(), [stop("TON")]), [namer]);
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG")]), [namer]);
 
     expect(Object.keys(files["stops.txt"][0])).to.not.contain("located");
   });
 
   it("records who wrote what, and what the enricher could not place", async () => {
-    const {files} = await build(new FakeSource(feed(), [stop("TON"), stop("SEV")]), [namer]);
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG"), stop("SEV", "SEVNOKS")]), [namer]);
     const [provenance] = files["provenance.json"];
 
     expect(provenance.enrichers).to.deep.equal([
       {id: "TEST_NAMER", matched: 1, unmatched: 1, conflicts: 0}
     ]);
     expect(provenance.fields).to.deep.equal([
-      {entity: "stop", id: "TON", field: "stop_name", value: "TON renamed", by: "TEST_NAMER", overruled: []}
+      {entity: "stop", id: "910GTONBDG", field: "stop_name", value: "910GTONBDG renamed", by: "TEST_NAMER", overruled: []}
     ]);
   });
 
   it("writes no provenance when nothing enriched", async () => {
-    const {files} = await build(new FakeSource(feed(), [stop("TON")]));
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG")]));
 
     expect(files["provenance.json"]).to.equal(undefined);
   });
