@@ -1,5 +1,5 @@
 import * as fs from "node:fs";
-import {BuildFeed, buildContext, option, options, stationCoordinates} from "@gb-transit/gtfs";
+import {BuildFeed, buildContext, dateRange, option, options, stationCoordinates} from "@gb-transit/gtfs";
 import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
 
@@ -28,7 +28,11 @@ export async function build(argv: string[]): Promise<void> {
 
   console.log(`Reading ${sources.join(", ")}`);
 
-  const feed = new BuildFeed(new CifFileSource(sources, stationCoordinates), new FileOutput(), context);
+  const feed = new BuildFeed(
+    new CifFileSource(sources, stationCoordinates, dateRange(context)),
+    new FileOutput(),
+    context
+  );
 
   if (out.endsWith(".zip")) {
     return new OutputGTFSZipCommand(feed).build(out);

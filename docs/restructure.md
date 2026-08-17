@@ -183,10 +183,10 @@ dependencies.
 ### The two SPIs
 
 ```ts
-interface TimetableSource {
+interface TimetableSource {                                     // built for one window
   stations(): AsyncIterable<StationRecord>;
-  schedules(range: DateRange): AsyncIterable<ScheduleRecord>;   // ordered: stp DESC, id, stop_seq
-  associations(range: DateRange): AsyncIterable<AssociationRecord>;
+  schedules(): AsyncIterable<ScheduleRecord>;                   // ordered: stp DESC, id, stop_seq
+  associations(): AsyncIterable<AssociationRecord>;
   fixedLinks(): AsyncIterable<FixedLinkRecord>;
 }
 
@@ -422,8 +422,8 @@ Gates everything else. T2 and T3 are required by the nightly build (E2) regardle
 B3: all three queries derive their window from one value.
 
 `BuildContext` carries `today` and `range`; `dateRange` turns the two into a `from`/`to` window and
-`TimetableSource` takes that window rather than a MySQL interval string, so the SQL is parameterised
-rather than interpolated. `--today`/`--range` on the command line beat `GTFS_TODAY`/`GTFS_RANGE`,
+a `TimetableSource` is built for that window rather than for a MySQL interval string, so the SQL is
+parameterised rather than interpolated. `--today`/`--range` on the command line beat `GTFS_TODAY`/`GTFS_RANGE`,
 which beat the real date and three months. `parseRange` still reads the `3 MONTH` form GTFS_RANGE
 has always used and refuses anything it cannot parse, rather than passing it to the driver.
 
@@ -904,6 +904,13 @@ The contract is: rows for one schedule contiguous and in stop sequence, schedule
 DESC so a cancellation or overlay follows the record it replaces. `ScheduleBuilder` groups on `id`
 changing, so a source that interleaves two schedules emits two trains carrying each other's stops -
 there is a test that pins exactly that, because it is the failure a second source will hit first.
+
+The window is a constructor argument, not a query one. As a parameter it read as a promise no
+source keeps: `CifFileSource` reads its feed once and cannot answer for a second window, and
+`MySqlTimetableSource` could, but a caller asking for two would get schedules from one window and
+associations from another - a feed with six months of trains and three months of the associations
+that join them, quietly. One window per source makes that unsayable rather than guarded, and the
+guard, its error message and its test went with the change.
 
 `ScheduleBuilder.load` takes any iterable in that order, which is what a source that is not a
 database query needs. Its per-run state moved into a cursor at the same time: the MySQL source loads
