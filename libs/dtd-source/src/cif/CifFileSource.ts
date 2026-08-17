@@ -53,8 +53,11 @@ const SUBSIDIARY = 9;
  */
 export class CifFileSource implements TimetableSource {
 
-  private reference?: Promise<Reference>;
-  private schedules?: {range: DateRange, timetable: Promise<Timetable>};
+  private readonly reference = once(() => readReference(this.sources));
+  private readonly stops = once(async () => toStops(await this.reference(), this.stationCoordinates));
+  private readonly timetable = onceForOneWindow(async (range: DateRange) =>
+    readTimetable(this.sources, await this.reference(), (await this.stops()).dropped, range)
+  );
 
   constructor(
     private readonly sources: string[],
@@ -74,23 +77,10 @@ export class CifFileSource implements TimetableSource {
   }
 
   public async getStops(): Promise<Stop[]> {
-    const {stops} = await this.stops_();
+    const {stops} = await this.stops();
 
     return stops;
   }
-
-  /**
-   * Every station as a stop, with the operator placeholders taken out and their
-   * codes kept so the schedule read can drop the stop times calling at them.
-   */
-  private stops_(): Promise<{stops: Stop[], dropped: Set<string>}> {
-    return this.stopsQ ??= this.loadReference().then(({stations}) => withoutPlaceholders(
-      groupByCrs(stations.rows.filter(row => row.crs_code !== null), true)
-        .map(row => toStop(stationRecord(row), this.stationCoordinates))
-    ));
-  }
-
-  private stopsQ?: Promise<{stops: Stop[], dropped: Set<string>}>;
 
   /**
    * SELECT crs_code, crs_code, 2, minimum_change_time * 60 FROM physical_station
@@ -99,7 +89,7 @@ export class CifFileSource implements TimetableSource {
    * Note there is no `crs_code IS NOT NULL` here, unlike getStops.
    */
   public async getTransfers(): Promise<Transfer[]> {
-    const {stations} = await this.loadReference();
+    const {stations} = await this.reference();
 
     return groupByCrs(stations.rows.filter(row => row.cate_interchange_status !== null))
       .map(row => interchange(row.crs_code as string, integer(row, "minimum_change_time") * 60));
@@ -110,7 +100,7 @@ export class CifFileSource implements TimetableSource {
    * ALF does not cover, deduplicated the way the UNION deduplicates them.
    */
   public async getFixedLinks(): Promise<FixedLink[]> {
-    const {stations, additionalFixedLinks, fixedLinks} = await this.loadReference();
+    const {stations, additionalFixedLinks, fixedLinks} = await this.reference();
 
     const known = new Set(stations.rows.map(row => String(row.crs_code)));
     const covered = new Set(additionalFixedLinks.rows.map(row => `${row.origin}${row.destination}`));
@@ -132,13 +122,13 @@ export class CifFileSource implements TimetableSource {
   }
 
   public async getSchedules(range: DateRange): Promise<ScheduleResults> {
-    const {schedules, maxId} = await this.loadTimetable(range);
+    const {schedules, maxId} = await this.timetable(range);
 
     return {schedules, idGenerator: idsFrom(maxId + 1)};
   }
 
   public async getAssociations(range: DateRange): Promise<Association[]> {
-    const {associations} = await this.loadTimetable(range);
+    const {associations} = await this.timetable(range);
 
     return associations;
   }
@@ -147,118 +137,115 @@ export class CifFileSource implements TimetableSource {
     return undefined;
   }
 
-  private loadReference(): Promise<Reference> {
-    return this.reference ??= this.readReference();
+}
+
+/**
+ * Every station as a stop, with the operator placeholders taken out and their
+ * codes kept so the schedule read can drop the stop times calling at them.
+ */
+function toStops(reference: Reference, coordinates: StationCoordinates): DroppableStops {
+  return withoutPlaceholders(
+    groupByCrs(reference.stations.rows.filter(row => row.crs_code !== null), true)
+      .map(row => toStop(stationRecord(row), coordinates))
+  );
+}
+
+/**
+ * MSN, ALF and FLF from every feed, in order.
+ *
+ * All of them are read before any schedule is, because the schedule queries
+ * join to physical_station and MySQL does that join against the finished
+ * table - an incremental can introduce a station that a schedule in the
+ * refresh calls at.
+ */
+async function readReference(sources: string[]): Promise<Reference> {
+  const msn = timetable["MSN"] as MultiRecordFile;
+  const alf = timetable["ALF"] as SingleRecordFile;
+  const flf = timetable["FLF"] as MultiRecordFile;
+
+  const stations = new MemoryTable(msn.records["A"]);
+  const additionalFixedLinks = new MemoryTable(alf.recordTypes[0]);
+  const fixedLinks = new MemoryTable(flf.records["A"]);
+
+  for (const source of sources) {
+    const zip = new FeedZip(source);
+
+    try {
+      await zip.eachLine("MSN", line => {
+        const record = msn.getRecord(line);
+
+        if (record && record.name === "physical_station") {
+          stations.apply(record.extractValues(line));
+        }
+      });
+      await zip.eachLine("ALF", line => {
+        additionalFixedLinks.apply(alf.recordTypes[0].extractValues(line));
+      });
+      await zip.eachLine("FLF", line => {
+        const record = flf.getRecord(line);
+
+        if (record) {
+          fixedLinks.apply(record.extractValues(line));
+        }
+      });
+    }
+    finally {
+      zip.close();
+    }
   }
 
-  /**
-   * getSchedules and getAssociations are both asked for the same window and the
-   * feed is only read once. A second window would need a second read, so say so
-   * rather than quietly answering the first question again.
-   */
-  private loadTimetable(range: DateRange): Promise<Timetable> {
-    this.schedules ??= {range, timetable: this.readTimetable(range)};
+  return {stations, additionalFixedLinks, fixedLinks};
+}
 
-    if (!sameRange(this.schedules.range, range)) {
-      throw new Error(
-        `This source has already been read for ${window(this.schedules.range)}; ` +
-        `it cannot also answer for ${window(range)}. Use a source per window.`
-      );
+/**
+ * MCA or CFA and ZTR from every feed, in order.
+ *
+ * The reference read has to be finished before this one starts: the stop times
+ * are joined to the stations by TIPLOC, and an incremental can introduce a
+ * station that a schedule in the refresh calls at.
+ */
+async function readTimetable(
+  sources: string[],
+  reference: Reference,
+  exclude: ReadonlySet<string>,
+  range: DateRange
+): Promise<Timetable> {
+  const {stations} = reference;
+  const crsByTiploc = new Map<string, string>();
+
+  for (const row of stations.rows) {
+    if (row.crs_code !== null) {
+      crsByTiploc.set(row.tiploc_code as string, row.crs_code as string);
     }
-
-    return this.schedules.timetable;
   }
 
-  /**
-   * MSN, ALF and FLF from every feed, in order.
-   *
-   * All of them are read before any schedule is, because the schedule queries
-   * join to physical_station and MySQL does that join against the finished
-   * table - an incremental can introduce a station that a schedule in the
-   * refresh calls at.
-   */
-  private async readReference(): Promise<Reference> {
-    const msn = timetable["MSN"] as MultiRecordFile;
-    const alf = timetable["ALF"] as SingleRecordFile;
-    const flf = timetable["FLF"] as MultiRecordFile;
+  const mca = timetable["MCA"] as MultiRecordFile;
+  const cfa = timetable["CFA"] as MultiRecordFile;
+  const ztr = timetable["ZTR"] as MultiRecordFile;
+  const loader = new ScheduleLoader(range, crsByTiploc, exclude);
 
-    const stations = new MemoryTable(msn.records["A"]);
-    const additionalFixedLinks = new MemoryTable(alf.recordTypes[0]);
-    const fixedLinks = new MemoryTable(flf.records["A"]);
+  for (const source of sources) {
+    const zip = new FeedZip(source);
+    const extensions = zip.extensions;
 
-    for (const source of this.sources) {
-      const zip = new FeedZip(source);
+    try {
+      const scheduleFile = extensions.includes("MCA") ? "MCA" : "CFA";
+      const file = scheduleFile === "MCA" ? mca : cfa;
 
-      try {
-        await zip.eachLine("MSN", line => {
-          const record = msn.getRecord(line);
+      await zip.eachLine(scheduleFile, line => loader.readTimetableLine(file, line));
+      loader.endOfFile();
 
-          if (record && record.name === "physical_station") {
-            stations.apply(record.extractValues(line));
-          }
-        });
-        await zip.eachLine("ALF", line => {
-          additionalFixedLinks.apply(alf.recordTypes[0].extractValues(line));
-        });
-        await zip.eachLine("FLF", line => {
-          const record = flf.getRecord(line);
-
-          if (record) {
-            fixedLinks.apply(record.extractValues(line));
-          }
-        });
-      }
-      finally {
-        zip.close();
-      }
+      await zip.eachLine("ZTR", line => loader.readZTrainLine(ztr, line));
+      loader.endOfFile();
     }
-
-    return {stations, additionalFixedLinks, fixedLinks};
+    finally {
+      zip.close();
+    }
   }
 
-  /**
-   * MCA or CFA and ZTR from every feed, in order.
-   */
-  private async readTimetable(range: DateRange): Promise<Timetable> {
-    const {stations} = await this.loadReference();
-    const {dropped} = await this.stops_();
-    const crsByTiploc = new Map<string, string>();
+  reportDroppedStops(loader.droppedStops);
 
-    for (const row of stations.rows) {
-      if (row.crs_code !== null) {
-        crsByTiploc.set(row.tiploc_code as string, row.crs_code as string);
-      }
-    }
-
-    const mca = timetable["MCA"] as MultiRecordFile;
-    const cfa = timetable["CFA"] as MultiRecordFile;
-    const ztr = timetable["ZTR"] as MultiRecordFile;
-    const loader = new ScheduleLoader(range, crsByTiploc, dropped);
-
-    for (const source of this.sources) {
-      const zip = new FeedZip(source);
-      const extensions = zip.extensions;
-
-      try {
-        const scheduleFile = extensions.includes("MCA") ? "MCA" : "CFA";
-        const file = scheduleFile === "MCA" ? mca : cfa;
-
-        await zip.eachLine(scheduleFile, line => loader.readTimetableLine(file, line));
-        loader.endOfFile();
-
-        await zip.eachLine("ZTR", line => loader.readZTrainLine(ztr, line));
-        loader.endOfFile();
-      }
-      finally {
-        zip.close();
-      }
-    }
-
-    reportDroppedStops(loader.droppedStops);
-
-    return loader.results();
-  }
-
+  return loader.results();
 }
 
 /**
@@ -697,6 +684,43 @@ function offsetId(schedule: Schedule, offset: number): Schedule {
   );
 }
 
+/**
+ * Read once, however many times it is asked for.
+ *
+ * The build asks all five questions at the same time, so three callers arrive
+ * for the reference read and two for the timetable before either has finished.
+ * They wait on the first read rather than starting one of their own.
+ */
+function once<T>(read: () => Promise<T>): () => Promise<T> {
+  let result: Promise<T> | undefined;
+
+  return () => result ??= read();
+}
+
+/**
+ * The same, for a read that answers for one window.
+ *
+ * getSchedules and getAssociations are both asked for the same window and the
+ * feed is only read once. A second window would need a second read, so say so
+ * rather than quietly answering the first question again.
+ */
+function onceForOneWindow<T>(read: (range: DateRange) => Promise<T>): (range: DateRange) => Promise<T> {
+  let first: {range: DateRange, result: Promise<T>} | undefined;
+
+  return range => {
+    first ??= {range, result: read(range)};
+
+    if (!sameRange(first.range, range)) {
+      throw new Error(
+        `This source has already been read for ${window(first.range)}; ` +
+        `it cannot also answer for ${window(range)}. Use a source per window.`
+      );
+    }
+
+    return first.result;
+  };
+}
+
 function* idsFrom(start: number): IdGenerator {
   let id = start;
 
@@ -713,6 +737,11 @@ interface Pending {
   stops: Row[];
   seen: Set<string>;
   zTrain: boolean;
+}
+
+interface DroppableStops {
+  stops: Stop[];
+  dropped: Set<string>;
 }
 
 interface Reference {
