@@ -26,3 +26,8 @@ export enum RouteType {
 }
 
 export type RouteID = number;
+
+/**
+ * routes.txt, as it is written. Every field of Route is a column of it.
+ */
+export type RouteRow = Route;

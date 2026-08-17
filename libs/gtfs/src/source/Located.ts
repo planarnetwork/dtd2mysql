@@ -1,4 +1,4 @@
-import {CRS, Stop} from "../entity/Stop";
+import {CRS, Stop, StopRow} from "../entity/Stop";
 
 /**
  * Somewhere to put a stop the feed uses but cannot locate.
@@ -73,7 +73,7 @@ export function locate(stops: Stop[], referenced: ReadonlySet<CRS>): Stop[] {
  * CRS is - it is on the ticket and the departure board - and `stop_id` is a
  * dataset key, which is why the ATCO code is there instead.
  */
-export function toStopRow(stop: Stop) {
+export function toStopRow(stop: Stop): StopRow {
   return {
     stop_id: stop.stop_id,
     stop_code: stop.crs,

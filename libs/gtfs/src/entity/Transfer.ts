@@ -50,3 +50,7 @@ export enum TransferType {
   NotPossible = 3
 }
 
+/**
+ * transfers.txt, as it is written. Every field of Transfer is a column of it.
+ */
+export type TransferRow = Transfer;
