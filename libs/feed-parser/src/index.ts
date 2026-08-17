@@ -12,7 +12,7 @@ export type {FeedFile} from "./file/FeedFile";
 export {MultiRecordFile} from "./file/MultiRecordFile";
 export type {RecordTypeMap} from "./file/MultiRecordFile";
 export {SingleRecordFile} from "./file/SingleRecordFile";
-export type {RecordFilter} from "./file/SingleRecordFile";
+export type {RecordFilter} from "./file/FeedFile";
 
 export {CSVRecord} from "./record/CSVRecord";
 export {FixedWidthRecord, RecordWithManualIdentifier} from "./record/FixedWidthRecord";

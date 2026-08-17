@@ -23,7 +23,6 @@ const TODAY = "2026-08-10";
 let built: string;
 
 const feed = (file: string) => fs.readFileSync(path.join(built, file), "utf8");
-const rows = (file: string) => feed(file).split("\n").filter(line => line !== "").slice(1);
 const columns = (file: string) => {
   const lines = feed(file).split("\n").filter(line => line !== "");
   const names = lines[0].split(",");
@@ -133,14 +132,50 @@ describe("the feed the mini fixture produces", () => {
     expect(ids.length).to.equal(new Set(ids).size);
   });
 
-  it("keeps the MSN header record, which parses as a station", () => {
-    // The header line begins with A, like every station record, so it is read as
-    // one: "FILE-SPEC=05 1.00 ..." lands in the columns a station's code, name
-    // and coordinates come from. Pinned here because it is the fixture's job to
-    // hold what is wrong as well as what is right.
-    const header = columns("stops.txt").find(s => s.stop_id === "4/0");
+  it("does not read the MSN header as a station", () => {
+    // The header line begins with A, like every station record, and read as one
+    // it became stop 4/0 with a name of "F" and coordinates in the South
+    // Atlantic
+    expect(columns("stops.txt").find(s => s.stop_id === "4/0")).to.equal(undefined);
+  });
 
-    expect(header?.stop_code).to.equal("PEC=05");
+  it("names every trip after the stop it ends at", () => {
+    const names = new Map(columns("stops.txt").map(s => [s.stop_id, s.stop_name]));
+    const last = new Map<string, {sequence: number, stop: string}>();
+
+    for (const stopTime of columns("stop_times.txt")) {
+      const sequence = Number(stopTime.stop_sequence);
+      const seen = last.get(stopTime.trip_id);
+
+      if (!seen || sequence > seen.sequence) {
+        last.set(stopTime.trip_id, {sequence, stop: stopTime.stop_id});
+      }
+    }
+
+    const trips = columns("trips.txt");
+
+    expect(trips.length).to.be.greaterThan(0);
+
+    for (const trip of trips) {
+      expect(trip.trip_headsign).to.equal(names.get(last.get(trip.trip_id)!.stop));
+    }
+  });
+
+  it("does not put the TUID in the headsign", () => {
+    const trips = columns("trips.txt");
+
+    expect(trips.every(t => t.trip_headsign !== t.trip_id.split("_")[0])).to.equal(true);
+  });
+
+  it("claims nothing about wheelchairs or bicycles", () => {
+    const trips = columns("trips.txt");
+
+    expect(trips.every(t => t.wheelchair_accessible === "0")).to.equal(true);
+    expect(trips.every(t => t.bikes_allowed === "0")).to.equal(true);
+  });
+
+  it("puts no platform in stop_headsign", () => {
+    expect(columns("stop_times.txt").every(s => s.stop_headsign === "")).to.equal(true);
   });
 
   it("puts a CIE station in the sea, because its eastings are zero", () => {

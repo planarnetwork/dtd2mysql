@@ -41,7 +41,7 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
   departure_time: "10:01:00",
   stop_id: stop,
   stop_sequence: sequence,
-  stop_headsign: "",
+  stop_headsign: null,
   pickup_type: 0,
   drop_off_type: 0,
   shape_dist_traveled: null,

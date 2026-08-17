@@ -7,7 +7,11 @@ export interface StopTime {
   departure_time: string;
   stop_id: CRS;
   stop_sequence: number;
-  stop_headsign: Platform;
+  /**
+   * Overrides the trip headsign from this stop onwards, which a GB rail service
+   * never needs. Always null.
+   */
+  stop_headsign: null;
   pickup_type: 0 | 1 | 2 | 3;
   drop_off_type: 0 | 1 | 2 | 3;
   shape_dist_traveled: null;

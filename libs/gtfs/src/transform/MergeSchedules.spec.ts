@@ -77,7 +77,7 @@ function stopTime(stop: string, tripId: string): StopTime {
     departure_time: "10:00",
     stop_id: stop,
     stop_sequence: 1,
-    stop_headsign: "",
+    stop_headsign: null,
     pickup_type: 0,
     drop_off_type: 0,
     shape_dist_traveled: null,

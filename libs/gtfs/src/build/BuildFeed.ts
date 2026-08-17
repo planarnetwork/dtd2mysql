@@ -10,6 +10,7 @@ import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
+import {Stop} from "../entity/Stop";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
@@ -47,7 +48,10 @@ export class BuildFeed {
     const associationsP = this.repository.getAssociations();
     const scheduleResultsP = this.repository.getSchedules();
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt", t => [t.from_stop_id, t.to_stop_id]);
-    const stopsP = this.copy(this.repository.getStops(), "stops.txt", s => [s.stop_id]);
+    // Awaited at copyTrips rather than here, so the queries below still start
+    // before the stops come back.
+    const stopsQ = this.repository.getStops();
+    const stopsP = this.copy(stopsQ, "stops.txt", s => [s.stop_id]);
     const agencyP = this.copy(agencies, "agency.txt", a => [a.agency_id]);
     const fixedLinksP = this.copy(
       this.repository.getFixedLinks(),
@@ -68,7 +72,7 @@ export class BuildFeed {
 
     const calendarP = this.copy(calendars, "calendar.txt", c => [c.service_id]);
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", d => [d.service_id, d.date]);
-    const tripsP = this.copyTrips(schedules, serviceIds);
+    const tripsP = this.copyTrips(schedules, serviceIds, names(await stopsQ));
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -118,7 +122,7 @@ export class BuildFeed {
   /**
    * trips.txt, stop_times.txt and routes.txt have interdependencies so they are written together
    */
-  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex): Promise<any> {
+  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex, stopNames: Map<string, string>): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
@@ -142,10 +146,24 @@ export class BuildFeed {
       .filter(schedule => schedule.stopTimes.length > 1)
       .sort((a, b) => a.tripId < b.tripId ? -1 : a.tripId > b.tripId ? 1 : 0);
 
+    const unknown = new Map<string, number>();
+
     for (const schedule of written) {
-      trips.write(schedule.toTrip(serviceIds[schedule.calendar.id], routeIds[schedule.routeShortName]));
+      const name = stopNames.get(schedule.destination);
+
+      if (name === undefined) {
+        unknown.set(schedule.destination, (unknown.get(schedule.destination) ?? 0) + 1);
+      }
+
+      trips.write(schedule.toTrip(
+        serviceIds[schedule.calendar.id],
+        routeIds[schedule.routeShortName],
+        name ?? schedule.destination
+      ));
       schedule.stopTimes.forEach(r => stopTimes.write(r));
     }
+
+    report(unknown);
 
     trips.end();
     stopTimes.end();
@@ -169,6 +187,37 @@ export class BuildFeed {
     return schedules.filter(schedule => !schedule.calendar.isEmpty);
   }
 
+}
+
+/**
+ * Where a trip is going, by the CRS code of the stop it ends at. A stop the feed
+ * never described falls back to the code itself rather than to nothing.
+ */
+function names(stops: Stop[]): Map<string, string> {
+  return new Map(stops.map(stop => [stop.stop_id, stop.stop_name]));
+}
+
+/**
+ * A trip ending at a stop that stops.txt does not describe keeps the CRS code as
+ * its headsign, which is the best available answer but hides the real problem:
+ * the stop times reference a stop that is not in the feed, which a GTFS
+ * validator reads as a broken foreign key. Say so rather than let a three letter
+ * code pass for a place name.
+ */
+function report(unknown: Map<string, number>): void {
+  if (unknown.size === 0) {
+    return;
+  }
+
+  const codes = [...unknown.entries()]
+    .sort(([a], [b]) => a < b ? -1 : 1)
+    .map(([code, trips]) => `${code} (${trips})`)
+    .join(", ");
+
+  console.warn(
+    `${unknown.size} destination(s) are not in stops.txt, so their trips are named after the ` +
+    `CRS code: ${codes}. The stop times referencing them are dangling.`
+  );
 }
 
 /**

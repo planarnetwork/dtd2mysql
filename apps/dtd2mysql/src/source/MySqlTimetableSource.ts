@@ -52,13 +52,37 @@ export class MySqlTimetableSource implements TimetableSource {
   }
 
   /**
-   * Return all the stops with some configurable long/lat applied
+   * Return all the stops with some configurable long/lat applied.
+   *
+   * One row per CRS, preferring a TIPLOC that describes the station itself.
+   * `cate_interchange_status` is the CATE interchange rating - 0 for a station
+   * that is not an interchange, 1 to 3 for how significant an interchange it is,
+   * and **9 for a subsidiary location**: a junction or an approach that shares
+   * the station's CRS without being the place a passenger stands. Reading has
+   * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
+   *
+   * `GROUP BY crs_code` alone keeps whichever row came first, which published
+   * the subsidiary TIPLOC as `stop_code` for 75 stations. Ordering a derived
+   * table does not fix it - MariaDB is free to ignore that - so the row is
+   * chosen explicitly.
+   *
+   * The TIPLOC itself breaks the tie, because some stations have nothing else
+   * to separate them: Westbury's TIPLOCs are all rated 9. Falling back to the
+   * order rows happen to arrive in makes this source and the file source
+   * disagree, which is how that was found.
    */
   public async getStops(): Promise<Stop[]> {
     const [results] = await this.db.query<StationRecord>(`
       SELECT crs_code, tiploc_code, station_name, cate_interchange_status, easting, northing
-      FROM physical_station WHERE crs_code IS NOT NULL
-      GROUP BY crs_code
+      FROM (
+        SELECT *, ROW_NUMBER() OVER (
+          PARTITION BY crs_code ORDER BY cate_interchange_status <=> 9, tiploc_code
+        ) AS preference
+        FROM physical_station
+        WHERE crs_code IS NOT NULL
+      ) ranked
+      WHERE preference = 1
+      ORDER BY crs_code
     `);
 
     return results.map(row => toStop(row, this.stationCoordinates));
@@ -79,6 +103,13 @@ export class MySqlTimetableSource implements TimetableSource {
   public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+
+    if (!lastSchedule) {
+      throw new Error(
+        "The schedule table is empty, so there is no timetable to export. " +
+        "Import a timetable feed first: dtd2mysql --timetable /path/to/RJTTFxxx.ZIP"
+      );
+    }
     const window = [this.range.to.toString(), this.range.from.toString()];
 
     await Promise.all([

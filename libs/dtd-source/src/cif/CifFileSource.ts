@@ -27,6 +27,12 @@ import {additionalFixedLink, associationRow, AssociationRow, fixedLink, integer,
 const timetable = config.timetable;
 
 /**
+ * The `cate_interchange_status` of a TIPLOC that is not the station itself -
+ * a junction or approach sharing its CRS. See groupByCrs.
+ */
+const SUBSIDIARY = 9;
+
+/**
  * A TimetableSource that reads the DTD feed files directly, with no database.
  *
  * MySqlTimetableSource's SQL is the specification. Three of its behaviours come
@@ -60,7 +66,7 @@ export class CifFileSource implements TimetableSource {
   public async getStops(): Promise<Stop[]> {
     const {stations} = await this.reference();
 
-    return groupByCrs(stations.rows.filter(row => row.crs_code !== null))
+    return groupByCrs(stations.rows.filter(row => row.crs_code !== null), true)
       .map(row => toStop(stationRecord(row), this.stationCoordinates));
   }
 
@@ -556,18 +562,52 @@ interface Overlaid {
  * GROUP BY crs_code keeps the first row inserted for each code, and returns the
  * groups in code order.
  */
-function groupByCrs(rows: Row[]): Row[] {
+/**
+ * One row per CRS, preferring a TIPLOC that describes the station itself.
+ *
+ * `cate_interchange_status` is the CATE interchange rating - 0 for a station
+ * that is not an interchange, 1 to 3 for how significant an interchange it is,
+ * and **9 for a subsidiary location**: a junction or an approach that shares the
+ * station's CRS without being the place a passenger stands. Reading has
+ * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
+ *
+ * Taking whichever row came first published the subsidiary TIPLOC as
+ * `stop_code` for 75 stations, Reading among them, because the order rows
+ * happen to arrive in is not a rule.
+ *
+ * The TIPLOC itself breaks the tie, because some stations have nothing else to
+ * separate them: Westbury's TIPLOCs are all rated 9, so the preference decides
+ * nothing and whatever remains has to be a property of the data rather than of
+ * the order it arrived in. The database and the file source read the rows in
+ * different orders, and a tie-break that depends on that makes them disagree.
+ *
+ * `preferStation` is off for transfers, which want the minimum change time of
+ * whichever row the database would have grouped to. Changing that is a separate
+ * question from which TIPLOC to publish.
+ */
+function groupByCrs(rows: Row[], preferStation = false): Row[] {
   const groups = new Map<string, Row>();
 
   for (const row of rows) {
     const crs = String(row.crs_code);
+    const chosen = groups.get(crs);
 
-    if (!groups.has(crs)) {
+    if (chosen === undefined || (preferStation && better(row, chosen))) {
       groups.set(crs, row);
     }
   }
 
   return [...groups.values()].sort((a, b) => String(a.crs_code) < String(b.crs_code) ? -1 : 1);
+}
+
+function subsidiary(row: Row): boolean {
+  return row.cate_interchange_status === SUBSIDIARY;
+}
+
+function better(candidate: Row, chosen: Row): boolean {
+  return subsidiary(candidate) !== subsidiary(chosen)
+    ? !subsidiary(candidate)
+    : String(candidate.tiploc_code) < String(chosen.tiploc_code);
 }
 
 /**
