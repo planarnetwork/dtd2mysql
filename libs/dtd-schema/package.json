@@ -1,6 +1,6 @@
 {
   "name": "@gb-transit/dtd-schema",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Declarative record layouts for the DTD fares, timetable, routeing guide and NFM64 feeds",
   "license": "GPL-3.0",
   "repository": {
