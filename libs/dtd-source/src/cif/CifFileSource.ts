@@ -44,13 +44,14 @@ const timetable = config.timetable;
 export class CifFileSource implements TimetableSource {
 
   private readonly reference = once(() => readReference(this.sources));
-  private readonly timetable = onceForOneWindow(async (range: DateRange) =>
-    readTimetable(this.sources, await this.reference(), range)
+  private readonly timetable = once(async () =>
+    readTimetable(this.sources, await this.reference(), this.range)
   );
 
   constructor(
     private readonly sources: string[],
-    private readonly stationCoordinates: StationCoordinates
+    private readonly stationCoordinates: StationCoordinates,
+    private readonly range: DateRange
   ) {}
 
   /**
@@ -107,14 +108,14 @@ export class CifFileSource implements TimetableSource {
     return dedupe(records, fixedLinkKey).flatMap(toFixedLinks);
   }
 
-  public async getSchedules(range: DateRange): Promise<ScheduleResults> {
-    const {schedules, maxId} = await this.timetable(range);
+  public async getSchedules(): Promise<ScheduleResults> {
+    const {schedules, maxId} = await this.timetable();
 
     return {schedules, idGenerator: idsFrom(maxId + 1)};
   }
 
-  public async getAssociations(range: DateRange): Promise<Association[]> {
-    const {associations} = await this.timetable(range);
+  public async getAssociations(): Promise<Association[]> {
+    const {associations} = await this.timetable();
 
     return associations;
   }
@@ -624,30 +625,6 @@ function once<T>(read: () => Promise<T>): () => Promise<T> {
   return () => result ??= read();
 }
 
-/**
- * The same, for a read that answers for one window.
- *
- * getSchedules and getAssociations are both asked for the same window and the
- * feed is only read once. A second window would need a second read, so say so
- * rather than quietly answering the first question again.
- */
-function onceForOneWindow<T>(read: (range: DateRange) => Promise<T>): (range: DateRange) => Promise<T> {
-  let first: {range: DateRange, result: Promise<T>} | undefined;
-
-  return range => {
-    first ??= {range, result: read(range)};
-
-    if (!sameRange(first.range, range)) {
-      throw new Error(
-        `This source has already been read for ${window(first.range)}; ` +
-        `it cannot also answer for ${window(range)}. Use a source per window.`
-      );
-    }
-
-    return first.result;
-  };
-}
-
 function* idsFrom(start: number): IdGenerator {
   let id = start;
 
@@ -676,12 +653,4 @@ interface Timetable {
   schedules: Schedule[];
   associations: Association[];
   maxId: number;
-}
-
-function sameRange(a: DateRange, b: DateRange): boolean {
-  return a.from.equals(b.from) && a.to.equals(b.to);
-}
-
-function window(range: DateRange): string {
-  return `${range.from} to ${range.to}`;
 }

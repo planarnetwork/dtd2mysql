@@ -44,8 +44,8 @@ export class BuildFeed {
 
     console.log(`Building ${range.from} to ${range.to}\n`);
 
-    const associationsP = this.repository.getAssociations(range);
-    const scheduleResultsP = this.repository.getSchedules(range);
+    const associationsP = this.repository.getAssociations();
+    const scheduleResultsP = this.repository.getSchedules();
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt");
     const stopsP = this.copy(this.repository.getStops(), "stops.txt");
     const agencyP = this.copy(agencies, "agency.txt");
