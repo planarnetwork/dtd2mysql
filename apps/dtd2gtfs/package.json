@@ -23,8 +23,11 @@
     "node": ">=26"
   },
   "dependencies": {
-    "@gb-rail/dtd-source": "workspace:^",
-    "@gb-rail/gtfs": "workspace:^",
-    "@gb-rail/gtfs-output": "workspace:^"
+    "@gb-transit/dtd-source": "workspace:^",
+    "@gb-transit/gtfs": "workspace:^",
+    "@gb-transit/gtfs-output": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

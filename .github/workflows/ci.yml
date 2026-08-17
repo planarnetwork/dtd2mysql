@@ -175,14 +175,36 @@ jobs:
           key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           restore-keys: yarn-${{ runner.os }}-
       - run: yarn install --immutable
-      # Tests run against source, so main, bin and files breakage is invisible to
-      # them. Install the tarball into a clean directory and run the CLI from it.
-      - name: Install the packaged tarball and run it
+      - run: yarn build
+      # Tests run against source, so main, types, bin and files breakage is
+      # invisible to them. Pack every workspace, install the dtd2mysql tarball
+      # into a clean directory and run the CLI from it. The @gb-transit packages
+      # are resolved from the tarballs built here rather than from the registry,
+      # so the check works before they are first published and tests this commit
+      # rather than the last release.
+      - name: Install the packaged tarballs and run the CLI
         run: |
-          yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/dtd2mysql.tgz"
+          mkdir -p "$RUNNER_TEMP/tarballs"
+          for pkg in feed-parser dtd-schema dtd-source gtfs gtfs-output; do
+            yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
+          done
+          yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
           mkdir -p "$RUNNER_TEMP/install" && cd "$RUNNER_TEMP/install"
-          npm init -y >/dev/null
-          npm install --no-audit --no-fund "$RUNNER_TEMP/dtd2mysql.tgz"
+          cat > package.json <<EOF
+          {
+            "name": "dtd2mysql-pack-smoke-test",
+            "private": true,
+            "version": "1.0.0",
+            "overrides": {
+              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
+              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
+              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
+              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
+              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz"
+            }
+          }
+          EOF
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
           ./node_modules/.bin/dtd2mysql --help | tee help.txt
           grep -q "Usage: dtd2mysql" help.txt
           grep -q -- "--gtfs-zip" help.txt

@@ -1,7 +1,7 @@
 import AdmZip from "adm-zip";
 import * as os from 'node:os';
 import * as path from 'node:path';
-import {BuildFeed} from "@gb-rail/gtfs";
+import {BuildFeed} from "@gb-transit/gtfs";
 import * as fs from "fs";
 
 export class OutputGTFSZipCommand {

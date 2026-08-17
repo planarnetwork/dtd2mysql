@@ -26,6 +26,8 @@ jobs:
       # legitimate answer - it means nothing user-facing changed.
       - run: yarn changeset status --since=origin/master
         continue-on-error: true
-      # List what the package would ship, so a broken `files`, `main` or `bin`
-      # surfaces here rather than during a release.
+      # List what each package would ship, so a broken `files`, `main` or `bin`
+      # surfaces here rather than during a release. The registry is deliberately
+      # not contacted: `npm publish --dry-run` still refuses a version that is
+      # already published, which every pull request before a version bump is.
       - run: yarn workspaces foreach -A --no-private --topological pack --dry-run

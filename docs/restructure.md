@@ -12,16 +12,13 @@ every file, with the same CLI surface and the same 119 tests. Two consecutive ru
 same code on the same day are byte-identical, so that comparison distinguishes a real
 change from noise.
 
-Two deliberate departures from §2:
+One deliberate departure from §2: the `GTFSOutput` *interface* lives in `libs/gtfs`, not
+`libs/gtfs-output`. The build orchestrator writes through it and the dependency graph runs
+`gtfs-output → gtfs`, so putting it in `gtfs-output` would invert that edge. `FileOutput`
+and the zip command are in `gtfs-output` as planned.
 
-- The `GTFSOutput` *interface* lives in `libs/gtfs`, not `libs/gtfs-output`. The build
-  orchestrator writes through it and the dependency graph runs `gtfs-output → gtfs`, so
-  putting it in `gtfs-output` would invert that edge. `FileOutput` and the zip command are
-  in `gtfs-output` as planned.
-- **`dtd2mysql` is the only published package.** The `@gb-rail` libraries are private and
-  bundled into its tarball with esbuild, so nothing new appears on npm and installing
-  `dtd2mysql` pulls nothing from the scope. Making a library public later is one field in
-  its manifest and one external in the bundle command.
+The scope is `@gb-transit` rather than `@gb-rail`: what is in these packages is a transit
+model and a GTFS build, and the DTD feeds are one source into it.
 
 The root has two tsconfigs. `tsconfig.json` is what tsx, vitest and the editor read, and it
 matches every source file in the workspace; `tsconfig.build.json` holds the project
@@ -126,7 +123,7 @@ libs/
   enrich-darwin/
 ```
 
-Libs publish as `@gb-rail/*`. The two CLI apps publish bare: `dtd2mysql` and `dtd2gtfs`.
+Libs publish as `@gb-transit/*`. The two CLI apps publish bare: `dtd2mysql` and `dtd2gtfs`.
 
 A second storage app (`dtd2postgres`, or any other backend) slots in beside `dtd2mysql` without
 moving anything, but is not built in this pass.
@@ -235,8 +232,8 @@ Three properties matter more than the interface shape:
 Yarn 4 (Berry) with `nodeLinker: node-modules` — tsx, vitest and `ssh2` are all happier with it and
 PnP buys nothing here.
 
-- Workspace deps via `"@gb-rail/gtfs": "workspace:^"`.
-- Libs are private and bundled into the app that needs them; apps publish bare.
+- Workspace deps via `"@gb-transit/gtfs": "workspace:^"`.
+- Libs get `"publishConfig": { "access": "public" }`; apps publish bare.
 - The existing `allowScripts` block is `@lavamoat/allow-scripts` config. Under Yarn 4 it becomes
   `dependenciesMeta.<pkg>.built` in the root manifest with `enableScripts: false` in `.yarnrc.yml`.
 - TypeScript project references with `composite: true`, so
@@ -1233,15 +1230,15 @@ it lands.
 `tsconfig.base.json` with project references; vitest `projects`. `yarn install --immutable` and
 `yarn test` green with the tree still in its current shape.
 
-**A2 · Extract `@gb-rail/feed-parser`** *(depends A1)* — **done**
+**A2 · Extract `@gb-transit/feed-parser`** *(depends A1)* — **done**
 `src/feed/**` and its tests moved. Zero dependencies on `config/` or `src/database`. Publish
 dry-run clean.
 
-**A3 · Extract `@gb-rail/dtd-schema`** *(depends A2)* — **done**
-All four feed configs moved; imports `@gb-rail/feed-parser` only. Removes the `config/` ↔ `src/`
+**A3 · Extract `@gb-transit/dtd-schema`** *(depends A2)* — **done**
+All four feed configs moved; imports `@gb-transit/feed-parser` only. Removes the `config/` ↔ `src/`
 circularity.
 
-**A4 · Extract `@gb-rail/feed-storage`** — **deferred, not in this pass**
+**A4 · Extract `@gb-transit/feed-storage`** — **deferred, not in this pass**
 Blocked on an incoming database-agnostic patch to the same files. Restructuring them concurrently
 would conflict, and the merge would be unreviewable. See §2.
 
@@ -1250,17 +1247,17 @@ What this pass owes instead: `src/database/**` and `ImportFeedCommand` move into
 rebases cleanly onto a rename rather than onto a rewrite. T6b is the deliverable that makes that
 patch safe to merge, and should be built before it arrives.
 
-**A5 · Extract `@gb-rail/dtd-source`** *(depends A3)* — **done**
+**A5 · Extract `@gb-transit/dtd-source`** *(depends A3)* — **done**
 SFTP client and download sequencing moved. **The last-processed cursor must no longer come from the
 `log` table** — `DownloadCommand.getLastProcessedFile()` queries MySQL, which `dtd2gtfs` will not
 have. Introduce a `FeedCursor` interface with a `Storage`-backed implementation for the DB apps and
 a file or no-op implementation for one-shot.
 
-**A6 · Extract `@gb-rail/gtfs`** *(depends A1)* — **done**
+**A6 · Extract `@gb-transit/gtfs`** *(depends A1)* — **done**
 Entities, model, transforms, build orchestrator. `agency.ts` and `station-coordinates.ts` land in
 `src/data/` unchanged. **No `mysql2` dependency.** All existing gtfs tests pass untouched.
 
-**A7 · Extract `@gb-rail/gtfs-output`** *(depends A6)* — **done**
+**A7 · Extract `@gb-transit/gtfs-output`** *(depends A6)* — **done**
 `FileOutput`, `GTFSOutput`, fixed `ZipOutput` (post-B5). Nothing else.
 
 **A8 · Assemble `apps/dtd2mysql`** *(depends A5, A6, A7)* — **done**
@@ -1273,13 +1270,12 @@ resolved once in the composition root, not via `require()` inside a memoized get
 
 **A9 · Changesets and release pipeline** *(depends A8)* — **done**
 `publish.yml` replaced. `yarn workspaces foreach --topological npm publish` gated on a changeset.
-Dry-run on PRs.
+Libs public under `@gb-transit`, apps bare. Dry-run on PRs. Topological order matters: a lib
+has to be on the registry before the app that depends on it is.
 
-Revised: the libraries are **not** published. They are private, and `apps/dtd2mysql` bundles
-them into a single file with esbuild, so the published tarball is the CLI and nothing else -
-four files, and the only runtime dependencies are the npm packages the libraries themselves
-pull in. The cost is that deep imports into `dtd2mysql/dist/...` no longer resolve; the
-`types` field goes with them, having pointed at a file that was never emitted.
+The first release of each `@gb-transit` package has to be made before npm can be told which
+workflow is allowed to publish it, so trusted publishing covers everything from the second
+release onwards.
 
 **A10 · CI for workspaces** *(depends A1)* — **done**
 `yarn install --immutable`, `.yarn/cache` cached, tests run per workspace with failures attributed
@@ -1384,7 +1380,7 @@ last-writer-wins.**
 options and `apply:` field allowlists) and extensions. `dtd2gtfs build --config`. Schema-validated;
 unknown enricher ids fail fast.
 
-**D3 · `@gb-rail/enrich-naptan`** *(depends D1)*
+**D3 · `@gb-transit/enrich-naptan`** *(depends D1)*
 OGL. Accurate lat/lon for `RLY` stops (2,673 rail stations); **rail replacement bus stop points**
 from `BCT` for BR/BS services; NPTG locality for disambiguation; match report by CRS with the
 unmatched list surfaced. **The `(easting - 10000) * 100` OSGB fudge in `getStops()` is removed, not
@@ -1395,16 +1391,16 @@ NaPTAN also carries `RSE` (4,543 station entrances) and `RPL` (rail platforms, A
 `9100ZZTYKKH1`). Extracting those is F3's dependency, and it means the station hierarchy is
 buildable entirely from OGL sources.
 
-**D4 · `@gb-rail/enrich-corpus`** *(depends D1)*
+**D4 · `@gb-transit/enrich-corpus`** *(depends D1)*
 OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
 `LEFT JOIN physical_station ON location = ps.tiploc_code` that currently drops stops. Count of
 recovered stop times reported. Blocks F3.
 
-**D5 · `@gb-rail/enrich-knowledgebase`** *(depends D1, C5)*
+**D5 · `@gb-transit/enrich-knowledgebase`** *(depends D1, C5)*
 `wheelchair_boarding` from step-free access data, replacing B7's `0`. `stop_url`, `stop_desc`. Token
 via RDM. Responses cached to disk so the nightly is not at the mercy of the API.
 
-**D6 · `@gb-rail/enrich-osm`** *(depends D1, F3)*
+**D6 · `@gb-transit/enrich-osm`** *(depends D1, F3)*
 **ODbL — share-alike.** Gated behind D8, so it only contributes to `gtfs-full.zip`.
 
 Scope is narrower than originally planned: NaPTAN already supplies stations, platforms and
@@ -1427,7 +1423,7 @@ There is deliberately no plain `gtfs.zip`, so no stable `releases/latest/downloa
 exists. E5 must state which tier a consumer wants; `gtfs-slim.zip` is the documented default
 recommendation, with `gtfs-full.zip` for consumers who can accept ODbL share-alike. Blocks E2.
 
-**D9 · `@gb-rail/enrich-darwin` — via locations** *(depends D1, B8)*
+**D9 · `@gb-transit/enrich-darwin` — via locations** *(depends D1, B8)*
 New package; Push Port / Darwin Timetable XML, distinct from the Knowledgebase API in D5.
 `trip_headsign` becomes "Brighton via Gatwick Airport" where Darwin supplies via text. Matching on
 TUID/RSID with an unmatched-rate report. Falls back to B8's plain destination on no match.
