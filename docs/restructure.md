@@ -1135,7 +1135,7 @@ The value is per *vehicle*, and the feed has trips, so the mapping depends on wh
 keyed by. Where nothing resolves, trips stay at `0` rather than inheriting a mode-level guess.
 Coverage report by operator, as D10.
 
-**D12 · `@gb-rail/enrich-station-groups` — `areas.txt` and `stop_areas.txt`** *(depends D1)*
+**D12 · `@gb-transit/enrich-station-groups` — `areas.txt` and `stop_areas.txt`** *(depends D1)*
 
 RDG group stations: four-digit NLC groups such as `1072` "London Terminals" covering Euston,
 Waterloo, King's Cross and 15 others. Useful for journey planning and required for honest fares.
