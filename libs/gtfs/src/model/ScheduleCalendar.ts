@@ -12,9 +12,17 @@ export class ScheduleCalendar {
     public readonly excludeDays: ExcludeDays = {}
   )  { }
 
+  /**
+   * What makes two calendars the same service: the dates, the day mask and the
+   * exclusions. Exclusions are sorted, so calendars excluding the same days are
+   * the same service whatever order those days were added in.
+   */
   @memoize
   public get id() {
-    return toYYYYMMDD(this.runsFrom) + toYYYYMMDD(this.runsTo) + this.binaryDays + Object.keys(this.excludeDays).join("");
+    return toYYYYMMDD(this.runsFrom)
+      + toYYYYMMDD(this.runsTo)
+      + this.binaryDays
+      + Object.keys(this.excludeDays).sort().join("");
   }
 
   @memoize

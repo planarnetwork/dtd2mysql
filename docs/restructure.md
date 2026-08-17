@@ -1,6 +1,6 @@
 # Restructure plan
 
-Status: Epic A landed, Epic C in progress; everything else proposal.
+Status: Epic A and Epic C landed, T1 to T3 done; everything else proposal.
 
 **Epic A is done.** The tree is a Yarn 4 monorepo of one app and five libraries, built
 exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
@@ -432,20 +432,64 @@ feed: at `6 MONTH` the old code pulled 93,348 extra schedules while dropping the
 that belong with them. No z-trains fall in that band in this feed, so replacement buses happen not to
 be affected today - the mechanism was still wrong.
 
-**T2 · Deterministic identifiers** *(partly delivered by #121)*
-`route_id` and `service_id` no longer depend on MySQL auto-increment ordering. `route_id` is
-`schedule.id`; `service_id` is a counter incremented in iteration order in `createCalendar`. Assign
-both in the build from a canonical sort. Same input plus same `--today` produces the same ids across
-engines and across runs. Test: import twice into fresh databases, assert identical output.
+**T2 · Deterministic identifiers** *(partly delivered by #121)* — **done**
+`route_id` and `service_id` no longer depend on MySQL auto-increment ordering. Assign both in the
+build from a canonical sort. Same input plus same `--today` produces the same ids across engines and
+across runs.
+
+`route_id` comes from a sort of `route_short_name`, which is what makes two schedules the same route
+- operator, origin, destination and mode - rather than from `schedule.id`, which was whichever trip
+reached the route first. `service_id` comes from a sort of the calendar's own identity, its date
+range, day mask and exclusions, rather than from the order the schedules arrived in.
 
 `trip_id` is already done, by a different mechanism than this ticket assumed: #121 makes it the
 string `TUID_runsFrom_runsTo` rather than an integer from a sort, which needs no global ordering at
 all. The STP indicator is deliberately **not** in the key — see §6.6.
 
-**T3 · Canonical output ordering** *(depends T2)*
-Every output file sorted by a declared key before writing — `stops` by `stop_id`, `trips` by
-`trip_id`, `stop_times` by `(trip_id, stop_sequence)`, and so on. Ordering documented per file. No
-reliance on engine row order.
+**T3 · Canonical output ordering** *(depends T2)* — **done**
+Every output file sorted by a declared key before writing. No reliance on engine row order.
+
+| file | key |
+|---|---|
+| `agency.txt` | `agency_id` |
+| `stops.txt` | `stop_id` |
+| `transfers.txt` | `from_stop_id`, `to_stop_id` |
+| `links.txt` | `from_stop_id`, `to_stop_id`, `mode`, `start_date`, `start_time` |
+| `calendar.txt` | `service_id` |
+| `calendar_dates.txt` | `service_id`, `date` |
+| `routes.txt` | `route_id`, which is the `route_short_name` order |
+| `trips.txt` | `trip_id` |
+| `stop_times.txt` | `trip_id`, `stop_sequence` |
+
+`stop_times.txt` falls out of `trips.txt`: sorting the schedules by trip ID sorts both, because a
+schedule's stops are contiguous and already in sequence.
+
+The key above is what the file is *ordered by*; anything it leaves tied is then ordered by the rest
+of the row, read in field-name order so that two sources building the same row differently still
+agree. That is not hypothetical - **1,276 of `links.txt`'s 8,518 rows tie on their declared key**,
+usually two links between the same pair differing only in the days they run. Without the fallback
+their order would be whatever the source returned, which is the thing this ticket exists to remove.
+
+Three other places decided something by arrival order and no longer do. `ScheduleCalendar.id` folded
+in its exclude days in the order they were added; they are sorted now. And where two schedules want
+the same trip ID, which one takes the `_2` suffix was whichever the index reached first - it is now
+the one that sorts later by content, because `Schedule.id` is the row number the source gave the
+record and the database and the files number them differently. Neither case occurs in the reference
+feed, which is why the byte comparison passed before they were fixed.
+
+The third does occur. A route's `route_desc` carries whether first class is available, which is a
+property of a train and not of the line it runs on, and **352 of the 6,184 routes have trips that
+disagree**. The description came from whichever trip reached the route first; it now comes from the
+one that sorts first. Arbitrary either way, and nothing else about a route moves.
+
+Worth noting how that was found. The cross-source byte comparison could never have caught it: both
+sources feed the build through the same merge, so they agree with each other while both differ from
+the previous build. Only comparing the content against the previous build did. Byte identity across
+two sources proves they agree - it does not prove either is a function of its input.
+
+**What this buys.** The two sources now produce a byte-identical feed from the same files, so
+comparing them is `diff` rather than a script that resolves every identifier to what it points at.
+The normalising half of T7 can go, and the T10 baselines become a plain byte comparison.
 
 **T4 · Fixture slice tool** *(depends T1)*
 `yarn fixture:slice --tuids <file> --out fixtures/mini` extracts BS/BX/LO/LI/LT/CR for the given

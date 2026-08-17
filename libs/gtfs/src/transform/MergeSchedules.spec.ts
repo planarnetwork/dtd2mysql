@@ -68,7 +68,7 @@ describe("MergeSchedules", () => {
 
 });
 
-const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+export const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 
 function stopTime(stop: string, tripId: string): StopTime {
   return {
@@ -111,3 +111,49 @@ export function schedule(id: number,
     true
   );
 }
+
+describe("mergeSchedules, when two schedules want the same trip ID", () => {
+
+  const colliding = (operator: string) => new Schedule(
+    1,
+    [stopTime("A", "x"), stopTime("B", "x")],
+    "A",
+    "",
+    new ScheduleCalendar(
+      Temporal.PlainDate.from("2017-01-01"),
+      Temporal.PlainDate.from("2017-01-31"),
+      ALL_DAYS,
+      {}
+    ),
+    RouteType.Rail,
+    operator,
+    STP.Permanent,
+    true,
+    false
+  );
+
+  it("gives the suffix to the same one whatever order they arrive in", () => {
+    const forwards = mergeSchedules({A: [colliding("AA"), colliding("ZZ")]});
+    const backwards = mergeSchedules({A: [colliding("ZZ"), colliding("AA")]});
+
+    const tripIds = (schedules: Schedule[]) => schedules.map(s => [s.operator, s.stopTimes[0].trip_id]);
+
+    expect(tripIds(backwards)).to.deep.equal(tripIds(forwards));
+    // AA sorts before ZZ, so AA keeps the bare ID
+    expect(tripIds(forwards)).to.deep.equal([
+      ["AA", "A_20170101_20170131"],
+      ["ZZ", "A_20170101_20170131_2"]
+    ]);
+  });
+
+  it("does not depend on the order the TUIDs are held in", () => {
+    const first = schedule(1, "A", "2017-01-01", "2017-01-31");
+    const second = schedule(2, "B", "2017-01-01", "2017-01-31");
+
+    const forwards = mergeSchedules({A: [first], B: [second]}).map(s => s.tuid);
+    const backwards = mergeSchedules({B: [second], A: [first]}).map(s => s.tuid);
+
+    expect(backwards).to.deep.equal(forwards);
+  });
+
+});

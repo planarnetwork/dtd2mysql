@@ -85,13 +85,22 @@ export class Schedule implements OverlayRecord {
   }
 
   /**
-   * Convert to GTFS Route
+   * What makes two schedules the same route: who runs it, where it goes between
+   * and how. Routes are numbered from a sort of this, so the number does not
+   * depend on which trip reached the route first.
+   */
+  public get routeShortName(): string {
+    return `${this.operator || "Z"}:${this.origin}->${this.destination}:${this.mode}`;
+  }
+
+  /**
+   * Convert to GTFS Route. The caller numbers it.
    */
   public toRoute(): Route {
     return {
       route_id: this.id,
       agency_id: this.operator || "ZZ",
-      route_short_name: `${this.operator || "Z"}:${this.origin}->${this.destination}:${this.mode}`,
+      route_short_name: this.routeShortName,
       route_long_name: `${this.operator || "Z"} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
       route_type: this.mode,
       route_text_color: null,
