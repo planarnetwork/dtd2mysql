@@ -10,3 +10,8 @@ export interface Agency {
   agency_phone: string;
   agency_fare_url: string | null;
 }
+
+/**
+ * agency.txt, as it is written. Every field of Agency is a column of it.
+ */
+export type AgencyRow = Agency;

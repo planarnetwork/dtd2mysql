@@ -11,3 +11,8 @@ export interface FeedInfo {
   feed_end_date: string;
   feed_version: string | null;
 }
+
+/**
+ * feed_info.txt, as it is written. Every field of FeedInfo is a column of it.
+ */
+export type FeedInfoRow = FeedInfo;

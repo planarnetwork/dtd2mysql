@@ -1,5 +1,5 @@
-import {Agency, AgencyID} from "../entity/Agency";
-import {Route} from "../entity/Route";
+import {Agency, AgencyID, AgencyRow} from "../entity/Agency";
+import {Route, RouteRow} from "../entity/Route";
 
 /**
  * A rail operator, as the National Operator Catalogue names one.
@@ -20,7 +20,7 @@ export function agencyId(atoc: AgencyID): AgencyID {
 /**
  * agency.txt as it is written.
  */
-export function toAgencyRow(agency: Agency): Agency {
+export function toAgencyRow(agency: Agency): AgencyRow {
   return {...agency, agency_id: agencyId(agency.agency_id)};
 }
 
@@ -30,6 +30,6 @@ export function toAgencyRow(agency: Agency): Agency {
  * `route_short_name` and `route_long_name` keep the bare ATOC code: they are
  * text for a passenger to read, not a reference to the agency.
  */
-export function toRouteRow(route: Route): Route {
+export function toRouteRow(route: Route): RouteRow {
   return {...route, agency_id: agencyId(route.agency_id)};
 }
