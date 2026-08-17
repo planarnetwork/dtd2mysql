@@ -11,3 +11,8 @@ export interface Calendar {
   start_date: string,
   end_date: string,
 }
+
+/**
+ * calendar.txt, as it is written. Every field of Calendar is a column of it.
+ */
+export type CalendarRow = Calendar;
