@@ -55,9 +55,11 @@ export class CifFileSource implements TimetableSource {
 
   private readonly reference = once(() => readReference(this.sources));
   private readonly stops = once(async () => toStops(await this.reference(), this.stationCoordinates));
-  private readonly timetable = once(async () =>
-    readTimetable(this.sources, await this.reference(), (await this.stops()).dropped, this.range)
-  );
+  private readonly timetable = once(async () => {
+    const [reference, stops] = await Promise.all([this.reference(), this.stops()]);
+
+    return readTimetable(this.sources, reference, stops.dropped, this.range);
+  });
 
   constructor(
     private readonly sources: string[],
