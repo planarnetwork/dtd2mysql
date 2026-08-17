@@ -66,12 +66,12 @@ export class BuildFeed {
     const fixedLinksQ = this.repository.getFixedLinks();
     const transfersQ = this.repository.getTransfers();
     const versionQ = this.repository.getFeedVersion();
-    const agencyP = this.copy(agencies.map(toAgencyRow), "agency.txt", by("agency_id"));
+    const agencyP = this.copy(agencies.map(toAgencyRow), "agency.txt", a => [a.agency_id]);
     const fixedLinksP = this.context.links
       ? this.copy(
         fixedLinksQ,
         "links.txt",
-        by("from_stop_id", "to_stop_id", "mode", "start_date", "start_time")
+        l => [l.from_stop_id, l.to_stop_id, l.mode, l.start_date, l.start_time]
       )
       : Promise.resolve();
 
@@ -113,21 +113,21 @@ export class BuildFeed {
       )
       : undefined;
 
-    const stopsP = this.copy(stops.map(toStopRow), "stops.txt", by("stop_id"));
+    const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, await fixedLinksQ, map(stations, stop => stop.stop_id)),
       "transfers.txt",
-      by("from_stop_id", "to_stop_id")
+      t => [t.from_stop_id, t.to_stop_id]
     );
 
     const [calendars, calendarDates, serviceIds] = createCalendar(called);
 
-    const calendarP = this.copy(calendars, "calendar.txt", by("service_id"));
-    const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", by("service_id", "date"));
+    const calendarP = this.copy(calendars, "calendar.txt", c => [c.service_id]);
+    const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", d => [d.service_id, d.date]);
     const feedInfoP = this.copy(
       [createFeedInfo(calendars, calendarDates, range, await versionQ)],
       "feed_info.txt",
-      by("feed_publisher_name")
+      f => [f.feed_publisher_name]
     );
     const tripsP = this.copyTrips(
       called,
@@ -157,20 +157,27 @@ export class BuildFeed {
   /**
    * Write rows to a file, in the order the key says.
    *
-   * Every file is sorted before it is written, so no output depends on the
-   * order a source happened to return its rows in. The key for each file is at
-   * the call site.
+   * Every file is sorted before it is written, so no output depends on the order
+   * a source happened to return its rows in. The key for each file is at the
+   * call site, and rows it leaves tied are ordered by their whole contents -
+   * links.txt has 1,276 rows that tie on their declared key.
    */
-  private async copy(
-    results: object[] | Promise<object[]>,
+  private async copy<T extends object>(
+    results: T[] | Promise<T[]>,
     filename: string,
-    key: (a: any, b: any) => number
+    key: (row: T) => Value[]
   ): Promise<void> {
     const rows = await results;
     const output = this.output.open(`${this.baseDir}/${filename}`);
+    const keyed = rows.map(row => ({row, key: key(row), whole: ""}));
 
     console.log("Writing " + filename);
-    [...rows].sort(key).forEach(row => output.write(row));
+    keyed.sort(byKeyThenWholeRow);
+
+    for (const {row} of keyed) {
+      output.write(row);
+    }
+
     output.end();
 
     return finished(output);
@@ -190,29 +197,9 @@ export class BuildFeed {
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
     const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
 
-    // A trip needs a route before it can be written, and a route's number comes
-    // from where its name sorts rather than from which trip reached it first.
-    //
-    // Trips on one route can disagree about the route's description - 352 of
-    // them do, over whether first class is available - because it is a property
-    // of a train being flattened onto the line it runs on. There is no right
-    // answer, so the answer is the one that sorts first rather than the one that
-    // arrived first.
-    const routes = new Map<string, Route>();
-
-    for (const schedule of schedules) {
-      if (schedule.stopTimes.length <= 1) {
-        continue;
-      }
-
-      const candidate = schedule.toRoute();
-      const chosen = routes.get(schedule.routeShortName);
-
-      if (!chosen || describes(candidate) < describes(chosen)) {
-        routes.set(schedule.routeShortName, candidate);
-      }
-    }
-
+    // A trip needs its route's number, and that number comes from where the
+    // route name sorts rather than from which trip reached it first.
+    const routes = chooseRoutes(schedules);
     const routeIds: { [routeShortName: string]: number } = {};
     let routeId = 0;
 
@@ -325,42 +312,67 @@ function report(unknown: Map<string, number>): void {
 }
 
 /**
- * Sort by the named fields, and then by everything else.
+ * The declared key first, then the whole row.
  *
- * The named fields say what the file is ordered by and are what the
- * documentation quotes. The fallback is what makes the order total: a key that
- * leaves two rows tied would leave their order to whatever the source returned,
- * which is the thing this is here to remove. links.txt has 1,276 rows that tie
- * on their declared key.
- *
- * The fallback reads the row's fields in name order rather than in the order the
- * object was built, so two sources that build the same row differently still
- * agree.
+ * The whole row is what makes the order total, and it is read in field name
+ * order so that two sources building the same row differently still agree. It
+ * costs a JSON encoding of the row, so it is computed on the first tie rather
+ * than for every row of every file.
  */
-function by(...fields: string[]): (a: any, b: any) => number {
-  return (a, b) => {
-    for (const field of fields) {
-      const order = compare(a[field], b[field]);
+function byKeyThenWholeRow<T extends object>(a: Keyed<T>, b: Keyed<T>): number {
+  for (let i = 0; i < a.key.length; i++) {
+    const order = ascending(a.key[i], b.key[i]);
 
-      if (order !== 0) {
-        return order;
-      }
+    if (order !== 0) {
+      return order;
     }
+  }
 
-    return compare(canonical(a), canonical(b));
-  };
+  return ascending(a.whole ||= canonical(a.row), b.whole ||= canonical(b.row));
 }
 
 /**
- * Null sorts before everything, so a missing value has a place rather than
- * comparing equal to whatever it is put next to.
+ * Ascending, with null first.
+ *
+ * A row's fields are typed as strings and numbers, but they come from a database
+ * that can return null in any of them. `null < "SEV"` and `null > "SEV"` are
+ * both false, so without this a row with a null key would sort wherever it
+ * happened to be rather than in one place.
  */
-function compare(a: unknown, b: unknown): number {
+function ascending(a: Value, b: Value): number {
   if (a === b) return 0;
   if (a === null || a === undefined) return -1;
   if (b === null || b === undefined) return 1;
 
   return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * One route per name, and which one cannot depend on arrival order.
+ *
+ * Trips sharing a route can disagree about its description - 352 do, over
+ * whether first class is available - because it is a property of a train being
+ * flattened onto the line it runs on. Neither is right, so the one that sorts
+ * first wins.
+ */
+function chooseRoutes(schedules: Schedule[]): Map<string, Route> {
+  const chosen = new Map<string, {route: Route, description: string}>();
+
+  for (const schedule of schedules) {
+    if (schedule.stopTimes.length <= 1) {
+      continue;
+    }
+
+    const route = schedule.toRoute();
+    const description = describes(route);
+    const current = chosen.get(schedule.routeShortName);
+
+    if (!current || description < current.description) {
+      chosen.set(schedule.routeShortName, {route, description});
+    }
+  }
+
+  return new Map([...chosen].map(([name, {route}]) => [name, route]));
 }
 
 /**
@@ -375,3 +387,14 @@ function describes(route: Route): string {
 function canonical(row: object): string {
   return JSON.stringify(Object.entries(row).sort(([a], [b]) => a < b ? -1 : 1));
 }
+
+/**
+ * A row, its declared key, and the tiebreak once anything has needed it.
+ */
+interface Keyed<T> {
+  readonly row: T;
+  readonly key: Value[];
+  whole: string;
+}
+
+type Value = string | number | null | undefined;
