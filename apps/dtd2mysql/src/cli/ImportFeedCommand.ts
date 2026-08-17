@@ -96,15 +96,13 @@ export class ImportFeedCommand implements CLICommand {
    *
    * A record that makes its own id counts from zero on each run, and `id` is the
    * primary key, so `INSERT IGNORE` silently drops every row whose id an earlier
-   * feed already used. Only the `schedule` counter was ever restored, which is
-   * why an incremental's schedules landed and their stop times did not: 5,354
-   * schedules from the two reference incrementals had no stop times at all, and
-   * the incrementals' ZTR was discarded whole.
+   * feed already used - the schedules of an incremental land and their stop
+   * times do not.
    *
-   * Every record with a counter is restored, not the ones that were noticed. The
-   * name of a record is the name of its table, so there is nothing to keep in
-   * step. A full refresh drops the tables first, so the max is null and this is
-   * a no-op.
+   * Every record with a counter is restored, so a new one needs nothing here.
+   * The name of a record is the name of its table, so there is no list to keep
+   * in step. A full refresh drops the tables first, leaving the max null and
+   * this a no-op.
    */
   private async restoreIdCounters(): Promise<void> {
     const counted = Object.values(this.files)

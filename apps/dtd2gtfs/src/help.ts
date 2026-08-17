@@ -16,9 +16,9 @@ Build a GTFS feed from the DTD timetable feed, with no database
   --config PATH              read the build from a YAML file. Any flag given as
                              well takes precedence, so a config is a starting
                              point rather than a commitment
-  --links                    also write links.txt. The fixed links are in
-                             transfers.txt now; this is here for one release for
-                             anyone still reading the old file
+  --links                    also write links.txt, this project's own file of
+                             fixed links. transfers.txt holds the same links;
+                             links.txt is kept for one release
 
 For example:
 
