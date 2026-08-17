@@ -3,15 +3,15 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import mysql from "mysql2";
 import mysqlPromise from "mysql2/promise";
-import config, {downloadUrl} from "@gb-rail/dtd-schema";
-import {BuildFeed, GTFSOutput, stationCoordinates} from "@gb-rail/gtfs";
-import {FileOutput, OutputGTFSZipCommand} from "@gb-rail/gtfs-output";
+import config, {downloadUrl} from "@gb-transit/dtd-schema";
+import {BuildFeed, GTFSOutput, stationCoordinates} from "@gb-transit/gtfs";
+import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
 import {
   DownloadAndProcessCommand,
   DownloadCommand,
   DownloadFileCommand,
   PromiseSFTP
-} from "@gb-rail/dtd-source";
+} from "@gb-transit/dtd-source";
 import {CLICommand} from "./cli/CLICommand";
 import {CleanFaresCommand} from "./cli/CleanFaresCommand";
 import {GTFSImportCommand} from "./cli/GTFSImportCommand";

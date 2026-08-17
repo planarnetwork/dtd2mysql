@@ -1,5 +1,5 @@
 
-import {BooleanField, DateField, FixedWidthRecord, IntField, RecordAction, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, FixedWidthRecord, IntField, RecordAction, SingleRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const ticketTypeFixedWidthRecord = new FixedWidthRecord(
   "ticket_type",

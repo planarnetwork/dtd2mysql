@@ -1,6 +1,6 @@
 import csvWriter from 'csv-write-stream';
 import * as fs from "fs";
-import {GTFSOutput} from "@gb-rail/gtfs";
+import {GTFSOutput} from "@gb-transit/gtfs";
 import {Writable} from "stream";
 
 export class FileOutput implements GTFSOutput {

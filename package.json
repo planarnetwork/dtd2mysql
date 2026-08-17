@@ -1,7 +1,7 @@
 {
-  "name": "gb-rail",
+  "name": "gb-transit",
   "private": true,
-  "description": "Monorepo for the GB rail DTD tooling: dtd2mysql and the @gb-rail packages it is built from",
+  "description": "Monorepo for the GB rail DTD tooling: dtd2mysql and the @gb-transit packages it is built from",
   "packageManager": "yarn@4.18.0",
   "workspaces": [
     "apps/*",

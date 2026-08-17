@@ -1,4 +1,4 @@
-import {CSVRecord, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
+import {CSVRecord, SingleRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const record = new CSVRecord(
   "easement_toc",

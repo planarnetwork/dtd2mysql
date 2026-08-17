@@ -1,7 +1,6 @@
 {
-  "name": "@gb-rail/gtfs-output",
+  "name": "@gb-transit/gtfs-output",
   "version": "0.0.0",
-  "private": true,
   "description": "Writers for a GTFS feed: a directory of text files, or a zip",
   "license": "GPL-3.0",
   "repository": {
@@ -17,14 +16,21 @@
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b"
   },
   "dependencies": {
-    "@gb-rail/gtfs": "workspace:^",
+    "@gb-transit/gtfs": "workspace:^",
     "csv-write-stream": "2.0.0"
   },
   "devDependencies": {
-    "@types/csv-write-stream": "2.0.3"
+    "@types/csv-write-stream": "2.0.3",
+    "typescript": "7.0.2"
   }
 }

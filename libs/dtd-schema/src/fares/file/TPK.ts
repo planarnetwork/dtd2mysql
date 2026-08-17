@@ -1,5 +1,5 @@
 
-import {DateField, FixedWidthRecord, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
+import {DateField, FixedWidthRecord, MultiRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const pkg = new FixedWidthRecord(
   "package",

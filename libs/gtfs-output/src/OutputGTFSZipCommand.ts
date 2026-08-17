@@ -2,7 +2,7 @@
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {processSpawnResult} from "./processSpawnResult";
-import {BuildFeed} from "@gb-rail/gtfs";
+import {BuildFeed} from "@gb-transit/gtfs";
 import * as fs from "fs";
 import {spawnSync} from "child_process";
 

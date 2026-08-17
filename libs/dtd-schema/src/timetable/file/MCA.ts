@@ -1,5 +1,5 @@
 
-import {BooleanField, FixedWidthRecord, ForeignKeyField, IntField, MultiFormatRecord, MultiRecordFile, RecordAction, RecordWithManualIdentifier, ShortDateField, TextField, TimeField, VariableLengthText} from "@gb-rail/feed-parser";
+import {BooleanField, FixedWidthRecord, ForeignKeyField, IntField, MultiFormatRecord, MultiRecordFile, RecordAction, RecordWithManualIdentifier, ShortDateField, TextField, TimeField, VariableLengthText} from "@gb-transit/feed-parser";
 
 export const tiplocInsert = new FixedWidthRecord(
   "tiploc",

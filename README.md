@@ -22,14 +22,15 @@ This is a monorepo. The published CLI is one workspace among several:
 | Package | Published as | What it is |
 |---|---|---|
 | `apps/dtd2mysql` | `dtd2mysql` | The command line tool |
-| `libs/feed-parser` | — | Declarative fixed-width and CSV record parsing |
-| `libs/dtd-schema` | — | Record layouts for the fares, timetable, routeing and NFM64 feeds |
-| `libs/dtd-source` | — | SFTP download and feed sequencing |
-| `libs/gtfs` | — | GTFS entities, the transit model, the transforms and the build |
-| `libs/gtfs-output` | — | Writers: a directory of text files, or a zip |
+| `libs/feed-parser` | `@gb-transit/feed-parser` | Declarative fixed-width and CSV record parsing |
+| `libs/dtd-schema` | `@gb-transit/dtd-schema` | Record layouts for the fares, timetable, routeing and NFM64 feeds |
+| `libs/dtd-source` | `@gb-transit/dtd-source` | SFTP download and feed sequencing |
+| `libs/gtfs` | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
+| `libs/gtfs-output` | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
 
-`dtd2mysql` is the only package published. The libraries are internal and bundled into
-its tarball, so installing it pulls nothing from the `@gb-rail` scope.
+Every package is published. `dtd2mysql` depends on the `@gb-transit` packages the same way
+anything else would, so the libraries are usable on their own — a GTFS build that reads
+from something other than this tool's MySQL schema needs `@gb-transit/gtfs`, not the CLI.
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the
 workspaces resolve to that output, so `yarn build` has to happen before anything runs;
