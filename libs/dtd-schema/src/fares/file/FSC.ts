@@ -1,5 +1,5 @@
 
-import {DateField, FixedWidthRecord, RecordAction, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
+import {DateField, FixedWidthRecord, RecordAction, SingleRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const clusterFixedWidthRecord = new FixedWidthRecord(
   "station_cluster",

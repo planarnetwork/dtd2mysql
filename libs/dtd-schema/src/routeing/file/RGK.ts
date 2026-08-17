@@ -1,4 +1,4 @@
-import {BooleanField, CSVRecord, IntField, MultiRecordFile, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
+import {BooleanField, CSVRecord, IntField, MultiRecordFile, TextField, ZeroFillIntField} from "@gb-transit/feed-parser";
 
 const londonRoute = new CSVRecord(
   "london_route",

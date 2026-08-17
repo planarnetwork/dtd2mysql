@@ -1,5 +1,5 @@
 
-import {DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
+import {DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const rover = new FixedWidthRecord(
   "rover",

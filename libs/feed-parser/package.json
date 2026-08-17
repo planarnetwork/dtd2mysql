@@ -1,7 +1,6 @@
 {
-  "name": "@gb-rail/feed-parser",
+  "name": "@gb-transit/feed-parser",
   "version": "0.0.0",
-  "private": true,
   "description": "Declarative fixed-width and CSV record parsing for the GB rail data feeds",
   "license": "GPL-3.0",
   "repository": {
@@ -17,11 +16,20 @@
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run"
   },
   "dependencies": {
     "memoized-class-decorator": "1.6.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

@@ -1,5 +1,5 @@
 
-import {BooleanField, DateField, FixedWidthRecord, MultiRecordFile, NullDateField, RecordAction, TextField, TimeField, ZeroFillIntField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, FixedWidthRecord, MultiRecordFile, NullDateField, RecordAction, TextField, TimeField, ZeroFillIntField} from "@gb-transit/feed-parser";
 
 const dates = new FixedWidthRecord(
   "restriction_date",

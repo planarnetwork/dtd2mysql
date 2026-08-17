@@ -1,5 +1,5 @@
-import config from "@gb-rail/dtd-schema";
-import {FieldValue, MultiRecordFile, RecordAction, SingleRecordFile} from "@gb-rail/feed-parser";
+import config from "@gb-transit/dtd-schema";
+import {FieldValue, MultiRecordFile, RecordAction, SingleRecordFile} from "@gb-transit/feed-parser";
 import {
   Association,
   DateRange,
@@ -19,7 +19,7 @@ import {
   toStop,
   Transfer,
   TransferType
-} from "@gb-rail/gtfs";
+} from "@gb-transit/gtfs";
 import {FeedZip} from "./FeedZip";
 import {charColumns, MemoryTable, Row} from "./MemoryTable";
 import {additionalFixedLink, associationRow, AssociationRow, fixedLink, integer, stationRecord} from "./Rows";
