@@ -12,15 +12,15 @@ const range: DateRange = {
 describe("MySqlTimetableSource", () => {
 
   it("says the schedule table is empty rather than failing on the row it did not get", async () => {
-    const source = new MySqlTimetableSource(new EmptyDatabase(), {} as Pool, {});
+    const source = new MySqlTimetableSource(new EmptyDatabase(), {} as Pool, {}, range);
 
-    await expect(source.getSchedules(range)).rejects.toThrow(/schedule table is empty/);
+    await expect(source.getSchedules()).rejects.toThrow(/schedule table is empty/);
   });
 
   it("names the import step, because that is what the operator has to do next", async () => {
-    const source = new MySqlTimetableSource(new EmptyDatabase(), {} as Pool, {});
+    const source = new MySqlTimetableSource(new EmptyDatabase(), {} as Pool, {}, range);
 
-    await expect(source.getSchedules(range)).rejects.toThrow(/--timetable/);
+    await expect(source.getSchedules()).rejects.toThrow(/--timetable/);
   });
 
 });

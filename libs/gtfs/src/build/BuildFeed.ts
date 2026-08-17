@@ -45,8 +45,8 @@ export class BuildFeed {
 
     console.log(`Building ${range.from} to ${range.to}\n`);
 
-    const associationsP = this.repository.getAssociations(range);
-    const scheduleResultsP = this.repository.getSchedules(range);
+    const associationsP = this.repository.getAssociations();
+    const scheduleResultsP = this.repository.getSchedules();
     const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt", by("from_stop_id", "to_stop_id"));
     // Awaited at copyTrips rather than here, so the queries below still start
     // before the stops come back.
