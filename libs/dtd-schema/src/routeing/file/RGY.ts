@@ -1,5 +1,5 @@
 
-import {CSVRecord, DateField, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
+import {CSVRecord, DateField, SingleRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const record = new CSVRecord(
   "location",

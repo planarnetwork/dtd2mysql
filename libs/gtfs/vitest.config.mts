@@ -1,3 +1,3 @@
 import {project} from "../../vitest.shared.mjs";
 
-export default project("@gb-rail/gtfs");
+export default project("@gb-transit/gtfs");

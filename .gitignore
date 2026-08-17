@@ -29,4 +29,3 @@ data/snapshots/db-mini/
 data/*.log
 data/*.pid
 data/probe*
-bundle/
