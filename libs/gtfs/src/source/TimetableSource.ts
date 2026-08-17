@@ -28,6 +28,12 @@ export interface TimetableSource {
   getTransfers(): Promise<Transfer[]>;
 
   /**
+   * Which DTD feed this was built from, for feed_info.feed_version - the
+   * filename of the most recent one applied, or null if the source cannot say.
+   */
+  getFeedVersion(): Promise<string | null>;
+
+  /**
    * Every station, with coordinates
    */
   getStops(): Promise<Stop[]>;
@@ -83,6 +89,9 @@ export interface ScheduleStopTimeRow {
   scheduled_arrival_time: string | null,
   scheduled_departure_time: string | null,
   platform: string,
+  // The TIPLOC of the timing point, which the stop id is built from. Null where
+  // the source has none: a z-train's location is a CRS code already.
+  tiploc: string | null,
   activity: string,
   train_class: null | "S" | "B",
   reservations: null | "R" | "S" | "A"

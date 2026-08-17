@@ -121,6 +121,16 @@ CREATE TABLE stops (
   PRIMARY KEY (stop_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+DROP TABLE IF EXISTS feed_info;
+CREATE TABLE feed_info (
+  feed_publisher_name varchar(255) NOT NULL,
+  feed_publisher_url varchar(255) NOT NULL,
+  feed_lang varchar(15) NOT NULL,
+  feed_start_date date NOT NULL,
+  feed_end_date date NOT NULL,
+  feed_version varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 DROP TABLE IF EXISTS transfers;
 CREATE TABLE transfers (
   from_stop_id varchar(100) NOT NULL,

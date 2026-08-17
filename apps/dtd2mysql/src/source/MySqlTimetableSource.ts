@@ -18,6 +18,7 @@ import {
   Stop,
   TimetableSource,
   toFixedLinks,
+  interchange,
   toStop,
   withoutPlaceholders,
   reportDroppedStops,
@@ -40,7 +41,7 @@ export class MySqlTimetableSource implements TimetableSource {
    * Return the interchange time between each station
    */
   public async getTransfers(): Promise<Transfer[]> {
-    const [results] = await this.db.query<Transfer>(`
+    const [results] = await this.db.query<{from_stop_id: string, min_transfer_time: number}>(`
       SELECT 
         crs_code AS from_stop_id, 
         crs_code AS to_stop_id, 
@@ -50,7 +51,28 @@ export class MySqlTimetableSource implements TimetableSource {
       GROUP BY crs_code
     `);
 
-    return results;
+    // Through interchange() rather than returned as they come back: the rows
+    // have the four standard columns and Transfer now has twelve more, and the
+    // CSV writer takes its header from the first row it is given.
+    return results.map(row => interchange(row.from_stop_id, row.min_transfer_time));
+  }
+
+  /**
+   * The last file ImportFeedCommand recorded. A missing table or an empty log
+   * both mean the same thing here as they do to LogTableFeedCursor: nothing is
+   * known, so say nothing rather than guess.
+   */
+  public async getFeedVersion(): Promise<string | null> {
+    try {
+      const [[log]] = await this.db.query<{filename: string | null}>(
+        "SELECT filename FROM log ORDER BY id DESC LIMIT 1"
+      );
+
+      return log?.filename ?? null;
+    }
+    catch (err) {
+      return null;
+    }
   }
 
   /**
@@ -63,15 +85,15 @@ export class MySqlTimetableSource implements TimetableSource {
    * the station's CRS without being the place a passenger stands. Reading has
    * `RDNGSTN` rated 2 and `RDNGORJ` rated 9.
    *
-   * `GROUP BY crs_code` alone keeps whichever row came first, which published
-   * the subsidiary TIPLOC as `stop_code` for 75 stations. Ordering a derived
-   * table does not fix it - MariaDB is free to ignore that - so the row is
-   * chosen explicitly.
+   * Grouping alone keeps whichever row came first, which published the
+   * subsidiary TIPLOC as `stop_code` for 75 stations. Ordering a derived table
+   * does not fix it - MariaDB is free to ignore that - so the row is chosen
+   * explicitly.
    *
    * The TIPLOC itself breaks the tie, because some stations have nothing else
    * to separate them: Westbury's TIPLOCs are all rated 9. Falling back to the
    * order rows happen to arrive in makes this source and the file source
-   * disagree, which is how that was found.
+   * disagree.
    */
   public async getStops(): Promise<Stop[]> {
     const {stops} = await this.stations();
@@ -137,7 +159,7 @@ export class MySqlTimetableSource implements TimetableSource {
           IF(train_status="S", "SS", train_category) AS train_category,
           scheduled_arrival_time AS scheduled_arrival_time,
           scheduled_departure_time AS scheduled_departure_time,
-          platform, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
+          platform, location AS tiploc, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
         LEFT JOIN stop_time ON schedule.id = stop_time.schedule
@@ -157,7 +179,7 @@ export class MySqlTimetableSource implements TimetableSource {
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, location AS crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
-          platform, atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class 
+          platform, NULL AS tiploc, atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class
         FROM z_schedule
         LEFT JOIN z_schedule_extra ON z_schedule.id = z_schedule_extra.schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule

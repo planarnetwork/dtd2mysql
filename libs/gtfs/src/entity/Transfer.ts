@@ -8,11 +8,38 @@ export interface Transfer {
   from_stop_id: StopID,
   to_stop_id: StopID,
   transfer_type: TransferType,
-  min_transfer_time: Duration
+  min_transfer_time: Duration,
+
+  /**
+   * Everything the DTD says about a fixed link that GTFS has no field for.
+   *
+   * These are producer extensions. The spec lets a producer add fields it does
+   * not define and requires consumers to ignore ones they do not recognise, so
+   * a reader that wants only standard transfers sees a standard file.
+   *
+   * The spec has nowhere else for them: a conditional transfer has no
+   * documented pattern, unlike a platform. They are here or they are lost.
+   *
+   * Null on a station interchange row, where there is no link to describe.
+   */
+  mode: string | null,
+  start_time: string | null,
+  end_time: string | null,
+  start_date: string | null,
+  end_date: string | null,
+  monday: 0 | 1 | null,
+  tuesday: 0 | 1 | null,
+  wednesday: 0 | 1 | null,
+  thursday: 0 | 1 | null,
+  friday: 0 | 1 | null,
+  saturday: 0 | 1 | null,
+  sunday: 0 | 1 | null
 }
 
 /**
- * 3 char CRS code (e.g. TBW)
+ * A station: the 3 char CRS code (e.g. `TBW`) as a source describes a transfer,
+ * and the station's ATCO code (`910GTONBDG`) once `mergeTransfers` has put the
+ * rows in the terms the feed publishes.
  */
 export type StopID = string;
 
@@ -23,3 +50,7 @@ export enum TransferType {
   NotPossible = 3
 }
 
+/**
+ * transfers.txt, as it is written. Every field of Transfer is a column of it.
+ */
+export type TransferRow = Transfer;

@@ -2,6 +2,8 @@ import proj4 from "proj4";
 import {Stop} from "../entity/Stop";
 import {StationCoordinates} from "./TimetableSource";
 import {inBounds} from "./Bounds";
+import {NOWHERE} from "./Located";
+import {stationId} from "../transform/Atco";
 
 proj4.defs(
   "EPSG:27700",
@@ -38,17 +40,19 @@ const outsideBounds = new Set(["HVH"]);
  * the eastern edge of the National Grid, and lands in the North Sea. Neither is
  * a coordinate, and inventing one for either is worse than saying so.
  */
-function located(row: StationRecord): [number | null, number | null] {
+function position(row: StationRecord): {stop_lon: number, stop_lat: number, located: boolean} {
   if (row.easting === null || row.northing === null) {
-    return [null, null];
+    return {...NOWHERE, located: false};
   }
 
-  const [lon, lat] = proj4("EPSG:27700", "EPSG:4326", [
+  const [stop_lon, stop_lat] = proj4("EPSG:27700", "EPSG:4326", [
     (row.easting - 10000) * 100,
     (row.northing - 60000) * 100
   ]);
 
-  return inBounds(lat, lon) || outsideBounds.has(row.crs_code) ? [lon, lat] : [null, null];
+  return inBounds(stop_lat, stop_lon) || outsideBounds.has(row.crs_code)
+    ? {stop_lon, stop_lat, located: true}
+    : {...NOWHERE, located: false};
 }
 
 /**
@@ -59,24 +63,29 @@ function located(row: StationRecord): [number | null, number | null] {
  * whatever `station-coordinates.ts` says. Both halves go when the coordinates
  * come from a source that has them in WGS84 already.
  *
- * The property order matters. csv-write-stream takes the column order from the
- * first row it is given, so this is what fixes the order of stops.txt.
+ * The CRS and the TIPLOC are both kept: the CRS is what the build identifies a
+ * station by and what the file publishes as `stop_code`, and the TIPLOC is what
+ * the ATCO code is built from. The overrides are keyed on CRS, which is the code
+ * a person editing them has.
  */
 export function toStop(row: StationRecord, overrides: StationCoordinates): Stop {
-  const [stop_lon, stop_lat] = located(row);
+  const {stop_lon, stop_lat, located} = position(row);
 
   return Object.assign({
-    stop_id: row.crs_code,
-    stop_code: row.tiploc_code,
+    stop_id: stationId(row.tiploc_code),
+    crs: row.crs_code,
+    tiploc: row.tiploc_code,
     stop_name: row.station_name,
     stop_desc: row.cate_interchange_status,
     zone_id: null,
     stop_url: null,
     location_type: null,
     parent_station: null,
+    platform_code: null,
     stop_timezone: row.station_name.includes("(CIE") ? "Europe/Dublin" : "Europe/London",
     wheelchair_boarding: 0,
     stop_lon,
-    stop_lat
+    stop_lat,
+    located
   } as unknown as Stop, overrides[row.crs_code]);
 }

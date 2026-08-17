@@ -16,6 +16,7 @@ import {
   STP,
   TimetableSource,
   toFixedLinks,
+  interchange,
   toStop,
   withoutPlaceholders,
   reportDroppedStops,
@@ -23,6 +24,7 @@ import {
   TransferType
 } from "@gb-transit/gtfs";
 import {FeedZip} from "./FeedZip";
+import {basename} from "node:path";
 import {charColumns, MemoryTable, Row} from "./MemoryTable";
 import {additionalFixedLink, associationRow, AssociationRow, fixedLink, integer, stationRecord} from "./Rows";
 
@@ -68,6 +70,15 @@ export class CifFileSource implements TimetableSource {
   /**
    * SELECT crs_code, ... FROM physical_station WHERE crs_code IS NOT NULL GROUP BY crs_code
    */
+  /**
+   * The last feed given, which is the most recent one applied.
+   */
+  public async getFeedVersion(): Promise<string | null> {
+    const last = this.sources[this.sources.length - 1];
+
+    return last === undefined ? null : basename(last);
+  }
+
   public async getStops(): Promise<Stop[]> {
     const {stops} = await this.stops();
 
@@ -84,12 +95,7 @@ export class CifFileSource implements TimetableSource {
     const {stations} = await this.reference();
 
     return groupByCrs(stations.rows.filter(row => row.cate_interchange_status !== null))
-      .map(row => ({
-        from_stop_id: row.crs_code as string,
-        to_stop_id: row.crs_code as string,
-        transfer_type: TransferType.MinTime,
-        min_transfer_time: integer(row, "minimum_change_time") * 60
-      }));
+      .map(row => interchange(row.crs_code as string, integer(row, "minimum_change_time") * 60));
   }
 
   /**
@@ -468,7 +474,10 @@ class ScheduleLoader {
         continue;
       }
 
-      rows.push({...common, ...stopColumns(stop, crs, rows.length + 1)} as unknown as ScheduleStopTimeRow);
+      rows.push({
+        ...common,
+        ...stopColumns(stop, crs, rows.length + 1, stop.location as string)
+      } as unknown as ScheduleStopTimeRow);
     }
 
     return rows;
@@ -499,7 +508,7 @@ class ScheduleLoader {
     };
 
     return stops.map((stop, index) =>
-      ({...common, ...stopColumns(stop, stop.location as string, index + 1)}) as ScheduleStopTimeRow
+      ({...common, ...stopColumns(stop, stop.location as string, index + 1, null)}) as ScheduleStopTimeRow
     );
   }
 
@@ -538,7 +547,7 @@ class ScheduleLoader {
 
 }
 
-function stopColumns(stop: Row, crs: string, sequence: number) {
+function stopColumns(stop: Row, crs: string, sequence: number, tiploc: string | null) {
   return {
     crs_code: crs,
     stop_id: sequence,
@@ -547,6 +556,7 @@ function stopColumns(stop: Row, crs: string, sequence: number) {
     scheduled_arrival_time: stop.scheduled_arrival_time,
     scheduled_departure_time: stop.scheduled_departure_time,
     platform: stop.platform,
+    tiploc,
     activity: stop.activity
   };
 }
@@ -559,6 +569,7 @@ const NO_STOP = {
   scheduled_arrival_time: null,
   scheduled_departure_time: null,
   platform: null,
+  tiploc: null,
   activity: null
 };
 

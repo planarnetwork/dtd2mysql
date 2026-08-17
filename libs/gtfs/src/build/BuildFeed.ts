@@ -10,12 +10,19 @@ import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
-import {CRS, Stop} from "../entity/Stop";
-import {locate} from "../source/Located";
+import {FeedRow} from "../entity/FeedRow";
+import {CRS, Stop, TIPLOC} from "../entity/Stop";
+import {locate, toStopRow} from "../source/Located";
+import {createFeedInfo} from "../transform/CreateFeedInfo";
+import {mergeTransfers} from "../transform/MergeTransfers";
+import {dropUnknownStops} from "../transform/DropUnknownStops";
+import {toAgencyRow, toRouteRow} from "../transform/Noc";
+import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
+import {Writable} from "stream";
 
 export class BuildFeed {
   private baseDir!: string;
@@ -52,12 +59,15 @@ export class BuildFeed {
     const stopsQ = this.repository.getStops();
     const fixedLinksQ = this.repository.getFixedLinks();
     const transfersQ = this.repository.getTransfers();
-    const agencyP = this.copy(agencies, "agency.txt", a => [a.agency_id]);
-    const fixedLinksP = this.copy(
-      fixedLinksQ,
-      "links.txt",
-      l => [l.from_stop_id, l.to_stop_id, l.mode, l.start_date, l.start_time]
-    );
+    const versionQ = this.repository.getFeedVersion();
+    const agencyP = this.copy(agencies.map(toAgencyRow), "agency.txt", a => [a.agency_id]);
+    const fixedLinksP = this.context.links
+      ? this.copy(
+        fixedLinksQ,
+        "links.txt",
+        l => [l.from_stop_id, l.to_stop_id, l.mode, l.start_date, l.start_time]
+      )
+      : Promise.resolve();
 
     const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
     const schedules = this.getSchedules(associations, scheduleResults);
@@ -73,20 +83,40 @@ export class BuildFeed {
     // whether an unlocated station is published depends on whether anything
     // references it.
     const [sourceStops, fixedLinks] = await Promise.all([stopsQ, fixedLinksQ]);
-    const stops = locate(sourceStops, referenced(schedules, fixedLinks));
-    const published = new Set(stops.map(stop => stop.stop_id));
-    const stopsP = this.copy(stops, "stops.txt", s => [s.stop_id]);
+    // The boarding points are added before anything asks which stops the feed
+    // publishes, because a call references one of them rather than the station.
+    // Only the hierarchy is built here; a call's id is composed when
+    // stop_times.txt is written, so nothing upstream of this sees it.
+    const withChildren = withStopPoints(sourceStops, schedules);
+    const stops = locate(withChildren, referenced(schedules, fixedLinks));
+    // Every index the build keeps is on the CRS code, because that is what a
+    // schedule, an association and a fixed link name a station by.
+    const stations = new Map(
+      stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
+    );
+    const called = dropUnknownStops(schedules, new Set(stations.keys()));
+    const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
-      (await transfersQ).filter(transfer => published.has(transfer.from_stop_id)),
+      mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
       "transfers.txt",
       t => [t.from_stop_id, t.to_stop_id]
     );
 
-    const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
+    const [calendars, calendarDates, serviceIds] = createCalendar(called);
 
     const calendarP = this.copy(calendars, "calendar.txt", c => [c.service_id]);
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", d => [d.service_id, d.date]);
-    const tripsP = this.copyTrips(schedules, serviceIds, names(stops));
+    const feedInfoP = this.copy(
+      [createFeedInfo(calendars, calendarDates, range, await versionQ)],
+      "feed_info.txt",
+      f => [f.feed_publisher_name]
+    );
+    const tripsP = this.copyTrips(
+      called,
+      serviceIds,
+      map(stations, stop => stop.stop_name),
+      map(stations, stop => stop.tiploc)
+    );
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -98,21 +128,35 @@ export class BuildFeed {
       calendarP,
       calendarDatesP,
       tripsP,
-      fixedLinksP
+      fixedLinksP,
+      feedInfoP
     ]);
 
     await Promise.all([this.repository.end(), this.output.end()]);
   }
 
   /**
+   * One row, to a file being streamed rather than sorted.
+   *
+   * trips.txt, stop_times.txt and routes.txt are written as they are built, so
+   * they do not go through copy(). This is where they meet the same constraint.
+   */
+  private write<T extends FeedRow>(output: Writable, row: T): void {
+    output.write(row);
+  }
+
+  /**
    * Write rows to a file, in the order the key says.
+   *
+   * A row, not a model: FeedRow is the ten files this build writes, so anything
+   * a model carries that its file has no column for cannot reach here.
    *
    * Every file is sorted before it is written, so no output depends on the order
    * a source happened to return its rows in. The key for each file is at the
    * call site, and rows it leaves tied are ordered by their whole contents -
    * links.txt has 1,276 rows that tie on their declared key.
    */
-  private async copy<T extends object>(
+  private async copy<T extends FeedRow>(
     results: T[] | Promise<T[]>,
     filename: string,
     key: (row: T) => Value[]
@@ -136,7 +180,12 @@ export class BuildFeed {
   /**
    * trips.txt, stop_times.txt and routes.txt have interdependencies so they are written together
    */
-  private copyTrips(schedules: Schedule[], serviceIds: ServiceIdIndex, stopNames: Map<string, string>): Promise<any> {
+  private copyTrips(
+    schedules: Schedule[],
+    serviceIds: ServiceIdIndex,
+    stopNames: ReadonlyMap<CRS, string>,
+    tiplocs: ReadonlyMap<CRS, TIPLOC>
+  ): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
@@ -150,7 +199,7 @@ export class BuildFeed {
 
     for (const name of [...routes.keys()].sort()) {
       routeIds[name] = ++routeId;
-      routeFile.write({...routes.get(name)!, route_id: routeId});
+      this.write(routeFile, toRouteRow({...routes.get(name)!, route_id: routeId}));
     }
 
     // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
@@ -169,12 +218,12 @@ export class BuildFeed {
         unknown.set(schedule.destination, (unknown.get(schedule.destination) ?? 0) + 1);
       }
 
-      trips.write(schedule.toTrip(
+      this.write(trips, schedule.toTrip(
         serviceIds[schedule.calendar.id],
         routeIds[schedule.routeShortName],
         name ?? schedule.destination
       ));
-      schedule.stopTimes.forEach(r => stopTimes.write(r));
+      schedule.stopTimes.forEach(r => this.write(stopTimes, toStopTimeRow(r, tiplocs)));
     }
 
     report(unknown);
@@ -226,11 +275,11 @@ function referenced(schedules: Schedule[], links: FixedLink[]): Set<CRS> {
 }
 
 /**
- * Where a trip is going, by the CRS code of the stop it ends at. A stop the feed
- * never described falls back to the code itself rather than to nothing.
+ * One property of every station, by CRS code - the name a headsign uses, the
+ * stop id a transfer references, the TIPLOC a call's id is built from.
  */
-function names(stops: Stop[]): Map<string, string> {
-  return new Map(stops.map(stop => [stop.stop_id, stop.stop_name]));
+function map<T>(stations: ReadonlyMap<CRS, Stop>, property: (stop: Stop) => T): ReadonlyMap<CRS, T> {
+  return new Map([...stations].map(([crs, stop]) => [crs, property(stop)]));
 }
 
 /**
@@ -264,7 +313,7 @@ function report(unknown: Map<string, number>): void {
  * costs a JSON encoding of the row, so it is computed on the first tie rather
  * than for every row of every file.
  */
-function byKeyThenWholeRow<T extends object>(a: Keyed<T>, b: Keyed<T>): number {
+function byKeyThenWholeRow<T extends FeedRow>(a: Keyed<T>, b: Keyed<T>): number {
   for (let i = 0; i < a.key.length; i++) {
     const order = ascending(a.key[i], b.key[i]);
 

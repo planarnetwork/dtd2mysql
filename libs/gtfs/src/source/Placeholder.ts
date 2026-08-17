@@ -11,7 +11,7 @@ import {Stop} from "../entity/Stop";
  *
  * - the name, which no real station has;
  * - a `CATZ` TIPLOC, which 121 stations have, most of them real CIE stations;
- * - no usable coordinate, which 45 stations have, including every CIE station.
+ * - no coordinate of its own, which 45 stations have, including every CIE station.
  *
  * A `Q` CRS prefix is not one of the signals. 38 stations have it and most are
  * real.
@@ -20,15 +20,16 @@ const name = /^[A-Z]+ (ORIGIN|DESTINATION)$/;
 
 export function isPlaceholder(stop: Stop): boolean {
   return name.test(stop.stop_name)
-    && stop.stop_code.startsWith("CATZ")
-    && stop.stop_lat === null;
+    && stop.tiploc.startsWith("CATZ")
+    && !stop.located;
 }
 
 /**
- * The stops that are real, and the codes of the ones that are not so their stop
- * times can go with them. Every trip calling at a placeholder calls at nothing
- * else, so dropping the stop times empties the trip and the existing
- * "fewer than two stops" filter removes it whole.
+ * The stops that are real, and the CRS codes of the ones that are not so their
+ * stop times can go with them - a stop time names a station by CRS. Every trip
+ * calling at a placeholder calls at nothing else, so dropping the stop times
+ * empties the trip and the existing "fewer than two stops" filter removes it
+ * whole.
  */
 export function withoutPlaceholders(stops: Stop[]): {stops: Stop[], dropped: Set<string>} {
   const dropped = new Set<string>();
@@ -37,7 +38,7 @@ export function withoutPlaceholders(stops: Stop[]): {stops: Stop[], dropped: Set
       return true;
     }
 
-    dropped.add(stop.stop_id);
+    dropped.add(stop.crs);
 
     return false;
   });

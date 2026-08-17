@@ -9,6 +9,13 @@
 export interface BuildContext {
   readonly today: Temporal.PlainDate;
   readonly range: Temporal.Duration;
+
+  /**
+   * Whether to write links.txt, a file of this project's own rather than
+   * anything GTFS defines, alongside the transfers.txt that holds the same
+   * links. Kept behind `--links` for one minor version.
+   */
+  readonly links: boolean;
 }
 
 /**
@@ -123,6 +130,7 @@ export function buildContext(argv: string[], env: NodeJS.ProcessEnv = process.en
 
   return {
     today: today ? Temporal.PlainDate.from(today) : Temporal.Now.plainDateISO(),
-    range: parseRange(range ?? "3 MONTH")
+    range: parseRange(range ?? "3 MONTH"),
+    links: argv.includes("--links") || env.GTFS_LINKS === "1"
   };
 }
