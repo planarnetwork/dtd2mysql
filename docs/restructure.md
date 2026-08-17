@@ -1269,9 +1269,16 @@ resolved once in the composition root, not via `require()` inside a memoized get
 `Container.ts`'s dynamic requires do not survive the move.
 
 **A9 · Changesets and release pipeline** *(depends A8)* — **done**
-`publish.yml` replaced. `yarn workspaces foreach --topological npm publish` gated on a changeset.
+`publish.yml` replaced. A topological `yarn pack` piped into `npm publish`, gated on a changeset.
 Libs public under `@gb-transit`, apps bare. Dry-run on PRs. Topological order matters: a lib
 has to be on the registry before the app that depends on it is.
+
+Each workspace is packed by yarn and the tarball handed to npm, rather than run through
+`npm publish` directly. `workspace:^` is a yarn protocol: yarn substitutes the real range as
+it packs, npm does not understand it at all, so publishing with npm alone would ship a
+manifest that fails to install with `Unsupported URL Type "workspace:"`. npm still does the
+upload, because trusted publishing over OIDC is an npm feature. Nothing catches this in a
+dry run — `pack --dry-run` is yarn, and yarn is the half that works.
 
 The first release of each `@gb-transit` package has to be made before npm can be told which
 workflow is allowed to publish it, so trusted publishing covers everything from the second
