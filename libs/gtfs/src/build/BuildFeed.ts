@@ -59,7 +59,8 @@ export class BuildFeed {
       l => [l.from_stop_id, l.to_stop_id, l.mode, l.start_date, l.start_time]
     );
 
-    const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
+    const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
+    const schedules = this.getSchedules(associations, scheduleResults);
 
     if (schedules.length === 0) {
       throw new Error(
@@ -71,7 +72,8 @@ export class BuildFeed {
     // stops.txt is written after the schedules and the links are known, because
     // whether an unlocated station is published depends on whether anything
     // references it.
-    const stops = locate(await stopsQ, referenced(schedules, await fixedLinksQ));
+    const [sourceStops, fixedLinks] = await Promise.all([stopsQ, fixedLinksQ]);
+    const stops = locate(sourceStops, referenced(schedules, fixedLinks));
     const published = new Set(stops.map(stop => stop.stop_id));
     const stopsP = this.copy(stops, "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
