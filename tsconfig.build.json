@@ -24,6 +24,9 @@
     },
     {
       "path": "./apps/dtd2gtfs"
+    },
+    {
+      "path": "./apps/website"
     }
   ]
 }

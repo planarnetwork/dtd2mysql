@@ -1620,27 +1620,46 @@ straight to 6.6.14 - which is the ten phantom versions the broken runs burned.
 
 So E8 closes when the stack merges. Nothing more to do for it.
 
-**E1 · Create the `gb-rail-gtfs` data repo**
-A year of daily releases would bury the npm tags, and DTD credentials should not sit in a repo that
-takes PRs. Secrets configured; feed workflows restricted to the default branch; no
-`pull_request_target` anywhere.
+**E1 · Publish from this repository**
+Originally a separate `gb-rail-gtfs` repo, on the grounds that a year of daily releases would bury
+the npm tags and that DTD credentials should not sit in a repo taking pull requests. **Decided
+against**: the feed is published from here.
 
-**E2 · Nightly build workflow** *(depends C3, B6, D8, E1)*
-`cron: '0 5 * * *'` plus `workflow_dispatch`. Downloads the latest full refresh and all subsequent
-incrementals with per-filename caching — deterministic, no stateful cursor to corrupt. Builds, runs
-the validator, runs T6's Track A invariants against the day's build, and fails the release on
-violation or on a swing over 5% in trip count versus the previous build. A published feed that fails
-referential integrity must never reach a release.
+Neither concern needs a second repository. Feed releases are tagged `feed-YYYY-MM-DD` and version
+releases `v6.6.x`, so they are distinguishable and filterable, and the `latest/download` link
+resolves by asset name regardless. Credentials are org secrets, which GitHub does not expose to a
+pull request from a fork; what makes that true is having no `pull_request_target` anywhere and
+keeping the feed workflows on the default branch, which is a rule to hold rather than a repository
+to create.
 
-*The 5% gate and #121 collide.* Removing the merge step is a **+19% step change** in trip count
-(229,898 → 273,539 on a 3 month build; stop times +21%, 16 MB → 20 MB zipped) because consecutive
-CIF records with the same stopping pattern are no longer collapsed into one trip. Whichever lands
-second trips the other. Either #121 ships before the gate exists, or the gate needs a documented
-one-off reset. The size is worth revisiting separately: merging by calendar *after* ids are assigned
-would recover most of it without destabilising them.
+What is actually needed: the credentials, which exist, and Pages enabled, which is not yet.
 
-*Risk:* `ubuntu-latest` is 4 vCPU / 16 GB and every `Schedule` is currently materialised in memory.
-Ship at a three-month horizon initially; raise after F1.
+**E2 · Nightly build workflow** *(depends C3, B6, E1)* — **written, never run**
+
+`cron: '0 5 * * *'` plus `workflow_dispatch`, in `.github/workflows/feed.yml`. Downloads the
+timetable with per-filename caching - the set of files to fetch is derived from what the server
+holds and what is already on disk, so there is no cursor to get out of step - builds, validates,
+compares with the last release and attaches the result to a `feed-YYYY-MM-DD` release.
+
+**Any validator ERROR stops the release.** A feed that fails referential integrity must not reach
+anybody, and it is cheaper to skip a night than to withdraw a feed. The full feed currently has two
+error types - `point_near_origin` for `QBN`/`QBS` and four stop times from B24 and B25 - **so the
+first real run will fail**, correctly. Those have to be resolved or explicitly accepted before a
+nightly can publish.
+
+**The 5% trip swing gate collides with #121 and F4.** Removing the merge step is a +19% step change,
+and F4 turns every joined service into two trips. Whichever lands second trips the gate. There is no
+previous release yet, so the comparison is skipped on the first run and the gate effectively starts
+from whatever ships first - which is the documented one-off reset, taken by default rather than by
+decision.
+
+Not verified beyond parsing: the credentials are organisation secrets that a repository token cannot
+read, so the download step has never executed. It fails immediately and says where credentials come
+from rather than failing at the SFTP handshake.
+
+The rule E1 replaced a whole repository with is enforced rather than written down: CI fails any
+workflow that gains a `pull_request_target` trigger, which is the thing that would run a fork's code
+with these secrets.
 
 **E3 · Weekly OSM rail extract** *(depends E1)*
 Separate weekly job pulls Geofabrik `great-britain-latest.osm.pbf`, filters to railway features, and
@@ -1654,18 +1673,28 @@ the first of each month.
 Key output: `https://github.com/planarnetwork/gb-rail-gtfs/releases/latest/download/gtfs-slim.zip`
 resolves to the newest asset permanently. The site links it once and never rewrites it.
 
-**E5 · `apps/website`** *(depends E4)*
-Static (Astro or 11ty). Pages:
-- **Download** — the stable links for both tiers, with `gtfs-slim.zip` presented as the default and
-  the ODbL implications of `gtfs-full.zip` stated plainly. Coverage window and build time read from
-  `feed_info.txt` at build time; no client-side API calls, no rate limits.
-- **Quality** — renders `validation.json`, `enrichment-report.json` and the Track B manifest, with a
-  30-build trend.
-- **Sources and licences** — generated from enricher `attribution` fields, so it cannot drift from
-  what actually ran.
-- **Docs** — from package READMEs.
+**E5 · `apps/website`** *(depends E4)* — **a download page**
 
-**E6 · Pages deploy** *(depends E5)*
+`apps/website` generates a single static page. **No framework**: the plan said Astro or 11ty, and
+four pages with no client side behaviour do not need a build system - one would be a dependency to
+keep current for the life of the project. If the site grows a reason for one, that is when to add
+it.
+
+Everything the page claims is read from the published feed's `feed-meta.json` at build time, so it
+cannot drift from what was actually built, and when nothing has been published it says so rather
+than inventing numbers - which is what it says today.
+
+The Quality page rendering `validation.json` and the enrichment report, the generated licence page
+and the docs pages are not built. The download link, the coverage window and the sources are, which
+is what somebody arriving actually needs.
+
+**E6 · Pages deploy** *(depends E5)* — **done**
+Pages is enabled on this repository with Actions as the source, serving
+`planarnetwork.github.io/dtd2mysql`. `.github/workflows/pages.yml` rebuilds on a change to the site,
+on dispatch, and **after the nightly feed completes** - the page reports the current feed, so it has
+to be rebuilt when there is a new one rather than only when its own source changes.
+
+
 Nightly writes `apps/website/data/latest.json` and triggers `actions/deploy-pages`. Site rebuild is
 idempotent and independent of the feed build's success.
 
@@ -1771,12 +1800,12 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
 B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
+B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, E1, E2, E5, E6, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
 those across master and Epic A. B14, B16,
 B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
 B25 are investigated and closed as source data the feed reports rather than corrects.
 
-That leaves **26 in scope** — 25 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **22 in scope** — 21 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
