@@ -23,7 +23,7 @@ import {
   withoutPlaceholders,
   reportDroppedStops,
   Transfer
-} from "@gb-rail/gtfs";
+} from "@gb-transit/gtfs";
 
 /**
  * Provide access to the CIF/TTIS data in a vaguely GTFS-ish shape.

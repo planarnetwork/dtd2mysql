@@ -1,5 +1,5 @@
 import {describe, it, expect, beforeEach, afterEach} from "vitest";
-import {interchange} from "@gb-rail/gtfs";
+import {interchange} from "@gb-transit/gtfs";
 import AdmZip from "adm-zip";
 import * as fs from "node:fs";
 import * as os from "node:os";

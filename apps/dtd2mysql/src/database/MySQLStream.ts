@@ -1,6 +1,6 @@
 import {Writable} from "stream";
 import {MySQLTable} from "./MySQLTable";
-import {FeedFile} from "@gb-rail/feed-parser";
+import {FeedFile} from "@gb-transit/feed-parser";
 
 export class MySQLStream extends Writable {
 

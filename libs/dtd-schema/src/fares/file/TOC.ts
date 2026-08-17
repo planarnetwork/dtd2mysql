@@ -1,5 +1,5 @@
 
-import {BooleanField, FixedWidthRecord, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
+import {BooleanField, FixedWidthRecord, MultiRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const toc = new FixedWidthRecord(
   "toc",
