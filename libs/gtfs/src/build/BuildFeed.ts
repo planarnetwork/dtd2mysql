@@ -10,6 +10,7 @@ import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
+import {FeedRow} from "../entity/FeedRow";
 import {CRS, Stop, TIPLOC} from "../entity/Stop";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
@@ -24,6 +25,7 @@ import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
+import {Writable} from "stream";
 
 export class BuildFeed {
   private baseDir!: string;
@@ -157,14 +159,27 @@ export class BuildFeed {
   }
 
   /**
+   * One row, to a file being streamed rather than sorted.
+   *
+   * trips.txt, stop_times.txt and routes.txt are written as they are built, so
+   * they do not go through copy(). This is where they meet the same constraint.
+   */
+  private write<T extends FeedRow>(output: Writable, row: T): void {
+    output.write(row);
+  }
+
+  /**
    * Write rows to a file, in the order the key says.
+   *
+   * A row, not a model: FeedRow is the ten files this build writes, so anything
+   * a model carries that its file has no column for cannot reach here.
    *
    * Every file is sorted before it is written, so no output depends on the order
    * a source happened to return its rows in. The key for each file is at the
    * call site, and rows it leaves tied are ordered by their whole contents -
    * links.txt has 1,276 rows that tie on their declared key.
    */
-  private async copy<T extends object>(
+  private async copy<T extends FeedRow>(
     results: T[] | Promise<T[]>,
     filename: string,
     key: (row: T) => Value[]
@@ -207,7 +222,7 @@ export class BuildFeed {
 
     for (const name of [...routes.keys()].sort()) {
       routeIds[name] = ++routeId;
-      routeFile.write(toRouteRow({...routes.get(name)!, route_id: routeId}));
+      this.write(routeFile, toRouteRow({...routes.get(name)!, route_id: routeId}));
     }
 
     // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
@@ -226,12 +241,12 @@ export class BuildFeed {
         unknown.set(schedule.destination, (unknown.get(schedule.destination) ?? 0) + 1);
       }
 
-      trips.write(schedule.toTrip(
+      this.write(trips, schedule.toTrip(
         serviceIds[schedule.calendar.id],
         routeIds[schedule.routeShortName],
         name ?? schedule.destination
       ));
-      schedule.stopTimes.forEach(r => stopTimes.write(toStopTimeRow(r, tiplocs)));
+      schedule.stopTimes.forEach(r => this.write(stopTimes, toStopTimeRow(r, tiplocs)));
     }
 
     report(unknown);
@@ -321,7 +336,7 @@ function report(unknown: Map<string, number>): void {
  * costs a JSON encoding of the row, so it is computed on the first tie rather
  * than for every row of every file.
  */
-function byKeyThenWholeRow<T extends object>(a: Keyed<T>, b: Keyed<T>): number {
+function byKeyThenWholeRow<T extends FeedRow>(a: Keyed<T>, b: Keyed<T>): number {
   for (let i = 0; i < a.key.length; i++) {
     const order = ascending(a.key[i], b.key[i]);
 

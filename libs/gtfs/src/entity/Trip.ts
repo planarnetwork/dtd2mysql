@@ -10,3 +10,8 @@ export interface Trip {
   wheelchair_accessible: 0 | 1 | 2;
   bikes_allowed: 0 | 1 | 2;
 }
+
+/**
+ * trips.txt, as it is written. Every field of Trip is a column of it.
+ */
+export type TripRow = Trip;

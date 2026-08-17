@@ -1,5 +1,5 @@
 import {CRS, Stop, TIPLOC} from "../entity/Stop";
-import {Platform, StopTime} from "../entity/StopTime";
+import {Platform, StopTime, StopTimeRow} from "../entity/StopTime";
 import {Schedule} from "../model/Schedule";
 import {stopPointId} from "./Atco";
 
@@ -118,7 +118,7 @@ function platformOf(stopTime: StopTime): Platform | null {
  * stop_times.txt as it is written: the platform decides the stop id and is not
  * a column of its own.
  */
-export function toStopTimeRow(stopTime: StopTime, tiplocs: ReadonlyMap<CRS, TIPLOC>) {
+export function toStopTimeRow(stopTime: StopTime, tiplocs: ReadonlyMap<CRS, TIPLOC>): StopTimeRow {
   return {
     trip_id: stopTime.trip_id,
     arrival_time: stopTime.arrival_time,

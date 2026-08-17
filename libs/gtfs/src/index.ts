@@ -1,15 +1,15 @@
 // GTFS entities - the shape of each output file
-export type {Agency, AgencyID} from "./entity/Agency";
-export type {Calendar} from "./entity/Calendar";
-export type {CalendarDate} from "./entity/CalendarDate";
-export type {FixedLink} from "./entity/FixedLink";
+export type {Agency, AgencyID, AgencyRow} from "./entity/Agency";
+export type {Calendar, CalendarRow} from "./entity/Calendar";
+export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate";
+export type {FixedLink, FixedLinkRow} from "./entity/FixedLink";
 export {RouteType} from "./entity/Route";
-export type {Route, RouteID} from "./entity/Route";
-export type {Stop, CRS, TIPLOC} from "./entity/Stop";
-export type {StopTime, Platform} from "./entity/StopTime";
+export type {Route, RouteID, RouteRow} from "./entity/Route";
+export type {Stop, StopRow, CRS, TIPLOC} from "./entity/Stop";
+export type {StopTime, StopTimeRow, Platform} from "./entity/StopTime";
 export {TransferType} from "./entity/Transfer";
-export type {Transfer, StopID} from "./entity/Transfer";
-export type {Trip} from "./entity/Trip";
+export type {Transfer, TransferRow, StopID} from "./entity/Transfer";
+export type {Trip, TripRow} from "./entity/Trip";
 
 // The transit model - pure domain objects with no IO
 export {Association, AssociationType, DateIndicator} from "./model/Association";
@@ -57,7 +57,8 @@ export {dropUnknownStops} from "./transform/DropUnknownStops";
 export {withStopPoints, stopId, toStopTimeRow} from "./transform/Platforms";
 export {stationId, stopPointId} from "./transform/Atco";
 export {agencyId, toAgencyRow, toRouteRow} from "./transform/Noc";
-export type {FeedInfo} from "./entity/FeedInfo";
+export type {FeedInfo, FeedInfoRow} from "./entity/FeedInfo";
+export type {FeedRow} from "./entity/FeedRow";
 export {toStop} from "./source/StationRecord";
 export {isPlaceholder, withoutPlaceholders, reportDroppedStops} from "./source/Placeholder";
 export {BOUNDS, inBounds} from "./source/Bounds";

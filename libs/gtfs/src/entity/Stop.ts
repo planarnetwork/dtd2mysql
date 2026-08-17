@@ -43,3 +43,22 @@ export interface Stop {
 export type StopID = string;
 export type CRS = string;
 export type TIPLOC = string;
+
+/**
+ * stops.txt, as it is written. `toStopRow` makes one from a Stop.
+ */
+export interface StopRow {
+  stop_id: StopID;
+  stop_code: CRS;
+  stop_name: string;
+  stop_desc: string;
+  zone_id: number;
+  stop_url: string;
+  location_type: 0 | 1;
+  parent_station: StopID | null;
+  platform_code: string | null;
+  stop_timezone: string;
+  wheelchair_boarding: 0 | 1 | 2;
+  stop_lon: number;
+  stop_lat: number;
+}
