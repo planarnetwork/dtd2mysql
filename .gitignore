@@ -20,3 +20,7 @@ dist/
 # local e2e baseline work (feeds, snapshots, credentials)
 .env.local
 data/
+
+# Tarballs written by the release, one per workspace, and removed as soon as
+# npm has taken them.
+*.tgz
