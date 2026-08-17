@@ -75,7 +75,8 @@ export class BuildFeed {
       )
       : Promise.resolve();
 
-    const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
+    const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
+    const schedules = this.getSchedules(associations, scheduleResults);
 
     if (schedules.length === 0) {
       throw new Error(
@@ -87,12 +88,13 @@ export class BuildFeed {
     // stops.txt is written after the schedules and the links are known, because
     // whether an unlocated station is published depends on whether anything
     // references it.
+    const [sourceStops, fixedLinks] = await Promise.all([stopsQ, fixedLinksQ]);
     // The boarding points are added before anything asks which stops the feed
     // publishes, because a call references one of them rather than the station.
     // Only the hierarchy is built here; a call's id is composed when
     // stop_times.txt is written, so nothing upstream of this sees it.
-    const withChildren = withStopPoints(await stopsQ, schedules);
-    const stops = locate(withChildren, referenced(schedules, await fixedLinksQ));
+    const withChildren = withStopPoints(sourceStops, schedules);
+    const stops = locate(withChildren, referenced(schedules, fixedLinks));
     // Every index the build keeps is on the CRS code, because that is what a
     // schedule, an association and a fixed link name a station by.
     const stations = new Map(
@@ -115,7 +117,7 @@ export class BuildFeed {
 
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
-      mergeTransfers(await transfersQ, await fixedLinksQ, map(stations, stop => stop.stop_id)),
+      mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
       "transfers.txt",
       t => [t.from_stop_id, t.to_stop_id]
     );
