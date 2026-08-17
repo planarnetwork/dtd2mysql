@@ -17,6 +17,9 @@
       "path": "./libs/gtfs-output"
     },
     {
+      "path": "./libs/enrich-naptan"
+    },
+    {
       "path": "./apps/dtd2mysql"
     },
     {

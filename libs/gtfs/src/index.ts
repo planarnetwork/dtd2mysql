@@ -44,6 +44,13 @@ export type {ScheduleResults} from "./build/ScheduleBuilder";
 
 // The source SPI
 export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";
+export {enrich, order, provenanceFile} from "./enrich/Enrich";
+export {MutableFeed} from "./enrich/MutableFeed";
+export {Provenance} from "./enrich/Provenance";
+export type {Write, FieldHistory} from "./enrich/Provenance";
+export type {Enricher, EnrichmentReport, Attribution} from "./enrich/Enricher";
+export {parseConfig} from "./build/BuildConfig";
+export type {BuildConfig, EnricherConfig, Licence} from "./build/BuildConfig";
 export {createFeedInfo} from "./transform/CreateFeedInfo";
 export {mergeTransfers, interchange} from "./transform/MergeTransfers";
 export {dropUnknownStops} from "./transform/DropUnknownStops";

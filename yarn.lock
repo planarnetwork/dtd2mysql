@@ -453,6 +453,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/enrich-naptan@workspace:^, @gb-transit/enrich-naptan@workspace:libs/enrich-naptan":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/enrich-naptan@workspace:libs/enrich-naptan"
+  dependencies:
+    "@gb-transit/gtfs": "workspace:^"
+    csv-parse: "npm:^7.0.2"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/feed-parser@workspace:^, @gb-transit/feed-parser@workspace:libs/feed-parser":
   version: 0.0.0-use.local
   resolution: "@gb-transit/feed-parser@workspace:libs/feed-parser"
@@ -1176,6 +1186,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"csv-parse@npm:^7.0.2":
+  version: 7.0.2
+  resolution: "csv-parse@npm:7.0.2"
+  checksum: 10c0/52ffaafbf7be37201ad782ec3eda37bc24ee0ec6e8967b5a68d5ad2973f10b4154fd11a5b90a002615ef98395c4cd699a13d13509b10067297795b9d3c9320e9
+  languageName: node
+  linkType: hard
+
 "csv-write-stream@npm:2.0.0":
   version: 2.0.0
   resolution: "csv-write-stream@npm:2.0.0"
@@ -1224,9 +1241,11 @@ __metadata:
   resolution: "dtd2gtfs@workspace:apps/dtd2gtfs"
   dependencies:
     "@gb-transit/dtd-source": "workspace:^"
+    "@gb-transit/enrich-naptan": "workspace:^"
     "@gb-transit/gtfs": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
     typescript: "npm:7.0.2"
+    yaml: "npm:^2.9.0"
   bin:
     dtd2gtfs: bin/dtd2gtfs.sh
   languageName: unknown
@@ -1482,12 +1501,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fsevents@npm:2.3.2":
+  version: 2.3.2
+  resolution: "fsevents@npm:2.3.2"
+  dependencies:
+    node-gyp: "npm:latest"
+  checksum: 10c0/be78a3efa3e181cda3cf7a4637cb527bcebb0bd0ea0440105a3bb45b86f9245b307dc10a2507e8f4498a7d4ec349d1910f4d73e4d4495b16103106e07eee735b
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
 "fsevents@npm:~2.3.3":
   version: 2.3.3
   resolution: "fsevents@npm:2.3.3"
   dependencies:
     node-gyp: "npm:latest"
   checksum: 10c0/a1f0c44595123ed717febbc478aa952e47adfc28e2092be66b8ab1635147254ca6cfe1df792a8997f22716d4cbafc73309899ff7bfac2ac3ad8cf2e4ecc3ec60
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
+"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
+  version: 2.3.2
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
+  dependencies:
+    node-gyp: "npm:latest"
   conditions: os=darwin
   languageName: node
   linkType: hard
@@ -1507,6 +1545,7 @@ __metadata:
   dependencies:
     "@changesets/cli": "npm:^2.31.1"
     "@types/node": "npm:26.1.1"
+    playwright: "npm:^1.62.1"
     tsx: "npm:4.23.1"
     typescript: "npm:7.0.2"
     vitest: "npm:^4.1.10"
@@ -2134,6 +2173,30 @@ __metadata:
   version: 4.0.1
   resolution: "pify@npm:4.0.1"
   checksum: 10c0/6f9d404b0d47a965437403c9b90eca8bb2536407f03de165940e62e72c8c8b75adda5516c6b9b23675a5877cc0bcac6bdfb0ef0e39414cd2476d5495da40e7cf
+  languageName: node
+  linkType: hard
+
+"playwright-core@npm:1.62.1":
+  version: 1.62.1
+  resolution: "playwright-core@npm:1.62.1"
+  bin:
+    playwright-core: cli.js
+  checksum: 10c0/a37d0f03bb73364cfd0eba704c4b3359b609c4779ae2649a88d8e2b3a29c7357dfcc58bdcf0cb68ddffdef7687abf78902c8356e89f189682c7e19be38e108f0
+  languageName: node
+  linkType: hard
+
+"playwright@npm:^1.62.1":
+  version: 1.62.1
+  resolution: "playwright@npm:1.62.1"
+  dependencies:
+    fsevents: "npm:2.3.2"
+    playwright-core: "npm:1.62.1"
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  bin:
+    playwright: cli.js
+  checksum: 10c0/4d3522cd46325f50c46f8874d31f70d036f6983228a9f8b9d68fc249e4c17464edcd97cc4adfbb24e712d1829c1386d3bc24e17f58a1ced94e7c423300c21845
   languageName: node
   linkType: hard
 
@@ -2907,5 +2970,14 @@ __metadata:
   version: 5.0.0
   resolution: "yallist@npm:5.0.0"
   checksum: 10c0/a499c81ce6d4a1d260d4ea0f6d49ab4da09681e32c3f0472dee16667ed69d01dae63a3b81745a24bd78476ec4fcf856114cb4896ace738e01da34b2c42235416
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.9.0":
+  version: 2.9.0
+  resolution: "yaml@npm:2.9.0"
+  bin:
+    yaml: bin.mjs
+  checksum: 10c0/f340718df45e97a9551b9bf9dac61c80050bc464513b710debfb5067c380c8472e3b67809cffacb4ab5ffb5e66ef9310816c88b05f371cec60abfedd8c88e0a2
   languageName: node
   linkType: hard

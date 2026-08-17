@@ -31,6 +31,7 @@ This is a monorepo. The published CLI is one workspace among several:
 | `libs/dtd-source` | `@gb-transit/dtd-source` | SFTP download and feed sequencing |
 | `libs/gtfs` | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | `libs/gtfs-output` | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
+| `libs/enrich-naptan` | `@gb-transit/enrich-naptan` | Station coordinates and names from NaPTAN |
 
 The libraries are published under `@gb-transit` and `dtd2mysql` depends on them the way any
 other consumer would, so a GTFS build that reads from something other than this tool's MySQL
