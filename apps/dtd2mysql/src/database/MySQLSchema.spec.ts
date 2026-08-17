@@ -1,6 +1,6 @@
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import {MySQLSchema} from "../database/MySQLSchema";
-import {BooleanField, DateField, DoubleField, FixedWidthRecord, IntField, TextField, TimeField, VariableLengthText, ZeroFillIntField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, DoubleField, FixedWidthRecord, IntField, TextField, TimeField, VariableLengthText, ZeroFillIntField} from "@gb-transit/feed-parser";
 import {describe, it, expect} from 'vitest';
 
 describe("MySQLSchema", () => {

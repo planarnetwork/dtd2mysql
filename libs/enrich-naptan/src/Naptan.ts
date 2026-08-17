@@ -1,4 +1,4 @@
-import {Attribution, Enricher, EnrichmentReport, MutableFeed} from "@gb-rail/gtfs";
+import {Attribution, Enricher, EnrichmentReport, MutableFeed} from "@gb-transit/gtfs";
 
 /**
  * One NaPTAN record, reduced to the parts a GTFS stop wants.

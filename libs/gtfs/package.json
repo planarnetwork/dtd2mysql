@@ -1,7 +1,6 @@
 {
-  "name": "@gb-rail/gtfs",
+  "name": "@gb-transit/gtfs",
   "version": "0.0.0",
-  "private": true,
   "description": "GTFS entities, the GB rail transit model, the schedule transforms and the feed build",
   "license": "GPL-3.0",
   "repository": {
@@ -17,6 +16,12 @@
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run"
@@ -24,5 +29,8 @@
   "dependencies": {
     "memoized-class-decorator": "1.6.1",
     "proj4": "2.20.9"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

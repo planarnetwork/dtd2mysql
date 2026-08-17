@@ -1,12 +1,12 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {NaptanEnricher, naptanFromApi} from "@gb-rail/enrich-naptan";
+import {NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
 import {parse} from "yaml";
-import {BuildConfig, Enricher, parseConfig} from "@gb-rail/gtfs";
-import {BuildFeed, buildContext, option, options, stationCoordinates} from "@gb-rail/gtfs";
-import {CifFileSource, timetableFeeds} from "@gb-rail/dtd-source";
-import {FileOutput, OutputGTFSZipCommand} from "@gb-rail/gtfs-output";
+import {BuildConfig, Enricher, parseConfig} from "@gb-transit/gtfs";
+import {BuildFeed, buildContext, option, options, stationCoordinates} from "@gb-transit/gtfs";
+import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
+import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
 
 /**
  * dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip

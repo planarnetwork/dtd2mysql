@@ -1,5 +1,5 @@
 {
-  "name": "@gb-rail/website",
+  "name": "@gb-transit/website",
   "version": "0.0.0",
   "private": true,
   "description": "The download page for the GB rail GTFS feed",
@@ -8,6 +8,9 @@
     "build": "tsc -b && node dist/build.js"
   },
   "dependencies": {
-    "@gb-rail/gtfs": "workspace:^"
+    "@gb-transit/gtfs": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

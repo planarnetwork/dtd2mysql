@@ -1,7 +1,6 @@
 {
-  "name": "@gb-rail/enrich-naptan",
+  "name": "@gb-transit/enrich-naptan",
   "version": "0.0.0",
-  "private": true,
   "description": "Station coordinates and names from NaPTAN",
   "license": "GPL-3.0",
   "repository": {
@@ -17,11 +16,20 @@
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b"
   },
   "dependencies": {
-    "@gb-rail/gtfs": "workspace:^",
+    "@gb-transit/gtfs": "workspace:^",
     "csv-parse": "^7.0.2"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

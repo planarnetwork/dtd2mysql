@@ -2,7 +2,7 @@ import {describe, it, expect} from "vitest";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import {MySqlTimetableSource} from "./MySqlTimetableSource";
 import {Pool} from "mysql2";
-import {DateRange} from "@gb-rail/gtfs";
+import {DateRange} from "@gb-transit/gtfs";
 
 const range: DateRange = {
   from: Temporal.PlainDate.from("2026-01-01"),

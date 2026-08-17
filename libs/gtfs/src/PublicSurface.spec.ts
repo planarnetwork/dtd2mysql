@@ -5,9 +5,10 @@ import * as path from "node:path";
 /**
  * What the workspace libraries export, pinned.
  *
- * `dtd2mysql` is bundled and ships no `types`, so it has no type surface of its
- * own. These do: enrichers are written as separate packages against `libs/gtfs`,
- * which makes a renamed export somebody else's build breaking.
+ * The apps are command line tools - nobody imports them, so their exports are
+ * not a surface. The libraries are: enrichers are written as separate packages
+ * against `libs/gtfs`, which makes a renamed export somebody else's build
+ * breaking.
  *
  * So a removed or renamed export is a decision, recorded here, rather than a
  * side effect of tidying an import.
