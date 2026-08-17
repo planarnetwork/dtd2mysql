@@ -201,27 +201,40 @@ async function getDownloadAndProcessCommand(
  * An unrecognised flag prints the help text and exits zero. That is deliberate
  * rather than a case someone forgot.
  */
-export const getCommand = once(async (type: string): Promise<CLICommand> => {
-  switch (type) {
-    case "--fares": return getImportFeedCommand("fares");
-    case "--fares-clean": return new CleanFaresCommand(databaseConnection());
-    case "--routeing": return getImportFeedCommand("routeing");
-    case "--timetable": return getImportFeedCommand("timetable");
-    case "--nfm64": return getImportFeedCommand("nfm64");
-    case "--gtfs": return getBuildFeedCommand(null);
-    case "--gtfs-import": return new GTFSImportCommand(databaseConfiguration());
-    case "--gtfs-zip": return new OutputGTFSZipCommand(getBuildFeedCommand(null));
-    case "--download-fares": return getDownloadCommand("/fares/");
-    case "--download-timetable": return getDownloadCommand("/timetable/");
-    case "--download-routeing": return getDownloadCommand("/routing_guide/");
-    case "--download-nfm64": return new DownloadFileCommand(downloadUrl);
-    case "--get-fares": return getDownloadAndProcessCommand("/fares/", "fares");
-    case "--get-timetable": return getDownloadAndProcessCommand("/timetable/", "timetable");
-    case "--get-routeing": return getDownloadAndProcessCommand("/routing_guide/", "routeing");
-    case "--get-nfm64": return new DownloadAndProcessCommand(
-      new DownloadFileCommand(downloadUrl),
-      getImportFeedCommand("nfm64")
-    );
-    default: return new ShowHelpCommand();
-  }
-});
+/**
+ * Every flag the CLI answers to, and what it builds.
+ *
+ * A map rather than a switch so it can be checked against the README without
+ * being invoked. Invoking is not an option in a test: the download commands
+ * open an SFTP connection as they are constructed.
+ */
+export const commands: {[flag: string]: () => CLICommand | Promise<CLICommand>} = {
+  "--fares": () => getImportFeedCommand("fares"),
+  "--fares-clean": () => new CleanFaresCommand(databaseConnection()),
+  "--routeing": () => getImportFeedCommand("routeing"),
+  "--timetable": () => getImportFeedCommand("timetable"),
+  "--nfm64": () => getImportFeedCommand("nfm64"),
+  "--gtfs": () => getBuildFeedCommand(null),
+  "--gtfs-import": () => new GTFSImportCommand(databaseConfiguration()),
+  "--gtfs-zip": () => new OutputGTFSZipCommand(getBuildFeedCommand(null)),
+  "--download-fares": () => getDownloadCommand("/fares/"),
+  "--download-timetable": () => getDownloadCommand("/timetable/"),
+  "--download-routeing": () => getDownloadCommand("/routing_guide/"),
+  "--download-nfm64": () => new DownloadFileCommand(downloadUrl),
+  "--get-fares": () => getDownloadAndProcessCommand("/fares/", "fares"),
+  "--get-timetable": () => getDownloadAndProcessCommand("/timetable/", "timetable"),
+  "--get-routeing": () => getDownloadAndProcessCommand("/routing_guide/", "routeing"),
+  "--get-nfm64": () => new DownloadAndProcessCommand(
+    new DownloadFileCommand(downloadUrl),
+    getImportFeedCommand("nfm64")
+  )
+};
+
+/**
+ * An unknown flag prints help and exits 0, which is friendly for a typo and
+ * silent for a dropped entry - a cron job would simply stop importing. The
+ * spec asserts the map and the README agree, in both directions.
+ */
+export const getCommand = once(async (type: string): Promise<CLICommand> =>
+  commands.hasOwnProperty(type) ? commands[type]() : new ShowHelpCommand()
+);
