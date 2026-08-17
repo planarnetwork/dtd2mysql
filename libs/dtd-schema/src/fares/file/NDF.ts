@@ -1,5 +1,5 @@
 
-import {BooleanField, DateField, FixedWidthRecord, IntField, SingleRecordFile, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, FixedWidthRecord, IntField, SingleRecordFile, TextField, ZeroFillIntField} from "@gb-transit/feed-parser";
 
 const nonDerivableFareFixedWidthRecord = new FixedWidthRecord(
   "non_derivable_fare",

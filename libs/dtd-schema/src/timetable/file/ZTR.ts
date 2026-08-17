@@ -1,5 +1,5 @@
 
-import {BooleanField, FixedWidthRecord, ForeignKeyField, MultiFormatRecord, MultiRecordFile, RecordWithManualIdentifier, ShortDateField, TextField, TimeField, VariableLengthText} from "@gb-rail/feed-parser";
+import {BooleanField, FixedWidthRecord, ForeignKeyField, MultiFormatRecord, MultiRecordFile, RecordWithManualIdentifier, ShortDateField, TextField, TimeField, VariableLengthText} from "@gb-transit/feed-parser";
 
 
 const schedule = new RecordWithManualIdentifier(

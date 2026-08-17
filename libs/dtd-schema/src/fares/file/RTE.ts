@@ -1,5 +1,5 @@
 
-import {BooleanField, DateField, FixedWidthRecord, MultiRecordFile, RecordAction, TextField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, FixedWidthRecord, MultiRecordFile, RecordAction, TextField} from "@gb-transit/feed-parser";
 
 const route = new FixedWidthRecord(
   "route",

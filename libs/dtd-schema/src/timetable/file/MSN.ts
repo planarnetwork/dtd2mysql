@@ -1,5 +1,5 @@
 
-import {FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
+import {FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const physicalStation = new FixedWidthRecord(
   "physical_station",
