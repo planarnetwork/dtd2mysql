@@ -91,8 +91,8 @@ const getDatabaseStream = once((_: null): mysql.Pool =>
  * An open pool keeps the event loop alive, so a command that does not close one
  * leaves the process hanging after its work is done - harmless at a prompt,
  * fatal for a scheduled job, which waits for the workflow timeout instead of
- * finishing. The download commands were the ones that never closed it; closing
- * from here covers all of them rather than the one that was noticed.
+ * finishing. Closing from here covers every command rather than the ones that
+ * remember to.
  */
 const pools: {end(...args: any[]): any}[] = [];
 
