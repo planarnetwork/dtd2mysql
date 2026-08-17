@@ -1,5 +1,5 @@
 ---
-"dtd2mysql": patch
+"dtd2mysql": major
 "@gb-transit/feed-parser": minor
 "@gb-transit/dtd-schema": minor
 "@gb-transit/dtd-source": minor
@@ -9,16 +9,21 @@
 
 Split the tool into a monorepo.
 
-`dtd2mysql` is now assembled from five `@gb-transit` packages rather than one flat tree.
-Its behaviour is unchanged: the CLI flags, the import path and the GTFS output are all as
-they were, and the GTFS output was verified byte-identical against the same database
-before and after the move.
+`dtd2mysql` is now assembled from five `@gb-transit` packages rather than one flat tree,
+and they are published in their own right: a GTFS build that reads from somewhere other
+than this tool's MySQL schema can depend on `@gb-transit/gtfs` without the CLI.
 
-The five libraries are published in their own right, so a GTFS build that reads from
-somewhere other than this tool's MySQL schema can depend on `@gb-transit/gtfs` without
-the CLI.
+**The command line is unchanged.** Same flags, same environment variables, same GTFS
+output - verified byte-identical against the same database before and after the move. If
+you install `dtd2mysql` to run it, nothing about this release asks anything of you.
 
-The published layout of `dtd2mysql` changes. Its `files` is `dist` and `bin` rather than
-`dist/src` and `dist/config`, so anything deep-importing `dtd2mysql/dist/src/...` or
-`dtd2mysql/dist/config/...` should import the `@gb-transit` package that now holds that
-code. `types` points at `dist/index.d.ts`, which is where it is now emitted.
+**The package layout is not**, which is why this is a major. Anything importing from the
+package rather than running it has to move:
+
+- `dtd2mysql/dist/src/...` and `dtd2mysql/dist/config/...` no longer exist. That code is
+  in the `@gb-transit` package that now owns it - record layouts in `dtd-schema`, the
+  parser in `feed-parser`, the GTFS model, transforms and build in `gtfs`, the writers in
+  `gtfs-output`, SFTP and feed sequencing in `dtd-source`.
+- `files` is `dist` and `bin`. `main` and `types` resolve to `dist/index.js` and
+  `dist/index.d.ts`, which is where they are emitted - `main` previously named a path that
+  the `files` list did not ship, so `require("dtd2mysql")` never worked.
