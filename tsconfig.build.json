@@ -18,6 +18,9 @@
     },
     {
       "path": "./apps/dtd2mysql"
+    },
+    {
+      "path": "./apps/dtd2gtfs"
     }
   ]
 }

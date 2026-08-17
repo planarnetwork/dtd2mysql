@@ -35,13 +35,17 @@ jobs:
       # tsc -b walks the project references in dependency order, so a type error
       # is reported against the package that contains it.
       - run: yarn build
+      # The build excludes the specs so they do not reach dist, which also means
+      # nothing type checks them. This does.
+      - run: yarn typecheck
       # Each workspace is a vitest project named after its package, so a failure
       # names the package rather than the repository.
       - run: yarn vitest run
-      # The CLI has to work from the repository root as well as from its own
-      # directory: tsx takes its compiler options from the nearest tsconfig whose
-      # include matches the file.
+      # Both CLIs have to work from the repository root as well as from their
+      # own directory: tsx takes its compiler options from the nearest tsconfig
+      # whose include matches the file.
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
+      - run: yarn tsx apps/dtd2gtfs/src/index.ts --help
 
   package:
     runs-on: ubuntu-latest

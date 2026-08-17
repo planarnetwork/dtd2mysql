@@ -27,7 +27,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "memoized-class-decorator": "1.6.1"
+    "memoized-class-decorator": "1.6.1",
+    "proj4": "2.20.9"
   },
   "devDependencies": {
     "typescript": "7.0.2"

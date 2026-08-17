@@ -11,9 +11,12 @@ dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip gtfs.zip
 ```
 
-**[Full command line documentation is in `apps/dtd2mysql`](apps/dtd2mysql/README.md)** —
-every flag, the environment variables each one needs, and the caveats worth knowing about
-the data.
+`dtd2gtfs` builds the same GTFS feed straight from the DTD files with no database at all.
+It is not published yet; run it from a clone with `yarn workspace dtd2gtfs run start build
+--source RJTTF918.ZIP --out gtfs.zip`.
+
+Full command line documentation: **[`apps/dtd2mysql`](apps/dtd2mysql/README.md)** for the importer,
+**[`apps/dtd2gtfs`](apps/dtd2gtfs/README.md)** for the one-shot build.
 
 ## Packages
 
@@ -21,16 +24,17 @@ This is a monorepo. The published CLI is one workspace among several:
 
 | Package | Published as | What it is |
 |---|---|---|
-| `apps/dtd2mysql` | `dtd2mysql` | The command line tool |
+| `apps/dtd2mysql` | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
+| `apps/dtd2gtfs` | — | Build a GTFS feed straight from the DTD files, no database |
 | `libs/feed-parser` | `@gb-transit/feed-parser` | Declarative fixed-width and CSV record parsing |
 | `libs/dtd-schema` | `@gb-transit/dtd-schema` | Record layouts for the fares, timetable, routeing and NFM64 feeds |
 | `libs/dtd-source` | `@gb-transit/dtd-source` | SFTP download and feed sequencing |
 | `libs/gtfs` | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | `libs/gtfs-output` | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
 
-Every package is published. `dtd2mysql` depends on the `@gb-transit` packages the same way
-anything else would, so the libraries are usable on their own — a GTFS build that reads
-from something other than this tool's MySQL schema needs `@gb-transit/gtfs`, not the CLI.
+The libraries are published under `@gb-transit` and `dtd2mysql` depends on them the way any
+other consumer would, so a GTFS build that reads from something other than this tool's MySQL
+schema needs `@gb-transit/gtfs` and not the CLI. `dtd2gtfs` is not published yet.
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the
 workspaces resolve to that output, so `yarn build` has to happen before anything runs;
@@ -38,6 +42,7 @@ workspaces resolve to that output, so `yarn build` has to happen before anything
 
 Where this is going, and why it is shaped like this, is written up in
 [`docs/restructure.md`](docs/restructure.md).
+
 
 ## Contributing
 

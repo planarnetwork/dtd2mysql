@@ -1,10 +1,8 @@
-
+import AdmZip from "adm-zip";
 import * as os from 'node:os';
 import * as path from 'node:path';
-import {processSpawnResult} from "./processSpawnResult";
 import {BuildFeed} from "@gb-transit/gtfs";
 import * as fs from "fs";
-import {spawnSync} from "child_process";
 
 export class OutputGTFSZipCommand {
 
@@ -13,25 +11,44 @@ export class OutputGTFSZipCommand {
   ) { }
 
   /**
-   * Create the text files and then zip them up using a CLI command that hopefully exists.
+   * The dtd2mysql CLI takes the zip filename as a positional argument
    */
   public async run(argv: string[]): Promise<void> {
-    const filename = argv[3] || "./gtfs.zip";
+    return this.build(argv[3] || "./gtfs.zip");
+  }
 
+  /**
+   * Write the feed to a temporary directory and zip it up.
+   *
+   * The zip is written in process and awaited, so this resolves when the file
+   * exists rather than when a timer is due to start writing it, and a failure
+   * fails the build instead of being thrown into an empty stack.
+   */
+  public async build(filename: string): Promise<void> {
     if (fs.existsSync(filename)) {
       fs.unlinkSync(filename);
     }
-    
-    argv[3] = fs.mkdtempSync(path.join(os.tmpdir(), "gtfs"));
 
-    await this.command.run(argv);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "gtfs"));
 
-    // when node tells you it's finished writing a file, it's lying.
-    setTimeout(() => {
+    try {
+      await this.command.build(directory);
+
       console.log("Writing " + filename);
-      processSpawnResult(spawnSync('zip', ['-jr', filename, argv[3]]));
-      fs.rmSync(argv[3], {recursive: true});
-    }, 1000);
+
+      // Flat, and in a fixed order: a GTFS feed is a directory of files at the
+      // root of the archive, and the same feed should produce the same zip.
+      const zip = new AdmZip();
+
+      for (const file of fs.readdirSync(directory).sort()) {
+        zip.addLocalFile(path.join(directory, file));
+      }
+
+      await zip.writeZipPromise(filename);
+    }
+    finally {
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
   }
 
 }

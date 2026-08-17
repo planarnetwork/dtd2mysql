@@ -124,3 +124,72 @@ describe("ScheduleBuilder", () => {
   });
 
 });
+
+describe("ScheduleBuilder ordering contract", () => {
+
+  it("builds the same schedules from an iterable as from a stream", async () => {
+    const rows = [
+      row({ id: 1, stop_id: 10, crs_code: "TBW" }),
+      row({ id: 1, stop_id: 11, crs_code: "TON" }),
+      row({ id: 2, train_uid: "C00002", stop_id: 12, crs_code: "SEV" }),
+      row({ id: 2, train_uid: "C00002", stop_id: 13, crs_code: "ORP" })
+    ];
+
+    const streamed = new ScheduleBuilder();
+    await streamed.loadSchedules(stream(rows));
+
+    const iterated = new ScheduleBuilder();
+    iterated.load(rows);
+
+    expect(iterated.results.schedules.map(s => [s.id, s.tuid, s.stopTimes.length]))
+      .to.deep.equal(streamed.results.schedules.map(s => [s.id, s.tuid, s.stopTimes.length]));
+  });
+
+  it("keeps two concurrent loads from splicing stops into each other's trains", async () => {
+    // The MySQL source loads passenger schedules and z-trains into one builder at
+    // the same time. Rows from the two queries arrive interleaved.
+    const builder = new ScheduleBuilder();
+
+    await Promise.all([
+      builder.loadSchedules(stream([
+        row({ id: 1, stop_id: 10, crs_code: "TBW" }),
+        row({ id: 1, stop_id: 11, crs_code: "TON" })
+      ])),
+      builder.loadSchedules(stream([
+        row({ id: 500, train_uid: "Z00001", stop_id: 20, crs_code: "SEV" }),
+        row({ id: 500, train_uid: "Z00001", stop_id: 21, crs_code: "ORP" })
+      ]))
+    ]);
+
+    const byId = new Map(builder.results.schedules.map(s => [s.id, s]));
+
+    expect(byId.get(1)!.stopTimes.map(s => s.stop_id)).to.deep.equal(["TBW", "TON"]);
+    expect(byId.get(500)!.stopTimes.map(s => s.stop_id)).to.deep.equal(["SEV", "ORP"]);
+  });
+
+  it("numbers stop times in the order the rows arrive", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({ id: 1, stop_id: 10, crs_code: "TBW" }),
+      row({ id: 1, stop_id: 11, crs_code: "TON" }),
+      row({ id: 1, stop_id: 12, crs_code: "SEV" })
+    ]);
+
+    expect(builder.results.schedules[0].stopTimes.map(s => s.stop_sequence)).to.deep.equal([1, 2, 3]);
+  });
+
+  it("starts a new schedule whenever the id changes, so an unsorted source produces duplicates", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({ id: 1, stop_id: 10, crs_code: "TBW" }),
+      row({ id: 2, train_uid: "C00002", stop_id: 12, crs_code: "SEV" }),
+      row({ id: 1, stop_id: 11, crs_code: "TON" })
+    ]);
+
+    // Three schedules from two ids: this is why the ordering is part of the contract
+    expect(builder.results.schedules.map(s => s.id)).to.deep.equal([1, 2, 1]);
+  });
+
+});

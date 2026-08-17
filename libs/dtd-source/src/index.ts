@@ -5,3 +5,8 @@ export {DownloadCommand} from "./DownloadCommand";
 export {DownloadFileCommand} from "./DownloadFileCommand";
 export {DownloadAndProcessCommand} from "./DownloadAndProcessCommand";
 export type {FeedProcessor, FileProvider} from "./DownloadAndProcessCommand";
+export {timetableFeeds} from "./FeedFiles";
+export {CifFileSource} from "./cif/CifFileSource";
+export {FeedZip} from "./cif/FeedZip";
+export {MemoryTable} from "./cif/MemoryTable";
+export type {Row} from "./cif/MemoryTable";

@@ -1,6 +1,6 @@
 # Restructure plan
 
-Status: Epic A landed; everything else proposal.
+Status: Epic A landed, Epic C in progress; everything else proposal.
 
 **Epic A is done.** The tree is a Yarn 4 monorepo of one app and five libraries, built
 exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
@@ -183,10 +183,10 @@ dependencies.
 ### The two SPIs
 
 ```ts
-interface TimetableSource {
+interface TimetableSource {                                     // built for one window
   stations(): AsyncIterable<StationRecord>;
-  schedules(range: DateRange): AsyncIterable<ScheduleRecord>;   // ordered: stp DESC, id, stop_seq
-  associations(range: DateRange): AsyncIterable<AssociationRecord>;
+  schedules(): AsyncIterable<ScheduleRecord>;                   // ordered: stp DESC, id, stop_seq
+  associations(): AsyncIterable<AssociationRecord>;
   fixedLinks(): AsyncIterable<FixedLinkRecord>;
 }
 
@@ -416,10 +416,21 @@ These matter as much as the tests:
 
 Gates everything else. T2 and T3 are required by the nightly build (E2) regardless.
 
-**T1 · Inject a clock; remove `CURDATE()`**
+**T1 · Inject a clock; remove `CURDATE()`** — **done**
 `BuildContext.today: Temporal.PlainDate` threaded through the three range-filtered queries;
 `--today` CLI flag and config key; nightly passes the real date, tests pin `2025-09-02`. Subsumes
 B3: all three queries derive their window from one value.
+
+`BuildContext` carries `today` and `range`; `dateRange` turns the two into a `from`/`to` window and
+a `TimetableSource` is built for that window rather than for a MySQL interval string, so the SQL is
+parameterised rather than interpolated. `--today`/`--range` on the command line beat `GTFS_TODAY`/`GTFS_RANGE`,
+which beat the real date and three months. `parseRange` still reads the `3 MONTH` form GTFS_RANGE
+has always used and refuses anything it cannot parse, rather than passing it to the driver.
+
+With the defaults the output is byte-identical to before. The B3 half is measurable on the current
+feed: at `6 MONTH` the old code pulled 93,348 extra schedules while dropping the **846 associations**
+that belong with them. No z-trains fall in that band in this feed, so replacement buses happen not to
+be affected today - the mechanism was still wrong.
 
 **T2 · Deterministic identifiers** *(partly delivered by #121)*
 `route_id` and `service_id` no longer depend on MySQL auto-increment ordering. `route_id` is
@@ -472,9 +483,19 @@ lands in the database?" with a yes or no rather than an opinion. It is not restr
 does not depend on any of Epic A, so it can be built now and handed to the patch author. The
 baseline it needs already exists.
 
-**T7 · Old-vs-new equivalence harness** *(depends T2, T3)*
+**T7 · Old-vs-new equivalence harness** *(depends T2, T3)* — **partly done**
 Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; normalised-identical
-or fails with a per-file diff. Marked for deletion in C2.
+or fails with a per-file diff.
+
+The pinned-commit half exists and asserts byte-identity, which is stronger than the normalised diff
+this ticket asked for and is what Epic A was held to. The normalised half also exists, and is what
+comparing two *sources* needs: `route_id` and `service_id` are counters assigned during the build,
+so the same timetable arriving in a different order gets different numbers for the same thing.
+Resolving every reference to what it points at before comparing removes that. T2 and T3 make the
+identifiers and the row order deterministic, at which point the normalising half can go.
+
+Neither is committed. Both want a database and a feed, so they live alongside the gitignored `data/`
+rather than in the repository.
 
 **T8 · Rebaseline protocol** *(depends T5)*
 `yarn test:e2e --update` regenerates the mini golden, and the `data/snapshot-*.sh` scripts
@@ -550,14 +571,25 @@ with the existing station interchange rows. Time and day-of-week windows GTFS ca
 documented in `stop_desc` or dropped with a logged count. `links.txt` kept behind a flag for one
 minor version, then removed. `config/gtfs/import.ts` updated. Blocks E2.
 
-**B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1.*
+**B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1, and **done** there.*
 
 **B4 · Handle an empty `schedule` table**
 Clear error naming the missing import step instead of `TypeError`.
 
-**B5 · Remove the zip race**
+**B5 · Remove the zip race** — **done**
 Zip written after awaited stream completion, in-process (`adm-zip`/`yazl`) rather than shelling out.
 No `setTimeout`. `run()` resolves only when the zip exists.
+
+The race was worse than it read. `FileOutput` piped a CSV writer into a file and the build awaited
+the *writer*, which finishes when it has handed on its last row, not when the row is on disk - which
+is what the `// when node tells you it's finished writing a file, it's lying` comment was working
+around. One second was not enough for a 164 MB `stop_times.txt`: taking the sleep out and zipping
+immediately produced an archive **60,885 bytes short**, silently. `FileOutput.end` now awaits the
+destination streams rather than the writers, and `BuildFeed` awaits every copy before asking the
+output whether it has finished, because `copy` only opens its file once its query returns.
+
+So `--gtfs-zip` has been capable of publishing a truncated feed whenever the flush outran the sleep.
+The directory output was never affected: the process stays alive until the streams drain.
 
 **B6 · GTFS validator in CI** *(depends B1, B2)*
 The mini fixture builds a feed in CI and runs the MobilityData `gtfs-validator` jar. Fails on any
@@ -716,7 +748,34 @@ with no Horsham association in the window. Either those target records outside i
 on a `C` is sometimes incidental, in which case they should still be cancelling Barnham. Unresolved,
 and the fixture case in §3 should pin whichever reading is right.
 
-B7 to B21 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
+**B22 · The incrementals' stop times and z-trains never reach the database** — *found while building C2*
+
+`ImportFeedCommand.setLastScheduleId` restores the BS record's id counter from the database before
+processing a CFA, and it is the only counter it restores. `stop_time`, `z_schedule` and
+`z_stop_time` are all written with ids the parser generates from zero on every run, and `id` is the
+primary key, so `INSERT IGNORE` silently drops every row whose id already exists.
+
+On the reference feed:
+
+- **5,354 schedules from RJTTC919 and RJTTC920 have no stop times at all.** Every LO/LI/LT the
+  incrementals carry collides with a row the refresh already inserted. Those schedules then drop out
+  of the GTFS build through the `stopTimes.length <= 1` filter, and any cancellation or overlay they
+  were expressing goes with them - the base schedule keeps running on dates the feed withdrew it.
+- **The incrementals' ZTR is discarded in full.** RJTTF918, RJTTC919 and RJTTC920 ship three
+  different ZTR files and the database only ever holds the first, so replacement buses are frozen at
+  the last full refresh.
+
+This is the entire difference between the two sources. Building the same three zips through
+`CifFileSource`, which keys on the CIF unique key rather than on a generated id, produces 6,140 trips
+the database build does not have and 85 whose calendars differ because a later ZTR revised them.
+Against a database holding only the full refresh the two agree exactly - see C2.
+
+The fix is to restore the counters the way `setLastScheduleId` does for BS, or to stop generating
+ids and let the unique keys carry the identity. It moves the T10 baseline, so it rebaselines under
+T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
+racing.
+
+B7 to B22 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
 
 ### Epic A — Monorepo migration
@@ -793,19 +852,70 @@ to a package.
 
 ### Epic C — Storage decoupling and one-shot
 
-**C1 · `TimetableSource` interface** *(depends A6, A8)*
+**C1 · `TimetableSource` interface** *(depends A6, A8)* — **done**
 Interface in `libs/gtfs`. `MySqlTimetableSource` in `apps/dtd2mysql` produces byte-identical output
 to today's `CIFRepository`. The ordering contract documented and asserted.
 
-**C2 · `CifFileSource` — one-shot** *(depends C1, A5)* — **closes #115**
-Read MCA/MSN/ALF/ZTR from the zip via `feed-parser`. A CIF file is already grouped by schedule, so
-the only work is a stable sort on the STP indicator. Comparison runs through T7's harness at a
-pinned `--today`; differences explained or zero. **T7 is deleted in this ticket.** Peak RSS
-recorded, feeding E2 and F1.
+The contract is: rows for one schedule contiguous and in stop sequence, schedules `stp_indicator`
+DESC so a cancellation or overlay follows the record it replaces. `ScheduleBuilder` groups on `id`
+changing, so a source that interleaves two schedules emits two trains carrying each other's stops -
+there is a test that pins exactly that, because it is the failure a second source will hit first.
 
-**C3 · `apps/dtd2gtfs`** *(depends C2, A7)*
+The window is a constructor argument, not a query one. As a parameter it read as a promise no
+source keeps: `CifFileSource` reads its feed once and cannot answer for a second window, and
+`MySqlTimetableSource` could, but a caller asking for two would get schedules from one window and
+associations from another - a feed with six months of trains and three months of the associations
+that join them, quietly. One window per source makes that unsayable rather than guarded, and the
+guard, its error message and its test went with the change.
+
+`ScheduleBuilder.load` takes any iterable in that order, which is what a source that is not a
+database query needs. Its per-run state moved into a cursor at the same time: the MySQL source loads
+passenger schedules and z-trains into one builder concurrently, and a shared cursor would have
+spliced the two streams together.
+
+**C2 · `CifFileSource` — one-shot** *(depends C1, A5)* — **done, closes #115**
+Read MCA/MSN/ALF/ZTR from the zip via `feed-parser`. A CIF file is already grouped by schedule, so
+the only work is a stable sort on the STP indicator. Comparison runs at a pinned `--today`;
+differences explained or zero. Peak RSS recorded, feeding E2 and F1.
+
+It took more than a stable sort. The SQL is the specification, and reproducing it meant reproducing
+the parts of MySQL the queries lean on: a CHAR column loses its trailing spaces where a VARCHAR does
+not, which matters because stop activities are VARCHAR and are read two characters at a time;
+`GROUP BY crs_code` returns the first row inserted for the code; `UNION` deduplicates the fixed
+links, which is the only reason importing the same ALF three times does not triple `links.txt`.
+`MemoryTable` holds each feed table with the insert semantics the importer gives it - INSERT IGNORE,
+REPLACE, DELETE - so a refresh followed by its incrementals produces what importing them in that
+order would.
+
+**Against a database holding only RJTTF918, every output file is byte-identical.** Against the
+three-zip database the two disagree, and the disagreement is B22: the importer drops the
+incrementals' stop times and their ZTR entirely, so the database build is missing 6,140 trips the
+file build has and 85 more have stale calendars. The new source found the bug in the old one.
+
+Cost on the reference feed, three month window, one refresh: **44 s wall and 4.6 GB peak RSS from
+the files, against 38 s and 3.8 GB from the database**. Six seconds and 800 MB is what parsing 650 MB
+of CIF costs over querying it back out of MySQL, and it buys not needing MySQL. Three zips take 46 s
+and 4.9 GB. The memory is the whole feed's Schedule objects, the same set the database build holds,
+so F1's sharding helps both equally. Only the finished Schedules are kept - each BS record's stop
+rows become a Schedule as soon as its stops end and are then dropped, because holding 2.9 million of
+them as well roughly doubles it.
+
+**C3 · `apps/dtd2gtfs`** *(depends C2, A7)* — **done, not published**
 `dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
-the tree. Published bare.
+the tree.
+
+It is private for now, along with the libraries: `dtd2mysql` is the only thing on npm. Publishing it
+is a decision to take once there is a nightly feed to point people at (E2 and E4), not a side effect
+of the code existing.
+
+`--source` takes a zip or a directory and repeats, `--out` writes a zip or a directory depending on
+the extension, and `--today` and `--range` come from T1's build context.
+
+A directory contributes every `RJTTFxxx.ZIP` and `RJTTCxxx.ZIP` in it, ordered by sequence number
+and starting at the most recent full refresh. Ordering by sequence is not the same as ordering by
+filename - as text every `RJTTC` sorts before every `RJTTF`, which would apply the refresh after the
+incrementals that amend it - and starting at the last refresh matters because a directory that feeds
+are downloaded into accumulates more than one cycle. E2 wants the same rule.
 
 **C5 · Rail Data Marketplace credential path** *(depends A5)*
 The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; tokens now come from Rail Data
@@ -1050,7 +1160,7 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**78 tickets** listed. B3 is absorbed into T1, B0 is done, B14, B16, B18, B20 and B21 are
+**79 tickets** listed (B22 was found while building C2). B3 is absorbed into T1, B0 and B5 are done, B14, B16, B18, B20 and B21 are
 resolved by #121, and A4 and C4 are deferred out of this pass, leaving 69 in scope.
 
 ---

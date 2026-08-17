@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import mysql from "mysql2";
 import mysqlPromise from "mysql2/promise";
 import config, {downloadUrl} from "@gb-transit/dtd-schema";
-import {BuildFeed, GTFSOutput, stationCoordinates} from "@gb-transit/gtfs";
+import {BuildFeed, buildContext, dateRange, GTFSOutput, stationCoordinates} from "@gb-transit/gtfs";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
 import {
   DownloadAndProcessCommand,
@@ -145,9 +145,12 @@ const getDownloadCommand = once(async (directory: string) =>
 );
 
 function buildFeed(output: GTFSOutput): BuildFeed {
+  const context = buildContext(process.argv);
+
   return new BuildFeed(
-    new MySqlTimetableSource(databaseConnection(), databaseStream(), stationCoordinates),
-    output
+    new MySqlTimetableSource(databaseConnection(), databaseStream(), stationCoordinates, dateRange(context)),
+    output,
+    context
   );
 }
 

@@ -24,7 +24,12 @@ Import a DTD feed into a MySQL compatible database
   --get-timetable [DIR]      download and process latest timetable refresh from DTD
   --get-routeing [DIR]       download and process latest routeing refresh from DTD
   --get-nfm64 [DIR]          download and process latest nfm64 file
-  
+
+The --gtfs and --gtfs-zip commands take the following options:
+
+  --range RANGE              how far ahead to build, e.g. "3 months" (defaults to '3 MONTH')
+  --today YYYY-MM-DD         the date to build for (defaults to the current date)
+
 The following environment properties are expected to be set:
   
   DATABASE_USERNAME          mysql username (defaults to root)
@@ -40,8 +45,9 @@ The --get-* and --download-* commands require SFTP environment properties:
 
 The --gtfs and --gtfs-zip commands take the following environment properties:
 
-  GTFS_RANGE                 A mysql interval expression for the scedules to include. This is NOT SANITIZED so it cannot be untrusted user input (defaults to '3 MONTH')
-  
+  GTFS_RANGE                 how far ahead to build, e.g. '6 MONTH' (defaults to '3 MONTH'). --range overrides it
+  GTFS_TODAY                 the date to build for, YYYY-MM-DD. --today overrides it
+
 `);
 
     return Promise.resolve();

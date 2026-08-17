@@ -4,21 +4,16 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "references": [
     {
-      "path": "../feed-parser"
+      "path": "../../libs/dtd-source"
     },
     {
-      "path": "../dtd-schema"
+      "path": "../../libs/gtfs"
     },
     {
-      "path": "../gtfs"
+      "path": "../../libs/gtfs-output"
     }
-  ],
-  "exclude": [
-    "**/*.spec.ts"
   ]
 }

@@ -36,12 +36,18 @@ export {mergeSchedules} from "./transform/MergeSchedules";
 
 // The build orchestrator
 export {BuildFeed} from "./build/BuildFeed";
+export {buildContext, dateRange, option, options, parseRange} from "./build/BuildContext";
+export type {BuildContext, DateRange} from "./build/BuildContext";
 export type {GTFSOutput} from "./build/GTFSOutput";
 export {ScheduleBuilder} from "./build/ScheduleBuilder";
 export type {ScheduleResults} from "./build/ScheduleBuilder";
 
 // The source SPI
 export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";
+export {toStop} from "./source/StationRecord";
+export type {StationRecord} from "./source/StationRecord";
+export {toFixedLinks} from "./source/FixedLinkRecord";
+export type {FixedLinkRecord} from "./source/FixedLinkRecord";
 
 // Data that belongs in a source with a provenance rather than in the library
 export {agencies} from "./data/agency";

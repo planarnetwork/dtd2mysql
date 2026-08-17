@@ -15,7 +15,8 @@
     "gtfs": "yarn workspace dtd2mysql run gtfs",
     "gtfs-zip": "yarn workspace dtd2mysql run gtfs-zip",
     "changeset": "changeset",
-    "release": "yarn workspaces foreach -A --no-private --topological exec 'yarn pack --out package.tgz && npm publish package.tgz && rm package.tgz'"
+    "release": "yarn workspaces foreach -A --no-private --topological exec 'yarn pack --out package.tgz && npm publish package.tgz && rm package.tgz'",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "repository": {
     "type": "git",

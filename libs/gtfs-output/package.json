@@ -27,9 +27,11 @@
   },
   "dependencies": {
     "@gb-transit/gtfs": "workspace:^",
+    "adm-zip": "0.6.0",
     "csv-write-stream": "2.0.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "0.5.8",
     "@types/csv-write-stream": "2.0.3",
     "typescript": "7.0.2"
   }

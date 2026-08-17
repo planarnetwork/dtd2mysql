@@ -1,5 +1,4 @@
 
-import proj4 from 'proj4';
 import {Pool} from "mysql2";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import {
@@ -7,15 +6,19 @@ import {
   AssociationType,
   CRS,
   DateIndicator,
-  Duration,
+  DateRange,
   FixedLink,
+  FixedLinkRecord,
   ScheduleBuilder,
   ScheduleCalendar,
   ScheduleResults,
   StationCoordinates,
+  StationRecord,
   STP,
   Stop,
   TimetableSource,
+  toFixedLinks,
+  toStop,
   Transfer
 } from "@gb-transit/gtfs";
 
@@ -27,10 +30,9 @@ export class MySqlTimetableSource implements TimetableSource {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly stream: Pool,
-    private readonly stationCoordinates: StationCoordinates
-  ) {
-    proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
-  }
+    private readonly stationCoordinates: StationCoordinates,
+    private readonly range: DateRange
+  ) {}
 
   /**
    * Return the interchange time between each station
@@ -53,47 +55,31 @@ export class MySqlTimetableSource implements TimetableSource {
    * Return all the stops with some configurable long/lat applied
    */
   public async getStops(): Promise<Stop[]> {
-    const [results] = await this.db.query<Omit<Stop, 'stop_lat' | 'stop_lon'> & {easting : number, northing : number}>(`
-      SELECT
-        crs_code AS stop_id, 
-        tiploc_code AS stop_code,
-        station_name AS stop_name,
-        cate_interchange_status AS stop_desc,
-        NULL AS zone_id,
-        NULL AS stop_url,
-        NULL AS location_type,
-        NULL AS parent_station,
-        IF(POSITION("(CIE" IN station_name), "Europe/Dublin", "Europe/London") AS stop_timezone,
-        0 AS wheelchair_boarding,
-        easting,
-        northing
+    const [results] = await this.db.query<StationRecord>(`
+      SELECT crs_code, tiploc_code, station_name, cate_interchange_status, easting, northing
       FROM physical_station WHERE crs_code IS NOT NULL
       GROUP BY crs_code
     `);
 
-    // overlay the long and latitude values from configuration
-    return results.map(row => {
-      const [stop_lon, stop_lat] = proj4('EPSG:27700', 'EPSG:4326', [(row.easting - 10000) * 100, (row.northing - 60000) * 100]);
-      const {easting, northing, ...stop} = {...row, stop_lon, stop_lat};
-      return Object.assign(stop, this.stationCoordinates[stop.stop_id]);
-    });
+    return results.map(row => toStop(row, this.stationCoordinates));
   }
 
   /**
    * Return the schedules and z trains. These queries probably require some explanation:
    *
-   * The first query selects the stop times for all passenger services between now and + 3 months. It's important that
+   * The first query selects the stop times for all passenger services live in the window. It's important that
    * the stop time location is mapped to physical stations to avoid getting fake CRS codes from the tiploc data.
    *
-   * The second query selects all the z-trains (usually replacement buses) within three months. They already use CRS
+   * The second query selects the z-trains (usually replacement buses) over the same window. They already use CRS
    * codes as the location so avoid the disaster above.
    *
-   * The argument range is a mysql expression like '3 MONTH'.
-   *   It is NOT SANITIZED so it cannot be untrusted user input.
+   * Both windows come from the source's DateRange, so a range longer than the default does not produce
+   * more trains than replacement buses.
    */
-  public async getSchedules(range: string): Promise<ScheduleResults> {
+  public async getSchedules(): Promise<ScheduleResults> {
     const scheduleBuilder = new ScheduleBuilder();
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
+    const window = [this.range.to.toString(), this.range.from.toString()];
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -113,11 +99,11 @@ export class MySqlTimetableSource implements TimetableSource {
         (
           stop_time.id IS NULL OR crs_code IS NOT NULL
         )
-        AND runs_from < CURDATE() + INTERVAL ${range}
-        AND runs_to >= CURDATE()
+        AND runs_from < ?
+        AND runs_to >= ?
         AND scheduled_pass_time is null
         ORDER BY stp_indicator DESC, id, stop_id
-      `)),
+      `, window)),
       scheduleBuilder.loadSchedules(this.stream.query(`
         SELECT
           ${lastSchedule.id} + z_schedule.id AS id, train_uid, null, runs_from, runs_to,
@@ -128,10 +114,10 @@ export class MySqlTimetableSource implements TimetableSource {
         FROM z_schedule
         LEFT JOIN z_schedule_extra ON z_schedule.id = z_schedule_extra.schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
-        WHERE runs_from < CURDATE() + INTERVAL 3 MONTH
-        AND runs_to >= CURDATE()
+        WHERE runs_from < ?
+        AND runs_to >= ?
         ORDER BY stop_id
-      `))
+      `, window))
     ]);
 
     return scheduleBuilder.results;
@@ -148,10 +134,10 @@ export class MySqlTimetableSource implements TimetableSource {
         start_date, end_date, stp_indicator
       FROM association a
       JOIN tiploc ON assoc_location = tiploc_code
-      WHERE start_date < CURDATE() + INTERVAL 3 MONTH
-      AND end_date >= CURDATE()
+      WHERE start_date < ?
+      AND end_date >= ?
       ORDER BY stp_indicator DESC, id
-    `);
+    `, [this.range.to.toString(), this.range.from.toString()]);
 
     return results.map(row => new Association(
       row.id,
@@ -180,7 +166,7 @@ export class MySqlTimetableSource implements TimetableSource {
    */
   public async getFixedLinks(): Promise<FixedLink[]> {
     // use the additional fixed links if possible and fill the missing data with fixed_links
-    const [rows] = await this.db.query<FixedLinkRow>(`
+    const [rows] = await this.db.query<FixedLinkRecord>(`
       SELECT
         mode, duration * 60 as duration, origin, destination,
         start_time, end_time, start_date, end_date,
@@ -199,34 +185,7 @@ export class MySqlTimetableSource implements TimetableSource {
       )
     `);
 
-    const results: FixedLink[] = [];
-
-    for (const row of rows) {
-      results.push(this.getFixedLinkRow(row.origin, row.destination, row));
-      results.push(this.getFixedLinkRow(row.destination, row.origin, row));
-    }
-
-    return results;
-  }
-
-  private getFixedLinkRow(origin: CRS, destination: CRS, row: FixedLinkRow): FixedLink {
-    return {
-      from_stop_id: origin,
-      to_stop_id: destination,
-      mode: row.mode,
-      duration: row.duration,
-      start_time: row.start_time,
-      end_time: row.end_time,
-      start_date: (row.start_date || "2017-01-01"),
-      end_date: (row.end_date || "2038-01-19"),
-      monday: row.monday,
-      tuesday: row.tuesday,
-      wednesday: row.wednesday,
-      thursday: row.thursday,
-      friday: row.friday,
-      saturday: row.saturday,
-      sunday: row.sunday
-    };
+    return rows.flatMap(toFixedLinks);
   }
 
   /**
@@ -257,28 +216,3 @@ interface AssociationRow {
   stp_indicator: STP;
 }
 
-interface FixedLinkRow {
-  mode: FixedLinkMode;
-  duration: Duration;
-  origin: CRS;
-  destination: CRS;
-  start_time: string;
-  end_time: string;
-  start_date: string | null;
-  end_date: string | null;
-  monday: 0 | 1;
-  tuesday: 0 | 1;
-  wednesday: 0 | 1;
-  thursday: 0 | 1;
-  friday: 0 | 1;
-  saturday: 0 | 1;
-  sunday: 0 | 1;
-}
-
-enum FixedLinkMode {
-  Walk = "WALK",
-  Metro = "METRO",
-  Transfer = "TRANSFER",
-  Tube = "TUBE",
-  Bus = "BUS"
-}

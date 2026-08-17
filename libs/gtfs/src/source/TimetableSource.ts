@@ -10,6 +10,11 @@ import {Transfer} from "../entity/Transfer";
  * a feed can be produced from a database, from the CIF files directly, or from
  * anything else that can answer these five questions.
  *
+ * A source is built for one window and answers for that one. It is not a
+ * parameter of the queries because it is not a property of a query: a feed
+ * cannot hold six months of trains and three months of the associations that
+ * join them together, so there is one window per build and a source per window.
+ *
  * The ordering of `getSchedules` is part of the contract: schedules must arrive
  * grouped by schedule and sorted stp_indicator DESC, id, stop_sequence, because
  * applyOverlays relies on cancellations and overlays following the permanent
@@ -28,16 +33,13 @@ export interface TimetableSource {
   getStops(): Promise<Stop[]>;
 
   /**
-   * Passenger schedules and z-trains within the given range.
-   *
-   * `range` is a MySQL interval expression such as "3 MONTH". It is the one part
-   * of this interface that leaks the storage engine, and wants replacing with a
-   * date window taken from an injected clock.
+   * Passenger schedules and z-trains that are live at some point in the window.
    */
-  getSchedules(range: string): Promise<ScheduleResults>;
+  getSchedules(): Promise<ScheduleResults>;
 
   /**
-   * Associations - splits, joins and next/previous workings
+   * Associations - splits, joins and next/previous workings - live at some
+   * point in the window.
    */
   getAssociations(): Promise<Association[]>;
 
