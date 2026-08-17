@@ -1,6 +1,31 @@
 # Restructure plan
 
-Status: proposal
+Status: Epic A landed; everything else proposal.
+
+**Epic A is done.** The tree is a Yarn 4 monorepo of one app and five libraries, built
+exactly as the move map in §2 describes. A4 stays deferred and no second storage app was
+written, as decided in §2. Nothing from Epics B, C, D, E or F is in yet.
+
+The move was verified rather than asserted. Building the feed from master and from the
+restructured tree against the same database on the same day gives byte-identical output in
+every file, with the same CLI surface and the same 119 tests. Two consecutive runs of the
+same code on the same day are byte-identical, so that comparison distinguishes a real
+change from noise.
+
+One deliberate departure from §2: the `GTFSOutput` *interface* lives in `libs/gtfs`, not
+`libs/gtfs-output`. The build orchestrator writes through it and the dependency graph runs
+`gtfs-output → gtfs`, so putting it in `gtfs-output` would invert that edge. `FileOutput`
+and the zip command are in `gtfs-output` as planned.
+
+The scope is `@gb-transit` rather than `@gb-rail`: what is in these packages is a transit
+model and a GTFS build, and the DTD feeds are one source into it.
+
+The root has two tsconfigs. `tsconfig.json` is what tsx, vitest and the editor read, and it
+matches every source file in the workspace; `tsconfig.build.json` holds the project
+references `tsc -b` walks. One file cannot do both: tsx takes a file's compiler options from
+the nearest tsconfig whose `include` matches it, and a solution file matches nothing, so the
+libraries would be compiled with the wrong kind of decorator whenever a command was run from
+the repository root.
 Issues: [#119](https://github.com/planarnetwork/dtd2mysql/issues/119) (external data),
 [#115](https://github.com/planarnetwork/dtd2mysql/issues/115) (one-shot GTFS),
 [#116](https://github.com/planarnetwork/dtd2mysql/issues/116) (other databases — deferred, see C4),
@@ -98,7 +123,7 @@ libs/
   enrich-darwin/
 ```
 
-Libs publish as `@gb-rail/*`. The two CLI apps publish bare: `dtd2mysql` and `dtd2gtfs`.
+Libs publish as `@gb-transit/*`. The two CLI apps publish bare: `dtd2mysql` and `dtd2gtfs`.
 
 A second storage app (`dtd2postgres`, or any other backend) slots in beside `dtd2mysql` without
 moving anything, but is not built in this pass.
@@ -207,7 +232,7 @@ Three properties matter more than the interface shape:
 Yarn 4 (Berry) with `nodeLinker: node-modules` — tsx, vitest and `ssh2` are all happier with it and
 PnP buys nothing here.
 
-- Workspace deps via `"@gb-rail/gtfs": "workspace:^"`.
+- Workspace deps via `"@gb-transit/gtfs": "workspace:^"`.
 - Libs get `"publishConfig": { "access": "public" }`; apps publish bare.
 - The existing `allowScripts` block is `@lavamoat/allow-scripts` config. Under Yarn 4 it becomes
   `dependenciesMeta.<pkg>.built` in the root manifest with `enableScripts: false` in `.yarnrc.yml`.
@@ -696,21 +721,21 @@ it lands.
 
 ### Epic A — Monorepo migration
 
-**A1 · Bootstrap Yarn 4 workspaces**
+**A1 · Bootstrap Yarn 4 workspaces** — **done**
 `.yarnrc.yml` with `nodeLinker: node-modules`; `.yarn/releases/` committed; root manifest declares
 `apps/*` and `libs/*`; lavamoat `allowScripts` migrated to `dependenciesMeta.*.built`; root
 `tsconfig.base.json` with project references; vitest `projects`. `yarn install --immutable` and
 `yarn test` green with the tree still in its current shape.
 
-**A2 · Extract `@gb-rail/feed-parser`** *(depends A1)*
+**A2 · Extract `@gb-transit/feed-parser`** *(depends A1)* — **done**
 `src/feed/**` and its tests moved. Zero dependencies on `config/` or `src/database`. Publish
 dry-run clean.
 
-**A3 · Extract `@gb-rail/dtd-schema`** *(depends A2)*
-All four feed configs moved; imports `@gb-rail/feed-parser` only. Removes the `config/` ↔ `src/`
+**A3 · Extract `@gb-transit/dtd-schema`** *(depends A2)* — **done**
+All four feed configs moved; imports `@gb-transit/feed-parser` only. Removes the `config/` ↔ `src/`
 circularity.
 
-**A4 · Extract `@gb-rail/feed-storage`** — **deferred, not in this pass**
+**A4 · Extract `@gb-transit/feed-storage`** — **deferred, not in this pass**
 Blocked on an incoming database-agnostic patch to the same files. Restructuring them concurrently
 would conflict, and the merge would be unreviewable. See §2.
 
@@ -719,20 +744,20 @@ What this pass owes instead: `src/database/**` and `ImportFeedCommand` move into
 rebases cleanly onto a rename rather than onto a rewrite. T6b is the deliverable that makes that
 patch safe to merge, and should be built before it arrives.
 
-**A5 · Extract `@gb-rail/dtd-source`** *(depends A3)*
+**A5 · Extract `@gb-transit/dtd-source`** *(depends A3)* — **done**
 SFTP client and download sequencing moved. **The last-processed cursor must no longer come from the
 `log` table** — `DownloadCommand.getLastProcessedFile()` queries MySQL, which `dtd2gtfs` will not
 have. Introduce a `FeedCursor` interface with a `Storage`-backed implementation for the DB apps and
 a file or no-op implementation for one-shot.
 
-**A6 · Extract `@gb-rail/gtfs`** *(depends A1)*
+**A6 · Extract `@gb-transit/gtfs`** *(depends A1)* — **done**
 Entities, model, transforms, build orchestrator. `agency.ts` and `station-coordinates.ts` land in
 `src/data/` unchanged. **No `mysql2` dependency.** All existing gtfs tests pass untouched.
 
-**A7 · Extract `@gb-rail/gtfs-output`** *(depends A6)*
+**A7 · Extract `@gb-transit/gtfs-output`** *(depends A6)* — **done**
 `FileOutput`, `GTFSOutput`, fixed `ZipOutput` (post-B5). Nothing else.
 
-**A8 · Assemble `apps/dtd2mysql`** *(depends A5, A6, A7)*
+**A8 · Assemble `apps/dtd2mysql`** *(depends A5, A6, A7)* — **done**
 `src/database/**` and `ImportFeedCommand` moved verbatim, `MySqlTimetableSource`,
 `CleanFaresCommand`, `GTFSImportCommand`, per-app composition root replacing `Container`.
 **No logic changes to the import path** — it is a path move, reviewable as a rename. **CLI surface byte-identical** — every flag in the README
@@ -740,11 +765,29 @@ behaves as before. Smoke test installs the tarball and runs `--help`. The two `m
 resolved once in the composition root, not via `require()` inside a memoized getter;
 `Container.ts`'s dynamic requires do not survive the move.
 
-**A9 · Changesets and release pipeline** *(depends A8)*
-`publish.yml` replaced. `yarn workspaces foreach --topological npm publish` gated on a changeset.
-Libs public under `@gb-rail`, apps bare. Dry-run on PRs.
+**A9 · Changesets and release pipeline** *(depends A8)* — **done**
+`publish.yml` replaced. A topological `yarn pack` piped into `npm publish`, gated on a changeset.
+Libs public under `@gb-transit`, apps bare. Dry-run on PRs. Topological order matters: a lib
+has to be on the registry before the app that depends on it is.
 
-**A10 · CI for workspaces** *(depends A1)*
+Each workspace is packed by yarn and the tarball handed to npm, rather than run through
+`npm publish` directly. `workspace:^` is a yarn protocol: yarn substitutes the real range as
+it packs, npm does not understand it at all, so publishing with npm alone would ship a
+manifest that fails to install with `Unsupported URL Type "workspace:"`. npm still does the
+upload, because trusted publishing over OIDC is an npm feature. Nothing catches this in a
+dry run — `pack --dry-run` is yarn, and yarn is the half that works.
+
+The first release of each `@gb-transit` package has to be made before npm can be told which
+workflow is allowed to publish it, so trusted publishing covers everything from the second
+release onwards.
+
+The split ships as **`dtd2mysql` 7.0.0**. The command line is untouched, but the tarball no
+longer contains `dist/src` or `dist/config`, so anything that imported out of the package
+rather than running it has to move to the `@gb-transit` package that now holds that code.
+The libraries start at 0.1.0: `libs/gtfs` becomes an SPI under D1 and the shape of it is
+still moving, which is what a 0.x says.
+
+**A10 · CI for workspaces** *(depends A1)* — **done**
 `yarn install --immutable`, `.yarn/cache` cached, tests run per workspace with failures attributed
 to a package.
 
@@ -798,7 +841,7 @@ last-writer-wins.**
 options and `apply:` field allowlists) and extensions. `dtd2gtfs build --config`. Schema-validated;
 unknown enricher ids fail fast.
 
-**D3 · `@gb-rail/enrich-naptan`** *(depends D1)*
+**D3 · `@gb-transit/enrich-naptan`** *(depends D1)*
 OGL. Accurate lat/lon for `RLY` stops (2,673 rail stations); **rail replacement bus stop points**
 from `BCT` for BR/BS services; NPTG locality for disambiguation; match report by CRS with the
 unmatched list surfaced. **The `(easting - 10000) * 100` OSGB fudge in `getStops()` is removed, not
@@ -809,16 +852,16 @@ NaPTAN also carries `RSE` (4,543 station entrances) and `RPL` (rail platforms, A
 `9100ZZTYKKH1`). Extracting those is F3's dependency, and it means the station hierarchy is
 buildable entirely from OGL sources.
 
-**D4 · `@gb-rail/enrich-corpus`** *(depends D1)*
+**D4 · `@gb-transit/enrich-corpus`** *(depends D1)*
 OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
 `LEFT JOIN physical_station ON location = ps.tiploc_code` that currently drops stops. Count of
 recovered stop times reported. Blocks F3.
 
-**D5 · `@gb-rail/enrich-knowledgebase`** *(depends D1, C5)*
+**D5 · `@gb-transit/enrich-knowledgebase`** *(depends D1, C5)*
 `wheelchair_boarding` from step-free access data, replacing B7's `0`. `stop_url`, `stop_desc`. Token
 via RDM. Responses cached to disk so the nightly is not at the mercy of the API.
 
-**D6 · `@gb-rail/enrich-osm`** *(depends D1, F3)*
+**D6 · `@gb-transit/enrich-osm`** *(depends D1, F3)*
 **ODbL — share-alike.** Gated behind D8, so it only contributes to `gtfs-full.zip`.
 
 Scope is narrower than originally planned: NaPTAN already supplies stations, platforms and
@@ -841,7 +884,7 @@ There is deliberately no plain `gtfs.zip`, so no stable `releases/latest/downloa
 exists. E5 must state which tier a consumer wants; `gtfs-slim.zip` is the documented default
 recommendation, with `gtfs-full.zip` for consumers who can accept ODbL share-alike. Blocks E2.
 
-**D9 · `@gb-rail/enrich-darwin` — via locations** *(depends D1, B8)*
+**D9 · `@gb-transit/enrich-darwin` — via locations** *(depends D1, B8)*
 New package; Push Port / Darwin Timetable XML, distinct from the Knowledgebase API in D5.
 `trip_headsign` becomes "Brighton via Gatwick Airport" where Darwin supplies via text. Matching on
 TUID/RSID with an unmatched-rate report. Falls back to B8's plain destination on no match.

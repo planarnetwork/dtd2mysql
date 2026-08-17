@@ -1,24 +1,14 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "nodenext",
-    "module": "nodenext",
-    "target": "es2025",
-    "sourceMap": true,
-    "experimentalDecorators": true,
-    "strict": true,
-    "declaration": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "lib": [
-      "esnext"
-    ],
-    "types": [
-      "node"
-    ]
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true
   },
-  "exclude": [
-    "node_modules",
-    "test/",
-    "dist/"
+  "include": [
+    "apps/*/src",
+    "libs/*/src",
+    "*.mts"
   ]
 }

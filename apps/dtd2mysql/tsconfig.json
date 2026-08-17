@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../libs/feed-parser"
+    },
+    {
+      "path": "../../libs/dtd-schema"
+    },
+    {
+      "path": "../../libs/dtd-source"
+    },
+    {
+      "path": "../../libs/gtfs"
+    },
+    {
+      "path": "../../libs/gtfs-output"
+    }
+  ],
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}

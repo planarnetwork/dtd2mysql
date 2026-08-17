@@ -1,37 +1,26 @@
 {
-  "name": "dtd2mysql",
-  "version": "6.6.16",
-  "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist/src",
-    "dist/config"
+  "name": "gb-transit",
+  "private": true,
+  "description": "Monorepo for the GB rail DTD tooling: dtd2mysql and the @gb-transit packages it is built from",
+  "packageManager": "yarn@4.18.0",
+  "workspaces": [
+    "apps/*",
+    "libs/*"
   ],
-  "bin": {
-    "dtd2mysql": "bin/dtd2mysql.sh"
-  },
   "scripts": {
-    "test": "vitest run",
+    "build": "tsc -b tsconfig.build.json",
+    "test": "yarn build && vitest run",
     "watch-test": "vitest",
-    "start": "tsx ./src/index.ts",
-    "prepublishOnly": "tsc -p ./ --outDir dist/",
-    "gtfs": "tsx ./src/index.ts --gtfs",
-    "gtfs-zip": "tsx ./src/index.ts --gtfs-zip"
+    "start": "yarn workspace dtd2mysql run start",
+    "gtfs": "yarn workspace dtd2mysql run gtfs",
+    "gtfs-zip": "yarn workspace dtd2mysql run gtfs-zip",
+    "changeset": "changeset",
+    "release": "yarn workspaces foreach -A --no-private --topological exec 'yarn pack --out package.tgz && npm publish package.tgz && rm package.tgz'"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/planarnetwork/dtd2mysql.git"
   },
-  "keywords": [
-    "gb",
-    "rail",
-    "etl",
-    "fares",
-    "routeing",
-    "timetable",
-    "dtd"
-  ],
   "author": "Linus Norton",
   "license": "GPL-3.0",
   "bugs": {
@@ -41,27 +30,19 @@
   "engines": {
     "node": ">=26"
   },
-  "dependencies": {
-    "adm-zip": "0.6.0",
-    "byline": "5.0.0",
-    "csv-write-stream": "2.0.0",
-    "memoized-class-decorator": "1.6.1",
-    "mysql2": "3.23.0",
-    "proj4": "2.20.9",
-    "ssh2": "1.17.0"
-  },
   "devDependencies": {
-    "@types/adm-zip": "0.5.8",
-    "@types/byline": "4.2.36",
-    "@types/csv-write-stream": "2.0.3",
+    "@changesets/cli": "^2.31.1",
     "@types/node": "26.1.1",
-    "@types/ssh2": "1.15.5",
     "tsx": "4.23.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },
-  "allowScripts": {
-    "ssh2@1.17.0": true,
-    "esbuild@0.28.1": true
+  "dependenciesMeta": {
+    "esbuild@0.28.2": {
+      "built": true
+    },
+    "ssh2@1.17.0": {
+      "built": true
+    }
   }
 }

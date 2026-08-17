@@ -1,9 +1,9 @@
 name: Test
 
 on:
+  # Every pull request, not only the ones targeting master, so a branch stacked
+  # on another branch is still tested.
   pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
@@ -17,9 +17,75 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v5
+      # A conflict marker in a workflow file makes it unparseable, which GitHub
+      # reports as a run that failed before any job started - easy to read as the
+      # workflow simply not triggering.
+      - name: No conflict markers
+        run: |
+          ! git grep -n -E '^(<<<<<<< |=======$|>>>>>>> )' -- . ':!*.spec.ts'
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.version }}
-          cache: npm
-      - run: npm ci
-      - run: npm test
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      # tsc -b walks the project references in dependency order, so a type error
+      # is reported against the package that contains it.
+      - run: yarn build
+      # Each workspace is a vitest project named after its package, so a failure
+      # names the package rather than the repository.
+      - run: yarn vitest run
+      # The CLI has to work from the repository root as well as from its own
+      # directory: tsx takes its compiler options from the nearest tsconfig whose
+      # include matches the file.
+      - run: yarn tsx apps/dtd2mysql/src/index.ts --help
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+      # Tests run against source, so main, types, bin and files breakage is
+      # invisible to them. Pack every workspace, install the dtd2mysql tarball
+      # into a clean directory and run the CLI from it. The @gb-transit packages
+      # are resolved from the tarballs built here rather than from the registry,
+      # so the check works before they are first published and tests this commit
+      # rather than the last release.
+      - name: Install the packaged tarballs and run the CLI
+        run: |
+          mkdir -p "$RUNNER_TEMP/tarballs"
+          for pkg in feed-parser dtd-schema dtd-source gtfs gtfs-output; do
+            yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
+          done
+          yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
+          mkdir -p "$RUNNER_TEMP/install" && cd "$RUNNER_TEMP/install"
+          cat > package.json <<EOF
+          {
+            "name": "dtd2mysql-pack-smoke-test",
+            "private": true,
+            "version": "1.0.0",
+            "overrides": {
+              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
+              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
+              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
+              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
+              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz"
+            }
+          }
+          EOF
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
+          ./node_modules/.bin/dtd2mysql --help | tee help.txt
+          grep -q "Usage: dtd2mysql" help.txt
+          grep -q -- "--gtfs-zip" help.txt

@@ -1,0 +1,35 @@
+{
+  "name": "@gb-transit/dtd-source",
+  "version": "0.0.0",
+  "description": "Download and sequencing of the DTD feed files from the RSP SFTP server",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/dtd-source"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "ssh2": "1.17.0"
+  },
+  "devDependencies": {
+    "@types/ssh2": "1.15.5",
+    "typescript": "7.0.2"
+  }
+}

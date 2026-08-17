@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
+    "target": "es2025",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "lib": [
+      "esnext"
+    ],
+    "types": [
+      "node"
+    ]
+  }
+}

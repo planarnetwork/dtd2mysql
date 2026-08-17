@@ -1,0 +1,36 @@
+{
+  "name": "@gb-transit/gtfs-output",
+  "version": "0.0.0",
+  "description": "Writers for a GTFS feed: a directory of text files, or a zip",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/gtfs-output"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@gb-transit/gtfs": "workspace:^",
+    "csv-write-stream": "2.0.0"
+  },
+  "devDependencies": {
+    "@types/csv-write-stream": "2.0.3",
+    "typescript": "7.0.2"
+  }
+}
