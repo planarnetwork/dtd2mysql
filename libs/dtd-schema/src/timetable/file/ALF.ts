@@ -1,5 +1,5 @@
 
-import {BooleanField, DateField, FieldMap, FieldValue, IntField, ParsedRecord, Record, RecordAction, SingleRecordFile, TextField, TimeField, VariableLengthText} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, FieldMap, FieldValue, IntField, ParsedRecord, Record, RecordAction, SingleRecordFile, TextField, TimeField, VariableLengthText} from "@gb-transit/feed-parser";
 
 import memoize from "memoized-class-decorator";
 

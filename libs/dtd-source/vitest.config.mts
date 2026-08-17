@@ -1,3 +1,3 @@
 import {project} from "../../vitest.shared.mjs";
 
-export default project("@gb-rail/dtd-source");
+export default project("@gb-transit/dtd-source");
