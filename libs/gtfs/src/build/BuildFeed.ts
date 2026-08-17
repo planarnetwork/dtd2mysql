@@ -10,7 +10,9 @@ import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
 import {Route} from "../entity/Route";
-import {Stop} from "../entity/Stop";
+import {CRS, Stop} from "../entity/Stop";
+import {locate} from "../source/Located";
+import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
@@ -47,19 +49,18 @@ export class BuildFeed {
 
     const associationsP = this.repository.getAssociations();
     const scheduleResultsP = this.repository.getSchedules();
-    const transfersP = this.copy(this.repository.getTransfers(), "transfers.txt", t => [t.from_stop_id, t.to_stop_id]);
-    // Awaited at copyTrips rather than here, so the queries below still start
-    // before the stops come back.
     const stopsQ = this.repository.getStops();
-    const stopsP = this.copy(stopsQ, "stops.txt", s => [s.stop_id]);
+    const fixedLinksQ = this.repository.getFixedLinks();
+    const transfersQ = this.repository.getTransfers();
     const agencyP = this.copy(agencies, "agency.txt", a => [a.agency_id]);
     const fixedLinksP = this.copy(
-      this.repository.getFixedLinks(),
+      fixedLinksQ,
       "links.txt",
       l => [l.from_stop_id, l.to_stop_id, l.mode, l.start_date, l.start_time]
     );
 
-    const schedules = this.getSchedules(await associationsP, await scheduleResultsP);
+    const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
+    const schedules = this.getSchedules(associations, scheduleResults);
 
     if (schedules.length === 0) {
       throw new Error(
@@ -68,11 +69,24 @@ export class BuildFeed {
       );
     }
 
+    // stops.txt is written after the schedules and the links are known, because
+    // whether an unlocated station is published depends on whether anything
+    // references it.
+    const [sourceStops, fixedLinks] = await Promise.all([stopsQ, fixedLinksQ]);
+    const stops = locate(sourceStops, referenced(schedules, fixedLinks));
+    const published = new Set(stops.map(stop => stop.stop_id));
+    const stopsP = this.copy(stops, "stops.txt", s => [s.stop_id]);
+    const transfersP = this.copy(
+      (await transfersQ).filter(transfer => published.has(transfer.from_stop_id)),
+      "transfers.txt",
+      t => [t.from_stop_id, t.to_stop_id]
+    );
+
     const [calendars, calendarDates, serviceIds] = createCalendar(schedules);
 
     const calendarP = this.copy(calendars, "calendar.txt", c => [c.service_id]);
     const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", d => [d.service_id, d.date]);
-    const tripsP = this.copyTrips(schedules, serviceIds, names(await stopsQ));
+    const tripsP = this.copyTrips(schedules, serviceIds, names(stops));
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -187,6 +201,28 @@ export class BuildFeed {
     return schedules.filter(schedule => !schedule.calendar.isEmpty);
   }
 
+}
+
+/**
+ * Every stop the feed points at from somewhere else. A station outside this set
+ * contributes nothing but its own existence, so it is only worth publishing if it
+ * can be put on a map.
+ */
+function referenced(schedules: Schedule[], links: FixedLink[]): Set<CRS> {
+  const used = new Set<CRS>();
+
+  for (const schedule of schedules) {
+    for (const stopTime of schedule.stopTimes) {
+      used.add(stopTime.stop_id);
+    }
+  }
+
+  for (const link of links) {
+    used.add(link.from_stop_id);
+    used.add(link.to_stop_id);
+  }
+
+  return used;
 }
 
 /**

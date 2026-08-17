@@ -17,6 +17,8 @@ import {
   TimetableSource,
   toFixedLinks,
   toStop,
+  withoutPlaceholders,
+  reportDroppedStops,
   Transfer,
   TransferType
 } from "@gb-transit/gtfs";
@@ -50,9 +52,12 @@ const SUBSIDIARY = 9;
 export class CifFileSource implements TimetableSource {
 
   private readonly reference = once(() => readReference(this.sources));
-  private readonly timetable = once(async () =>
-    readTimetable(this.sources, await this.reference(), this.range)
-  );
+  private readonly stops = once(async () => toStops(await this.reference(), this.stationCoordinates));
+  private readonly timetable = once(async () => {
+    const [reference, stops] = await Promise.all([this.reference(), this.stops()]);
+
+    return readTimetable(this.sources, reference, stops.dropped, this.range);
+  });
 
   constructor(
     private readonly sources: string[],
@@ -64,10 +69,9 @@ export class CifFileSource implements TimetableSource {
    * SELECT crs_code, ... FROM physical_station WHERE crs_code IS NOT NULL GROUP BY crs_code
    */
   public async getStops(): Promise<Stop[]> {
-    const {stations} = await this.reference();
+    const {stops} = await this.stops();
 
-    return groupByCrs(stations.rows.filter(row => row.crs_code !== null), true)
-      .map(row => toStop(stationRecord(row), this.stationCoordinates));
+    return stops;
   }
 
   /**
@@ -133,6 +137,17 @@ export class CifFileSource implements TimetableSource {
 }
 
 /**
+ * Every station as a stop, with the operator placeholders taken out and their
+ * codes kept so the schedule read can drop the stop times calling at them.
+ */
+function toStops(reference: Reference, coordinates: StationCoordinates): DroppableStops {
+  return withoutPlaceholders(
+    groupByCrs(reference.stations.rows.filter(row => row.crs_code !== null), true)
+      .map(row => toStop(stationRecord(row), coordinates))
+  );
+}
+
+/**
  * MSN, ALF and FLF from every feed, in order.
  *
  * All of them are read before any schedule is, because the schedule queries
@@ -189,6 +204,7 @@ async function readReference(sources: string[]): Promise<Reference> {
 async function readTimetable(
   sources: string[],
   reference: Reference,
+  exclude: ReadonlySet<string>,
   range: DateRange
 ): Promise<Timetable> {
   const {stations} = reference;
@@ -203,7 +219,7 @@ async function readTimetable(
   const mca = timetable["MCA"] as MultiRecordFile;
   const cfa = timetable["CFA"] as MultiRecordFile;
   const ztr = timetable["ZTR"] as MultiRecordFile;
-  const loader = new ScheduleLoader(range, crsByTiploc);
+  const loader = new ScheduleLoader(range, crsByTiploc, exclude);
 
   for (const source of sources) {
     const zip = new FeedZip(source);
@@ -223,6 +239,8 @@ async function readTimetable(
       zip.close();
     }
   }
+
+  reportDroppedStops(loader.droppedStops);
 
   return loader.results();
 }
@@ -249,9 +267,14 @@ class ScheduleLoader {
   private scheduleId = 0;
   private zScheduleId = 0;
 
+  // Summed across builders because there is one per schedule here, unlike the
+  // MySQL source which streams every schedule through a single builder.
+  public droppedStops = 0;
+
   constructor(
     private readonly range: DateRange,
-    private readonly crsByTiploc: Map<string, string>
+    private readonly crsByTiploc: Map<string, string>,
+    private readonly exclude: ReadonlySet<string>
   ) {}
 
   public readTimetableLine(file: MultiRecordFile, line: string): void {
@@ -398,8 +421,9 @@ class ScheduleLoader {
       return;
     }
 
-    const builder = new ScheduleBuilder();
+    const builder = new ScheduleBuilder(this.exclude);
     builder.load(pending.zTrain ? this.zTrainRows(pending) : this.scheduleRows(pending));
+    this.droppedStops += builder.dropped;
 
     const [schedule] = builder.results.schedules;
 
@@ -681,6 +705,11 @@ interface Pending {
   stops: Row[];
   seen: Set<string>;
   zTrain: boolean;
+}
+
+interface DroppableStops {
+  stops: Stop[];
+  dropped: Set<string>;
 }
 
 interface Reference {

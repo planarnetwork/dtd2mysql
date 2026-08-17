@@ -87,8 +87,8 @@ export function stationRecord(row: Row): StationRecord {
     tiploc_code: text(row, "tiploc_code"),
     station_name: text(row, "station_name"),
     cate_interchange_status: optionalInteger(row, "cate_interchange_status"),
-    easting: integer(row, "easting"),
-    northing: integer(row, "northing")
+    easting: optionalInteger(row, "easting"),
+    northing: optionalInteger(row, "northing")
   };
 }
 

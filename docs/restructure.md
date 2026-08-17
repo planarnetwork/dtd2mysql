@@ -717,37 +717,93 @@ The four possible configurations, since this is easy to get wrong:
 `[" "]` is deliberately narrower than the default. The feed contains no blanks in that field
 (values are 0, 1, 2, 3 and 9), so nothing else moves. `MSN.spec.ts` pins both the blank and the `9`.
 
-**B10 · Zero eastings project to the South Atlantic**
-`00000` treated as absent, not zero — `IntField` gains an explicit sentinel list so an all-zero
-fixed-width numeric field parses to null. `stop_lat`/`stop_lon` are required in GTFS, so the 46
-affected stops are real places that need real coordinates: 43 CIE stations, `SOS` Stromness, and
-`QBN`/`QBS` Blackpool bus-tram. Seed `overrides.yaml` — the same file D7 introduces. A stop that
-still has no coordinate after overrides fails the build rather than emitting a placeholder. Test
-covers a CIE station.
+**B10 · Zero eastings project to the South Atlantic** — **done**
 
-NaPTAN is GB-only and will not cover the 43 CIE stations; a compatible source for Irish stations is
-to be identified at implementation time.
+The ticket assumed all 46 affected stops were "real places that need real coordinates", which is why
+it was blocked on finding an Irish source. They are not. **43 of the 46 need no coordinate, because
+nothing in the feed goes there:**
 
-**B11 · TCR latitude and longitude are transposed**
-`config/gtfs/station-coordinates.ts:13613` has `stop_lat: -0.1306, stop_lon: 51.5163`, placing
-Tottenham Court Road in the Indian Ocean. Fix the entry, and add a validation test over the whole
-override file asserting every entry falls within the GB bounding box (or an explicit allowlist for
-genuinely non-GB stops such as `HVH` Hoek van Holland). The same assertion carries over to
+| | stop times | fixed links | outcome |
+|---|---:|---:|---|
+| 43 CIE stations, easting `00000` | 0 | 0 | not published |
+| `QBN`/`QBS` Blackpool bus-tram | 0 | 4 each | published at the default |
+| `HVH` Hoek van Holland | 12 | 0 | correct already, exempt from the bounds |
+
+The Irish stations are in the MSN because they are ticketable, but no train in the feed calls at one.
+Their entire footprint is a row in `stops.txt` and a self-referencing row in `transfers.txt`. So no
+Irish coordinate source is needed to close this.
+
+What it does:
+
+1. An all-zero fixed-width coordinate field parses as absent - the MSN schema gives `easting` and
+   `northing` a nullChars list rather than `IntField` gaining a mechanism, since `nullValues`
+   already repeats the character to the field width.
+2. A coordinate that survives parsing but cannot be a place is also absent. `19500` unwinds to an
+   easting of 950,000, well past the eastern edge of the National Grid, and lands in the North Sea.
+   That is only visible after projecting, so `toStop` checks the projected point against `Bounds.ts`
+   and nulls it if it fails. `HVH` is the one documented exemption.
+3. A stop with no coordinate that nothing references is not published, and its transfer goes with it.
+4. A stop with no coordinate that something does reference is published at `NOWHERE` - 0,0 - and
+   named in a warning. Null Island rather than a plausible centroid: a validator flags it and nobody
+   mistakes it for a survey, where a national centre point would hide exactly what needs finding.
+
+`stops.txt` is therefore written after the schedules and links are known, because whether an
+unlocated station is published depends on whether anything references it.
+
+Feed effect: stops 3,097 -> 3,054, transfers 3,109 -> 3,054, trips and stop times unchanged. Three
+stops remain outside the bounds: `HVH`, which is right, and `QBN`/`QBS` at 0,0 awaiting an override.
+Both sources byte identical.
+
+This also fixed a dangling reference B12 left behind: the twelve placeholder stops were removed from
+`stops.txt` but their self-transfers were not, and the transfer filter here takes them out. The mini
+fixture caught it when the golden was regenerated.
+
+**`SOS` Stromness survives all of it.** It is at 50.80, -3.05 - Devon, not Orkney - from a northing
+of `61009` where it should be `70091`: the encoder divided by 1,000 instead of 100, and `1009` is
+visible in both. It is in bounds, has no sentinel, and nothing references it, so none of the three
+rules touches it. It needs a hand-written override, and it is the standing reminder that the bounds
+check catches coordinates that are impossible, not ones that are merely wrong.
+
+NaPTAN is GB-only and will not cover the 43 CIE stations. That no longer blocks anything: they come
+back the moment a source can locate them, and `QBN`/`QBS` are GB so D3 covers those two.
+
+**B11 · TCR latitude and longitude are transposed** — **done**
+`libs/gtfs/src/data/station-coordinates.ts` had `stop_lat: -0.1306, stop_lon: 51.5163`, placing
+Tottenham Court Road in the Indian Ocean. Fixed, and `station-coordinates.spec.ts` now checks all
+2,594 entries against `Bounds.ts`. TCR was the only one outside. The same assertion carries over to
 `overrides.yaml` in D7.
 
-**B12 · Drop fictional TOC origin/destination placeholders**
+No allowlist was needed. `HVH` Hoek van Holland is genuinely outside the box but takes its
+coordinates from the MSN projection rather than an override, so it never reaches this file. The box
+covers Ireland because the CIE stations will need it once B10 gives them coordinates.
+
+**B12 · Drop fictional TOC origin/destination placeholders** — **done**
 Twelve MSN records are TOC placeholders, not places — `CH ORIGIN`/`CH DESTINATION` and the
-equivalents for EMR, Northern, SWR, TransPennine and CrossCountry. They currently appear as stops
-in the North Sea and 22 trips call at them.
+equivalents for EMR, Northern, SWR, TransPennine and CrossCountry. They appeared as stops in the
+North Sea, from an easting of 18999 or 19500 against a northing of 69999.
 
 Matched by the `<TOC> ORIGIN` / `<TOC> DESTINATION` name pattern in combination with a `CATZ` TIPLOC
 and an invalid coordinate — **not** by `Q` CRS prefix or `CATZ` TIPLOC prefix alone, either of which
 would delete real stations (see §3). Excluded from `stops.txt`, stop times dropped, count logged.
 
-All 22 affected trips have exactly two stops and both are placeholders, so each trip drops to zero
-stops and is removed in full by the existing `stopTimes.length <= 1` filter. No trip is left
-partially truncated. All 22 originate in ZTR, which is consistent with their being replacement-bus
-placeholders. The fixture in T4 must include one so this stays true.
+Measured on the three month window from 2026-08-10 rather than the 22 first counted, which was a
+different window: **18 trips, 36 stop times**. Every one of the 18 has exactly two stops and both
+are placeholders, so each drops to zero stops and is removed whole by the existing
+`stopTimes.length > 1` filter - no trip is left truncated. All 18 are z-trains, consistent with
+their being replacement-bus placeholders.
+
+That z-train origin is why the exclusion lives in `ScheduleBuilder` rather than in the queries: the
+passenger query joins `physical_station` and could have filtered there, but the z-train query takes
+its stop id straight from the ZTR location and never meets that table.
+
+The match is checked against the data it has to survive. The name pattern alone happens to be exact
+today, and the other two signals are there so it stays safe: 121 stations have a `CATZ` TIPLOC,
+mostly real CIE stations, and 59 are outside the bounds, which is every CIE station until B10
+lands. Either signal alone deletes real places.
+
+Feed effect: stops 3,109 -> 3,097, trips 276,048 -> 276,030, stop times 2,868,101 -> 2,868,065.
+Both sources byte identical. The mini fixture carries `QXO`/`QXD` and two trips calling at them, so
+the golden shows the removal.
 
 **B13 · Platform number is in the wrong field** — **done**
 `stop_headsign` is null. It overrides the trip headsign at a stop — it means "this service
@@ -887,32 +943,62 @@ ids and let the unique keys carry the identity. It moves the T10 baseline, so it
 T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
 racing.
 
-**B23 · Preserve the platform as a producer extension column** *(depends B13)*
+**B23 · Platforms as child stops** *(depends B13)* — *supersedes the extension-column approach*
 
 B13 took the platform out of `stop_headsign` and nothing carries it, so the export loses a field the
 feed supplies. The data is not gone — `stop_time.platform` in the database, the `LI`/`LO`/`LT`
-records in the CIF — only the GTFS output drops it. **3,823 distinct station-platform pairs across
-1,314 stations.**
+records in the CIF — only the GTFS output drops it.
 
-GTFS has no platform field on `stop_times.txt`, and the spec's model for platforms is a stop:
-`location_type=0` with a `parent_station` and a `platform_code`. That is F3, and it is not an
-acceptable answer here — it takes `stops.txt` from 3,109 rows to roughly 6,932 and breaks every
-consumer that joins on a three-letter code unless it walks `parent_station`.
+This was first planned as a producer extension column on `stop_times.txt`, on the grounds that it
+cost one column and fragmented nothing. That was the wrong call. The
+[stops.txt best practices](https://gtfs.org/documentation/schedule/schedule-best-practices/#stopstxt)
+are explicit that a station with multiple boarding facilities should be described with the types the
+spec already has:
 
-So: a **producer extension column `platform_code` on `stop_times.txt`**. The spec allows producers
-to add fields it does not define and requires consumers to ignore columns they do not recognise, so
-this costs one column, keeps one row per stop time, fragments nothing, and gives anyone who wants
-platforms a direct read.
+> Many stations or terminals have multiple boarding facilities...feed producers should describe
+> stations, boarding facilities (also called child stops), and their relation.
 
-Two alternatives rejected. `stop_headsign` is B13's whole point — it means "this service terminates
-here", and with B8 putting a real destination in `trip_headsign` a platform there would override it
-at every call. A bespoke `platforms.txt` keyed by trip and sequence is the same column behind a
-join, and B2 is deleting `links.txt` precisely to stop shipping files nobody reads.
+A station is `location_type=1`; each boarding facility is `location_type=0` with `parent_station`
+pointing at it; and the child's name should identify both — their example is "Chicago Union Station"
+with a child "Chicago Union Station Platform 19". A non-standard column expresses none of that, and
+every consumer would need bespoke code to read it. A child stop is understood by everything.
 
-Being honestly non-standard in a column with no defined meaning beats misusing a field that has one.
-The column survives F3 as the station-level fallback, since F3 ships behind a flag with CRS-only
-stops as the default for at least one release. Golden fixture asserts the column, so B13's removal
-and this restoration are both visible in the diff.
+| | station row | platform row |
+|---|---|---|
+| `stop_id` | `PAD` | `PAD_A` |
+| `stop_code` | TIPLOC (until F3 swaps it for CRS) | same |
+| `stop_name` | London Paddington | London Paddington Platform A |
+| `location_type` | `1` | `0` |
+| `parent_station` | — | `PAD` |
+| `platform_code` | — | `A` |
+
+`<CRS>_<platform>` needs no external data, which is what separates this from F3. The underscore
+matches the separator the trip ids already use.
+
+**What the data actually holds.** Measured on the database's public calls (4,034,934 rows, of which
+2,467,114 carry a platform) there are **3,750 station-platform pairs**. 3,705 are platform-shaped —
+`1`, `13`, `A`, `3A`, `4B`. The remaining **45 are not platforms at all**: `DF`, `UM`, `DM`, `DPL`,
+`UGL` and friends are running-line designations that describe which track a service takes, and
+turning those into boarding facilities would invent places passengers cannot stand on. So the value
+has to be filtered to `^[0-9]{1,2}[A-Z]?$|^[A-Z]$` before it becomes a stop; a call carrying anything
+else references the station. `BAY` is a real designation and is a deliberate casualty of that
+pattern — worth revisiting, not worth special-casing first time.
+
+`stops.txt` goes from 3,054 rows to roughly 6,759. Stations with no platform anywhere stay plain
+stops rather than becoming childless `location_type=1` rows.
+
+**This is a breaking change** for every consumer joining on a three-letter code, because
+`stop_times.stop_id` starts pointing at `PAD_A`. Same treatment F3 gets: behind a flag, CRS-only
+stops as the default for at least one release, and announced before the default flips.
+`transfers.txt` keeps referencing parent stations.
+
+Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying;
+a trip may reference a platform at one call and the station at the next, which is valid but should
+be visible in the fixture; and the golden should show one station gaining children so B13's removal
+and this restoration both read in the diff.
+
+`stop_headsign` stays null. It means "this service terminates here", and B8 now puts a real
+destination in `trip_headsign` for it to override.
 
 B7 to B22 are captured in the T10 baseline as current behaviour, and each rebaselines under T8 when
 it lands.
@@ -1277,7 +1363,10 @@ months. Unblocks raising E2's horizon.
 Geometry from Network Rail GIS track centrelines (OGL). `shape_dist_traveled` populated. Behind an
 `extensions:` flag, since it materially inflates feed size.
 
-**F3 · Station and platform hierarchy** *(depends D3, D4, B13)* — **closes #69**
+**F3 · Station and platform hierarchy from NaPTAN** *(depends D3, D4, B23)* — **closes #69**
+
+B23 builds the hierarchy from the timetable alone, with `<CRS>_<platform>` ids. F3 is the upgrade
+that needs external data: real ATCO ids, station entrances, and the `stop_id`/`stop_code` swap.
 
 The current feed has `stop_id` and `stop_code` the wrong way round. GTFS defines `stop_code` as
 rider-facing text — which CRS is, since it appears on tickets and departure boards — while
@@ -1292,19 +1381,19 @@ Proposed `stops.txt`:
 
 | field | now | proposed |
 |---|---|---|
-| `stop_id` | CRS (`PAD`) | NaPTAN ATCO where available, else CRS-derived; platforms as `<station_id>:<platform>` |
+| `stop_id` | CRS (`PAD`) | NaPTAN ATCO where available, else B23's `<CRS>_<platform>` |
 | `stop_code` | TIPLOC (`PADTON`) | **CRS** (`PAD`) |
-| `platform_code` | — | platform number (new field) |
-| `location_type` | always NULL | `1` station, `0` platform, `2` entrance |
-| `parent_station` | always NULL | populated for platforms and entrances |
+| `platform_code` | B23 sets it on platforms | unchanged |
+| `location_type` | B23 sets `1` and `0` | adds `2` entrance |
+| `parent_station` | B23 sets it on platforms | adds entrances |
 | `stop_desc` | `cate_interchange_status` | free text; interchange status is already carried by `transfers.txt` |
 
 Knock-on changes: `stop_times.stop_id` references the platform stop where known, falling back to
 the station; `transfers.txt` `from_stop_id`/`to_stop_id` reference parent stations.
 
-This is a breaking change for every existing consumer joining on three-letter codes. Ship behind a
-flag with CRS-only stops as the default for at least one release, and announce the flip on the
-website before changing the default.
+B23 already broke the three-letter join and carries the flag; F3 changes the ids again, from
+`PAD_A` to the ATCO form, so it needs the same treatment rather than inheriting B23's. Do not flip
+both defaults in one release.
 
 **F4 · Splits and joins as transfers** *(depends C1)* — **closes #81**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
@@ -1351,8 +1440,8 @@ parallel by different people without touching the core.
 
 **82 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred out of this
-pass, leaving **50 in scope**.
+C1–C3 and B10–B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
+out of this pass, leaving **47 in scope**.
 
 ---
 
