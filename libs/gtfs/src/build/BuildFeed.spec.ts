@@ -96,10 +96,10 @@ class FakeSource implements TimetableSource {
   async getStops() { return this.stops; }
   async getTransfers() { return this.transfers; }
   async getFixedLinks() { return this.links; }
-  async getAssociations(_: DateRange): Promise<Association[]> { return []; }
+  async getAssociations(): Promise<Association[]> { return []; }
   async end() {}
 
-  async getSchedules(_: DateRange): Promise<ScheduleResults> {
+  async getSchedules(): Promise<ScheduleResults> {
     return {schedules: this.schedules, idGenerator: ids()};
   }
 

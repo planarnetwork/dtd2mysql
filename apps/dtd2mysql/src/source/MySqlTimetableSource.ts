@@ -32,7 +32,8 @@ export class MySqlTimetableSource implements TimetableSource {
   constructor(
     private readonly db: DatabaseConnection,
     private readonly stream: Pool,
-    private readonly stationCoordinates: StationCoordinates
+    private readonly stationCoordinates: StationCoordinates,
+    private readonly range: DateRange
   ) {}
 
   /**
@@ -111,10 +112,10 @@ export class MySqlTimetableSource implements TimetableSource {
    * The second query selects the z-trains (usually replacement buses) over the same window. They already use CRS
    * codes as the location so avoid the disaster above.
    *
-   * Both windows come from the same DateRange, so a range longer than the default does not produce
+   * Both windows come from the source's DateRange, so a range longer than the default does not produce
    * more trains than replacement buses.
    */
-  public async getSchedules(range: DateRange): Promise<ScheduleResults> {
+  public async getSchedules(): Promise<ScheduleResults> {
     const {dropped} = await this.stations();
     const scheduleBuilder = new ScheduleBuilder(dropped);
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
@@ -125,7 +126,7 @@ export class MySqlTimetableSource implements TimetableSource {
         "Import a timetable feed first: dtd2mysql --timetable /path/to/RJTTFxxx.ZIP"
       );
     }
-    const window = [range.to.toString(), range.from.toString()];
+    const window = [this.range.to.toString(), this.range.from.toString()];
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -174,7 +175,7 @@ export class MySqlTimetableSource implements TimetableSource {
   /**
    * Get associations
    */
-  public async getAssociations(range: DateRange): Promise<Association[]> {
+  public async getAssociations(): Promise<Association[]> {
     const [results] = await this.db.query<AssociationRow>(`
       SELECT 
         a.id AS id, base_uid, assoc_uid, crs_code, assoc_date_ind, assoc_cat,
@@ -185,7 +186,7 @@ export class MySqlTimetableSource implements TimetableSource {
       WHERE start_date < ?
       AND end_date >= ?
       ORDER BY stp_indicator DESC, id
-    `, [range.to.toString(), range.from.toString()]);
+    `, [this.range.to.toString(), this.range.from.toString()]);
 
     return results.map(row => new Association(
       row.id,
