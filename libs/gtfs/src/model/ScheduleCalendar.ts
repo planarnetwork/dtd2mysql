@@ -13,10 +13,9 @@ export class ScheduleCalendar {
   )  { }
 
   /**
-   * What makes two calendars the same service. Service IDs are numbered from a
-   * sort of this, so it has to depend on the calendar and not on the order the
-   * exclude days were added - which is why they are sorted rather than taken in
-   * the order the object happens to hold them.
+   * What makes two calendars the same service: the dates, the day mask and the
+   * exclusions. Exclusions are sorted, so calendars excluding the same days are
+   * the same service whatever order those days were added in.
    */
   @memoize
   public get id() {
