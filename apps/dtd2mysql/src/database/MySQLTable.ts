@@ -1,6 +1,6 @@
 
 import {DatabaseConnection} from "./DatabaseConnection";
-import {ParsedRecord, RecordAction} from "@gb-rail/feed-parser";
+import {ParsedRecord, RecordAction} from "@gb-transit/feed-parser";
 
 /**
  * Stateful class that provides access to a MySQL table and acts as buffer for inserts.

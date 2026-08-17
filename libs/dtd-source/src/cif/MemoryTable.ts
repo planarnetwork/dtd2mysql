@@ -1,4 +1,4 @@
-import {FieldValue, ParsedRecord, Record, RecordAction, TextField, VariableLengthText} from "@gb-rail/feed-parser";
+import {FieldValue, ParsedRecord, Record, RecordAction, TextField, VariableLengthText} from "@gb-transit/feed-parser";
 
 export type Row = { [field: string]: FieldValue };
 

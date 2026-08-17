@@ -1,5 +1,5 @@
 
-import {MultiRecordFile} from "@gb-rail/feed-parser";
+import {MultiRecordFile} from "@gb-transit/feed-parser";
 import {association, stop, extraDetails, schedule, tiplocInsert} from "./MCA";
 
 const CFA = new MultiRecordFile({

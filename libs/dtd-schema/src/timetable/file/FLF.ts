@@ -1,5 +1,5 @@
 
-import {CSVRecord, IntField, MultiRecordFile, TextField, VariableLengthText} from "@gb-rail/feed-parser";
+import {CSVRecord, IntField, MultiRecordFile, TextField, VariableLengthText} from "@gb-transit/feed-parser";
 
 const fixedLink = new CSVRecord(
   "fixed_link",

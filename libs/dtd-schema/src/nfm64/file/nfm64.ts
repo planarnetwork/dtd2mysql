@@ -1,4 +1,4 @@
-import {FixedWidthRecord, IntField, SingleRecordFile, TextField} from "@gb-rail/feed-parser";
+import {FixedWidthRecord, IntField, SingleRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const nfm64Row = new FixedWidthRecord(
   "nfm64",

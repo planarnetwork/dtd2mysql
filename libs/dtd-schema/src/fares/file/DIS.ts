@@ -1,4 +1,4 @@
-import {BooleanField, DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, FixedWidthRecord, IntField, MultiRecordFile, TextField} from "@gb-transit/feed-parser";
 
 const statusDiscount = new FixedWidthRecord(
   "status_discount",
