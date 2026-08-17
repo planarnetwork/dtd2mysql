@@ -17,10 +17,8 @@ export interface Transfer {
    * not define and requires consumers to ignore ones they do not recognise, so
    * a reader that wants only standard transfers sees a standard file.
    *
-   * They exist because the alternative was deletion. `links.txt` held the mode,
-   * the operating window and the days, `transfers.txt` has nowhere for any of
-   * it, and no other file in the spec does either. Unlike platforms, which have
-   * a documented pattern, a conditional transfer has none.
+   * The spec has nowhere else for them: a conditional transfer has no
+   * documented pattern, unlike a platform. They are here or they are lost.
    *
    * Null on a station interchange row, where there is no link to describe.
    */

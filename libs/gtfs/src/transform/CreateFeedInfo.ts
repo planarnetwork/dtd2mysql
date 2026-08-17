@@ -22,9 +22,8 @@ const PUBLISHER_URL = "https://github.com/planarnetwork/dtd2mysql";
  *   feed only knows about services live inside the window, so anything past the
  *   end of it is unverified.
  *
- * So it is the window, with the end pulled in when the data runs out first -
- * which is the case the ticket was really about, and the only one where the
- * calendars have something to say.
+ * So it is the window, with the end pulled in when the data runs out first,
+ * which is the only case where the calendars have anything to say.
  */
 export function createFeedInfo(
   calendars: Calendar[],

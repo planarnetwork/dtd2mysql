@@ -7,10 +7,10 @@ const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 /**
  * The station interchange times and the fixed links, as one transfers.txt.
  *
- * `links.txt` was this project's own invention and no consumer reads it. GTFS
- * has a file for "you can get from this stop to that one, and it takes this
- * long", so the links belong in it - and the mode, the operating window and the
- * days come with them as producer extension columns rather than being dropped.
+ * transfers.txt is the GTFS file for "you can get from this stop to that one,
+ * and it takes this long", which is what both of them describe. The mode, the
+ * operating window and the days a link runs travel with it as producer
+ * extension columns.
  *
  * **One row per pair, because more than one is invalid.** The primary key of
  * transfers.txt is the stop pair, and the validator raises `duplicate_key` on a
@@ -116,9 +116,9 @@ function fromLink(link: FixedLink): Transfer {
  * A day flag, whatever the source called it.
  *
  * MySQL returns a TINYINT as a number from a plain select and as a *string*
- * through a UNION, and getFixedLinks is a UNION. That never showed while the
- * rows went straight to links.txt, because "1" and 1 both write as 1 - it only
- * appeared once something compared them, which turned every day off.
+ * through a UNION, and getFixedLinks is a UNION. Both forms write as 1, so the
+ * difference only shows when something compares them - and comparing "1" to 1
+ * turns every day off.
  */
 function flag(value: unknown): 0 | 1 {
   return Number(value) === 1 ? 1 : 0;

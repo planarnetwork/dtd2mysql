@@ -11,9 +11,9 @@ export interface BuildContext {
   readonly range: Temporal.Duration;
 
   /**
-   * Whether to write links.txt as well as transfers.txt. The links moved into
-   * transfers.txt, and the file is kept behind `--links` for one minor version
-   * so anyone reading it has somewhere to go first.
+   * Whether to write links.txt, a file of this project's own rather than
+   * anything GTFS defines, alongside the transfers.txt that holds the same
+   * links. Kept behind `--links` for one minor version.
    */
   readonly links: boolean;
 }
