@@ -1,4 +1,4 @@
-import {FixedWidthRecord, SingleRecordFile, TextField, VariableLengthText} from "@gb-rail/feed-parser";
+import {FixedWidthRecord, SingleRecordFile, TextField, VariableLengthText} from "@gb-transit/feed-parser";
 
 const record = new FixedWidthRecord(
   "permitted_route",

@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import {MySQLTable} from "../database/MySQLTable";
-import {RecordAction} from "@gb-rail/feed-parser";
+import {RecordAction} from "@gb-transit/feed-parser";
 
 describe("MySQLTable", () => {
 

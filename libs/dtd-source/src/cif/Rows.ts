@@ -1,4 +1,4 @@
-import {AssociationType, DateIndicator, FixedLinkRecord, StationRecord, STP} from "@gb-rail/gtfs";
+import {AssociationType, DateIndicator, FixedLinkRecord, StationRecord, STP} from "@gb-transit/gtfs";
 import {Row} from "./MemoryTable";
 
 /**

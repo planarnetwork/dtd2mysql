@@ -17,5 +17,5 @@ On master, the release workflow opens a "Version Packages" pull request that app
 every pending changeset. Merging that pull request is what publishes, so a failed
 release cannot burn a version number or tag something that never shipped.
 
-`dtd2mysql` is the only package published; the libraries are private and bundled into
-its tarball.
+Every workspace is published: `dtd2mysql` bare, the libraries under `@gb-transit`. A
+change to a library that reaches a `dtd2mysql` user needs a bump for both.

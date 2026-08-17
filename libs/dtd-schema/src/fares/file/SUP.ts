@@ -1,5 +1,5 @@
 
-import {DateField, FixedWidthRecord, IntField, MultiRecordFile, RecordAction, TextField, ZeroFillIntField} from "@gb-rail/feed-parser";
+import {DateField, FixedWidthRecord, IntField, MultiRecordFile, RecordAction, TextField, ZeroFillIntField} from "@gb-transit/feed-parser";
 
 const supplement = new FixedWidthRecord(
   "supplement",

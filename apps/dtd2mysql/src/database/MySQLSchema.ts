@@ -1,7 +1,7 @@
 
 
 import {DatabaseConnection} from "./DatabaseConnection";
-import {BooleanField, DateField, DoubleField, Field, ForeignKeyField, IntField, NullDateField, Record, ShortDateField, TextField, TimeField, VariableLengthText, ZeroFillIntField} from "@gb-rail/feed-parser";
+import {BooleanField, DateField, DoubleField, Field, ForeignKeyField, IntField, NullDateField, Record, ShortDateField, TextField, TimeField, VariableLengthText, ZeroFillIntField} from "@gb-transit/feed-parser";
 
 export class MySQLSchema {
 

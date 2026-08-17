@@ -1,4 +1,4 @@
-import {FeedCursor} from "@gb-rail/dtd-source";
+import {FeedCursor} from "@gb-transit/dtd-source";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 
 interface LogEntry {
