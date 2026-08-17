@@ -912,6 +912,12 @@ The first release of each `@gb-transit` package has to be made before npm can be
 workflow is allowed to publish it, so trusted publishing covers everything from the second
 release onwards.
 
+The split ships as **`dtd2mysql` 7.0.0**. The command line is untouched, but the tarball no
+longer contains `dist/src` or `dist/config`, so anything that imported out of the package
+rather than running it has to move to the `@gb-transit` package that now holds that code.
+The libraries start at 0.1.0: `libs/gtfs` becomes an SPI under D1 and the shape of it is
+still moving, which is what a 0.x says.
+
 **A10 · CI for workspaces** *(depends A1)* — **done**
 `yarn install --immutable`, `.yarn/cache` cached, tests run per workspace with failures attributed
 to a package.
