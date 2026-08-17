@@ -4,7 +4,7 @@ import * as path from "node:path";
 import {NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
 import {parse} from "yaml";
 import {BuildConfig, Enricher, parseConfig} from "@gb-transit/gtfs";
-import {BuildFeed, buildContext, option, options, stationCoordinates} from "@gb-transit/gtfs";
+import {BuildFeed, buildContext, dateRange, option, options, stationCoordinates} from "@gb-transit/gtfs";
 import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
 
@@ -47,7 +47,7 @@ export async function build(argv: string[]): Promise<void> {
   console.log(`Reading ${sources.join(", ")}`);
 
   const feed = new BuildFeed(
-    new CifFileSource(sources, stationCoordinates),
+    new CifFileSource(sources, stationCoordinates, dateRange(context)),
     new FileOutput(),
     context,
     registered(config)
