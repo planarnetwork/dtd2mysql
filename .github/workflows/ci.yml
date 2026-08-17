@@ -208,17 +208,17 @@ jobs:
           ./node_modules/.bin/dtd2mysql --help | tee help.txt
           grep -q "Usage: dtd2mysql" help.txt
           grep -q -- "--gtfs-zip" help.txt
-      # --help barely touches the bundle. Running a real command with no database
-      # loads the container, resolves every schema module and exercises the error
-      # path - which is what catches a files/main/bundle mistake that --help
-      # sails straight past.
+      # --help barely touches the package. Running a real command with no
+      # database loads the container, resolves every schema module and exercises
+      # the error path - which is what catches a files or main mistake, or a
+      # missing @gb-transit dependency, that --help sails straight past.
       - name: The packaged CLI runs a real command
         run: |
           cd "$RUNNER_TEMP/install"
           set +e
           # The CLI checks its configuration and then the output path before it
           # connects, so both have to be satisfied to reach the connection - and
-          # reaching it is the point: by then the bundle has resolved, the
+          # reaching it is the point: by then every package has resolved, the
           # container has wired up and agency.txt is already written.
           mkdir -p ./out
           DATABASE_HOSTNAME=127.0.0.1 DATABASE_PORT=1 DATABASE_NAME=nothing \
