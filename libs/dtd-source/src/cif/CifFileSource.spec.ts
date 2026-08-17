@@ -103,7 +103,7 @@ const refresh = () => zip("RJTTF001", {
   ]
 });
 
-const source = (...sources: string[]) => new CifFileSource(sources, {});
+const source = (...sources: string[]) => new CifFileSource(sources, {}, range);
 
 beforeEach(() => directory = fs.mkdtempSync(path.join(os.tmpdir(), "cifsrc")));
 afterEach(() => fs.rmSync(directory, {recursive: true, force: true}));
@@ -131,7 +131,7 @@ describe("CifFileSource", () => {
   it("lets an override replace what the feed says", async () => {
     const overridden = new CifFileSource([refresh()], {
       TON: {stop_name: "Tonbridge", stop_lat: 51.1926, stop_lon: 0.2661, wheelchair_boarding: 1}
-    });
+    }, range);
 
     const tonbridge = (await overridden.getStops()).find(s => s.crs === "TON")!;
 
@@ -165,7 +165,7 @@ describe("CifFileSource", () => {
   });
 
   it("builds a schedule with its stops, times and operator", async () => {
-    const {schedules} = await source(refresh()).getSchedules(range);
+    const {schedules} = await source(refresh()).getSchedules();
     const [train] = schedules.filter(s => s.tuid === "C00001");
 
     expect(train.operator).to.equal("SE");
@@ -190,7 +190,7 @@ describe("CifFileSource", () => {
       ]
     });
 
-    const {schedules} = await source(feed).getSchedules(range);
+    const {schedules} = await source(feed).getSchedules();
 
     expect(schedules[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["TON", "SEV"]);
   });
@@ -208,7 +208,7 @@ describe("CifFileSource", () => {
       ]
     });
 
-    const {schedules} = await source(feed).getSchedules(range);
+    const {schedules} = await source(feed).getSchedules();
 
     expect(schedules.map(s => s.tuid)).to.deep.equal(["C00001"]);
   });
@@ -226,13 +226,13 @@ describe("CifFileSource", () => {
       ]
     });
 
-    const {schedules} = await source(feed).getSchedules(range);
+    const {schedules} = await source(feed).getSchedules();
 
     expect(schedules.map(s => s.stp)).to.deep.equal(["P", "O"]);
   });
 
   it("reads a z-train, whose location is already a CRS code", async () => {
-    const {schedules} = await source(refresh()).getSchedules(range);
+    const {schedules} = await source(refresh()).getSchedules();
     const [bus] = schedules.filter(s => s.tuid === "Z00001");
 
     expect(bus.stopTimes.map(s => s.stop_id)).to.deep.equal(["TON", "SEV"]);
@@ -240,7 +240,7 @@ describe("CifFileSource", () => {
   });
 
   it("keeps the z-train ids clear of the passenger schedule ids", async () => {
-    const {schedules} = await source(refresh()).getSchedules(range);
+    const {schedules} = await source(refresh()).getSchedules();
     const ids = new Set(schedules.map(s => s.id));
 
     expect(ids.size).to.equal(schedules.length);
@@ -255,7 +255,7 @@ describe("CifFileSource", () => {
       ]
     });
 
-    const associations = await source(feed).getAssociations(range);
+    const associations = await source(feed).getAssociations();
 
     expect(associations.length).to.equal(1);
     expect(associations[0].assocLocation).to.equal("TON");
@@ -267,7 +267,7 @@ describe("CifFileSource", () => {
       MCA: [association("C00001", "C00002", "240101", "240401", "NOWHERE", "P")]
     });
 
-    expect(await source(feed).getAssociations(range)).to.deep.equal([]);
+    expect(await source(feed).getAssociations()).to.deep.equal([]);
   });
 
   it("lets an incremental revise a schedule from the refresh", async () => {
@@ -281,7 +281,7 @@ describe("CifFileSource", () => {
       ]
     });
 
-    const {schedules} = await source(refresh(), incremental).getSchedules(range);
+    const {schedules} = await source(refresh(), incremental).getSchedules();
     const [train] = schedules.filter(s => s.tuid === "C00001");
 
     expect(train.stopTimes[0].departure_time).to.equal("08:30:00");
@@ -293,7 +293,7 @@ describe("CifFileSource", () => {
       CFA: [schedule("C00001", "240101", "240401", "1111100", "P", "D")]
     });
 
-    const {schedules} = await source(refresh(), incremental).getSchedules(range);
+    const {schedules} = await source(refresh(), incremental).getSchedules();
 
     expect(schedules.filter(s => s.tuid === "C00001")).to.deep.equal([]);
   });
@@ -308,7 +308,7 @@ describe("CifFileSource", () => {
       ]
     });
 
-    const {schedules} = await source(refresh(), again).getSchedules(range);
+    const {schedules} = await source(refresh(), again).getSchedules();
     const [train] = schedules.filter(s => s.tuid === "C00001");
 
     expect(train.stopTimes[0].departure_time).to.equal("08:00:00");
@@ -322,17 +322,6 @@ describe("CifFileSource", () => {
     expect((await source3.getFixedLinks()).filter(l => l.mode === "WALK").length).to.equal(2);
   });
 
-  it("refuses a second window rather than answering the first one again", async () => {
-    const feed = source(refresh());
-
-    await feed.getSchedules(range);
-
-    await expect(feed.getAssociations({
-      from: Temporal.PlainDate.from("2024-06-01"),
-      to: Temporal.PlainDate.from("2024-09-01")
-    })).rejects.toThrow(/already been read/);
-  });
-
   it("names the file and the line when a record cannot be parsed", async () => {
     const feed = zip("RJTTF001", {
       MSN,
@@ -340,7 +329,7 @@ describe("CifFileSource", () => {
       MCA: [at([0, "BS"], [2, "N"], [3, "C00001"], [9, "240101"], [15, "240401"], [21, "1111100"], [79, "P"])]
     });
 
-    await expect(source(feed).getSchedules(range)).rejects.toThrow(/RJTTF001\.MCA line 1/);
+    await expect(source(feed).getSchedules()).rejects.toThrow(/RJTTF001\.MCA line 1/);
   });
 
 });
