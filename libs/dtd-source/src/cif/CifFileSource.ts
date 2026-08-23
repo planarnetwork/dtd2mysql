@@ -20,8 +20,7 @@ import {
   toStop,
   withoutPlaceholders,
   reportDroppedStops,
-  Transfer,
-  TransferType
+  Transfer
 } from "@gb-transit/gtfs";
 import {FeedZip} from "./FeedZip";
 import {basename} from "node:path";
@@ -68,9 +67,6 @@ export class CifFileSource implements TimetableSource {
   ) {}
 
   /**
-   * SELECT crs_code, ... FROM physical_station WHERE crs_code IS NOT NULL GROUP BY crs_code
-   */
-  /**
    * The last feed given, which is the most recent one applied.
    */
   public async getFeedVersion(): Promise<string | null> {
@@ -79,6 +75,9 @@ export class CifFileSource implements TimetableSource {
     return last === undefined ? null : basename(last);
   }
 
+  /**
+   * SELECT crs_code, ... FROM physical_station WHERE crs_code IS NOT NULL GROUP BY crs_code
+   */
   public async getStops(): Promise<Stop[]> {
     const {stops} = await this.stops();
 
