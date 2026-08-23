@@ -28,33 +28,13 @@ data/download.sh --download-routeing
 data/download.sh --download-nfm64
 ```
 
-## Rail Data Marketplace
+## The location mapping is already in the feed
 
-`rdm-download.sh` pulls the files behind a data product. It needs a Bearer token copied out of the
-browser, because RDM's portal client requires an interactive authorization code flow - there is no
-password grant to script, and the token endpoint says so:
-`Unsupported Client Authentication Method!`.
-
-```
-RDM_TOKEN=... data/rdm-download.sh P-<product> DSP-<dataset> NLC data/rdm
-```
-
-The token lasts an hour. `rdm-token.mjs` is a start at getting one without devtools, by driving the
-login page - **it does not work yet**, and says so at the top of the file along with what is known
-about the flow. There is no machine credential to use instead: the token endpoint answers
-`Unsupported Client Authentication Method!` to anything but an interactive authorization code flow.
-
-The other durable path is the product's own cloud delivery, which pushes files to a bucket you own
-on a schedule and needs nobody logged in.
-
-**The location mapping needs none of this.** The MCA file's `TI` records already carry TIPLOC, NLC,
-STANOX and CRS for 12,047 locations, which is the same dataset RDM ships as weekly NLC snapshots and
-agrees with it on every station checked. RDM is for the products that are genuinely not in the DTD
-feed - accessibility, vehicle data - not for locations.
-
-The prefix is required rather than optional. A product holds more than one family of file - the
-location product carries 118 NLC snapshots and 3 passenger-consist logs - and they are dated
-independently, so the newest file overall is rarely the newest of the family you wanted.
+Worth knowing before anybody goes looking for it elsewhere: the MCA file's `TI` records carry
+TIPLOC, NLC, STANOX and CRS for 12,047 locations. That is the same dataset the Rail Data Marketplace
+ships as weekly NLC snapshots, and it agrees with it on every station checked. RDM is worth the
+trouble for the products that are genuinely not in the DTD feed - accessibility, vehicle data - and
+not for locations.
 
 ## Fingerprinting
 
