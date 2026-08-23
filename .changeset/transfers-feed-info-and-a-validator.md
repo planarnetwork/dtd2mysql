@@ -1,8 +1,14 @@
 ---
-"dtd2mysql": minor
+"dtd2mysql": major
+"@gb-transit/gtfs": minor
+"@gb-transit/dtd-source": minor
 ---
 
 Put the fixed links where GTFS expects them, say what the feed covers, and check it.
+
+**Major, because every identifier in the feed changes.** A consumer joining on a
+three letter `stop_id` or a bare ATOC `agency_id` has to move to `stop_code` and
+the NOC form, and there is no flag to keep the old ones - see below.
 
 - **`links.txt` is now `transfers.txt`.** The fixed links were in a file of this
   project's own invention that no consumer reads. They are transfers with a

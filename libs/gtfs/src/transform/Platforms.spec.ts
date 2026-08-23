@@ -82,6 +82,25 @@ describe("withStopPoints", () => {
     expect(stops.map(s => s.stop_id)).to.deep.equal(["910GPADTON"]);
   });
 
+  it("refuses to let two boarding points hold the same id", () => {
+    // An ATCO code is a concatenation, so CLPHMJM platform 11 and CLPHMJM1
+    // platform 1 are both 9100CLPHMJM11. Nothing in the feed collides today;
+    // one that did would quietly become a single stop.
+    const clapham = stop("CLJ", "CLPHMJC");
+    const collides = () => withStopPoints(
+      [clapham],
+      [train(call("CLJ", "11", "CLPHMJM"), call("CLJ", "1", "CLPHMJM1"))]
+    );
+
+    expect(collides).to.throw(/9100CLPHMJM11 is both CLJ\/CLPHMJM platform 11 and CLJ\/CLPHMJM1 platform 1/);
+  });
+
+  it("refuses to let two stations hold the same id", () => {
+    const collides = () => withStopPoints([paddington, {...paddington, crs: "QPD"}], []);
+
+    expect(collides).to.throw(/910GPADTON is both PAD\/PADTON and QPD\/PADTON/);
+  });
+
 });
 
 describe("stopId", () => {
