@@ -40,7 +40,9 @@ export function mergeTransfers(
 ): Transfer[] {
   const merged = new Map<string, Transfer>();
   const modes = new Map<string, Set<string>>();
+  let added = 0;
   let summarised = 0;
+  let skipped = 0;
 
   for (const transfer of transfers) {
     if (stations.has(transfer.from_stop_id) && stations.has(transfer.to_stop_id)) {
@@ -50,6 +52,7 @@ export function mergeTransfers(
 
   for (const link of links) {
     if (!stations.has(link.from_stop_id) || !stations.has(link.to_stop_id)) {
+      skipped++;
       continue;
     }
 
@@ -60,11 +63,16 @@ export function mergeTransfers(
     seen.add(link.mode);
     modes.set(id, seen);
 
-    if (existing === undefined || existing.mode === null) {
+    if (existing === undefined) {
+      added++;
       merged.set(id, fromLink(link));
       continue;
     }
 
+    // Including where the pair is already an interchange row, which has a time
+    // and nothing else. Widening keeps the shorter of the two times and takes
+    // the window and the days from the link, where replacing the row outright
+    // would throw the station's minimum change time away.
     summarised++;
     merged.set(id, widen(existing, link));
   }
@@ -79,12 +87,13 @@ export function mergeTransfers(
 
   if (links.length > 0) {
     console.log(
-      `Merged ${links.length} fixed links into transfers.txt as ${links.length - summarised} rows; ` +
-      `${summarised} described a pair already covered and were summarised into it`
+      `Merged ${links.length} fixed links into transfers.txt: ${added} new row(s), ` +
+      `${summarised} folded into a pair already described` +
+      (skipped > 0 ? `, ${skipped} skipped for stations the feed does not publish` : "")
     );
   }
 
-  return [...merged.values()].map(transfer => ({
+  return Array.from(merged.values(), transfer => ({
     ...transfer,
     from_stop_id: stations.get(transfer.from_stop_id)!,
     to_stop_id: stations.get(transfer.to_stop_id)!

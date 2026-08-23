@@ -1,4 +1,4 @@
-import {CRS, Stop, TIPLOC} from "../entity/Stop";
+import {CRS, Stop, StopID, TIPLOC} from "../entity/Stop";
 import {Platform, StopTime, StopTimeRow} from "../entity/StopTime";
 import {Schedule} from "../model/Schedule";
 import {stopPointId} from "./Atco";
@@ -45,7 +45,7 @@ const PLATFORM = /^([0-9]{1,2}[A-Z]?|[A-Z])$/;
  */
 export function withStopPoints(stations: Stop[], schedules: Schedule[]): Stop[] {
   const byCrs = new Map(stations.map(station => [station.crs, station]));
-  const called = new Map<CRS, Map<string, {tiploc: TIPLOC, platform: Platform | null}>>();
+  const called = new Map<StopID, Point>();
 
   for (const schedule of schedules) {
     for (const stopTime of schedule.stopTimes) {
@@ -55,13 +55,23 @@ export function withStopPoints(stations: Stop[], schedules: Schedule[]): Stop[] 
         continue;
       }
 
-      const tiploc = stopTime.tiploc ?? station.tiploc;
-      const platform = platformOf(stopTime);
-      const points = called.get(station.crs)
-        ?? called.set(station.crs, new Map()).get(station.crs)!;
+      const point = {
+        crs: station.crs,
+        tiploc: stopTime.tiploc ?? station.tiploc,
+        platform: platformOf(stopTime)
+      };
 
-      points.set(stopPointId(tiploc, platform), {tiploc, platform});
+      claim(called, stopPointId(point.tiploc, point.platform), point);
     }
+  }
+
+  // Two stations sharing a TIPLOC would share a stop_id the same way two
+  // boarding points can, and the source picks one TIPLOC per CRS without
+  // promising it picked a different one each time.
+  const held = new Map<StopID, Point>();
+
+  for (const station of stations) {
+    claim(held, station.stop_id, {crs: station.crs, tiploc: station.tiploc, platform: null});
   }
 
   // A station is location_type=1 whether or not anything calls at it, so the
@@ -71,25 +81,63 @@ export function withStopPoints(stations: Stop[], schedules: Schedule[]): Stop[] 
   const parents = stations.map(station => ({...station, location_type: 1 as const}));
   const children: Stop[] = [];
 
-  for (const [crs, points] of called) {
+  for (const [stop_id, {crs, tiploc, platform}] of called) {
     const station = byCrs.get(crs)!;
 
-    for (const [stop_id, {tiploc, platform}] of points) {
-      children.push({
-        ...station,
-        stop_id,
-        tiploc,
-        stop_name: platform === null ? station.stop_name : `${station.stop_name} Platform ${platform}`,
-        location_type: 0,
-        parent_station: station.stop_id,
-        platform_code: platform
-      });
-    }
+    children.push({
+      ...station,
+      stop_id,
+      tiploc,
+      stop_name: platform === null ? station.stop_name : `${station.stop_name} Platform ${platform}`,
+      location_type: 0,
+      parent_station: station.stop_id,
+      platform_code: platform
+    });
   }
 
   console.log(`Published ${parents.length} stations with ${children.length} boarding points beneath them`);
 
   return [...parents, ...children];
+}
+
+/**
+ * Somewhere a train calls, before it is a Stop: which station it belongs to,
+ * the timing point it is, and the platform if it is one.
+ */
+interface Point {
+  readonly crs: CRS;
+  readonly tiploc: TIPLOC;
+  readonly platform: Platform | null;
+}
+
+/**
+ * Record that a point holds an id, and refuse to let two of them hold the same.
+ *
+ * An ATCO code is a concatenation - `9100` and the TIPLOC and the platform - so
+ * a TIPLOC ending in a digit can in principle produce the id another TIPLOC and
+ * platform produce: `CLPHMJM` platform 11 and `CLPHMJM1` platform 1 are both
+ * `9100CLPHMJM11`. Nothing in the feed collides today. If something ever does,
+ * two timing points quietly become one stop, or two stations publish the same
+ * `stop_id` and the feed fails a validator a long way from here. Say which two.
+ */
+function claim(claimed: Map<StopID, Point>, id: StopID, point: Point): void {
+  const holder = claimed.get(id);
+
+  if (holder === undefined) {
+    claimed.set(id, point);
+
+    return;
+  }
+
+  if (holder.crs !== point.crs || holder.tiploc !== point.tiploc || holder.platform !== point.platform) {
+    throw new Error(
+      `${id} is both ${describe(holder)} and ${describe(point)}. Two stops cannot share an id.`
+    );
+  }
+}
+
+function describe(point: Point): string {
+  return `${point.crs}/${point.tiploc}${point.platform === null ? "" : ` platform ${point.platform}`}`;
 }
 
 /**

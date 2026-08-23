@@ -10,6 +10,8 @@ export type {StopTime, StopTimeRow, Platform} from "./entity/StopTime";
 export {TransferType} from "./entity/Transfer";
 export type {Transfer, TransferRow, StopID} from "./entity/Transfer";
 export type {Trip, TripRow} from "./entity/Trip";
+export type {FeedInfo, FeedInfoRow} from "./entity/FeedInfo";
+export type {FeedRow} from "./entity/FeedRow";
 
 // The transit model - pure domain objects with no IO
 export {Association, AssociationType, DateIndicator} from "./model/Association";
@@ -34,6 +36,14 @@ export type {HasCalendar, ServiceIdIndex} from "./transform/CreateCalendar";
 export type {Frequency} from "./transform/Frequency";
 export {mergeSchedules} from "./transform/MergeSchedules";
 
+// Transforms - what the feed publishes, and the identifiers it publishes it by
+export {createFeedInfo} from "./transform/CreateFeedInfo";
+export {dropUnknownStops} from "./transform/DropUnknownStops";
+export {interchange, mergeTransfers} from "./transform/MergeTransfers";
+export {stopId, toStopTimeRow, withStopPoints} from "./transform/Platforms";
+export {stationId, stopPointId} from "./transform/Atco";
+export {agencyId, toAgencyRow, toRouteRow} from "./transform/Noc";
+
 // The build orchestrator
 export {BuildFeed} from "./build/BuildFeed";
 export {buildContext, dateRange, option, options, parseRange} from "./build/BuildContext";
@@ -41,24 +51,19 @@ export type {BuildContext, DateRange} from "./build/BuildContext";
 export type {GTFSOutput} from "./build/GTFSOutput";
 export {ScheduleBuilder} from "./build/ScheduleBuilder";
 export type {ScheduleResults} from "./build/ScheduleBuilder";
+export {parseConfig} from "./build/BuildConfig";
+export type {BuildConfig, EnricherConfig, Licence} from "./build/BuildConfig";
 
-// The source SPI
-export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";
+// Enrichment - what an external source is allowed to change, and the record of
+// what it did
 export {enrich, order, provenanceFile} from "./enrich/Enrich";
 export {MutableFeed} from "./enrich/MutableFeed";
 export {Provenance} from "./enrich/Provenance";
 export type {Write, FieldHistory} from "./enrich/Provenance";
 export type {Enricher, EnrichmentReport, Attribution} from "./enrich/Enricher";
-export {parseConfig} from "./build/BuildConfig";
-export type {BuildConfig, EnricherConfig, Licence} from "./build/BuildConfig";
-export {createFeedInfo} from "./transform/CreateFeedInfo";
-export {mergeTransfers, interchange} from "./transform/MergeTransfers";
-export {dropUnknownStops} from "./transform/DropUnknownStops";
-export {withStopPoints, stopId, toStopTimeRow} from "./transform/Platforms";
-export {stationId, stopPointId} from "./transform/Atco";
-export {agencyId, toAgencyRow, toRouteRow} from "./transform/Noc";
-export type {FeedInfo, FeedInfoRow} from "./entity/FeedInfo";
-export type {FeedRow} from "./entity/FeedRow";
+
+// The source SPI
+export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";
 export {toStop} from "./source/StationRecord";
 export {isPlaceholder, withoutPlaceholders, reportDroppedStops} from "./source/Placeholder";
 export {BOUNDS, inBounds} from "./source/Bounds";
