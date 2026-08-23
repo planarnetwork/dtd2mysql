@@ -4,21 +4,16 @@ import {CRS} from "../entity/Stop";
 /**
  * Remove calls at stops the feed does not publish.
  *
- * The z-train query takes its stop id straight from the ZTR location, and the
- * comment claiming those "already use CRS codes so avoid the disaster above" is
- * wrong: `QHA` and `ZUX` appear in `z_stop_time` and nowhere else - not in
- * `physical_station`, not even in `tiploc`. There is no name and no coordinate
- * to publish a stop from, so the calls go instead, and the feed stops pointing
- * at stops it does not declare.
+ * The z-train query takes its stop id straight from the ZTR location, which is
+ * not always somewhere a stop can be published from: `QHA` and `ZUX` appear in
+ * `z_stop_time` and nowhere else - not in `physical_station`, not in `tiploc` -
+ * so there is no name and no coordinate for them. The calls go instead.
  *
- * Every affected trip today has two stops, so 31 of the 36 fall to one call and
- * are dropped whole by the "fewer than two stops" filter downstream. That is not
- * a loss of service - a trip from a real station to a station that does not
- * exist was never usable.
+ * A trip left with fewer than two calls is dropped whole downstream.
  *
  * Sequence numbers are rewritten after a call is removed. GTFS only asks that
- * they increase, so a gap would be legal, but a renumbered trip reads the same
- * as one that never had the problem.
+ * they increase, so a gap would be legal, but renumbering leaves the trip
+ * indistinguishable from one that never lost a call.
  */
 export function dropUnknownStops(schedules: Schedule[], published: ReadonlySet<CRS>): Schedule[] {
   const unknown = new Map<CRS, number>();
