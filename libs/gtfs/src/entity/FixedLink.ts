@@ -22,3 +22,8 @@ export interface FixedLink {
   saturday: 0 | 1;
   sunday: 0 | 1;
 }
+
+/**
+ * links.txt, as it is written. Every field of FixedLink is a column of it.
+ */
+export type FixedLinkRow = FixedLink;

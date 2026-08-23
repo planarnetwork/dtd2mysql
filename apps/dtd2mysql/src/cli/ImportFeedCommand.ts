@@ -2,7 +2,7 @@ import AdmZip from "adm-zip";
 import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "@gb-transit/dtd-schema";
-import {FeedFile, MultiRecordFile, RecordWithManualIdentifier} from "@gb-transit/feed-parser";
+import {FeedFile, MultiRecordFile, Record as FeedRecord} from "@gb-transit/feed-parser";
 import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
@@ -56,9 +56,7 @@ export class ImportFeedCommand implements CLICommand {
       await this.createLastProcessedSchema();
     }
 
-    if (this.files["CFA"] instanceof MultiRecordFile) {
-      await this.setLastScheduleId();
-    }
+    await this.restoreIdCounters();
 
     await Promise.all(
       fs.readdirSync(this.tmpFolder)
@@ -66,9 +64,7 @@ export class ImportFeedCommand implements CLICommand {
         .map(filename => this.processFile(filename))
     );
 
-    if (this.files["CFA"] instanceof MultiRecordFile) {
-      await this.removeOrphanStopTimes();
-    }
+    await this.removeOrphanStopTimes();
 
     await this.updateLastFile(zipName);
     fs.rmSync(this.tmpFolder, { recursive: true });
@@ -96,20 +92,52 @@ export class ImportFeedCommand implements CLICommand {
   }
 
   /**
-   * Set the last schedule ID in the CFA record
+   * Continue every generated id from where the database left off.
+   *
+   * A record that makes its own id counts from zero on each run, and `id` is the
+   * primary key, so `INSERT IGNORE` silently drops every row whose id an earlier
+   * feed already used - the schedules of an incremental land and their stop
+   * times do not.
+   *
+   * Every record with a counter is restored, so a new one needs nothing here.
+   * The name of a record is the name of its table, so there is no list to keep
+   * in step. A full refresh drops the tables first, leaving the max null and
+   * this a no-op.
    */
-  private async setLastScheduleId(): Promise<void> {
-    const [[lastSchedule]] = await this.db.query<{id : number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
-    const lastId = lastSchedule ? lastSchedule.id : 0;
-    const cfaFile = this.files["CFA"] as MultiRecordFile;
-    const bsRecord = cfaFile.records["BS"] as RecordWithManualIdentifier;
+  private async restoreIdCounters(): Promise<void> {
+    const counted = Object.values(this.files)
+      .flatMap(file => file.recordTypes)
+      .filter((record): record is FeedRecord & {lastId: number} => "lastId" in record);
 
-    bsRecord.lastId = lastId;
+    const seen = new Set<string>();
+
+    await Promise.all(counted.map(async record => {
+      if (seen.has(record.name)) {
+        return;
+      }
+
+      seen.add(record.name);
+
+      const [[row]] = await this.db.query<{id: number | null}>(
+        `SELECT MAX(id) AS id FROM \`${record.name}\``
+      );
+
+      record.lastId = row?.id ?? 0;
+    }));
   }
 
+  /**
+   * Stop times whose schedule is gone.
+   *
+   * A z-train that a later feed revises is REPLACEd, which means the old row is
+   * deleted and the new one takes a new id - so the stop times that pointed at
+   * the old id belong to nothing. The same is true of a schedule an incremental
+   * withdraws.
+   */
   private async removeOrphanStopTimes() {
     return Promise.all([
       this.db.query("DELETE FROM stop_time WHERE schedule NOT IN (SELECT id FROM schedule)"),
+      this.db.query("DELETE FROM z_stop_time WHERE z_schedule NOT IN (SELECT id FROM z_schedule)"),
       this.db.query("DELETE FROM schedule_extra WHERE schedule NOT IN (SELECT id FROM schedule)")
     ]);
   }

@@ -1,0 +1,35 @@
+{
+  "_": [
+    "Notice types the mini feed is allowed to raise. No ERROR may appear here -",
+    "an error fails the build whatever this file says. Each entry needs a reason,",
+    "and an entry that stops occurring has to be removed."
+  ],
+  "reasons": {
+    "unexpected_enum_value": "route_type 714, rail replacement bus, from the extended route types the validator does not know",
+    "route_short_name_too_long": "route_short_name is an internal key, AW:POR->QBM:714, and should not be. Not yet ticketed",
+    "mixed_case_recommended_field": "MSN station names are upper case. Fixed by D3/D5 supplying rider-facing names",
+    "transfer_distance_too_large": "B2 moved the fixed links into transfers.txt; a tube leg really is 36 km",
+    "transfer_distance_above_2_km": "same",
+    "missing_bike_allowance": "bikes_allowed is 0, meaning no information. D10 supplies it",
+    "missing_feed_contact_email_and_url": "no contact address to publish yet",
+    "big_gap_in_service": "the fixture is a slice of a refresh, so its services are sparse",
+    "service_extends_far_in_the_future": "a calendar running to 2099 in the source",
+    "service_window_outside_feed_period": "same calendars, against the three month build window",
+    "unknown_column": "the twelve producer extension columns B2 added to transfers.txt, which the spec permits and the validator does not know",
+    "unused_station": "stations with no service inside the window, so nothing calls at them and they have no boarding point beneath them. They are still real stations, and a station is location_type=1 whether or not the window happens to contain a call at it"
+  },
+  "accepted": [
+    "big_gap_in_service",
+    "missing_bike_allowance",
+    "missing_feed_contact_email_and_url",
+    "mixed_case_recommended_field",
+    "route_short_name_too_long",
+    "service_extends_far_in_the_future",
+    "service_window_outside_feed_period",
+    "transfer_distance_above_2_km",
+    "transfer_distance_too_large",
+    "unexpected_enum_value",
+    "unknown_column",
+    "unused_station"
+  ]
+}

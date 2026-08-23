@@ -1,15 +1,17 @@
 // GTFS entities - the shape of each output file
-export type {Agency, AgencyID} from "./entity/Agency";
-export type {Calendar} from "./entity/Calendar";
-export type {CalendarDate} from "./entity/CalendarDate";
-export type {FixedLink} from "./entity/FixedLink";
+export type {Agency, AgencyID, AgencyRow} from "./entity/Agency";
+export type {Calendar, CalendarRow} from "./entity/Calendar";
+export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate";
+export type {FixedLink, FixedLinkRow} from "./entity/FixedLink";
 export {RouteType} from "./entity/Route";
-export type {Route, RouteID} from "./entity/Route";
-export type {Stop, CRS, TIPLOC} from "./entity/Stop";
-export type {StopTime, Platform} from "./entity/StopTime";
+export type {Route, RouteID, RouteRow} from "./entity/Route";
+export type {Stop, StopRow, CRS, TIPLOC} from "./entity/Stop";
+export type {StopTime, StopTimeRow, Platform} from "./entity/StopTime";
 export {TransferType} from "./entity/Transfer";
-export type {Transfer, StopID} from "./entity/Transfer";
-export type {Trip} from "./entity/Trip";
+export type {Transfer, TransferRow, StopID} from "./entity/Transfer";
+export type {Trip, TripRow} from "./entity/Trip";
+export type {FeedInfo, FeedInfoRow} from "./entity/FeedInfo";
+export type {FeedRow} from "./entity/FeedRow";
 
 // The transit model - pure domain objects with no IO
 export {Association, AssociationType, DateIndicator} from "./model/Association";
@@ -34,6 +36,14 @@ export type {HasCalendar, ServiceIdIndex} from "./transform/CreateCalendar";
 export type {Frequency} from "./transform/Frequency";
 export {mergeSchedules} from "./transform/MergeSchedules";
 
+// Transforms - what the feed publishes, and the identifiers it publishes it by
+export {createFeedInfo} from "./transform/CreateFeedInfo";
+export {dropUnknownStops} from "./transform/DropUnknownStops";
+export {interchange, mergeTransfers} from "./transform/MergeTransfers";
+export {stopId, toStopTimeRow, withStopPoints} from "./transform/Platforms";
+export {stationId, stopPointId} from "./transform/Atco";
+export {agencyId, toAgencyRow, toRouteRow} from "./transform/Noc";
+
 // The build orchestrator
 export {BuildFeed} from "./build/BuildFeed";
 export {buildContext, dateRange, option, options, parseRange} from "./build/BuildContext";
@@ -47,7 +57,7 @@ export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./s
 export {toStop} from "./source/StationRecord";
 export {isPlaceholder, withoutPlaceholders, reportDroppedStops} from "./source/Placeholder";
 export {BOUNDS, inBounds} from "./source/Bounds";
-export {locate, NOWHERE} from "./source/Located";
+export {locate, NOWHERE, toStopRow} from "./source/Located";
 export type {StationRecord} from "./source/StationRecord";
 export {toFixedLinks} from "./source/FixedLinkRecord";
 export type {FixedLinkRecord} from "./source/FixedLinkRecord";

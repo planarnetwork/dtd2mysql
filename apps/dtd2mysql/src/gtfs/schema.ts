@@ -43,25 +43,6 @@ CREATE TABLE calendar_dates (
   PRIMARY KEY (service_id, date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS links;
-CREATE TABLE links (
-  from_stop_id varchar(100) NOT NULL,
-  to_stop_id varchar(100) NOT NULL,
-  mode VARCHAR (15) NOT NULL,
-  duration smallint(8) unsigned NOT NULL,
-  start_time time NOT NULL,
-  end_time time NOT NULL,
-  start_date date NOT NULL,
-  end_date date NOT NULL,
-  monday tinyint(1) unsigned NOT NULL,
-  tuesday tinyint(1) unsigned NOT NULL,
-  wednesday tinyint(1) unsigned NOT NULL,
-  thursday tinyint(1) unsigned NOT NULL,
-  friday tinyint(1) unsigned NOT NULL,
-  saturday tinyint(1) unsigned NOT NULL,
-  sunday tinyint(1) unsigned NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 DROP TABLE IF EXISTS routes;
 CREATE TABLE routes (
   route_id varchar(100) NOT NULL,
@@ -116,9 +97,20 @@ CREATE TABLE stops (
   stop_url varchar(255) DEFAULT NULL,
   location_type varchar(2) DEFAULT NULL,
   parent_station varchar(100) DEFAULT NULL,
+  platform_code varchar(50) DEFAULT NULL,
   stop_timezone varchar(50) DEFAULT NULL,
   wheelchair_boarding tinyint(1) unsigned DEFAULT NULL,
   PRIMARY KEY (stop_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS feed_info;
+CREATE TABLE feed_info (
+  feed_publisher_name varchar(255) NOT NULL,
+  feed_publisher_url varchar(255) NOT NULL,
+  feed_lang varchar(15) NOT NULL,
+  feed_start_date date NOT NULL,
+  feed_end_date date NOT NULL,
+  feed_version varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS transfers;
@@ -127,6 +119,21 @@ CREATE TABLE transfers (
   to_stop_id varchar(100) NOT NULL,
   transfer_type tinyint(1) unsigned NOT NULL,
   min_transfer_time smallint(8) unsigned NOT NULL,
+  -- The producer extension columns transfers.txt carries for a fixed link: the
+  -- mode, the window it runs in and the days it runs on. All null on a station
+  -- interchange row, which has no link to describe.
+  mode varchar(255) DEFAULT NULL,
+  start_time time DEFAULT NULL,
+  end_time time DEFAULT NULL,
+  start_date date DEFAULT NULL,
+  end_date date DEFAULT NULL,
+  monday tinyint(1) unsigned DEFAULT NULL,
+  tuesday tinyint(1) unsigned DEFAULT NULL,
+  wednesday tinyint(1) unsigned DEFAULT NULL,
+  thursday tinyint(1) unsigned DEFAULT NULL,
+  friday tinyint(1) unsigned DEFAULT NULL,
+  saturday tinyint(1) unsigned DEFAULT NULL,
+  sunday tinyint(1) unsigned DEFAULT NULL,
   PRIMARY KEY (from_stop_id, to_stop_id, transfer_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

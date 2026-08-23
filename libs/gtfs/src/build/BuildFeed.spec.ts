@@ -11,7 +11,8 @@ import {RouteType} from "../entity/Route";
 import {STP} from "../model/OverlayRecord";
 import {StopTime} from "../entity/StopTime";
 import {Stop} from "../entity/Stop";
-import {Transfer, TransferType} from "../entity/Transfer";
+import {Transfer} from "../entity/Transfer";
+import {interchange} from "../transform/MergeTransfers";
 import {FixedLink} from "../entity/FixedLink";
 import {TimetableSource} from "../source/TimetableSource";
 
@@ -45,7 +46,9 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
   pickup_type: 0,
   drop_off_type: 0,
   shape_dist_traveled: null,
-  timepoint: 1
+  timepoint: 1,
+    platform: null,
+    tiploc: null
 });
 
 function schedule(id: number, tuid: string, from: string, to: string, operator: string, stops: string[]): Schedule {
@@ -69,14 +72,14 @@ function schedule(id: number, tuid: string, from: string, to: string, operator: 
   );
 }
 
-const stop = (id: string): Stop => ({
-  stop_id: id, stop_code: id, stop_name: id, stop_desc: "", stop_lat: 0, stop_lon: 0,
-  zone_id: 0, stop_url: "", location_type: 0, parent_station: "",
-  stop_timezone: "Europe/London", wheelchair_boarding: 0
+const stop = (crs: string, tiploc: string): Stop => ({
+  stop_id: `910G${tiploc}`, crs, tiploc, stop_name: crs, stop_desc: "", stop_lat: 0, stop_lon: 0,
+  zone_id: 0, stop_url: "", location_type: 0, parent_station: null, platform_code: null,
+  stop_timezone: "Europe/London", wheelchair_boarding: 0, located: true
 });
 
 const transfer = (from: string, to: string): Transfer =>
-  ({from_stop_id: from, to_stop_id: to, transfer_type: TransferType.MinTime, min_transfer_time: 300});
+  ({...interchange(from, 300), to_stop_id: to});
 
 const link = (from: string, to: string): FixedLink => ({
   from_stop_id: from, to_stop_id: to, mode: "WALK", duration: 300,
@@ -93,8 +96,26 @@ class FakeSource implements TimetableSource {
     private readonly links: FixedLink[] = []
   ) {}
 
-  async getStops() { return this.stops; }
+  /**
+   * The stops the test declared, or one for every stop its schedules call at if
+   * it declared none. The build drops calls at stops it does not publish, and
+   * most of these tests are about ordering rather than about stops - they would
+   * otherwise end up with no stop times at all. A test that does declare stops
+   * gets exactly those, including the deliberately malformed ones.
+   */
+  async getStops() {
+    if (this.stops.length > 0) {
+      return this.stops;
+    }
+
+    const called = this.schedules.flatMap(s => s.stopTimes.map(stopTime => stopTime.stop_id));
+
+    // The TIPLOC a made up station gets is its CRS code, which is enough for the
+    // ids to be built from and to differ from each other.
+    return [...new Set(called)].sort().map(crs => stop(crs, crs));
+  }
   async getTransfers() { return this.transfers; }
+  async getFeedVersion() { return "RJTTF001.ZIP"; }
   async getFixedLinks() { return this.links; }
   async getAssociations(): Promise<Association[]> { return []; }
   async end() {}
@@ -115,7 +136,8 @@ function* ids(): IterableIterator<number> {
 
 const context: BuildContext = {
   today: Temporal.PlainDate.from("2024-01-01"),
-  range: parseRange("3 MONTH")
+  range: parseRange("3 MONTH"),
+  links: true
 };
 
 async function build(source: TimetableSource): Promise<MemoryOutput> {
@@ -188,13 +210,20 @@ describe("BuildFeed ordering", () => {
   it("sorts the stops, transfers and links", async () => {
     const {files} = await build(new FakeSource(
       feed(),
-      [stop("TON"), stop("SEV")],
+      [stop("TON", "TONBDG"), stop("SEV", "SEVNOKS")],
       [transfer("TON", "TON"), transfer("SEV", "SEV")],
       [link("TON", "SEV"), link("SEV", "TON")]
     ));
 
-    expect(files["stops.txt"].map(s => s.stop_id)).to.deep.equal(["SEV", "TON"]);
-    expect(files["transfers.txt"].map(t => t.from_stop_id)).to.deep.equal(["SEV", "TON"]);
+    // Each station, and the boarding point the calls with no platform are at
+    expect(files["stops.txt"].map(s => s.stop_id))
+      .to.deep.equal(["9100SEVNOKS", "9100TONBDG", "910GSEVNOKS", "910GTONBDG"]);
+    // The two self transfers and the two links, as one file, between stations
+    expect(files["transfers.txt"].map(t => [t.from_stop_id, t.to_stop_id]))
+      .to.deep.equal([
+        ["910GSEVNOKS", "910GSEVNOKS"], ["910GSEVNOKS", "910GTONBDG"],
+        ["910GTONBDG", "910GSEVNOKS"], ["910GTONBDG", "910GTONBDG"]
+      ]);
     expect(files["links.txt"].map(l => [l.from_stop_id, l.to_stop_id]))
       .to.deep.equal([["SEV", "TON"], ["TON", "SEV"]]);
   });
@@ -220,13 +249,14 @@ describe("BuildFeed ordering", () => {
   });
 
   it("puts a null ahead of a value rather than wherever it was found", async () => {
-    const named = stop("SEV");
-    const unnamed = {...stop("TON"), stop_id: null as unknown as string};
+    const named = stop("SEV", "SEVNOKS");
+    const unnamed = {...stop("XXX", "XXXXXX"), stop_id: null as unknown as string};
 
     const forwards = await build(new FakeSource(feed(), [named, unnamed]));
     const backwards = await build(new FakeSource(feed(), [unnamed, named]));
 
-    expect(forwards.files["stops.txt"].map(s => s.stop_id)).to.deep.equal([null, "SEV"]);
+    expect(forwards.files["stops.txt"].map(s => s.stop_id))
+      .to.deep.equal([null, "9100SEVNOKS", "910GSEVNOKS"]);
     expect(backwards.files["stops.txt"]).to.deep.equal(forwards.files["stops.txt"]);
   });
 

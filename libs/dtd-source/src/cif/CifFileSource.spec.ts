@@ -1,4 +1,5 @@
 import {describe, it, expect, beforeEach, afterEach} from "vitest";
+import {interchange} from "@gb-transit/gtfs";
 import AdmZip from "adm-zip";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -112,11 +113,11 @@ describe("CifFileSource", () => {
   it("reads the stations, one per CRS, in CRS order", async () => {
     const stops = await source(refresh()).getStops();
 
-    expect(stops.map(s => [s.stop_id, s.stop_code, s.stop_name]))
+    expect(stops.map(s => [s.stop_id, s.crs, s.tiploc, s.stop_name]))
       .to.deep.equal([
-        ["HLD", "HLDNBRO", "HILDENBOROUGH"],
-        ["SEV", "SEVNOKS", "SEVENOAKS"],
-        ["TON", "TONBDG", "TONBRIDGE"]
+        ["910GHLDNBRO", "HLD", "HLDNBRO", "HILDENBOROUGH"],
+        ["910GSEVNOKS", "SEV", "SEVNOKS", "SEVENOAKS"],
+        ["910GTONBDG", "TON", "TONBDG", "TONBRIDGE"]
       ]);
   });
 
@@ -132,7 +133,7 @@ describe("CifFileSource", () => {
       TON: {stop_name: "Tonbridge", stop_lat: 51.1926, stop_lon: 0.2661, wheelchair_boarding: 1}
     }, range);
 
-    const tonbridge = (await overridden.getStops()).find(s => s.stop_id === "TON")!;
+    const tonbridge = (await overridden.getStops()).find(s => s.crs === "TON")!;
 
     expect(tonbridge.stop_name).to.equal("Tonbridge");
     expect(tonbridge.stop_lat).to.equal(51.1926);
@@ -142,9 +143,9 @@ describe("CifFileSource", () => {
   it("turns the interchange time into a transfer", async () => {
     const transfers = await source(refresh()).getTransfers();
 
-    expect(transfers).to.deep.include({
-      from_stop_id: "TON", to_stop_id: "TON", transfer_type: 2, min_transfer_time: 300
-    });
+    // The fixed link columns are null on an interchange row: there is no link to
+    // describe, only the time it takes to cross the station.
+    expect(transfers).to.deep.include(interchange("TON", 300));
   });
 
   it("emits a fixed link in both directions, in minutes converted to seconds", async () => {
@@ -169,10 +170,12 @@ describe("CifFileSource", () => {
 
     expect(train.operator).to.equal("SE");
     expect(train.rsid).to.equal("SE000100");
-    expect(train.stopTimes.map(s => [s.stop_id, s.arrival_time, s.departure_time, s.stop_sequence]))
+    // The station, not the platform. The platform rides alongside and only
+    // becomes part of the stop id when stop_times.txt is written.
+    expect(train.stopTimes.map(s => [s.stop_id, s.platform, s.arrival_time, s.stop_sequence]))
       .to.deep.equal([
-        ["TON", "08:00:00", "08:00:00", 1],
-        ["SEV", "08:20:00", "08:20:00", 2]
+        ["TON", "1", "08:00:00", 1],
+        ["SEV", "3", "08:20:00", 2]
       ]);
   });
 

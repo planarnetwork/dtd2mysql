@@ -57,7 +57,7 @@ beforeAll(async () => {
 describe("the mini fixture", () => {
 
   const files = [
-    "agency.txt", "stops.txt", "transfers.txt", "links.txt",
+    "agency.txt", "stops.txt", "transfers.txt", "feed_info.txt",
     "routes.txt", "trips.txt", "stop_times.txt", "calendar.txt", "calendar_dates.txt"
   ];
 
@@ -139,7 +139,10 @@ describe("the feed the mini fixture produces", () => {
     expect(columns("stops.txt").find(s => s.stop_id === "4/0")).to.equal(undefined);
   });
 
-  it("names every trip after the stop it ends at", () => {
+  it("names every trip after the station it ends at", () => {
+    // The last call is at a platform; the headsign is the station it belongs to,
+    // because a train moved to a different platform is going to the same place.
+    const parent = new Map(columns("stops.txt").map(s => [s.stop_id, s.parent_station || s.stop_id]));
     const names = new Map(columns("stops.txt").map(s => [s.stop_id, s.stop_name]));
     const last = new Map<string, {sequence: number, stop: string}>();
 
@@ -157,7 +160,7 @@ describe("the feed the mini fixture produces", () => {
     expect(trips.length).to.be.greaterThan(0);
 
     for (const trip of trips) {
-      expect(trip.trip_headsign).to.equal(names.get(last.get(trip.trip_id)!.stop));
+      expect(trip.trip_headsign).to.equal(names.get(parent.get(last.get(trip.trip_id)!.stop)!));
     }
   });
 

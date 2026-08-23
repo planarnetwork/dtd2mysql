@@ -549,11 +549,12 @@ page.
 The Layer 3 test, and the one that actually protects dtd2mysql. Import each of the four feeds,
 fingerprint all 80 tables with `snapshot-db.sh`, and assert the hashes match a committed baseline.
 
-Promoted because the storage layer is about to be rewritten by an incoming database-agnostic patch
-(§2, A4). This harness is what makes that patch reviewable — it answers "did the rewrite change what
-lands in the database?" with a yes or no rather than an opinion. It is not restructure-specific and
-does not depend on any of Epic A, so it can be built now and handed to the patch author. The
-baseline it needs already exists.
+Promoted originally because the storage layer was about to be rewritten by an incoming
+database-agnostic patch. **That patch is deferred, so the original reason is gone** - and the need
+is larger than it was. B22 rewrote how every generated id is assigned during import, and it was
+verified by importing three zips by hand and diffing two builds. This harness is what turns that
+into something the repository asserts. It does not depend on any of Epic A and the baseline it needs
+already exists.
 
 **T7 · Old-vs-new equivalence harness** *(depends T2, T3)* — **partly done**
 Runs pre-refactor `dtd2mysql --gtfs` at a pinned commit against the new build; normalised-identical
@@ -614,11 +615,21 @@ rather than an accident. The package ships `types`, so library consumers exist.
 
 **T14 · MariaDB service container in CI**
 `ci.yml` has no database, so nothing above Layer 1 can run there. Add a MariaDB service, wire up
-`docker-compose.yml`, and make Layer 2 and Layer 5 run on every PR. Prerequisite for Epic A.
+`docker-compose.yml`, and make Layer 2 and Layer 5 run on every PR.
+
+Written as a prerequisite for Epic A, which then shipped without it. That is the point rather than a
+correction: **every database claim in Epic A, B and C was verified by hand** - a container started
+locally, feeds imported by hand, two builds diffed at the shell. None of it is in the repository, so
+nothing catches a regression in the importer. B22 changed what 6,140 trips look like and the only
+evidence it worked lives in a pull request description.
 
 ### Epic B — Correctness
 
-Land on master before the restructure, so the move is a pure refactor with green tests either side.
+Planned to land on master before the restructure, so the move would be a pure refactor with green
+tests either side. It did not happen that way: A and C landed first and B stacked on top of them,
+which means the refactor was verified against behaviour that then changed underneath it. The
+byte-comparison against the pre-refactor baseline is what stood in for the green-tests-either-side
+this sequencing was meant to provide.
 
 **B0 · GTFS build hangs on schedules with no stop times** — **done**, `3d8f218`
 `getSchedules` keeps schedules with no stop time records via `stop_time.id IS NULL`. Those arrive as
@@ -633,15 +644,51 @@ the throw two lines down), catching throws in the result listener so a bad row f
 loudly, and teaching `addLateNightServices` that `stopTimes[0]` may not exist. Added the
 `ScheduleBuilder` spec, which did not exist.
 
-**B1 · Emit `feed_info.txt`** *(coordinate with B14)*
-Written by the build; `feed_version` from the source DTD filename; start and end dates from the
-actual min/max of emitted calendars, not the requested range.
+**B1 · Emit `feed_info.txt`** *(coordinate with B14)* — **done**
+Written by the build; `feed_version` from the source DTD filename, which both sources can supply -
+the file list for `CifFileSource`, the `log` table for the database.
 
-**B2 · Replace `links.txt` with `transfers.txt`**
+The dates are **not** the min/max of the emitted calendars, which is what this ticket asked for and
+would have been wrong in both directions. GTFS defines them as the first and last day the feed is
+*complete* for. The earliest calendar start is routinely years back, because a schedule that began
+in 2021 and still runs carries its real start date, and the feed does not describe 2021 - anything
+that ended before the build date was never queried. The latest end is routinely 2099 for the mirror
+of the same reason. So it is the build window, with the end pulled in when the data runs out first,
+which is the only case where the calendars have something to say.
+
+**B2 · Replace `links.txt` with `transfers.txt`** — **done**
 Fixed links emitted as `transfers.txt` rows (`transfer_type=2` plus `min_transfer_time`), merged
-with the existing station interchange rows. Time and day-of-week windows GTFS cannot express are
-documented in `stop_desc` or dropped with a logged count. `links.txt` kept behind a flag for one
-minor version, then removed. `config/gtfs/import.ts` updated. Blocks E2.
+with the station interchange rows. `links.txt` is behind `--links`/`GTFS_LINKS=1` for one minor
+version. `import.ts` swaps the `links` load for `feed_info`; the `links` table stays for the flag.
+
+**The mode, window and days survive as producer extension columns**, not as deletions: `mode`,
+`start_time`, `end_time`, `start_date`, `end_date` and the seven day flags. GTFS has no field for a
+conditional transfer and no documented pattern for one - unlike platforms, where B23 uses the
+pattern the spec already defines - so extending is the honest move and the spec permits it. The
+validator raises `unknown_column` (INFO) for the twelve, which the baseline accepts.
+
+**One row per pair, because more than one is invalid.** The primary key of `transfers.txt` is the
+stop pair; a repeat is a `duplicate_key` **error**, confirmed by feeding the validator a deliberate
+duplicate. The ALF holds one record per window and day pattern, so **8,514 records describe 2,406
+pairs** and the pair must be described once. Where several links describe a pair the row is their
+envelope: shortest `min_transfer_time`, every mode pipe separated (`TRANSFER|TUBE`), earliest start
+to latest end, and a day set if any of them runs on it. 2,114 of the 2,406 pairs have a single mode,
+so it is exact for those; for the rest the row says when the connection is available by *some*
+means, not by each. `--links` still writes the unsummarised records.
+
+Nothing here is about self transfers: `from_stop_id == to_stop_id` is the documented way to express
+an in-station interchange time, the feed has 3,054 of them, and the validator is happy with them.
+
+**A MySQL quirk surfaced doing it.** `getFixedLinks` is a `UNION`, and MySQL returns a TINYINT as a
+number from a plain select but as a **string** through a UNION. That was invisible while the rows
+went straight to `links.txt`, because `"1"` and `1` both write as `1`. The moment anything compared
+them, every day flag turned off - caught by the two sources disagreeing, not by a test. `flag()`
+coerces. Worth adding to the list of MySQL behaviours `CifFileSource` documents.
+
+"Documented in `stop_desc`" from the original ticket was dropped: `stop_desc` is on stops and cannot
+say anything per-pair.
+
+Feed effect: `transfers.txt` 3,054 -> 5,460 rows, `links.txt` gone by default.
 
 **B3 · Honour `GTFS_RANGE` everywhere** — *merged into T1, and **done** there.*
 
@@ -663,9 +710,77 @@ output whether it has finished, because `copy` only opens its file once its quer
 So `--gtfs-zip` has been capable of publishing a truncated feed whenever the flush outran the sleep.
 The directory output was never affected: the process stays alive until the streams drain.
 
-**B6 · GTFS validator in CI** *(depends B1, B2)*
-The mini fixture builds a feed in CI and runs the MobilityData `gtfs-validator` jar. Fails on any
-error, prints warnings. Baseline of accepted notices committed.
+**B6 · GTFS validator in CI** *(depends B1, B2)* — **done**
+A `validate` job builds the mini fixture and runs MobilityData `gtfs-validator` 8.0.1, pinned rather
+than latest so the accepted list only moves when somebody moves it. Any ERROR fails.
+`validator-baseline.json` holds the accepted notice codes with a reason each; a new code fails, and
+so does an accepted one that stops occurring, so the list cannot rot.
+
+**The validator is given the fixture's build date with `-d`.** Several of its rules - feed expiry,
+`expired_calendar` - compare the feed to the real clock, so a fixture pinned to a fixed day starts
+raising notices simply because time passed. It did: a calendar ending 2026-08-10 became
+`expired_calendar` overnight. Pinning both clocks to the same day makes the check a function of the
+code rather than of the date it runs.
+
+**The mini fixture has zero errors.** Eleven accepted warnings and infos, each with a reason - the
+`714` route type the validator does not know, upper-case MSN names, transfers that really are 36 km
+now the tube links are in there.
+
+**The full feed does not, and the job does not cover it** - it needs a 70 MB source and does not
+belong in a PR check. Running it by hand against `RJTTF918` found three errors:
+
+| | | |
+|---|---:|---|
+| `foreign_key_violation` | 36 | the `QHA`/`ZUX` stop times - B15 |
+| `point_near_origin` | 2 | `QBN`/`QBS` at 0,0 - B10 put them there deliberately |
+| `stop_time_with_arrival_before_previous_departure_time` | 4 | **new, see B24 and B25** |
+
+That gap is real: a green PR check does not mean the published feed validates. Whoever does E2's
+nightly should run the validator there.
+
+**B24 · A joined trip visits a station twice with time going backwards** — *investigated; the source is inconsistent, and the feed reports it*
+
+`G38297`/`G38968`, a `JJ` join at Swansea, on three of the six dates the association covers.
+
+Not a passing time read as an arrival - `scheduled_pass_time` is NULL on every row involved - and not
+an import fault. The raw MCA says it outright:
+
+```
+G38297 overlay 2026-09-27:  LTSWANSEA 0931 0933     arrives 09:33
+G38968 overlay 2026-09-27:  LOSWANSEA 0912 0912     departs 09:12
+```
+
+Both trains carry a Permanent record for 2026-09-20 to 2026-12-06 and a per-date Overlay. **The
+Permanent pair is consistent** - arrive 09:03, depart 09:30 - and **the two overlays are not**: one
+was moved 30 minutes later and the other 18 minutes earlier, so the train that joins now reaches
+Swansea 21 minutes after the train it joins has left. The join cannot happen as described.
+
+**Decided: represent the data as it is.** The build applies the association and emits the trip that
+doubles back, because that is what the feed describes. Refusing a join whose timings cannot work was
+considered and rejected for the same reason B25 was left alone: the feed's job is to say what the
+source says, and a consumer that sees an impossible trip is seeing something true about the DTD.
+Fixing it here would hide the fault from whoever can correct it.
+
+It stays a validator error on the full feed - three of the four
+`stop_time_with_arrival_before_previous_departure_time` - and no code changes.
+
+**B25 · A z-train arrives before it left** — *found by B6; **the source is wrong, not us***
+
+`Z03536`: LPY 15:38, LJL arrive 16:00 depart **16:12**, LPY arrive **16:09**. The raw ZTR settles
+it - nothing is being read from the wrong field:
+
+```
+LOLPY---- 1538 1538
+LILJL---- 1600 1612      16001612
+LTLPY---- 1609 1609      TF
+```
+
+The feed says the bus leaves Liverpool James Street at 16:12 and reaches Lime Street at 16:09.
+
+**Decided: leave it.** The feed represents the source, and the source is what needs correcting.
+Clamping the arrival would invent a time, which B10 established this project does not do, and
+dropping the trip would lose a service that does run. It stays as a validator error on the full
+feed - four stop times out of 2.87 million - until it is fixed upstream.
 
 **B7 · Stop asserting wheelchair accessibility** — **done**
 `wheelchair_accessible: 0` until D11 supplies real data. `bikes_allowed: 0` documented in code as
@@ -830,13 +945,19 @@ from `min(calendar.start_date)` reports the earliest calendar rather than the co
 must derive its window from calendars that have not expired, and log the count dropped. Retained
 rather than closed because the T10 baseline moves when #121 lands and T8 wants the reason recorded.
 
-**B15 · Z-train stop times reference stops that do not exist**
-34 rows in `stop_times.txt` point at `QHA` (31) and `ZUX` (3), which appear in `z_stop_time` but not
-in `physical_station`. `getStops` only emits rows from `physical_station`, while the z-train query
-passes `location AS crs_code` straight through. The comment in `getSchedules` claims ZTR locations
-"already use CRS codes so avoid the disaster above" — they do not. Referential integrity failure in
-the published feed. Either emit a stop for these locations or drop the stop times, and log the
-count. D4 (CORPUS) may resolve the mapping properly.
+**B15 · Z-train stop times reference stops that do not exist** — **done**
+
+36 calls pointed at `QHA` (31) and `ZUX` (5). Emitting a stop for them was the other option in the
+ticket and is not available: they are in `z_stop_time` and **nowhere else** - not `physical_station`,
+not even `tiploc` - so there is no name and no coordinate to build one from. D4 may map them later.
+
+So the calls go, and the count is logged. Every affected trip had two stops, so 31 fall to one call
+and are dropped whole by the existing filter; a trip from a real station to a station that does not
+exist was never usable. Sequence numbers are rewritten after a call is removed - GTFS only asks that
+they increase, but a renumbered trip reads like one that never had the problem.
+
+Feed effect: trips 276,030 -> 275,999, stop times 2,868,065 -> 2,867,998. **`foreign_key_violation`
+is gone from the validator.**
 
 **B16 · Calendars with no days set** — **superseded by #121**
 `service_id 101` in the current build has all seven day flags zero, runs 20260222–20991231, is
@@ -850,11 +971,16 @@ actually runs, so an all-zero mask and a fully-excluded calendar both report emp
 called per overlay application. It short-circuits on the first running day, so only genuinely empty
 calendars pay the full scan, and build wall clock moved from 30s to 36s.
 
-**B17 · Download commands never exit**
-`DownloadCommand.run` closes the SFTP connection but never the database pool, so the process hangs
-after the transfer completes. Harmless interactively, fatal for a scheduled job — E2 would hang
-until the workflow timeout. Ties in with A5's `FeedCursor`, which removes the database from the
-download path entirely.
+**B17 · Download commands never exit** — **done**
+`DownloadCommand.run` closed the SFTP connection but never the database pool, so the process hung
+after the transfer completed. Harmless interactively, fatal for a scheduled job - E2 would hang
+until the workflow timeout.
+
+A5 already took the database out of `DownloadCommand` itself; the pool it leaves open belongs to
+`LogTableFeedCursor`. Rather than have that one command close a pool it does not own, `container.ts`
+tracks the pools it creates and `index.ts` closes them when the command resolves. That covers every
+command, not just the one that was noticed, and a command that already closes its own pool - the
+GTFS build does - is tolerated rather than made to throw.
 
 **B18 · Associations fabricate service outside a schedule's validity** — **fixed by #121**
 `Association.apply` looped the association's exclude days and cloned the associated schedule onto
@@ -870,8 +996,12 @@ covers the date at all. #121 replaces the whole mechanism, applying association 
 exclude days on the associated schedule. This is the largest single behaviour change in the T10
 rebaseline and the reason the diff is not empty.
 
-**B19 · STP indicator constants never match the feed**
-`STP.Permanent` is `"Previous"` and `STP.New` is `"Next"`, since `94b2834`. The feed carries `P` and
+**B19 · STP indicator constants never match the feed** — **fixed by #121**
+`b12ad68` set the constants to `"P"` and `"N"` and removed the guard, which is both halves of what
+this ticket asked for. Verified rather than assumed: no production code references `STP.Permanent`
+any more, only specs. The rest of this entry is kept for the reasoning.
+
+`STP.Permanent` was `"Previous"` and `STP.New` was `"Next"`, since `94b2834`. The feed carries `P` and
 `N`, so neither constant has ever matched. Only `Cancellation = "C"` works. The single place it
 mattered — `if (schedule.stp !== STP.Permanent)` in `applyOverlays`, guarding "perms don't overlap"
 — has therefore been dead since it was written.
@@ -916,7 +1046,7 @@ with no Horsham association in the window. Either those target records outside i
 on a `C` is sometimes incidental, in which case they should still be cancelling Barnham. Unresolved,
 and the fixture case in §3 should pin whichever reading is right.
 
-**B22 · The incrementals' stop times and z-trains never reach the database** — *found while building C2*
+**B22 · The incrementals' stop times and z-trains never reach the database** — **done**, bar 27 trips
 
 `ImportFeedCommand.setLastScheduleId` restores the BS record's id counter from the database before
 processing a CFA, and it is the only counter it restores. `stop_time`, `z_schedule` and
@@ -938,12 +1068,52 @@ This is the entire difference between the two sources. Building the same three z
 the database build does not have and 85 whose calendars differ because a later ZTR revised them.
 Against a database holding only the full refresh the two agree exactly - see C2.
 
-The fix is to restore the counters the way `setLastScheduleId` does for BS, or to stop generating
-ids and let the unique keys carry the identity. It moves the T10 baseline, so it rebaselines under
-T8. It also overlaps the incoming database-agnostic patch, so it wants coordinating rather than
-racing.
+**Done, all but 27 trips.** `setLastScheduleId` is now `restoreIdCounters`, which walks every record
+in every file being imported, finds the ones that generate an id, and continues each from
+`MAX(id)` on its own table. The name of a record is the name of its table, so there is nothing to
+keep in step as records are added - the previous code restored exactly one counter and had no way to
+notice the others existed.
 
-**B23 · Platforms as child stops** *(depends B13)* — *supersedes the extension-column approach*
+Measured by importing `RJTTF918`, `RJTTC919` and `RJTTC920` into an empty database and building
+against the same three zips read as files:
+
+| | before | after |
+|---|---:|---:|
+| trips the file source has and the database does not | 6,140 | **27** |
+| trips the database has and the file source does not | - | **0** |
+| files that differ, of nine | 3 | **2** |
+
+`agency`, `calendar`, `calendar_dates`, `routes`, `stops`, `transfers` and `feed_info` are now byte
+identical across the two sources on the three-zip feed, which they never were.
+
+**The residual 27 are all z-trains** - `Z04870` onwards, from the incrementals' ZTR. They collide on
+the *unique key* rather than on an id: an incremental reissues a z-train with the same `train_uid`,
+`runs_from` and `stp_indicator`, and `INSERT IGNORE` keeps the original.
+
+**`REPLACE` was tried and is not the answer.** It looks obviously right - applying feeds in order
+should mean the later one wins - and it fixed 19 of the 27. But it broke agreement on the other 8,
+because the file source does not apply those revisions either:
+
+```
+cif has  Z04870_20260723_20991231     the original from RJTTF918
+db then  Z04870_20260723_20271231     the revision from RJTTC919
+```
+
+Both sources previously kept the original and agreed. `REPLACE` made the database take the revision
+and the file source not, turning 27 one-way differences into 8 two-way ones and pulling
+`calendar.txt` and `calendar_dates.txt` out of agreement as well. Reverted.
+
+So the open question is not "how do we make the revision win" but **which source is right about
+these 27**, and that has to be settled against the DTD specification for a reissued ZTR record
+before either side changes. The database is the specification everywhere else in this project, which
+argues for changing the file source - but the file source applies 19 of the revisions and not the
+other 8, so it is not consistent with itself either. Needs its own ticket and a proper look.
+
+The orphan cleanup added while trying `REPLACE` is kept: `z_stop_time` rows whose `z_schedule` is
+gone were never deleted, and it now runs for every import rather than only when a CFA is present.
+It moves the T10 baseline, so it rebaselines under T8.
+
+**B23 · Platforms as child stops, with NaPTAN identifiers** *(depends B13)* — **done**, no flag
 
 B13 took the platform out of `stop_headsign` and nothing carries it, so the export loses a field the
 feed supplies. The data is not gone — `stop_time.platform` in the database, the `LI`/`LO`/`LT`
@@ -963,17 +1133,33 @@ pointing at it; and the child's name should identify both — their example is "
 with a child "Chicago Union Station Platform 19". A non-standard column expresses none of that, and
 every consumer would need bespoke code to read it. A child stop is understood by everything.
 
-| | station row | platform row |
-|---|---|---|
-| `stop_id` | `PAD` | `PAD_A` |
-| `stop_code` | TIPLOC (until F3 swaps it for CRS) | same |
-| `stop_name` | London Paddington | London Paddington Platform A |
-| `location_type` | `1` | `0` |
-| `parent_station` | — | `PAD` |
-| `platform_code` | — | `A` |
+**The ids are NaPTAN's, on review.** The first cut invented `PAD_A` under `PAD`, on the grounds that
+it needed no external data. @miklcct pointed out on #131 that it does not have to invent anything:
+the ATCO code for a rail stop is `9100` and the TIPLOC, the station's stop area is `910G` and the
+TIPLOC, and both are in the timetable already. A feed in those identifiers merges with the DfT's
+GTFS rather than sitting alongside it as a parallel universe of the same railway, so the id scheme
+that was F3's moves here — see the field layout decision in §6 — and the three-letter join breaks
+once rather than twice.
 
-`<CRS>_<platform>` needs no external data, which is what separates this from F3. The underscore
-matches the separator the trip ids already use.
+| | station row | boarding point | call with no platform |
+|---|---|---|---|
+| `stop_id` | `910GCLPHMJC` | `9100CLPHMJC15` | `9100CLPHMJC` |
+| `stop_code` | `CLJ` | `CLJ` | `CLJ` |
+| `stop_name` | Clapham Junction | Clapham Junction Platform 15 | Clapham Junction |
+| `location_type` | `1` | `0` | `0` |
+| `parent_station` | — | `910GCLPHMJC` | `910GCLPHMJC` |
+| `platform_code` | — | `15` | — |
+
+**A boarding point takes the TIPLOC of the timing point, not of the station.** Clapham Junction's
+West London and Main Line platforms are `9100CLPHMJW3` and `9100CLPHMJM11` under `910GCLPHMJC`,
+which is how NaPTAN names them and what the TIPLOC → CRS join the sources already do makes
+available: the call knows its own TIPLOC, and the CRS says which station it belongs to. A z-train's
+location is a CRS code rather than a TIPLOC, so those calls fall back to the station's own.
+
+`stop_code` becomes the CRS, on the station and on every stop beneath it. GTFS defines `stop_code`
+as the code a passenger sees, which CRS is — it is on the ticket and the departure board — and
+`stop_id` as a dataset key, which is what the ATCO code is. It also keeps the three-letter code in
+the feed rather than removing it.
 
 **What the data actually holds.** Measured on the database's public calls (4,034,934 rows, of which
 2,467,114 carry a platform) there are **3,750 station-platform pairs**. 3,705 are platform-shaped —
@@ -984,18 +1170,51 @@ has to be filtered to `^[0-9]{1,2}[A-Z]?$|^[A-Z]$` before it becomes a stop; a c
 else references the station. `BAY` is a real designation and is a deliberate casualty of that
 pattern — worth revisiting, not worth special-casing first time.
 
-`stops.txt` goes from 3,054 rows to roughly 6,759. Stations with no platform anywhere stay plain
-stops rather than becoming childless `location_type=1` rows.
+**This is a breaking change** for every consumer joining on a three-letter code, because no id in
+the feed is one any more. Shipped without a flag, by decision. `transfers.txt` references stations,
+which are `910G` rows.
 
-**This is a breaking change** for every consumer joining on a three-letter code, because
-`stop_times.stop_id` starts pointing at `PAD_A`. Same treatment F3 gets: behind a flag, CRS-only
-stops as the default for at least one release, and announced before the default flips.
-`transfers.txt` keeps referencing parent stations.
+**Every call gets a boarding point, whether or not it names a platform.** Once a station is
+`location_type=1` no stop time may reference it, so a station where some calls name a platform and
+some do not needs somewhere for the others to point — splitting one regardless produced **907
+`location_with_unexpected_stop_time` errors**. The suffix-less `9100CLPHMJC` is that somewhere, and
+it is a stop in its own right rather than a workaround: it is what NaPTAN calls the station's access
+node.
 
-Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying;
-a trip may reference a platform at one call and the station at the next, which is valid but should
-be visible in the fixture; and the golden should show one station gaining children so B13's removal
-and this restoration both read in the diff.
+That is what makes the first cut's limitation go away. It could only split a station where *every*
+call named a platform — 335 stations, 729 platforms, out of 3,750 station-platform pairs — and the
+other 909 stations published none of theirs. Every station is now `location_type=1` and every pair
+is published: **3,097 stations with 6,139 boarding points**, `stops.txt` 3,054 rows → 9,193.
+
+A station nothing calls at in the window is a childless `location_type=1` row, which the validator
+notes as `unused_station` (INFO, 87 in the fixture and 311 in the full feed). It is accepted in the
+baseline: whether a station has a boarding point should not depend on whether the three months the
+feed covers happen to contain a call at it.
+
+**The id belongs to the output, not to the model.** The first attempt composed `PAD_A` in
+`ScheduleBuilder`, which is upstream of overlays, associations and merges - so the domain saw stop
+ids that were no longer CRS codes, and **every association silently stopped applying**, because an
+association names a bare CRS. 56 fixture trips changed and some lost every stop. Route names split
+by platform too, 20 to 30 in the fixture, and headsigns read "Sevenoaks Platform 3".
+
+Patching `stopAt`, `before`, `after`, `origin` and `destination` to compare stations made the
+symptoms go away and left the cause: a GTFS presentation detail had been pushed into the timetable
+model. `StopTime.platform` carries it instead, `stop_id` stays a CRS through every transform, and
+`toStopTimeRow` composes the id when `stop_times.txt` is written. Those five compensating changes
+are gone, and the feed is byte for byte what the first attempt produced.
+
+`StopTime.tiploc` joins it for the same reason, and `Stop` carries `crs` and `tiploc` as internal
+fields that `toStopRow` projects out. Every index the build keeps — which stations are published,
+what a trip's headsign is, which pair a transfer describes — is on the CRS, because that is what a
+schedule, an association and a fixed link name a station by.
+
+Feed effect: stops 3,054 -> 9,193. Trips, stop times, routes and transfers unchanged. Both sources
+byte identical.
+
+Knock-ons: `StopTime` needs the platform back from the source row, which B13 stopped carrying, and
+the TIPLOC with it - which neither source was passing on, though both have it; and a trip may
+reference a platform at one call and the station's own boarding point at the next, which is valid
+and should be visible in the fixture.
 
 `stop_headsign` stays null. It means "this service terminates here", and B8 now puts a real
 destination in `trip_headsign` for it to override.
@@ -1142,11 +1361,16 @@ filename - as text every `RJTTC` sorts before every `RJTTF`, which would apply t
 incrementals that amend it - and starting at the last refresh matters because a directory that feeds
 are downloaded into accumulates more than one cycle. E2 wants the same rule.
 
-**C5 · Rail Data Marketplace credential path** *(depends A5)*
-The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; tokens now come from Rail Data
-Marketplace (`raildata.org.uk`). The SFTP host still serves files but credential issuance has moved.
-`dtd-source` transport becomes pluggable (SFTP today, RDM API when needed); credentials resolved
-from env in one place; README updated.
+**C5 · Rail Data Marketplace credential path** *(depends A5)* — **not in this pass**
+The NRDP (`opendata.nationalrail.co.uk`) was retired in early 2026; an account now comes from a Rail
+Data Marketplace subscription (`raildata.org.uk`). The SFTP host still serves the files, so nothing
+about the transport has changed and downloads work as they always did - only where the username and
+password are obtained has moved, and anyone with credentials already is unaffected.
+
+Deferred with C4. It was built once and closed unmerged (#132): a `FeedTransport` seam so
+`DownloadCommand` does not depend on the SFTP client, credentials resolved in one place, and an
+error naming raildata.org.uk instead of failing at the handshake. Worth picking that up from the
+closed PR rather than starting again if it is ever wanted.
 
 **C4 · `apps/dtd2postgres`** — **deferred, not in this pass** — **would close #116**
 Postgres `Storage` (DDL generation, `COPY`-based bulk load) and `PostgresTimetableSource`, plus a
@@ -1280,21 +1504,29 @@ stations and lands first; F5 extends the same two files.
 
 ### Epic E — Publishing
 
-**E8 · Fix the npm release pipeline** — *do this first*
-Publishing has been broken since 2025-12-02: npm has 6.6.3 while git carries tags through v6.6.9.
-`npm publish` fails with `404 Not Found - PUT .../dtd2mysql`, which is npm's response to an
-*unauthorised* publish rather than a missing package. The `NPM_TOKEN` secret needs regenerating.
+**E8 · Fix the npm release pipeline** — **done**, in two halves
 
-Two defects beyond the expired token:
+Publishing had been broken since 2025-12-02: npm had 6.6.3 while git carried tags through v6.6.9,
+and `npm publish` returned `404 Not Found - PUT .../dtd2mysql`, which is npm's answer to an
+*unauthorised* publish rather than a missing package.
 
-- `npm version patch` and `git push --follow-tags` run **before** `npm publish`, so every failed run
-  still burns a version number and pushes a tag. Six phantom versions exist as tags but were never
-  published. Reorder, or roll back the bump on failure.
-- The workflow triggers on every push to `master` with no path filter, so a documentation-only
-  commit attempts a release. Add a path filter, and gate the workflow while Epic A is in flight — a
-  half-migrated master must not ship.
+**The authorisation half is fixed on master.** `7398148` dropped the `NPM_TOKEN` secret for trusted
+publishing over OIDC, so the credential is minted per run and the publish carries a provenance
+attestation. It works: **6.6.14 and 6.6.15 are on npm**. The registry still shows the gap - 6.6.3
+straight to 6.6.14 - which is the ten phantom versions the broken runs burned.
 
-Until this is fixed, no fix reaches users, including B0.
+**The other two defects are fixed by Epic A**, in the workflow that replaces this one:
+
+- `npm version patch` and `git push --follow-tags` ran **before** `npm publish`, so a failed run
+  still burned a version and pushed a tag. Master still has that order; the monorepo's Release
+  workflow hands both to `changesets/action`, which opens a "Version Packages" pull request instead
+  of bumping in place, so there is no window where a tag exists for a version that was never
+  published.
+- The workflow triggered on every push to `master` with no path filter, so a documentation commit
+  attempted a release. The replacement filters on `apps/**`, `libs/**`, `.changeset/**` and the
+  manifests.
+
+So E8 closes when the stack merges. Nothing more to do for it.
 
 **E1 · Create the `gb-rail-gtfs` data repo**
 A year of daily releases would bury the npm tags, and DTD credentials should not sit in a repo that
@@ -1363,37 +1595,30 @@ months. Unblocks raising E2's horizon.
 Geometry from Network Rail GIS track centrelines (OGL). `shape_dist_traveled` populated. Behind an
 `extensions:` flag, since it materially inflates feed size.
 
-**F3 · Station and platform hierarchy from NaPTAN** *(depends D3, D4, B23)* — **closes #69**
+**F3 · Station entrances and the rest of the node set from NaPTAN** *(depends D3, D4, B23)* —
+**closes #69**
 
-B23 builds the hierarchy from the timetable alone, with `<CRS>_<platform>` ids. F3 is the upgrade
-that needs external data: real ATCO ids, station entrances, and the `stop_id`/`stop_code` swap.
+**The ids and the field layout are no longer part of this.** B23 publishes the ATCO codes and moved
+CRS to `stop_code`, because neither needs NaPTAN: `9100` plus the TIPLOC is the ATCO code for a rail
+stop, and the timetable carries the TIPLOC. What is left is what genuinely needs the external node
+set.
 
-The current feed has `stop_id` and `stop_code` the wrong way round. GTFS defines `stop_code` as
-rider-facing text — which CRS is, since it appears on tickets and departure boards — while
-`stop_id` is a dataset-internal key. Today CRS is the `stop_id` and TIPLOC the `stop_code`.
+NaPTAN supplies it under OGL, so this does not depend on OSM: `RSE` (4,543 **station entrances**),
+and `RPL` (**rail platforms**) to check the platforms B23 derives against the ones NaPTAN records —
+a platform in the timetable that NaPTAN does not have, or the reverse, is a data quality signal
+worth reporting. OSM is then needed only for pathway *edges* and lift/stair attributes in D6, which
+materially reduces the ODbL exposure there.
 
-NaPTAN supplies the whole node set under OGL, so this does not depend on OSM: `RLY` (2,673 rail
-stations), `RSE` (4,543 **station entrances**) and `RPL` (**rail platforms**, ATCO form
-`9100ZZTYKKH1` — TIPLOC plus platform number). OSM is then needed only for pathway *edges* and
-lift/stair attributes in D6, which materially reduces the ODbL exposure there.
-
-Proposed `stops.txt`:
+Remaining `stops.txt` changes:
 
 | field | now | proposed |
 |---|---|---|
-| `stop_id` | CRS (`PAD`) | NaPTAN ATCO where available, else B23's `<CRS>_<platform>` |
-| `stop_code` | TIPLOC (`PADTON`) | **CRS** (`PAD`) |
-| `platform_code` | B23 sets it on platforms | unchanged |
 | `location_type` | B23 sets `1` and `0` | adds `2` entrance |
-| `parent_station` | B23 sets it on platforms | adds entrances |
+| `parent_station` | B23 sets it on boarding points | adds entrances |
 | `stop_desc` | `cate_interchange_status` | free text; interchange status is already carried by `transfers.txt` |
 
-Knock-on changes: `stop_times.stop_id` references the platform stop where known, falling back to
-the station; `transfers.txt` `from_stop_id`/`to_stop_id` reference parent stations.
-
-B23 already broke the three-letter join and carries the flag; F3 changes the ids again, from
-`PAD_A` to the ATCO form, so it needs the same treatment rather than inheriting B23's. Do not flip
-both defaults in one release.
+B23 broke the three-letter join once, with the ids it will keep. F3 adds stops rather than renaming
+them, so it needs no flag and no second break.
 
 **F4 · Splits and joins as transfers** *(depends C1)* — **closes #81**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
@@ -1438,10 +1663,16 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**82 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
-B4–B13 batch). B3 is absorbed into T1, 24 are done — T1–T5, B0, B4, B5, B7–B9, B13, A1–A3, A5–A10,
-C1–C3 and B10–B12 — B14, B16, B18, B20 and B21 are resolved by #121, and A4 and C4 are deferred
-out of this pass, leaving **47 in scope**.
+**84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
+B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
+
+B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
+B7–B9, B10–B13, B15, B17, B22, B23 and E8, the last of those across master and Epic A. B14, B16,
+B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
+B25 are investigated and closed as source data the feed reports rather than corrects.
+
+That leaves **37 in scope** — 36 untouched and T7 partly done — all of them in D, E, F or the
+remainder of T.
 
 ---
 
@@ -1461,10 +1692,21 @@ out of this pass, leaving **47 in scope**.
    `overrides.yaml` (B10); the twelve TOC origin/destination placeholders are dropped with their
    stop times (B12); `HVH` needs no action; `2/0` is B9. A source for the Irish coordinates is to be
    identified when B10 is picked up.
-3. **Field layout** — CRS moves to `stop_code`, `stop_id` becomes the NaPTAN ATCO where available,
-   `platform_code` is introduced, and `location_type`/`parent_station` are populated. Full before
-   and after table in F3. Ships behind a flag with CRS-only stops as the default for at least one
-   release.
+3. **Field layout** — *revised, and landed in B23.* CRS moves to `stop_code`, `stop_id` becomes the
+   NaPTAN ATCO code, `platform_code` is introduced, and `location_type`/`parent_station` are
+   populated. Full before and after table under B23.
+
+   This was to wait for F3 and NaPTAN, behind a flag, with CRS-only stops as the default for a
+   release. Both parts are superseded. **The ATCO code needs no external data** — it is `9100` or
+   `910G` and a TIPLOC, and the timetable carries the TIPLOC — so there is nothing to wait for. And
+   **there is no flag**, for the same reason B23 has none: the alternative is to break the
+   three-letter join twice, once for `PAD_A` and again for the ATCO form, and a consumer would
+   rather be broken once. Raised by @miklcct in review of #131, and agreed.
+
+   `agency_id` moves with it, to the National Operator Catalogue form — `=SN`, `=AW`. A bare two
+   letter code is an airline in the NOC, and the equals sign is how it distinguishes a rail
+   operator. The point of both is the same: the feed can be merged with the DfT's bus and metro
+   data as it stands, rather than sitting beside it in identifiers only this project uses.
 4. **Tiers** — `gtfs-slim.zip` (OGL-compatible) and `gtfs-full.zip` (adds ODbL). No plain
    `gtfs.zip`; slim is the documented default (D8, E4, E5).
 5. **The storage layer is not touched** — no `libs/feed-storage`, and A4 is deferred. A

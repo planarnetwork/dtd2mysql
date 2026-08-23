@@ -396,6 +396,8 @@ function stop(stopSequence: number, location: CRS, time: string, tripId: string 
     drop_off_type: 0,
     shape_dist_traveled: null,
     timepoint: 0,
+    platform: null,
+    tiploc: null,
   };
 }
 
