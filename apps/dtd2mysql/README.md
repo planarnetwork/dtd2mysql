@@ -50,11 +50,33 @@ dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 
 ### Convert to GTFS
 
-Convert the DTD/TTIS version of the timetable (up to 3 months into the future) to GTFS. 
+Convert the DTD/TTIS version of the timetable (up to 3 months into the future) to GTFS.
 
 ```
 dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip filename-of-gtfs.zip
+```
+
+`--gtfs` writes the same feed as a directory of text files instead of a zip, which is easier to
+read and to diff:
+
+```
+dtd2mysql --gtfs /path/to/output/
+```
+
+How far ahead the feed reaches, and the date it is built for, come from `GTFS_RANGE` and
+`GTFS_TODAY`. Pinning `GTFS_TODAY` makes a build reproducible.
+
+```
+GTFS_TODAY=2026-08-10 GTFS_RANGE="6 MONTH" dtd2mysql --gtfs /path/to/output/
+```
+
+### Import a GTFS feed
+
+Load a GTFS feed back into the database, which is how the fares and routeing data are joined to it.
+
+```
+dtd2mysql --gtfs-import /path/to/gtfs/
 ```
 
 ## Routeing Guide
