@@ -485,6 +485,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/website@workspace:apps/website":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/website@workspace:apps/website"
+  dependencies:
+    "@gb-transit/gtfs": "workspace:^"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@inquirer/external-editor@npm:^1.0.2":
   version: 1.0.3
   resolution: "@inquirer/external-editor@npm:1.0.3"

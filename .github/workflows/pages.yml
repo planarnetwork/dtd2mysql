@@ -1,0 +1,49 @@
+name: Website
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'apps/website/**'
+      - '.github/workflows/pages.yml'
+  # The page reports the current feed, so it is rebuilt after one is published
+  # rather than only when its own source changes.
+  workflow_run:
+    workflows: ["Nightly feed"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+      - run: node apps/website/dist/build.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/website/public
+      - id: deploy
+        uses: actions/deploy-pages@v4
