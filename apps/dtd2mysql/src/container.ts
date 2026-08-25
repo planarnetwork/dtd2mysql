@@ -10,8 +10,10 @@ import {
   DownloadAndProcessCommand,
   DownloadCommand,
   DownloadFileCommand,
+  NO_CURSOR,
   PromiseSFTP
 } from "@gb-transit/dtd-source";
+import type {FeedCursor} from "@gb-transit/dtd-source";
 import {CLICommand} from "./cli/CLICommand";
 import {CleanFaresCommand} from "./cli/CleanFaresCommand";
 import {GTFSImportCommand} from "./cli/GTFSImportCommand";
@@ -168,9 +170,22 @@ const getSFTP = once((_: null): Promise<PromiseSFTP> =>
   })
 );
 
+/**
+ * The log table records what ImportFeedCommand imported, so it only says
+ * anything where there is a database to import into. Downloading does not need
+ * one - `--download-timetable` writes files and imports nothing - so without a
+ * database it takes the latest full refresh, which is what NO_CURSOR means.
+ *
+ * The cursor already treats a missing log as "start from the most recent full
+ * refresh"; constructing it eagerly is what turned that into a failure instead.
+ */
+export function feedCursor(): FeedCursor {
+  return process.env.DATABASE_NAME ? new LogTableFeedCursor(databaseConnection()) : NO_CURSOR;
+}
+
 const getDownloadCommand = once(async (directory: string) =>
   new DownloadCommand(
-    new LogTableFeedCursor(databaseConnection()),
+    feedCursor(),
     await getSFTP(null),
     directory
   )
