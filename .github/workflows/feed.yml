@@ -63,9 +63,15 @@ jobs:
       - run: yarn install --immutable
       - run: yarn build
 
-      # Per-filename caching rather than a stored cursor: the set of files to
-      # download is derived from what the server holds and what is already on
-      # disk, so there is no state to get out of step with reality.
+      # There is no stored cursor: with no database to import into, the download
+      # takes the most recent full refresh and the incrementals after it every
+      # time, so there is no state to get out of step with reality.
+      #
+      # The cache therefore saves nothing today - the download overwrites what
+      # it restores. It is here because the alternative to a cursor is deriving
+      # the set to fetch from what is already on disk, and that needs the disk
+      # to persist. Until a cursor reads this directory, it is carrying a cost
+      # for a later benefit.
       - uses: actions/cache@v4
         with:
           path: data/feeds
@@ -84,22 +90,15 @@ jobs:
           yarn tsx apps/dtd2gtfs/src/index.ts build --source data/feeds --out feed | tee build.log
 
       # A published feed that fails referential integrity must never reach a
-      # release, so the validator runs before anything is attached.
+      # release, so the validator runs before anything is attached. What counts
+      # as a failure is validator-baseline.json: an unlisted error, or more of
+      # a listed one than it accepts.
       - name: Validate
         run: |
           curl -sSfL -o gtfs-validator.jar \
             "https://github.com/MobilityData/gtfs-validator/releases/download/v8.0.1/gtfs-validator-8.0.1-cli.jar"
           java -jar gtfs-validator.jar -i feed -o report -svu
-          node -e "
-            const report = require('./report/report.json');
-            const errors = report.notices.filter(n => n.severity === 'ERROR');
-            for (const e of errors) console.log(e.code, e.totalNotices);
-            require('fs').writeFileSync('feed/validation.json', JSON.stringify(report, null, 2));
-            if (errors.length > 0) {
-              console.error('The feed has ' + errors.length + ' error type(s) and will not be released.');
-              process.exit(1);
-            }
-          "
+          node scripts/check-validation.mjs
 
       # A feed that suddenly has a fifth fewer trips than yesterday is a feed
       # with something wrong in it, and it is cheaper to stop than to withdraw.

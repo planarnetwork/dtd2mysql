@@ -727,16 +727,25 @@ code rather than of the date it runs.
 now the tube links are in there.
 
 **The full feed does not, and the job does not cover it** - it needs a 70 MB source and does not
-belong in a PR check. Running it by hand against `RJTTF918` found three errors:
+belong in a PR check. Running it by hand against `RJTTF918` found three errors; E2's nightly now
+runs it on every build, and the first one to get that far reported two:
 
 | | | |
 |---|---:|---|
-| `foreign_key_violation` | 36 | the `QHA`/`ZUX` stop times - B15 |
+| `foreign_key_violation` | 0 | the `QHA`/`ZUX` stop times - **cleared by B15** |
 | `point_near_origin` | 2 | `QBN`/`QBS` at 0,0 - B10 put them there deliberately |
-| `stop_time_with_arrival_before_previous_departure_time` | 4 | **new, see B24 and B25** |
+| `stop_time_with_arrival_before_previous_departure_time` | 4 | see B24 and B25 |
 
-That gap is real: a green PR check does not mean the published feed validates. Whoever does E2's
-nightly should run the validator there.
+That gap is real: a green PR check does not mean the published feed validates. E2's nightly runs the
+validator there, which is what closes it.
+
+**The two that remain are decisions, so "any ERROR blocks" would never pass.** `validator-baseline.json`
+names them and how many of each, and `scripts/check-validation.mjs` holds the build to it: an error
+that is not listed fails, and so does a listed one that grew, because an accepted error is a known
+quantity rather than a licence for more of the same. Fewer than the baseline allows is reported and
+passes - `point_near_origin` goes to 0 when D3 or D7 gives `QBN`/`QBS` coordinates, and that is the
+moment to lower it. Changing the file is covered by the same CI gate as `type-surface.json` and the
+goldens, so loosening it has to be explained.
 
 **B24 · A joined trip visits a station twice with time going backwards** — *investigated; the source is inconsistent, and the feed reports it*
 
@@ -1540,20 +1549,24 @@ pull request from a fork; what makes that true is having no `pull_request_target
 keeping the feed workflows on the default branch, which is a rule to hold rather than a repository
 to create.
 
-What is actually needed: the credentials, which exist, and Pages enabled, which is not yet.
+What is actually needed: the credentials, which exist, and Pages enabled, which it now is.
 
-**E2 · Nightly build workflow** *(depends C3, B6, E1)* — **written, never run**
+**E2 · Nightly build workflow** *(depends C3, B6, E1)* — **run, through to a validated feed**
 
 `cron: '0 5 * * *'` plus `workflow_dispatch`, in `.github/workflows/feed.yml`. Downloads the
-timetable with per-filename caching - the set of files to fetch is derived from what the server
-holds and what is already on disk, so there is no cursor to get out of step - builds, validates,
-compares with the last release and attaches the result to a `feed-YYYY-MM-DD` release.
+timetable, builds, validates, compares with the last release and attaches the result to a
+`feed-YYYY-MM-DD` release.
 
-**Any validator ERROR stops the release.** A feed that fails referential integrity must not reach
-anybody, and it is cheaper to skip a night than to withdraw a feed. The full feed currently has two
-error types - `point_near_origin` for `QBN`/`QBS` and four stop times from B24 and B25 - **so the
-first real run will fail**, correctly. Those have to be resolved or explicitly accepted before a
-nightly can publish.
+Downloading needs no database. It used to: `DownloadCommand` takes a `FeedCursor`, the only one
+wired up read the `log` table, and constructing it eagerly meant an unset `DATABASE_NAME` threw
+before anything ran. But downloading imports nothing, so there is nothing to be behind -
+`--download-timetable` now uses `NO_CURSOR`, which the library already had for exactly this, and
+takes the latest full refresh.
+
+**An unaccepted validator ERROR stops the release.** A feed that fails referential integrity must
+not reach anybody, and it is cheaper to skip a night than to withdraw a feed. What counts as
+accepted is `validator-baseline.json` - see the B6 section above for why a blanket rule could not
+work and what the file holds.
 
 **The 5% trip swing gate collides with #121 and F4.** Removing the merge step is a +19% step change,
 and F4 turns every joined service into two trips. Whichever lands second trips the gate. There is no
@@ -1561,9 +1574,10 @@ previous release yet, so the comparison is skipped on the first run and the gate
 from whatever ships first - which is the documented one-off reset, taken by default rather than by
 decision.
 
-Not verified beyond parsing: the credentials are organisation secrets that a repository token cannot
-read, so the download step has never executed. It fails immediately and says where credentials come
-from rather than failing at the SFTP handshake.
+Verified by running it: download, build and validate all execute against the real feed. The
+credentials are held as `DTD_HOSTNAME`, `DTD_USERNAME` and `DTD_PASSWORD` and mapped to the
+`SFTP_*` variables dtd2mysql reads, which is where the first run stopped - the workflow asked for
+secrets by the variable names rather than the secret names.
 
 The rule E1 replaced a whole repository with is enforced rather than written down: CI fails any
 workflow that gains a `pull_request_target` trigger, which is the thing that would run a fork's code
