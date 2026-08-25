@@ -40,6 +40,13 @@ jobs:
             exit 1
           fi
 
+      # The feed workflow holds DTD credentials. pull_request_target runs with
+      # the base repository's secrets against a fork's code, which is how a
+      # pull request gets to print them. Nothing here should ever use it.
+      - name: No workflow runs a fork's code with our secrets
+        run: |
+          ! grep -rn "^\s*pull_request_target:" .github/workflows/
+
       - name: No conflict markers
         run: |
           ! git grep -n -E '^(<<<<<<< |=======$|>>>>>>> )' -- . ':!*.spec.ts'

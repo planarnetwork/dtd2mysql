@@ -28,6 +28,7 @@ data/snapshots/db-mini/
 data/*.log
 data/*.pid
 data/probe*
+apps/website/public/
 
 # Tarballs written by the release, one per workspace, and removed as soon as
 # npm has taken them.
