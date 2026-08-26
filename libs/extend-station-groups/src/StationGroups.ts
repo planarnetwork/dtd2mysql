@@ -15,7 +15,7 @@ export const STATION_GROUPS = "STATION_GROUPS";
 const ATTRIBUTION: Attribution = {
   organisation: "Rail Delivery Group",
   licence: "Rail Settlement Plan data licence",
-  url: "https://data.atoc.org/",
+  url: "https://raildata.org.uk/",
   shareAlike: false
 };
 

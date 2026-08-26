@@ -1,5 +1,6 @@
 import {AgencyRow} from "./Agency";
 import {AreaRow, StopAreaRow} from "./Area";
+import {AttributionRow} from "./Attribution";
 import {CalendarRow} from "./Calendar";
 import {CalendarDateRow} from "./CalendarDate";
 import {FeedInfoRow} from "./FeedInfo";
@@ -27,6 +28,7 @@ import {TripRow} from "./Trip";
 export type FeedRow =
   AgencyRow
   | AreaRow
+  | AttributionRow
   | CalendarRow
   | CalendarDateRow
   | FeedInfoRow

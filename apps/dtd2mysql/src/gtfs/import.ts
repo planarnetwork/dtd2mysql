@@ -44,6 +44,12 @@ TRUNCATE trips;
 LOAD DATA LOCAL INFILE 'trips.txt' INTO TABLE trips FIELDS TERMINATED BY ',' IGNORE 1 LINES;
 TRUNCATE feed_info;
 LOAD DATA LOCAL INFILE 'feed_info.txt' INTO TABLE feed_info FIELDS TERMINATED BY ',' IGNORE 1 LINES;
+TRUNCATE attributions;
+LOAD DATA LOCAL INFILE 'attributions.txt' INTO TABLE attributions
+FIELDS TERMINATED BY ','
+IGNORE 1 LINES
+(organization_name, is_producer, is_operator, is_authority, @attribution_url, attribution_licence)
+SET attribution_url = NULLIF(@attribution_url, '');
 
 TRUNCATE stop_times;
 LOAD DATA LOCAL INFILE 'stop_times.txt' INTO TABLE stop_times FIELDS TERMINATED BY ',' IGNORE 1 LINES;

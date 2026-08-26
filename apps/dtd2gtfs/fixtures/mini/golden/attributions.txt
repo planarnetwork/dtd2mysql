@@ -1,0 +1,2 @@
+organization_name,is_producer,is_operator,is_authority,attribution_url,attribution_licence
+Rail Delivery Group,0,0,1,https://raildata.org.uk/,Rail Settlement Plan data licence

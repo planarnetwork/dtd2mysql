@@ -13,6 +13,24 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## D8 · attributions.txt
+
+`golden/` gains **`attributions.txt`**, with one row: Rail Delivery Group, the source of the
+timetable. Nothing else in the feed moves.
+
+It is written whatever ran, because the timetable always needs crediting. With an enricher
+configured it gains a row per source - the nightly, which runs NaPTAN as of #143, now credits the
+Department for Transport under the Open Government Licence. **That was the point of the ticket:
+OGL makes acknowledgement a condition of use, so the feed had been published outside its licence
+since NaPTAN was turned on.**
+
+`attribution_licence` is a producer extension. The spec has `organization_name` and a URL and no
+field for the terms, which is the one thing an attribution statement has to say. `unknown_column`
+is already accepted for the twelve columns B2 added to `transfers.txt`.
+
+`type-surface.json` gains `AttributionRow`, `AttributionRole`, `createAttributions` and
+`TIMETABLE_ATTRIBUTION`; `Attribution` gains an optional `role`. All additions.
+
 ## D12 · the extension SPI and station groups
 
 `type-surface.json` gains the extension exports from `libs/gtfs` - `Extension`, `ExtensionFile`,

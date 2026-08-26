@@ -1,6 +1,7 @@
 // GTFS entities - the shape of each output file
 export type {Agency, AgencyID, AgencyRow} from "./entity/Agency";
 export type {Area, AreaID, AreaRow, StopArea, StopAreaRow} from "./entity/Area";
+export type {AttributionRole, AttributionRow} from "./entity/Attribution";
 export type {Calendar, CalendarRow} from "./entity/Calendar";
 export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate";
 export type {FixedLink, FixedLinkRow} from "./entity/FixedLink";
@@ -38,6 +39,7 @@ export type {Frequency} from "./transform/Frequency";
 export {mergeSchedules} from "./transform/MergeSchedules";
 
 // Transforms - what the feed publishes, and the identifiers it publishes it by
+export {TIMETABLE_ATTRIBUTION, createAttributions} from "./transform/CreateAttributions";
 export {createFeedInfo} from "./transform/CreateFeedInfo";
 export {dropUnknownStops} from "./transform/DropUnknownStops";
 export {interchange, mergeTransfers} from "./transform/MergeTransfers";

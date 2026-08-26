@@ -1,4 +1,16 @@
 export const schema = `
+DROP TABLE IF EXISTS attributions;
+CREATE TABLE attributions (
+  organization_name varchar(255) NOT NULL,
+  is_producer tinyint(1) unsigned NOT NULL,
+  is_operator tinyint(1) unsigned NOT NULL,
+  is_authority tinyint(1) unsigned NOT NULL,
+  attribution_url varchar(255) DEFAULT NULL,
+  -- Producer extension. The spec has no field for the terms, which is the one
+  -- thing an attribution statement has to say. See entity/Attribution.ts.
+  attribution_licence varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 DROP TABLE IF EXISTS agency;
 CREATE TABLE agency (
   agency_id varchar(100) NOT NULL,
