@@ -5,7 +5,8 @@ import {
   Extension,
   ExtensionOutput,
   FeedView,
-  StopAreaRow
+  StopAreaRow,
+  extensionFile
 } from "@gb-transit/gtfs";
 import {FaresGroups, GroupMember, LocationGroup} from "./FaresSource";
 
@@ -110,16 +111,8 @@ export class StationGroupsExtension implements Extension<FaresGroups> {
 
     return {
       files: [
-        {
-          filename: "areas.txt",
-          rows: areas,
-          key: row => [(row as AreaRow).area_id]
-        },
-        {
-          filename: "stop_areas.txt",
-          rows: stopAreas,
-          key: row => [(row as StopAreaRow).area_id, (row as StopAreaRow).stop_id]
-        }
+        extensionFile("areas.txt", areas, row => [row.area_id]),
+        extensionFile("stop_areas.txt", stopAreas, row => [row.area_id, row.stop_id])
       ],
       report: {
         extension: this.key,

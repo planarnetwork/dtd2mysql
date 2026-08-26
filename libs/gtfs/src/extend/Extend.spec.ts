@@ -1,7 +1,7 @@
 import {describe, it, expect} from "vitest";
 import {MutableFeed} from "../enrich/MutableFeed";
 import {checkKeys, extend} from "./Extend";
-import {Extension, ExtensionOutput} from "./Extension";
+import {Extension, ExtensionOutput, extensionFile} from "./Extension";
 import {FeedView} from "./FeedView";
 import {AreaRow} from "../entity/Area";
 import {Stop} from "../entity/Stop";
@@ -33,7 +33,7 @@ const lister = (key: string, filename = "areas.txt"): Extension<null> => ({
     }));
 
     return {
-      files: [{filename, rows, key: row => [row.area_id]}],
+      files: [extensionFile(filename, rows, row => [row.area_id])],
       report: {extension: key, written: rows.length, dropped: 0}
     };
   }

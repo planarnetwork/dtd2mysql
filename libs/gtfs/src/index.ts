@@ -65,7 +65,8 @@ export type {Enricher, EnrichmentReport, Attribution} from "./enrich/Enricher";
 
 // Extension - whole files the core build has no concept of
 export {checkKeys, extend} from "./extend/Extend";
-export type {Extension, ExtensionFile, ExtensionOutput, ExtensionReport} from "./extend/Extension";
+export {extensionFile} from "./extend/Extension";
+export type {Extension, ExtensionFile, ExtensionOutput, ExtensionReport, KeyValue} from "./extend/Extension";
 export type {FeedView} from "./extend/FeedView";
 
 // The source SPI

@@ -50,21 +50,42 @@ export interface Extension<T = unknown> {
 
 /**
  * One file an extension contributes, and how to order it.
+ *
+ * Build one with `extensionFile`, which keeps the rows and the key in the same
+ * row type. Here they are widened to `FeedRow`, because a list of files cannot
+ * hold a different row type per element and still be a list.
  */
-export interface ExtensionFile<T extends FeedRow = FeedRow> {
+export interface ExtensionFile {
 
   /** `areas.txt`. A name, not a path: the build decides where it goes. */
   readonly filename: string;
 
-  readonly rows: readonly T[];
+  readonly rows: readonly FeedRow[];
 
   /**
    * What the file is sorted by, as `copy()` sorts the core files. Rows left
    * tied by it are ordered by their whole contents, so the order is total
    * whatever this returns.
    */
-  readonly key: (row: T) => (string | number | null | undefined)[];
+  readonly key: (row: FeedRow) => KeyValue[];
 
+}
+
+export type KeyValue = string | number | null | undefined;
+
+/**
+ * A file, with its rows and its key checked against each other.
+ *
+ * The widening to `FeedRow` happens here, once, where the two are known to
+ * match - rather than at each call site, where it would be a cast per file and
+ * `row.area_id` on something that might be an agency would compile.
+ */
+export function extensionFile<T extends FeedRow>(
+  filename: string,
+  rows: readonly T[],
+  key: (row: T) => KeyValue[]
+): ExtensionFile {
+  return {filename, rows, key: key as (row: FeedRow) => KeyValue[]};
 }
 
 export interface ExtensionOutput {
