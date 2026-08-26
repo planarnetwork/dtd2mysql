@@ -13,6 +13,19 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## D12 · the extension SPI and station groups
+
+`type-surface.json` gains the extension exports from `libs/gtfs` - `Extension`, `ExtensionFile`,
+`ExtensionOutput`, `ExtensionReport`, `FeedView`, `extend`, `checkKeys` and `ExtensionConfig` - the
+Fares v2 entities `Area`, `AreaID`, `AreaRow`, `StopArea` and `StopAreaRow`, and the whole surface
+of the new `extend-station-groups` package. `MutableFeed` gains `station()`, which finds a station
+by CRS rather than by the ATCO code the feed publishes.
+
+Every entry is an addition; nothing is renamed or removed, so no consumer breaks.
+
+**No feed output changes unless an extension is configured.** `extensions:` was validated and
+dropped before this, so a config naming one was already doing nothing.
+
 ## D1 · the enricher SPI
 
 `type-surface.json` gains the enrichment exports from `libs/gtfs`: `Enricher`, `EnrichmentReport`,

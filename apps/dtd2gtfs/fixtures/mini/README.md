@@ -4,6 +4,20 @@
 the feed it produces at `--today 2026-08-10`, committed as text so that a change in
 behaviour arrives as a readable diff rather than as a hash that moved.
 
+`RJFAF001.ZIP` is a slice of the fares refresh `RJFAF847`, holding only the `LOC`
+records the station groups extension reads. The real fares feed is 46 MB and
+gitignored, so without this the zip and the fixed-width parsing would be covered by
+nothing. It holds four `RG` records and their members, all real lines:
+
+| group | for |
+|---|---|
+| `7010720` | London Terminals, and its 18 members |
+| `7000390` | two date ranges over the same group, which 58 real groups have |
+| `70J2230` | `BEDFORD+BUS`, a name padded out to its fixed width |
+
+Plus an `RL` location, an `RR` railcard and the `/!!` header, so the records that are
+not groups are exercised too.
+
 To take a change: `UPDATE_GOLDEN=1 yarn vitest run`, then read the diff before you
 commit it. `apps/dtd2gtfs/src/build.spec.ts` is what compares them.
 

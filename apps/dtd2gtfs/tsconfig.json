@@ -12,6 +12,12 @@
       "path": "../../libs/dtd-source"
     },
     {
+      "path": "../../libs/enrich-naptan"
+    },
+    {
+      "path": "../../libs/extend-station-groups"
+    },
+    {
       "path": "../../libs/gtfs"
     },
     {

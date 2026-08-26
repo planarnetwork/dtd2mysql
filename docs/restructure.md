@@ -1566,7 +1566,7 @@ The value is per *vehicle*, and the feed has trips, so the mapping depends on wh
 keyed by. Where nothing resolves, trips stay at `0` rather than inheriting a mode-level guess.
 Coverage report by operator, as D10.
 
-**D12 · `@gb-transit/enrich-station-groups` — `areas.txt` and `stop_areas.txt`** *(depends D1)*
+**D12 · `@gb-transit/extend-station-groups` — `areas.txt` and `stop_areas.txt`** — **done**
 
 RDG group stations: four-digit NLC groups such as `1072` "London Terminals" covering Euston,
 Waterloo, King's Cross and 15 others. Useful for journey planning and required for honest fares.
@@ -1588,20 +1588,43 @@ EUSTON  144400 N  EUS   ←→  7014440
 WATRLOO 559800 Q  WAT   ←→  7055980
 ```
 
-What the timetable feed lacks is *membership*. The fares feed has it and it is already parsed and
-imported — `location_group` (816 rows) and `location_group_member` (1,384 rows; 740 groups with
-members, 540 distinct CRS, 537 resolving to a TIPLOC). But the file source reads `RJTT*` only, so
-taking membership from `RJFA` would make the database and file sources disagree and break the
-byte-identity check that T9 relies on. An enricher keeps both sources equal and is the plan of
-record; RDM is expected to publish a group-stations product, to be confirmed at implementation time.
+What the timetable feed lacks is *membership*. The fares feed has it — `location_group` (815 rows)
+and `location_group_member` (1,383). But the file source reads `RJTT*` only, so taking membership
+through the shared source would make the database and file sources disagree and break the
+byte-identity check that T9 relies on. **The package reads the fares refresh itself**, which keeps
+both sources equal because neither of them has it. RDM was expected to publish a group-stations
+product; it was not needed, and no credential is involved.
 
-Two things to get right. **58 groups have more than one date range** — select the row valid at the
-build date or `area_id` duplicates. And the table mixes true station groups with travelcard zones
-(`LONDON ZONES 1-3`) and bus groups (`HEATHROW BUS`); all are legitimate fare areas, so emit all and
-make the kind legible in `area_name` rather than silently filtering.
+Both things the ticket flagged held up against the feed. **58 groups have more than one date range**
+— exactly the count predicted — and the row valid at the build date is selected, with the
+soonest-ending range winning where two overlap, so `area_id` cannot duplicate and the result does
+not depend on read order. The table does mix station groups with travelcard zones (`LONDON ZONES
+1-3`) and bus groups (`BEDFORD+BUS`); all are emitted, and the source's own description is the
+`area_name`, so the kind stays legible without this deciding which fares are real.
+
+On the August 2026 feed: **730 areas, 1,217 memberships, and 4 members out of 1,221 naming a station
+the feed does not contain.** One group has no member in the feed and is not published — an area with
+no members cannot be told from one the build failed to resolve. `1072` comes out with all 18.
+
+**D12 did not fit D1.** An `Enricher` writes fields on entities the DTD already produced, through a
+ledger recording who won and who lost; it has no way to contribute a *file*, and field provenance is
+meaningless for a file with no prior value to lose. So this landed with a second seam beside it —
+see D13.
 
 Coordinate with F5, which scopes `networks`/`areas` from the routeing guide. D12 owns group
-stations and lands first; F5 extends the same two files.
+stations and landed first; F5 extends the same two files.
+
+**D13 · The `Extension` seam** — **done**, and not in the original plan
+
+Found by building D12. An extension contributes whole files rather than improving entities: it gets
+a read-only `FeedView` instead of the ledger, and returns rows rather than writing them, so the
+files still go through the one sort that makes a build reproducible. It fails rather than let an
+extension replace a file the build writes itself, or two extensions claim the same file.
+
+`extensions:` was already in the config format from D2, validated and then dropped on the floor. It
+now selects extensions and carries their options, in the documented list form or a mapping form for
+when one has something to say. Pathways, shapes and translations are the other GTFS extension
+families this opens the door to; D6's `levels.txt` is the next likely user.
 
 ### Epic E — Publishing
 

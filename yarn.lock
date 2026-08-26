@@ -463,6 +463,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/extend-station-groups@workspace:^, @gb-transit/extend-station-groups@workspace:libs/extend-station-groups":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/extend-station-groups@workspace:libs/extend-station-groups"
+  dependencies:
+    "@gb-transit/dtd-schema": "workspace:^"
+    "@gb-transit/dtd-source": "workspace:^"
+    "@gb-transit/feed-parser": "workspace:^"
+    "@gb-transit/gtfs": "workspace:^"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/feed-parser@workspace:^, @gb-transit/feed-parser@workspace:libs/feed-parser":
   version: 0.0.0-use.local
   resolution: "@gb-transit/feed-parser@workspace:libs/feed-parser"
@@ -1251,6 +1263,7 @@ __metadata:
   dependencies:
     "@gb-transit/dtd-source": "workspace:^"
     "@gb-transit/enrich-naptan": "workspace:^"
+    "@gb-transit/extend-station-groups": "workspace:^"
     "@gb-transit/gtfs": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
     typescript: "npm:7.0.2"

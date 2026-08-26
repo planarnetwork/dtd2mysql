@@ -25,6 +25,7 @@
   "dependencies": {
     "@gb-transit/dtd-source": "workspace:^",
     "@gb-transit/enrich-naptan": "workspace:^",
+    "@gb-transit/extend-station-groups": "workspace:^",
     "@gb-transit/gtfs": "workspace:^",
     "@gb-transit/gtfs-output": "workspace:^",
     "yaml": "^2.9.0"

@@ -1,5 +1,6 @@
 // GTFS entities - the shape of each output file
 export type {Agency, AgencyID, AgencyRow} from "./entity/Agency";
+export type {Area, AreaID, AreaRow, StopArea, StopAreaRow} from "./entity/Area";
 export type {Calendar, CalendarRow} from "./entity/Calendar";
 export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate";
 export type {FixedLink, FixedLinkRow} from "./entity/FixedLink";
@@ -52,7 +53,7 @@ export type {GTFSOutput} from "./build/GTFSOutput";
 export {ScheduleBuilder} from "./build/ScheduleBuilder";
 export type {ScheduleResults} from "./build/ScheduleBuilder";
 export {parseConfig} from "./build/BuildConfig";
-export type {BuildConfig, EnricherConfig, Licence} from "./build/BuildConfig";
+export type {BuildConfig, EnricherConfig, ExtensionConfig, Licence} from "./build/BuildConfig";
 
 // Enrichment - what an external source is allowed to change, and the record of
 // what it did
@@ -61,6 +62,12 @@ export {MutableFeed} from "./enrich/MutableFeed";
 export {Provenance} from "./enrich/Provenance";
 export type {Write, FieldHistory} from "./enrich/Provenance";
 export type {Enricher, EnrichmentReport, Attribution} from "./enrich/Enricher";
+
+// Extension - whole files the core build has no concept of
+export {checkKeys, extend} from "./extend/Extend";
+export {extensionFile} from "./extend/Extension";
+export type {Extension, ExtensionFile, ExtensionOutput, ExtensionReport, KeyValue} from "./extend/Extension";
+export type {FeedView} from "./extend/FeedView";
 
 // The source SPI
 export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";

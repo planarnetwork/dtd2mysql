@@ -17,6 +17,8 @@ import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {enrich, provenanceFile} from "../enrich/Enrich";
 import {MutableFeed} from "../enrich/MutableFeed";
 import {Enricher} from "../enrich/Enricher";
+import {checkKeys, extend} from "../extend/Extend";
+import {Extension} from "../extend/Extension";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
@@ -38,8 +40,15 @@ export class BuildFeed {
      * Sources of detail the DTD does not carry. Empty produces the same feed as
      * a build with no enrichment at all.
      */
-    private readonly enrichers: readonly Enricher[] = []
-  ) {}
+    private readonly enrichers: readonly Enricher[] = [],
+    /**
+     * Sources of files the core build has no concept of. Empty produces the
+     * same feed as a build with no extensions at all.
+     */
+    private readonly extensions: readonly Extension[] = []
+  ) {
+    checkKeys(extensions);
+  }
 
   /**
    * The dtd2mysql CLI takes the output directory as a positional argument
@@ -117,6 +126,16 @@ export class BuildFeed {
       )
       : undefined;
 
+    // Extensions run after enrichment, so a file built out of the stops is
+    // built out of the stops as they will be published rather than as the DTD
+    // left them.
+    const extended = this.extensions.length > 0
+      ? await extend(feed, this.extensions)
+      : {files: [], reports: []};
+    const extensionsP = extended.files.map(
+      file => this.copy([...file.rows], file.filename, file.key)
+    );
+
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
@@ -152,7 +171,8 @@ export class BuildFeed {
       tripsP,
       fixedLinksP,
       feedInfoP,
-      provenanceP
+      provenanceP,
+      ...extensionsP
     ]);
 
     await Promise.all([this.repository.end(), this.output.end()]);

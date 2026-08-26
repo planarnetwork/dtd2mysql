@@ -18,7 +18,7 @@ export interface BuildConfig {
   readonly links: boolean;
   readonly licence: Licence;
   readonly enrichers: readonly EnricherConfig[];
-  readonly extensions: readonly string[];
+  readonly extensions: readonly ExtensionConfig[];
 }
 
 /**
@@ -43,18 +43,35 @@ export interface EnricherConfig {
   readonly options: {readonly [key: string]: unknown};
 }
 
+/**
+ * An extension the build should run, and what to tell it.
+ *
+ * No `priority` and no `apply`: those settle which of two sources wins a field,
+ * and an extension writes its own files rather than competing for anything. Two
+ * extensions wanting the same file is a collision to fail on, not a contest to
+ * resolve.
+ */
+export interface ExtensionConfig {
+  readonly key: string;
+  readonly options: {readonly [key: string]: unknown};
+}
+
 const LICENCES: Licence[] = ["permissive", "full"];
 const TOP_LEVEL = ["source", "out", "today", "range", "links", "licence", "enrichers", "extensions"];
 
 /**
  * Check a parsed config and say precisely what is wrong with it.
  *
- * `known` is the set of enricher keys the build has registered. An unknown one
- * fails here rather than being ignored: a typo in an enricher name would
+ * `known` and `knownExtensions` are the keys the build has registered. An
+ * unknown one fails here rather than being ignored: a typo in a name would
  * otherwise produce a feed that is quietly missing whatever it was supposed to
  * add, and nothing downstream could tell that from a source with no matches.
  */
-export function parseConfig(raw: unknown, known: readonly string[] = []): BuildConfig {
+export function parseConfig(
+  raw: unknown,
+  known: readonly string[] = [],
+  knownExtensions: readonly string[] = []
+): BuildConfig {
   const config = object(raw, "the config");
 
   for (const key of Object.keys(config)) {
@@ -83,8 +100,57 @@ export function parseConfig(raw: unknown, known: readonly string[] = []): BuildC
     links: config.links === true,
     licence: licence as Licence,
     enrichers: enrichers(config.enrichers, known),
-    extensions: config.extensions === undefined ? [] : list(config.extensions, "extensions")
+    extensions: extensions(config.extensions, knownExtensions)
   };
+}
+
+/**
+ * Two forms, because both are the obvious thing to write.
+ *
+ * `extensions: [fares_v2]` is a list of what to turn on, which is the common
+ * case and the form the plan was written in. `extensions: {fares_v2: {options:
+ * ...}}` is the same thing with something to say, and matches how enrichers are
+ * declared. Neither is a shorthand for the other; they are the same setting
+ * read two ways.
+ */
+function extensions(raw: unknown, known: readonly string[]): ExtensionConfig[] {
+  if (raw === undefined || raw === null) {
+    return [];
+  }
+
+  if (typeof raw === "string" || Array.isArray(raw)) {
+    return list(raw, "extensions").map(key => ({key: check(key, known), options: {}}));
+  }
+
+  const configured = object(raw, "extensions");
+
+  return Object.keys(configured).sort().map(key => {
+    const settings = configured[key] === null || configured[key] === undefined
+      ? {}
+      : object(configured[key], key);
+
+    for (const option of Object.keys(settings)) {
+      if (option !== "options") {
+        throw new Error(`${key}.${option} is not an extension option. Expected options.`);
+      }
+    }
+
+    return {
+      key: check(key, known),
+      options: settings.options === undefined ? {} : object(settings.options, `${key}.options`)
+    };
+  });
+}
+
+function check(key: string, known: readonly string[]): string {
+  if (!known.includes(key)) {
+    throw new Error(
+      `${key} is not an extension this build knows about. ` +
+      `Available: ${known.length > 0 ? [...known].sort().join(", ") : "none are registered"}.`
+    );
+  }
+
+  return key;
 }
 
 function enrichers(raw: unknown, known: readonly string[]): EnricherConfig[] {
