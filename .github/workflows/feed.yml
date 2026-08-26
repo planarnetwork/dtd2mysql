@@ -164,7 +164,7 @@ jobs:
 
       - name: Package
         run: |
-          cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json enrichment-report.json && cd ..
+          cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json enrichment-report.json provenance.json && cd ..
           ls -la gtfs.zip
 
       - uses: actions/upload-artifact@v4
@@ -175,6 +175,7 @@ jobs:
             feed/validation.json
             feed/feed-meta.json
             feed/enrichment-report.json
+            feed/provenance.json
           retention-days: 14
 
       # The tag is the date, so the release list reads as a history of feeds and
@@ -196,6 +197,19 @@ jobs:
                 '| Built from | ' + m.commit.slice(0, 7) + ' |'
               ].join('\n')
             ")" \
-            gtfs.zip feed/validation.json feed/feed-meta.json feed/enrichment-report.json
+            gtfs.zip feed/validation.json feed/feed-meta.json feed/enrichment-report.json \
+            $([ -f feed/provenance.json ] && echo feed/provenance.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # A release a day, each carrying a 20 MB zip, accumulates forever. The
+      # last month is what anybody fetches; past that what is wanted is the
+      # ability to say what the feed looked like in April, and one release a
+      # month answers that as well as thirty do.
+      #
+      # Runs after the release, so a night that fails to publish prunes nothing.
+      - name: Prune old feeds
+        if: github.event_name == 'schedule' || inputs.publish
+        run: node scripts/prune-releases.mjs
         env:
           GH_TOKEN: ${{ github.token }}
