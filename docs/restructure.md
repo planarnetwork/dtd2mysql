@@ -206,7 +206,7 @@ source:  { type: cif, path: ./RJTTF918.ZIP }   # or { type: mysql }
 today:   2026-08-07                            # omit for the real date
 range:   6 months
 licence: ogl                                   # or "full" to admit ODbL sources
-extensions: [pathways, shapes, fares_v2, translations]
+extensions: [pathways, shapes, station_groups, translations]
 enrich:
   - naptan:        { path: ./naptan.xml, apply: [rail_replacement_stops, stop_code] }
   - corpus:        { apply: [tiploc_crs_mapping, station_hierarchy] }
@@ -1668,8 +1668,8 @@ ledger recording who won and who lost; it has no way to contribute a *file*, and
 meaningless for a file with no prior value to lose. So this landed with a second seam beside it —
 see D13.
 
-Coordinate with F5, which scopes `networks`/`areas` from the routeing guide. D12 owns group
-stations and landed first; F5 extends the same two files.
+D12 owns `areas.txt` and `stop_areas.txt` outright. F5 was to have extended the same two files
+with routeing guide scoping and has been dropped, so nothing else writes them.
 
 **D13 · The `Extension` seam** — **done**, and not in the original plan
 
@@ -1862,12 +1862,29 @@ becomes two, so this collides with E2's 5% swing gate the same way #121 does, an
 treatment: land it before the gate exists, or reset the gate deliberately. It moves the golden and
 the T10 baseline.
 
-**F5 · GTFS-Fares v2** *(depends D1)*
-The fares and routeing feeds are already imported and discarded at GTFS time. Nobody publishes a GB
-rail GTFS with Fares v2 — this is what makes the feed distinctive rather than the sixth ATOC-to-GTFS
-converter. `fare_products`, `fare_leg_rules`, `rider_categories` (railcards), `networks`/`areas`
-scoped from the routeing guide, `timeframes` from restrictions. Validated with
-`gtfs-fares-v2-validator`. Separate artifact so the core feed stays small.
+**F5 · GTFS-Fares v2** — **dropped.** GB fares do not fit the model
+
+The attraction was that nobody publishes a GB rail GTFS with Fares v2, so it would make this feed
+distinctive rather than the sixth ATOC-to-GTFS converter. That is a reason to want it, not evidence
+it can be done.
+
+GB rail fares are priced origin to destination and constrained by the **routeing guide**: which
+fares are valid depends on which permitted routes exist between two stations, and a permitted route
+is a property of the network graph rather than of a leg or a set of legs. Fares v2 prices a journey
+from the legs it is made of. There is no honest mapping from "any permitted route between A and B"
+onto `fare_leg_rules`, and the failure mode is the worst kind — a feed that quotes a price and gets
+it wrong looks exactly like one that gets it right.
+
+Railcards, restriction codes and the ticket-type calendar have the same problem to a lesser degree.
+
+**What survives is D12**, which was never really a fares ticket: `areas.txt` and `stop_areas.txt`
+say which stations a group station covers, which is a fact about the network that a journey planner
+needs and that GTFS has no other structure for. Publishing an area is not the same as claiming to
+price a journey through it, and the group station data is exact rather than inferred.
+
+So the fares feed stays a source of station-level facts and does not become a fares model. If
+somebody wants GB fares as data, the fares feed itself is a better answer than a lossy translation
+of it.
 
 **F6 · `translations.txt`** *(depends D1)*
 Welsh and Gaelic station names from TfW and ScotRail reference data.
@@ -1909,9 +1926,9 @@ B3 is absorbed into T1. **53 are done** — T1–T5, T6b, T8–T13, A1–A3, A5�
 B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E4, E5, E6 and E8, the last of
 those across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5
 are deferred out of this pass. B24, B25 and **D4** are investigated and closed as data the feed
-already carries or already reports.
+already carries or already reports, and **F5** is dropped as a model GB fares do not fit.
 
-That leaves **19 in scope** — 18 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **18 in scope** — 17 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
