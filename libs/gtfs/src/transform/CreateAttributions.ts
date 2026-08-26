@@ -30,11 +30,16 @@ export const TIMETABLE_ATTRIBUTION: Attribution = {
  * declared key before it is written.
  */
 export function createAttributions(attributions: readonly Attribution[]): AttributionRow[] {
-  return Object.values(attributions.reduce((rows, source) => ({
+  return Object.values(attributions.reduce<AttributionRows>((rows, source) => ({
     [`${source.organisation} ${source.licence}`]: toRow(source),
     ...rows
-  }), {} as {[organisationAndLicence: string]: AttributionRow}));
+  }), {}));
 }
+
+/**
+ * The rows so far, by organisation and licence.
+ */
+type AttributionRows = Record<string, AttributionRow>;
 
 function toRow(attribution: Attribution): AttributionRow {
   // A source is the authority for the data it supplies unless it says
