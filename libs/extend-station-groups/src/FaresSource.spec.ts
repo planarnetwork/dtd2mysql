@@ -2,7 +2,7 @@ import {describe, it, expect, beforeEach, afterEach} from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {faresRefresh} from "./FaresSource";
+import {faresRefresh, parseGroups} from "./FaresSource";
 
 let directory: string;
 
@@ -76,6 +76,53 @@ describe("faresRefresh", () => {
   it("says so when the path does not exist", () => {
     expect(() => faresRefresh(path.join(directory, "nothing")))
       .to.throw(/No fares feed at /);
+  });
+
+});
+
+// Taken from RJFAF847.LOC. The trailing spaces are the fixed widths, and are
+// part of what is being tested.
+const LONDON_TERMINALS = "RG7010720311229991508202407042017LONDON TERMINALS     ";
+const BEDFORD_BUS = "RG70J2230311229992506201907042017BEDFORD+BUS          ";
+const EUSTON = "RM7010720311229997014440EUS";
+const MARYLEBONE = "RM7010720311229997014750MYB";
+const A_LOCATION = "RL7000010311229991508202410102022  0001AACHEN          ";
+
+describe("parseGroups", () => {
+
+  it("reads a group", () => {
+    expect(parseGroups([LONDON_TERMINALS]).groups).to.deep.equal([{
+      uic: "7010720",
+      description: "LONDON TERMINALS",
+      startDate: "2024-08-15",
+      endDate: "2999-12-31"
+    }]);
+  });
+
+  it("reads a member", () => {
+    expect(parseGroups([EUSTON]).members).to.deep.equal([{
+      groupUic: "7010720",
+      endDate: "2999-12-31",
+      crs: "EUS"
+    }]);
+  });
+
+  // The description is a 16 character field and the value is padded into it.
+  // area_name is published, so the padding would be too.
+  it("takes the fixed width padding off a name", () => {
+    expect(parseGroups([BEDFORD_BUS]).groups[0].description).to.equal("BEDFORD+BUS");
+  });
+
+  // The LOC file is 207,000 lines and 2,200 of them are these.
+  it("ignores the rest of the file", () => {
+    const parsed = parseGroups([A_LOCATION, LONDON_TERMINALS, EUSTON, MARYLEBONE]);
+
+    expect(parsed.groups).to.have.length(1);
+    expect(parsed.members.map(m => m.crs)).to.deep.equal(["EUS", "MYB"]);
+  });
+
+  it("survives a line it cannot identify at all", () => {
+    expect(parseGroups(["", "XX", LONDON_TERMINALS]).groups).to.have.length(1);
   });
 
 });

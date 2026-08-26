@@ -93,43 +93,65 @@ function sequence(name: string): number {
   return Number(FARES_REFRESH.exec(name)![1]);
 }
 
+function text(value: unknown): string {
+  return String(value).trim();
+}
+
 async function read(filename: string): Promise<FaresGroups> {
   const zip = new FeedZip(filename);
+  const lines: string[] = [];
+
+  try {
+    await zip.eachLine("LOC", line => lines.push(line));
+  }
+  finally {
+    zip.close();
+  }
+
+  return parseGroups(lines);
+}
+
+/**
+ * The `RG` and `RM` records out of the lines of a LOC file.
+ *
+ * The rest of the file is ignored: it is mostly `RL` locations and `RR`
+ * railcards, 207,000 lines of them against the 2,200 that matter here.
+ */
+export function parseGroups(lines: Iterable<string>): FaresGroups {
   const groups: LocationGroup[] = [];
   const members: GroupMember[] = [];
   const LOC = schema.fares.LOC;
 
-  try {
-    await zip.eachLine("LOC", line => {
-      const record = LOC.getRecord(line);
+  for (const line of lines) {
+    // Not `=== null`: getRecord is typed `Record | null` but indexes a map, so
+    // an unrecognised record type comes back undefined. A record type this
+    // schema does not know is a line to skip, not a build to crash.
+    const record = LOC.getRecord(line);
 
-      // The LOC file is mostly `RL` locations and `RR` railcards - 207,000 lines
-      // of them against 2,200 that matter here.
-      if (record === null || (record.name !== "location_group" && record.name !== "location_group_member")) {
-        return;
-      }
+    if (!record || (record.name !== "location_group" && record.name !== "location_group_member")) {
+      continue;
+    }
 
-      const {values} = record.extractValues(line);
+    const {values} = record.extractValues(line);
 
-      if (record.name === "location_group") {
-        groups.push({
-          uic: String(values.group_uic_code),
-          description: String(values.description),
-          startDate: String(values.start_date),
-          endDate: String(values.end_date)
-        });
-      }
-      else {
-        members.push({
-          groupUic: String(values.group_uic_code),
-          endDate: String(values.end_date),
-          crs: String(values.member_crs_code)
-        });
-      }
-    });
-  }
-  finally {
-    zip.close();
+    // Every text field is padded to its fixed width - `BEDFORD+BUS` arrives as
+    // `BEDFORD+BUS     `. The padding is an artifact of the file format rather
+    // than part of the value, and `area_name` is published.
+    if (record.name === "location_group") {
+      groups.push({
+        uic: text(values.group_uic_code),
+        description: text(values.description),
+        startDate: text(values.start_date),
+        endDate: text(values.end_date)
+      });
+    }
+    else {
+      members.push({
+        groupUic: text(values.group_uic_code),
+        endDate: text(values.end_date),
+        crs: text(values.member_crs_code)
+      });
+    }
   }
 
   return {groups, members};
