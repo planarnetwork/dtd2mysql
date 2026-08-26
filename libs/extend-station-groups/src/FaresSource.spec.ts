@@ -2,7 +2,7 @@ import {describe, it, expect, beforeEach, afterEach} from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {faresRefresh, parseGroups} from "./FaresSource";
+import {faresRefresh, groupsFromFeed, parseGroups} from "./FaresSource";
 
 let directory: string;
 
@@ -123,6 +123,40 @@ describe("parseGroups", () => {
 
   it("survives a line it cannot identify at all", () => {
     expect(parseGroups(["", "XX", LONDON_TERMINALS]).groups).to.have.length(1);
+  });
+
+});
+
+describe("groupsFromFeed", () => {
+
+  // The mini fares fixture, so the zip and the parsing are exercised in CI. The
+  // real feed is 46 MB and gitignored, which would leave this path covered by
+  // nothing.
+  const fixture = path.join(
+    __dirname, "..", "..", "..", "apps", "dtd2gtfs", "fixtures", "mini", "RJFAF001.ZIP"
+  );
+
+  it("reads the groups out of a fares zip", async () => {
+    const {groups, members} = await groupsFromFeed(fixture)();
+
+    expect(groups.map(g => g.description).sort()).to.deep.equal([
+      "BEDFORD+BUS", "LONDON TERMINALS", "LONDON ZONES 3-4", "LONDON ZONES 3-4"
+    ]);
+    expect(members.filter(m => m.groupUic === "7010720")).to.have.length(18);
+  });
+
+  it("finds the fares zip in a directory alongside the timetable feed", async () => {
+    const {groups} = await groupsFromFeed(path.dirname(fixture))();
+
+    expect(groups).to.have.length(4);
+  });
+
+  // The two ranges of 7000390 are the shape 58 real groups have.
+  it("keeps both date ranges of a group that has two", async () => {
+    const {groups} = await groupsFromFeed(fixture)();
+    const zones = groups.filter(g => g.uic === "7000390");
+
+    expect(zones.map(g => g.endDate).sort()).to.deep.equal(["2026-07-27", "2999-12-31"]);
   });
 
 });
