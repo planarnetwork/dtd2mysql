@@ -2,8 +2,9 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
+import {STATION_GROUPS, StationGroupsExtension, groupsFromFeed} from "@gb-transit/extend-station-groups";
 import {parse} from "yaml";
-import {BuildConfig, Enricher, parseConfig} from "@gb-transit/gtfs";
+import {BuildConfig, BuildContext, Enricher, Extension, parseConfig} from "@gb-transit/gtfs";
 import {BuildFeed, buildContext, dateRange, option, options, stationCoordinates} from "@gb-transit/gtfs";
 import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
@@ -50,7 +51,8 @@ export async function build(argv: string[]): Promise<void> {
     new CifFileSource(sources, stationCoordinates, dateRange(context)),
     new FileOutput(),
     context,
-    registered(config)
+    registered(config),
+    registeredExtensions(config, context, given)
   );
 
   if (out.endsWith(".zip")) {
@@ -93,7 +95,50 @@ function registered(config: BuildConfig | undefined): Enricher[] {
     });
 }
 
+/**
+ * The extensions this build can run, by key.
+ *
+ * Unlike enrichers, an extension takes its settings as plain options, because
+ * there is no field for two of them to contest. `STATION_GROUPS` needs to be
+ * told where the fares feed is, and defaults to looking beside the timetable
+ * feed - which is where it already is when a build reads a directory.
+ */
+function registeredExtensions(
+  config: BuildConfig | undefined,
+  context: BuildContext,
+  given: readonly string[]
+): Extension[] {
+  const wanted = new Map((config?.extensions ?? []).map(e => [e.key, e]));
+  const settings = wanted.get(STATION_GROUPS);
+
+  if (settings === undefined) {
+    return [];
+  }
+
+  const source = settings.options.source === undefined
+    ? beside(given)
+    : String(settings.options.source);
+
+  return [
+    new StationGroupsExtension(groupsFromFeed(source), context.today.toString())
+  ];
+}
+
+/**
+ * Where to look for the fares feed when the config does not say.
+ *
+ * The timetable sources are files or directories; a fares refresh sits in the
+ * same directory as the timetable one it was published alongside, so that is
+ * where to look before asking anybody to write it down.
+ */
+function beside(given: readonly string[]): string {
+  const first = given[0];
+
+  return fs.existsSync(first) && fs.statSync(first).isDirectory() ? first : path.dirname(first);
+}
+
 const REGISTERED = ["NAPTAN"];
+const REGISTERED_EXTENSIONS = [STATION_GROUPS];
 
 function readConfig(path: string | undefined): BuildConfig | undefined {
   if (path === undefined) {
@@ -105,7 +150,7 @@ function readConfig(path: string | undefined): BuildConfig | undefined {
   }
 
   try {
-    return parseConfig(parse(fs.readFileSync(path, "utf8")), REGISTERED);
+    return parseConfig(parse(fs.readFileSync(path, "utf8")), REGISTERED, REGISTERED_EXTENSIONS);
   }
   catch (err) {
     // The file is named, because "licence must be one of" is a puzzle when

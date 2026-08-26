@@ -1,4 +1,5 @@
 import {AgencyRow} from "./Agency";
+import {AreaRow, StopAreaRow} from "./Area";
 import {CalendarRow} from "./Calendar";
 import {CalendarDateRow} from "./CalendarDate";
 import {FeedInfoRow} from "./FeedInfo";
@@ -17,15 +18,22 @@ import {TripRow} from "./Trip";
  * what reaches the writer is a row rather than a model, and the projection
  * happens once, in the `toXRow` beside the model. Where a model is already
  * exactly its file, the row type says so.
+ *
+ * An extension's files are in here too, rather than extensions carrying a row
+ * type of their own. The list stays the list of files the build can write, so
+ * a column that does not exist still fails to compile, and the writer keeps one
+ * type to sort.
  */
 export type FeedRow =
   AgencyRow
+  | AreaRow
   | CalendarRow
   | CalendarDateRow
   | FeedInfoRow
   | FixedLinkRow
   | RouteRow
   | StopRow
+  | StopAreaRow
   | StopTimeRow
   | TransferRow
   | TripRow;

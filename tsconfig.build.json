@@ -20,6 +20,9 @@
       "path": "./libs/enrich-naptan"
     },
     {
+      "path": "./libs/extend-station-groups"
+    },
+    {
       "path": "./apps/dtd2mysql"
     },
     {

@@ -1,0 +1,37 @@
+{
+  "name": "@gb-transit/extend-station-groups",
+  "version": "0.0.0",
+  "description": "RDG group stations as GTFS Fares v2 areas.txt and stop_areas.txt",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/extend-station-groups"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@gb-transit/dtd-schema": "workspace:^",
+    "@gb-transit/dtd-source": "workspace:^",
+    "@gb-transit/feed-parser": "workspace:^",
+    "@gb-transit/gtfs": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

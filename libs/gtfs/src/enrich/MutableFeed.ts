@@ -1,8 +1,9 @@
-import {CRS, Stop} from "../entity/Stop";
+import {CRS, Stop, StopID} from "../entity/Stop";
 import {Trip} from "../entity/Trip";
 import {Route} from "../entity/Route";
 import {Enricher} from "./Enricher";
 import {Provenance} from "./Provenance";
+import {FeedView} from "../extend/FeedView";
 
 /**
  * The built feed, indexed, and writable only through a recorded write.
@@ -16,12 +17,16 @@ import {Provenance} from "./Provenance";
  * Deliberately narrow. An enricher adds detail to entities the DTD already
  * produced; it does not create trips or delete stops. A source that wants to do
  * that is not an enricher and should say so.
+ *
+ * It is also the `FeedView` an extension reads, which is the same feed seen
+ * through a smaller hole: everything here that reads, and nothing that writes.
  */
-export class MutableFeed {
+export class MutableFeed implements FeedView {
 
-  private readonly stopIndex: Map<CRS, Stop>;
+  private readonly stopIndex: Map<StopID, Stop>;
   private readonly tripIndex: Map<string, Trip>;
   private readonly routeIndex: Map<number, Route>;
+  private stationIndex?: Map<CRS, Stop>;
 
   constructor(
     public readonly stops: Stop[],
@@ -44,8 +49,20 @@ export class MutableFeed {
     this.routeIndex = new Map(routes.map(route => [route.route_id, route]));
   }
 
-  public stop(id: CRS): Stop | undefined {
+  public stop(id: StopID): Stop | undefined {
     return this.stopIndex.get(id);
+  }
+
+  /**
+   * A station by its CRS code, which is what an external source has.
+   *
+   * Built on first use rather than in the constructor: every build makes a
+   * MutableFeed and only the ones running an extension ask for this.
+   */
+  public station(crs: CRS): Stop | undefined {
+    this.stationIndex ??= new Map(this.stations.map(stop => [stop.crs, stop]));
+
+    return this.stationIndex.get(crs);
   }
 
   public trip(id: string): Trip | undefined {
