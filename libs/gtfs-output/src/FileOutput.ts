@@ -26,6 +26,10 @@ export class FileOutput implements GTFSOutput {
     return writer;
   }
 
+  public write(filename: string, contents: string): void {
+    fs.writeFileSync(filename, contents);
+  }
+
   public async end(): Promise<void> {
     await Promise.all(this.files);
   }

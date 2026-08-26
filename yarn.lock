@@ -453,6 +453,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/enrich-naptan@workspace:^, @gb-transit/enrich-naptan@workspace:libs/enrich-naptan":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/enrich-naptan@workspace:libs/enrich-naptan"
+  dependencies:
+    "@gb-transit/gtfs": "workspace:^"
+    csv-parse: "npm:^7.0.2"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/feed-parser@workspace:^, @gb-transit/feed-parser@workspace:libs/feed-parser":
   version: 0.0.0-use.local
   resolution: "@gb-transit/feed-parser@workspace:libs/feed-parser"
@@ -1185,6 +1195,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"csv-parse@npm:^7.0.2":
+  version: 7.0.2
+  resolution: "csv-parse@npm:7.0.2"
+  checksum: 10c0/52ffaafbf7be37201ad782ec3eda37bc24ee0ec6e8967b5a68d5ad2973f10b4154fd11a5b90a002615ef98395c4cd699a13d13509b10067297795b9d3c9320e9
+  languageName: node
+  linkType: hard
+
 "csv-write-stream@npm:2.0.0":
   version: 2.0.0
   resolution: "csv-write-stream@npm:2.0.0"
@@ -1233,9 +1250,11 @@ __metadata:
   resolution: "dtd2gtfs@workspace:apps/dtd2gtfs"
   dependencies:
     "@gb-transit/dtd-source": "workspace:^"
+    "@gb-transit/enrich-naptan": "workspace:^"
     "@gb-transit/gtfs": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
     typescript: "npm:7.0.2"
+    yaml: "npm:^2.9.0"
   bin:
     dtd2gtfs: bin/dtd2gtfs.sh
   languageName: unknown
@@ -2916,5 +2935,14 @@ __metadata:
   version: 5.0.0
   resolution: "yallist@npm:5.0.0"
   checksum: 10c0/a499c81ce6d4a1d260d4ea0f6d49ab4da09681e32c3f0472dee16667ed69d01dae63a3b81745a24bd78476ec4fcf856114cb4896ace738e01da34b2c42235416
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.9.0":
+  version: 2.9.0
+  resolution: "yaml@npm:2.9.0"
+  bin:
+    yaml: bin.mjs
+  checksum: 10c0/f340718df45e97a9551b9bf9dac61c80050bc464513b710debfb5067c380c8472e3b67809cffacb4ab5ffb5e66ef9310816c88b05f371cec60abfedd8c88e0a2
   languageName: node
   linkType: hard

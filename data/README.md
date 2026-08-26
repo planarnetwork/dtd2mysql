@@ -28,6 +28,14 @@ data/download.sh --download-routeing
 data/download.sh --download-nfm64
 ```
 
+## The location mapping is already in the feed
+
+Worth knowing before anybody goes looking for it elsewhere: the MCA file's `TI` records carry
+TIPLOC, NLC, STANOX and CRS for 12,047 locations. That is the same dataset the Rail Data Marketplace
+ships as weekly NLC snapshots, and it agrees with it on every station checked. RDM is worth the
+trouble for the products that are genuinely not in the DTD feed - accessibility, vehicle data - and
+not for locations.
+
 ## Fingerprinting
 
 **The dump tool is part of the baseline.** A fingerprint is a hash of `mariadb-dump` output, so

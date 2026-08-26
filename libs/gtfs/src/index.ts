@@ -51,6 +51,16 @@ export type {BuildContext, DateRange} from "./build/BuildContext";
 export type {GTFSOutput} from "./build/GTFSOutput";
 export {ScheduleBuilder} from "./build/ScheduleBuilder";
 export type {ScheduleResults} from "./build/ScheduleBuilder";
+export {parseConfig} from "./build/BuildConfig";
+export type {BuildConfig, EnricherConfig, Licence} from "./build/BuildConfig";
+
+// Enrichment - what an external source is allowed to change, and the record of
+// what it did
+export {enrich, order, provenanceFile} from "./enrich/Enrich";
+export {MutableFeed} from "./enrich/MutableFeed";
+export {Provenance} from "./enrich/Provenance";
+export type {Write, FieldHistory} from "./enrich/Provenance";
+export type {Enricher, EnrichmentReport, Attribution} from "./enrich/Enricher";
 
 // The source SPI
 export type {ScheduleStopTimeRow, StationCoordinates, TimetableSource} from "./source/TimetableSource";

@@ -14,6 +14,9 @@ import {FeedRow} from "../entity/FeedRow";
 import {CRS, Stop, TIPLOC} from "../entity/Stop";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
+import {enrich, provenanceFile} from "../enrich/Enrich";
+import {MutableFeed} from "../enrich/MutableFeed";
+import {Enricher} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
@@ -30,7 +33,12 @@ export class BuildFeed {
   public constructor(
     private readonly repository: TimetableSource,
     private readonly output: GTFSOutput,
-    private readonly context: BuildContext
+    private readonly context: BuildContext,
+    /**
+     * Sources of detail the DTD does not carry. Empty produces the same feed as
+     * a build with no enrichment at all.
+     */
+    private readonly enrichers: readonly Enricher[] = []
   ) {}
 
   /**
@@ -95,6 +103,20 @@ export class BuildFeed {
       stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
     );
     const called = dropUnknownStops(schedules, new Set(stations.keys()));
+    // Only the stops are offered to an enricher. Trips and routes are streamed
+    // straight to their files rather than held, and materialising 276,000 trips
+    // to enrich a handful is the wrong trade until something needs it.
+    const feed = new MutableFeed(stops, [], []);
+    const reports = this.enrichers.length > 0 ? await enrich(feed, this.enrichers) : [];
+    // Written whole rather than through copy(): it is a document, and the CSV
+    // writer turns its nested arrays into `[object Object]`.
+    const provenanceP = reports.length > 0
+      ? this.output.write(
+        `${this.baseDir}/provenance.json`,
+        JSON.stringify(provenanceFile(feed, reports), null, 2) + "\n"
+      )
+      : undefined;
+
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
@@ -129,7 +151,8 @@ export class BuildFeed {
       calendarDatesP,
       tripsP,
       fixedLinksP,
-      feedInfoP
+      feedInfoP,
+      provenanceP
     ]);
 
     await Promise.all([this.repository.end(), this.output.end()]);

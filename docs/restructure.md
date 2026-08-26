@@ -1397,28 +1397,103 @@ Nothing in the structure has to move when it is picked up: `dtd2postgres` slots 
 
 ### Epic D — Enrichment (#119)
 
-**D1 · `Enricher` SPI, `MutableFeed`, provenance** *(depends A6)*
-`MutableFeed` gives indexed access to stops, trips and routes post-core-build. Every write records
-`(entity, field, value, enricher_id, priority)`; higher priority wins and the loser is retained in
-`provenance.json`. `EnrichmentReport` carries matched, unmatched and conflict counts, reusing T6's
-report format so the mini fixture can assert enricher behaviour without network access. **Not
-last-writer-wins.**
+**D1 · `Enricher` SPI, `MutableFeed`, provenance** *(depends A6)* — **done**
 
-**D2 · Build config format and CLI wiring** *(depends D1, C3)*
-`gtfs.config.yaml` selecting source, today, range, licence tier, enrichers (with per-enricher
-options and `apply:` field allowlists) and extensions. `dtd2gtfs build --config`. Schema-validated;
-unknown enricher ids fail fast.
+**Fetch and apply are separate, and dependencies are separate from priority.** Fetching is slow and
+independent - a NaPTAN download, an API call, an OSM extract - so every enricher fetches at once and
+twelve of them is one download rather than twelve in a queue. It also lets a test drive `apply` from
+a fixture with no network, which is what the mini fixture needs, and gives caching one place to
+live. `fetch` therefore **cannot see another enricher's output**, or the feed at all; an enricher
+that wants to narrow what it fetches must fetch broadly and narrow in `apply`.
 
-**D3 · `@gb-transit/enrich-naptan`** *(depends D1)*
-OGL. Accurate lat/lon for `RLY` stops (2,673 rail stations); **rail replacement bus stop points**
-from `BCT` for BR/BS services; NPTG locality for disambiguation; match report by CRS with the
-unmatched list surfaced. **The `(easting - 10000) * 100` OSGB fudge in `getStops()` is removed, not
-merely overridden** — NaPTAN becomes the primary coordinate source and the projection path is
-deleted along with `proj4` if nothing else needs it.
+`dependsOn` decides the order `apply` runs in, because OSM pathways cannot join platforms NaPTAN has
+not created yet. `priority` decides who wins a contested field. Conflating them - which the first
+attempt did, ordering by priority - produces an order that looks deliberate and is not. Everything
+that can be rejected is rejected before any fetch: an unknown dependency, a duplicate key, a cycle.
+A build that has downloaded four sources and then finds a circle has wasted the expensive part and
+left the feed half enriched.
 
-NaPTAN also carries `RSE` (4,543 station entrances) and `RPL` (rail platforms, ATCO form
-`9100ZZTYKKH1`). Extracting those is F3's dependency, and it means the station hierarchy is
-buildable entirely from OGL sources.
+`MutableFeed` indexes the feed and is writable only through `set`, so every change has an author and
+a priority and nothing can quietly overwrite something better. `Provenance` keeps the winning write
+and every write that lost, which is what makes "the coordinate is wrong" answerable: NaPTAN said
+this, OSM said that, NaPTAN won because it is 50 and OSM is 30.
+
+**Not last-writer-wins**, and tested as such: the same enrichers in either order produce the same
+feed. Order dependence here would be the same class of defect as the route numbering that depended
+on which trip arrived first, and it would be far harder to notice.
+
+Equal priority is a real conflict. It cannot be resolved on merit, so it resolves on enricher id -
+arbitrary but stable - and is **counted**, because a conflict count above zero means two sources are
+fighting over a field and somebody has to decide which should outrank the other. Agreement at equal
+priority is not a conflict.
+
+`EnrichmentReport` carries matched, unmatched and conflicts. `unmatched` is the number an enricher
+is tempted not to report and the one that matters: a source matching 12 stations of 3,000 has added
+noise, and nothing else would say so.
+
+**Only the stops are offered to an enricher.** Trips and routes stream straight to their files
+rather than being held, and materialising 276,000 trips to enrich a handful is the wrong trade until
+something needs it - D9 is the first that will, and it can pay for it then.
+
+The build takes an empty enricher list until D2 wires the config, and produces a byte identical feed
+with one. `provenance.json` is written only when an enricher ran.
+
+**D2 · Build config format and CLI wiring** *(depends D1, C3)* — **done**
+`gtfs.config.yaml` selecting source, out, today, range, links, licence tier, enrichers and
+extensions. `dtd2gtfs build --config`. A flag given as well wins, so a config is a starting point
+rather than a commitment, and `today` and `range` reach `buildContext` the same way the environment
+does so precedence is decided in one place.
+
+**Validated by hand rather than by a schema library.** The errors are the reason the file exists -
+`must match schema #/enrichers` helps nobody at 3am when a nightly did not build. So an unknown
+option is named and the valid ones listed, a bad licence tier says which are allowed, and every
+message is prefixed with the file, because three configs in play makes an unattributed error a
+puzzle.
+
+**An unknown enricher fails immediately**, against the registry of what the build has, listing what
+is available. Left to run it would produce a feed quietly missing whatever that source was meant to
+add - indistinguishable from a source that matched nothing.
+
+**`apply:` is enforced in `MutableFeed.set`**, not asked of the enricher, because an allowlist an
+enricher is trusted to honour is not an allowlist. It exists so a source can be taken for the one
+thing it is good at: NaPTAN has excellent coordinates and station names that are not the ones on the
+departure boards, and there is no reason to accept both to get one. Refused writes are counted, so
+a list that turns away everything an enricher does is visible rather than a config that reads as
+enabling a source and does nothing.
+
+Enrichers are sorted by key when parsed, so the same config produces the same build however it was
+typed. `yaml` is a real dependency of `apps/dtd2gtfs` now; the validator itself takes a parsed object
+and has none, so it is testable without it.
+
+**D3 · `@gb-transit/enrich-naptan`** *(depends D1)* — **done**, coordinates only
+
+OGL, so it is in the permissive tier. It joins on **TIPLOC, not CRS** - a NaPTAN rail record is
+`9100` and then the TIPLOC, which is `stop_code` here - which is why the station's own TIPLOC had to
+be published before this could work at all.
+
+**2,622 of 3,054 stations matched.** The 432 that did not are bus, coach, tram, ferry, Underground,
+Metro and heritage stops; NaPTAN's rail records cover railway stations and those live under other
+stop types. The report says so rather than leaving a number for somebody to chase.
+
+**Only coordinates.** NaPTAN's name for Aberdare is "Aberdare Rail Station" where the departure
+boards say "Aberdare", so taking the name as well is something to ask for through the config's
+`apply:` rather than to inflict.
+
+Effect: the median station moves **2 metres** and the 90th percentile 78, which is the OSGB
+projection being roughly right all along; the tail is what matters, out to 3.8 km. `QBN`, `QBS` and
+`HVH` are still outside the bounds - the first two have no NaPTAN record and the third is correct.
+
+**Two things worth knowing before writing another enricher.**
+
+NaPTAN ships rail records with the position left blank - Bond Street, Tottenham Court Road and
+Barking Riverside among them. `Number("")` is 0 rather than NaN, so the emptiness survived the
+finite check and three London stations were moved to the Gulf of Guinea, including the one whose
+coordinate had just been corrected by hand. **Nothing failed**: the run reported 2,628 happy
+matches. It was found by measuring how far each stop moved, which is now the thing to do to any
+enricher before believing it.
+
+`provenance.json` was being written through the CSV writer, so it came out as a column of
+`[object Object]`. `GTFSOutput` gains `write` for files that are documents rather than tables.
 
 **D4 · `@gb-transit/enrich-corpus`** *(depends D1)*
 OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
@@ -1438,10 +1513,27 @@ lift, stair and `wheelchair=*` attributes and `levels.txt`. Consumes a pre-built
 never the full GB pbf at build time. Because the nodes are OGL, `gtfs-slim.zip` can still carry the
 station hierarchy — only the pathway graph is tier-restricted.
 
-**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)*
+**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)* — *measured, awaiting review*
+
 Every station previously covered by the override is covered by an enricher or explicitly listed in a
 small documented `overrides.yaml` with a reason per entry. Agency list derives from live TOC
-reference data. Diff report of coordinate deltas over 100 m for review before merge.
+reference data.
+
+The measurement the ticket asks for is done and lives in `docs/coordinate-review.md`:
+
+- the override file has **2,594 entries** and NaPTAN covers **2,580** of them;
+- **14 are not covered** - Bond Street, Barking Riverside, Ashford International and others NaPTAN
+  either has no record for or ships with a blank position - and those keep an override until
+  something else covers them;
+- **125 differ by more than 100 metres**, out to 3.2 km at Eskbank.
+
+The large differences look like stations that moved or reopened - Eskbank and Laurencekirk are on
+reinstated lines, so the override is probably the older position - but that is a guess and the
+report exists so somebody decides rather than a script silently preferring one source. **Nothing is
+deleted until that review happens**: replacing 2,594 hand-checked coordinates on the strength of a
+99.5% match rate would be trading a known state for an unknown one.
+
+`agency.ts` is untouched and needs a live source identified.
 
 **D8 · Licence-tiered builds and `attributions.txt`** *(depends D1)*
 `attributions.txt` generated from enricher `attribution` fields. The `licence:` tier produces
@@ -1662,9 +1754,21 @@ Remaining `stops.txt` changes:
 B23 broke the three-letter join once, with the ids it will keep. F3 adds stops rather than renaming
 them, so it needs no flag and no second break.
 
-**F4 · Splits and joins as transfers** *(depends C1)* — **closes #81**
+**F4 · Splits and joins as transfers** *(depends C1)* — **closes #81 and #80**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
-associations. #80 (joins at route start should not be processed) addressed in the same pass.
+associations, in place of concatenating the portions into one trip.
+
+**#80 is not a separate fix, it is the same change.** A join at the start of the base's route
+produces a service that doubles back - #80 reports `W04046` and `W03086` becoming a circular run
+round Kent, and B24 found `G38297`/`G38968` doing it at Swansea, where the base begins. Both are the
+concatenation: two services that share a unit are not one passenger journey, and GTFS has
+`transfer_type=4` for precisely that relationship. Emitting linked trips makes the shape
+unrepresentable rather than needing a rule to exclude it.
+
+**Expect a large change in trip count.** Every joined or split service currently emitted as one trip
+becomes two, so this collides with E2's 5% swing gate the same way #121 does, and wants the same
+treatment: land it before the gate exists, or reset the gate deliberately. It moves the golden and
+the T10 baseline.
 
 **F5 · GTFS-Fares v2** *(depends D1)*
 The fares and routeing feeds are already imported and discarded at GTFS time. Nobody publishes a GB
@@ -1708,12 +1812,13 @@ parallel by different people without touching the core.
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
-B3 is absorbed into T1. **39 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23, E1, E2, E5, E6 and E8, the last of those across master and Epic
-A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this
-pass. B24 and B25 are investigated and closed as source data the feed reports rather than corrects.
+B3 is absorbed into T1. **49 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, E1, E2, E5, E6 and E8, the last of those
+across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are
+deferred out of this pass. B24 and B25 are investigated and closed as source data the feed reports
+rather than corrects.
 
-That leaves **33 in scope** — 32 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **23 in scope** — 22 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
