@@ -19,6 +19,8 @@ import {MutableFeed} from "../enrich/MutableFeed";
 import {Enricher} from "../enrich/Enricher";
 import {checkKeys, extend} from "../extend/Extend";
 import {Extension} from "../extend/Extension";
+import {TIMETABLE_ATTRIBUTION, createAttributions} from "../transform/CreateAttributions";
+import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
@@ -136,6 +138,14 @@ export class BuildFeed {
       file => this.copy([...file.rows], file.filename, file.key)
     );
 
+    // Written whatever ran, because the timetable always needs crediting and
+    // an enricher's licence may make it a condition rather than a courtesy.
+    const attributionsP = this.copy(
+      createAttributions(this.attributions()),
+      "attributions.txt",
+      a => [a.organization_name, a.attribution_licence]
+    );
+
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
       mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
@@ -172,10 +182,27 @@ export class BuildFeed {
       fixedLinksP,
       feedInfoP,
       provenanceP,
+      attributionsP,
       ...extensionsP
     ]);
 
     await Promise.all([this.repository.end(), this.output.end()]);
+  }
+
+  /**
+   * Everything that has to be credited: the timetable, and whatever enricher or
+   * extension actually ran.
+   *
+   * Taken from what each source declares about itself rather than from a list
+   * kept here, so a package added without a licence is a compile error rather
+   * than a feed quietly published outside its terms.
+   */
+  private attributions(): Attribution[] {
+    return [
+      TIMETABLE_ATTRIBUTION,
+      ...this.enrichers.map(e => e.attribution),
+      ...this.extensions.map(e => e.attribution)
+    ].filter(attribution => attribution !== undefined);
   }
 
   /**

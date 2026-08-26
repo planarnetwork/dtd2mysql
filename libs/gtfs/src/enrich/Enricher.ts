@@ -1,3 +1,4 @@
+import {AttributionRole} from "../entity/Attribution";
 import {MutableFeed} from "./MutableFeed";
 
 /**
@@ -60,15 +61,32 @@ export interface Enricher<T = unknown> {
   apply(feed: MutableFeed, data: T): EnrichmentReport;
 }
 
+/**
+ * Who a source belongs to, and on what terms.
+ *
+ * Declared by the enricher or extension rather than listed centrally, because
+ * the thing that knows a source's licence is the code that fetches it. A list
+ * somewhere else goes stale the first time somebody adds a package and forgets,
+ * and the failure is silent: a feed published outside its licence looks exactly
+ * like one published inside it.
+ *
+ * Every one of these becomes a row of attributions.txt.
+ */
 export interface Attribution {
   readonly organisation: string;
   readonly licence: string;
   readonly url?: string;
   /**
-   * Whether the licence obliges the whole feed to carry it. These are kept out
-   * of the permissive build rather than the obligation being discovered later.
+   * Whether the licence obliges the whole feed to carry it. Recorded now and
+   * acted on when there is a share-alike source to keep out of a permissive
+   * build; nothing here is one yet.
    */
   readonly shareAlike: boolean;
+  /**
+   * Defaults to authority: a source is the authority for the data it supplies.
+   * The producer of this feed is named in feed_info.txt, not here.
+   */
+  readonly role?: AttributionRole;
 }
 
 /**
