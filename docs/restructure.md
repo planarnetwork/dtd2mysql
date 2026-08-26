@@ -1730,13 +1730,25 @@ with these secrets.
 Separate weekly job pulls Geofabrik `great-britain-latest.osm.pbf`, filters to railway features, and
 publishes a small extract as a release asset. The nightly consumes that, never the 1.5 GB source.
 
-**E4 · Release and prune** *(depends E2)*
-Release tagged `feed-YYYY-MM-DD` carrying `gtfs-slim.zip`, `gtfs-full.zip`, `provenance.json`,
-`enrichment-report.json`, `validation.json`, `feed-meta.json`. Prune keeps the last 30 dailies plus
-the first of each month.
+**E4 · Release and prune** *(depends E2)* — **done**
 
-Key output: `https://github.com/planarnetwork/gb-rail-gtfs/releases/latest/download/gtfs-slim.zip`
-resolves to the newest asset permanently. The site links it once and never rewrites it.
+Release tagged `feed-YYYY-MM-DD` carrying `gtfs.zip`, `provenance.json`, `enrichment-report.json`,
+`validation.json` and `feed-meta.json`. Not `gtfs-slim.zip` / `gtfs-full.zip`: the tiering is
+deferred with the rest of D8 until there is a share-alike source to keep out of a permissive build.
+
+The four JSON files are release assets rather than zip contents, because they describe the feed
+rather than being part of it and a GTFS consumer unzipping the feed should get GTFS.
+`provenance.json` is attached only when an enricher ran, since that is when it exists.
+
+Key output: `https://github.com/planarnetwork/dtd2mysql/releases/latest/download/gtfs.zip` resolves
+to the newest asset permanently. The site links it once and never rewrites it.
+
+**Pruning keeps the last 30 dailies plus the earliest release of each month** - the earliest rather
+than whichever is dated the 1st, so a night that failed to publish does not cost the whole month its
+record. The selection is a pure function with tests, because a rule that deletes published artifacts
+should not be discoverable only by watching it run, and it considers `feed-` tags only: the npm
+version tags share the release list, and a pruner that could reach them is one bad regular
+expression from deleting a release of the software.
 
 **E5 · `apps/website`** *(depends E4)* — **a download page**
 
@@ -1864,13 +1876,13 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run; D13 was found by building
 D12, which did not fit the seam it was said to depend on).
 
-B3 is absorbed into T1. **52 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
-B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E5, E6 and E8, the last of
+B3 is absorbed into T1. **53 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E4, E5, E6 and E8, the last of
 those across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5
 are deferred out of this pass. B24, B25 and **D4** are investigated and closed as data the feed
 already carries or already reports.
 
-That leaves **20 in scope** — 19 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **19 in scope** — 18 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
