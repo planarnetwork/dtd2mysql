@@ -1,0 +1,191 @@
+name: Nightly feed
+
+# Never on a pull request, and never pull_request_target. The DTD credentials
+# are what makes that rule matter: a workflow that a fork can trigger is a
+# workflow that can be made to print them.
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      range:
+        description: How far ahead to build
+        default: 3 months
+      publish:
+        description: Attach the result to a release
+        type: boolean
+        default: true
+
+concurrency:
+  group: nightly-feed
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # The secrets are named for the feed, the variables for the protocol it
+    # arrives over: dtd2mysql reads SFTP_*, so the names cannot be made to
+    # match on either side and the mapping belongs here.
+    env:
+      SFTP_HOSTNAME: ${{ secrets.DTD_HOSTNAME }}
+      SFTP_USERNAME: ${{ secrets.DTD_USERNAME }}
+      SFTP_PASSWORD: ${{ secrets.DTD_PASSWORD }}
+      GTFS_RANGE: ${{ inputs.range || '3 months' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+
+      - name: Fail fast without credentials
+        run: |
+          # DTD_HOSTNAME is not required: dtd2mysql defaults it to
+          # dtd.atocrsp.org when it is empty.
+          if [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_PASSWORD" ]; then
+            echo "The DTD_USERNAME and DTD_PASSWORD secrets are not set for this repository."
+            echo "They come from a Rail Data Marketplace subscription - raildata.org.uk."
+            exit 1
+          fi
+
+      - run: yarn install --immutable
+      - run: yarn build
+
+      # There is no stored cursor: with no database to import into, the download
+      # takes the most recent full refresh and the incrementals after it every
+      # time, so there is no state to get out of step with reality.
+      #
+      # The cache therefore saves nothing today - the download overwrites what
+      # it restores. It is here because the alternative to a cursor is deriving
+      # the set to fetch from what is already on disk, and that needs the disk
+      # to persist. Until a cursor reads this directory, it is carrying a cost
+      # for a later benefit.
+      - uses: actions/cache@v4
+        with:
+          path: data/feeds
+          key: dtd-feeds-${{ github.run_id }}
+          restore-keys: dtd-feeds-
+
+      - name: Download the timetable
+        run: |
+          mkdir -p data/feeds
+          yarn tsx apps/dtd2mysql/src/index.ts --download-timetable data/feeds/
+          ls -la data/feeds/
+
+      - name: Build the feed
+        run: |
+          mkdir -p feed
+          yarn tsx apps/dtd2gtfs/src/index.ts build --source data/feeds --out feed | tee build.log
+
+      # A published feed that fails referential integrity must never reach a
+      # release, so the validator runs before anything is attached. What counts
+      # as a failure is validator-baseline.json: an unlisted error, or more of
+      # a listed one than it accepts.
+      - name: Validate
+        run: |
+          curl -sSfL -o gtfs-validator.jar \
+            "https://github.com/MobilityData/gtfs-validator/releases/download/v8.0.1/gtfs-validator-8.0.1-cli.jar"
+          java -jar gtfs-validator.jar -i feed -o report -svu
+          node scripts/check-validation.mjs
+
+      # A feed that suddenly has a fifth fewer trips than yesterday is a feed
+      # with something wrong in it, and it is cheaper to stop than to withdraw.
+      # There is no previous release on the first run, so there is nothing to
+      # compare against and nothing to complain about.
+      - name: Compare with the last release
+        id: compare
+        run: |
+          trips=$(( $(wc -l < feed/trips.txt) - 1 ))
+          echo "trips=$trips" >> "$GITHUB_OUTPUT"
+          echo "This build: $trips trips"
+
+          previous=$(gh release list --limit 20 --json tagName \
+            --jq '[.[] | select(.tagName | startswith("feed-"))][0].tagName' || true)
+
+          if [ -z "$previous" ]; then
+            echo "No previous feed release to compare against."
+            exit 0
+          fi
+
+          gh release download "$previous" --pattern feed-meta.json --output previous.json || exit 0
+          was=$(node -p "require('./previous.json').trips")
+          echo "Previous ($previous): $was trips"
+
+          node -e "
+            const was = $was, now = $trips;
+            const swing = Math.abs(now - was) / was * 100;
+            console.log('Swing: ' + swing.toFixed(1) + '%');
+            if (swing > 5) {
+              console.error('More than 5% different from the last release. Releasing this needs a human.');
+              process.exit(1);
+            }
+          "
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Describe the build
+        run: |
+          node -e "
+            const fs = require('fs');
+            const info = fs.readFileSync('feed/feed_info.txt', 'utf8').trim().split('\n');
+            const [names, values] = info.map(line => line.split(','));
+            const feed = Object.fromEntries(names.map((n, i) => [n, values[i]]));
+            fs.writeFileSync('feed/feed-meta.json', JSON.stringify({
+              built: new Date().toISOString(),
+              commit: '${{ github.sha }}',
+              trips: ${{ steps.compare.outputs.trips }},
+              feed_version: feed.feed_version,
+              feed_start_date: feed.feed_start_date,
+              feed_end_date: feed.feed_end_date
+            }, null, 2));
+          "
+          cat feed/feed-meta.json
+
+      - name: Package
+        run: |
+          cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json && cd ..
+          ls -la gtfs.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: feed
+          path: |
+            gtfs.zip
+            feed/validation.json
+            feed/feed-meta.json
+          retention-days: 14
+
+      # The tag is the date, so the release list reads as a history of feeds and
+      # stays distinguishable from the v6.6.x version tags npm publishes under.
+      - name: Release
+        if: github.event_name == 'schedule' || inputs.publish
+        run: |
+          tag="feed-$(date -u +%Y-%m-%d)"
+          gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$tag" \
+            --title "Feed $(date -u +%Y-%m-%d)" \
+            --notes "$(node -p "
+              const m = require('./feed/feed-meta.json');
+              [
+                '| | |', '|---|---|',
+                '| Covers | ' + m.feed_start_date + ' to ' + m.feed_end_date + ' |',
+                '| Trips | ' + m.trips.toLocaleString() + ' |',
+                '| Source | ' + m.feed_version + ' |',
+                '| Built from | ' + m.commit.slice(0, 7) + ' |'
+              ].join('\n')
+            ")" \
+            gtfs.zip feed/validation.json feed/feed-meta.json
+        env:
+          GH_TOKEN: ${{ github.token }}

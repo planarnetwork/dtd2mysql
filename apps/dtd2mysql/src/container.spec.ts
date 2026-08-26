@@ -1,7 +1,7 @@
 import {describe, it, expect} from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import {commands} from "./container";
+import {commands, feedCursor} from "./container";
 
 /**
  * The CLI's flags, held to the README.
@@ -45,6 +45,34 @@ describe("the CLI flags", () => {
       .map(([flag]) => flag);
 
     expect(empty).to.deep.equal([]);
+  });
+
+});
+
+/**
+ * Downloading imports nothing, so it has nothing to be behind and needs no
+ * database. The log table only says anything where there is one to import into.
+ *
+ * The nightly feed build is the caller with no database, and it failed here:
+ * the cursor was constructed eagerly, so an unset DATABASE_NAME threw before
+ * the code that treats a missing log as "take the latest full refresh" could
+ * run. Only the pool construction is asserted - reaching for a connection is
+ * the failure, whatever a query would have gone on to do.
+ */
+describe("the feed cursor", () => {
+
+  it("needs no database, because downloading does not import", async () => {
+    const before = process.env.DATABASE_NAME;
+    delete process.env.DATABASE_NAME;
+
+    try {
+      await expect(feedCursor().getLastProcessedFile()).resolves.to.equal(undefined);
+    }
+    finally {
+      if (before !== undefined) {
+        process.env.DATABASE_NAME = before;
+      }
+    }
   });
 
 });

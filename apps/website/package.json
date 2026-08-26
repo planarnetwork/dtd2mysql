@@ -1,0 +1,16 @@
+{
+  "name": "@gb-transit/website",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The download page for the GB rail GTFS feed",
+  "license": "GPL-3.0",
+  "scripts": {
+    "build": "tsc -b && node dist/build.js"
+  },
+  "dependencies": {
+    "@gb-transit/gtfs": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

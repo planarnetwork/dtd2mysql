@@ -727,16 +727,25 @@ code rather than of the date it runs.
 now the tube links are in there.
 
 **The full feed does not, and the job does not cover it** - it needs a 70 MB source and does not
-belong in a PR check. Running it by hand against `RJTTF918` found three errors:
+belong in a PR check. Running it by hand against `RJTTF918` found three errors; E2's nightly now
+runs it on every build, and the first one to get that far reported two:
 
 | | | |
 |---|---:|---|
-| `foreign_key_violation` | 36 | the `QHA`/`ZUX` stop times - B15 |
+| `foreign_key_violation` | 0 | the `QHA`/`ZUX` stop times - **cleared by B15** |
 | `point_near_origin` | 2 | `QBN`/`QBS` at 0,0 - B10 put them there deliberately |
-| `stop_time_with_arrival_before_previous_departure_time` | 4 | **new, see B24 and B25** |
+| `stop_time_with_arrival_before_previous_departure_time` | 4 | see B24 and B25 |
 
-That gap is real: a green PR check does not mean the published feed validates. Whoever does E2's
-nightly should run the validator there.
+That gap is real: a green PR check does not mean the published feed validates. E2's nightly runs the
+validator there, which is what closes it.
+
+**The two that remain are decisions, so "any ERROR blocks" would never pass.** `validator-baseline.json`
+names them and how many of each, and `scripts/check-validation.mjs` holds the build to it: an error
+that is not listed fails, and so does a listed one that grew, because an accepted error is a known
+quantity rather than a licence for more of the same. Fewer than the baseline allows is reported and
+passes - `point_near_origin` goes to 0 when D3 or D7 gives `QBN`/`QBS` coordinates, and that is the
+moment to lower it. Changing the file is covered by the same CI gate as `type-surface.json` and the
+goldens, so loosening it has to be explained.
 
 **B24 · A joined trip visits a station twice with time going backwards** — *investigated; the source is inconsistent, and the feed reports it*
 
@@ -1620,27 +1629,51 @@ straight to 6.6.14 - which is the ten phantom versions the broken runs burned.
 
 So E8 closes when the stack merges. Nothing more to do for it.
 
-**E1 · Create the `gb-rail-gtfs` data repo**
-A year of daily releases would bury the npm tags, and DTD credentials should not sit in a repo that
-takes PRs. Secrets configured; feed workflows restricted to the default branch; no
-`pull_request_target` anywhere.
+**E1 · Publish from this repository**
+Originally a separate `gb-rail-gtfs` repo, on the grounds that a year of daily releases would bury
+the npm tags and that DTD credentials should not sit in a repo taking pull requests. **Decided
+against**: the feed is published from here.
 
-**E2 · Nightly build workflow** *(depends C3, B6, D8, E1)*
-`cron: '0 5 * * *'` plus `workflow_dispatch`. Downloads the latest full refresh and all subsequent
-incrementals with per-filename caching — deterministic, no stateful cursor to corrupt. Builds, runs
-the validator, runs T6's Track A invariants against the day's build, and fails the release on
-violation or on a swing over 5% in trip count versus the previous build. A published feed that fails
-referential integrity must never reach a release.
+Neither concern needs a second repository. Feed releases are tagged `feed-YYYY-MM-DD` and version
+releases `v6.6.x`, so they are distinguishable and filterable, and the `latest/download` link
+resolves by asset name regardless. Credentials are org secrets, which GitHub does not expose to a
+pull request from a fork; what makes that true is having no `pull_request_target` anywhere and
+keeping the feed workflows on the default branch, which is a rule to hold rather than a repository
+to create.
 
-*The 5% gate and #121 collide.* Removing the merge step is a **+19% step change** in trip count
-(229,898 → 273,539 on a 3 month build; stop times +21%, 16 MB → 20 MB zipped) because consecutive
-CIF records with the same stopping pattern are no longer collapsed into one trip. Whichever lands
-second trips the other. Either #121 ships before the gate exists, or the gate needs a documented
-one-off reset. The size is worth revisiting separately: merging by calendar *after* ids are assigned
-would recover most of it without destabilising them.
+What is actually needed: the credentials, which exist, and Pages enabled, which it now is.
 
-*Risk:* `ubuntu-latest` is 4 vCPU / 16 GB and every `Schedule` is currently materialised in memory.
-Ship at a three-month horizon initially; raise after F1.
+**E2 · Nightly build workflow** *(depends C3, B6, E1)* — **run, through to a validated feed**
+
+`cron: '0 5 * * *'` plus `workflow_dispatch`, in `.github/workflows/feed.yml`. Downloads the
+timetable, builds, validates, compares with the last release and attaches the result to a
+`feed-YYYY-MM-DD` release.
+
+Downloading needs no database. It used to: `DownloadCommand` takes a `FeedCursor`, the only one
+wired up read the `log` table, and constructing it eagerly meant an unset `DATABASE_NAME` threw
+before anything ran. But downloading imports nothing, so there is nothing to be behind -
+`--download-timetable` now uses `NO_CURSOR`, which the library already had for exactly this, and
+takes the latest full refresh.
+
+**An unaccepted validator ERROR stops the release.** A feed that fails referential integrity must
+not reach anybody, and it is cheaper to skip a night than to withdraw a feed. What counts as
+accepted is `validator-baseline.json` - see the B6 section above for why a blanket rule could not
+work and what the file holds.
+
+**The 5% trip swing gate collides with #121 and F4.** Removing the merge step is a +19% step change,
+and F4 turns every joined service into two trips. Whichever lands second trips the gate. There is no
+previous release yet, so the comparison is skipped on the first run and the gate effectively starts
+from whatever ships first - which is the documented one-off reset, taken by default rather than by
+decision.
+
+Verified by running it: download, build and validate all execute against the real feed. The
+credentials are held as `DTD_HOSTNAME`, `DTD_USERNAME` and `DTD_PASSWORD` and mapped to the
+`SFTP_*` variables dtd2mysql reads, which is where the first run stopped - the workflow asked for
+secrets by the variable names rather than the secret names.
+
+The rule E1 replaced a whole repository with is enforced rather than written down: CI fails any
+workflow that gains a `pull_request_target` trigger, which is the thing that would run a fork's code
+with these secrets.
 
 **E3 · Weekly OSM rail extract** *(depends E1)*
 Separate weekly job pulls Geofabrik `great-britain-latest.osm.pbf`, filters to railway features, and
@@ -1654,20 +1687,29 @@ the first of each month.
 Key output: `https://github.com/planarnetwork/gb-rail-gtfs/releases/latest/download/gtfs-slim.zip`
 resolves to the newest asset permanently. The site links it once and never rewrites it.
 
-**E5 · `apps/website`** *(depends E4)*
-Static (Astro or 11ty). Pages:
-- **Download** — the stable links for both tiers, with `gtfs-slim.zip` presented as the default and
-  the ODbL implications of `gtfs-full.zip` stated plainly. Coverage window and build time read from
-  `feed_info.txt` at build time; no client-side API calls, no rate limits.
-- **Quality** — renders `validation.json`, `enrichment-report.json` and the Track B manifest, with a
-  30-build trend.
-- **Sources and licences** — generated from enricher `attribution` fields, so it cannot drift from
-  what actually ran.
-- **Docs** — from package READMEs.
+**E5 · `apps/website`** *(depends E4)* — **a download page**
 
-**E6 · Pages deploy** *(depends E5)*
-Nightly writes `apps/website/data/latest.json` and triggers `actions/deploy-pages`. Site rebuild is
-idempotent and independent of the feed build's success.
+`apps/website` generates a single static page. **No framework**: the plan said Astro or 11ty, and
+four pages with no client side behaviour do not need a build system - one would be a dependency to
+keep current for the life of the project. If the site grows a reason for one, that is when to add
+it.
+
+Everything the page claims is read from the published feed's `feed-meta.json` at build time, so it
+cannot drift from what was actually built, and when nothing has been published it says so rather
+than inventing numbers - which is what it says today.
+
+The Quality page rendering `validation.json` and the enrichment report, the generated licence page
+and the docs pages are not built. The download link, the coverage window and the sources are, which
+is what somebody arriving actually needs.
+
+**E6 · Pages deploy** *(depends E5)* — **done**
+Pages is enabled on this repository with Actions as the source, serving
+`planarnetwork.github.io/dtd2mysql`. `.github/workflows/pages.yml` rebuilds on a change to the site,
+on dispatch, and **after the nightly feed completes** - the page reports the current feed, so it has
+to be rebuilt when there is a new one rather than only when its own source changes.
+
+The site rebuild is idempotent and independent of the feed build's success: it reads the published
+release, so a night that fails to publish leaves the page describing the last feed that did.
 
 **E7 · ORR station usage on the website** *(depends E5)*
 Not a GTFS field — it is how QA effort gets prioritised. Enrichment reports on the Quality page
@@ -1770,13 +1812,13 @@ parallel by different people without touching the core.
 **84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
 
-B3 is absorbed into T1. **35 are done** — T1–T5, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4, B5, B6,
-B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, T8, T9, T10, T11, T12, T13, T6b and E8 - the last of
-those across master and Epic A. B14, B16,
-B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are deferred out of this pass. B24 and
-B25 are investigated and closed as source data the feed reports rather than corrects.
+B3 is absorbed into T1. **49 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, E1, E2, E5, E6 and E8, the last of those
+across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are
+deferred out of this pass. B24 and B25 are investigated and closed as source data the feed reports
+rather than corrects.
 
-That leaves **26 in scope** — 25 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **23 in scope** — 22 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
