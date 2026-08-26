@@ -20,6 +20,7 @@ import {Enricher} from "../enrich/Enricher";
 import {checkKeys, extend} from "../extend/Extend";
 import {Extension} from "../extend/Extension";
 import {TIMETABLE_ATTRIBUTION, createAttributions} from "../transform/CreateAttributions";
+import {buildReport} from "./BuildReport";
 import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
@@ -140,11 +141,24 @@ export class BuildFeed {
 
     // Written whatever ran, because the timetable always needs crediting and
     // an enricher's licence may make it a condition rather than a courtesy.
+    // Computed once and used twice, so the report cannot credit a different set
+    // of sources from the file.
+    const credits = createAttributions(this.attributions());
     const attributionsP = this.copy(
-      createAttributions(this.attributions()),
+      credits,
       "attributions.txt",
       a => [a.organization_name, a.attribution_licence]
     );
+
+    // What the sources did, kept where a workflow log cannot expire out from
+    // under it. Only when something ran: a feed with no enrichment has nothing
+    // to report that attributions.txt does not already say.
+    const reportP = reports.length > 0 || extended.reports.length > 0
+      ? this.output.write(
+        `${this.baseDir}/enrichment-report.json`,
+        JSON.stringify(buildReport(reports, extended.reports, credits), null, 2) + "\n"
+      )
+      : undefined;
 
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
     const transfersP = this.copy(
@@ -183,6 +197,7 @@ export class BuildFeed {
       feedInfoP,
       provenanceP,
       attributionsP,
+      reportP,
       ...extensionsP
     ]);
 

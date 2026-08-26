@@ -5,9 +5,10 @@
 Credit the sources the feed is built from, in `attributions.txt`.
 
 NaPTAN is Open Government Licence v3.0, and the licence makes acknowledgement a
-condition of use rather than a courtesy. Since NaPTAN was turned on for the
-nightly the feed had carried DfT survey coordinates with nothing crediting the
-DfT, which is a feed published outside its licence.
+condition of use rather than a courtesy. NaPTAN was turned on for the nightly
+and this landed before the first run that would have used it, so no published
+feed ever carried DfT coordinates without crediting the DfT - but it was one
+night away from doing so.
 
 Each enricher and extension already declared an `attribution` - who the source
 belongs to, on what terms, and whether the licence is share-alike - and nothing

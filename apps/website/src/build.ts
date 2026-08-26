@@ -17,13 +17,56 @@ const OWNER = "planarnetwork";
 const REPO = "dtd2mysql";
 const DOWNLOAD = `https://github.com/${OWNER}/${REPO}/releases/latest/download/gtfs.zip`;
 
-interface FeedMeta {
+export interface FeedMeta {
   built: string;
   commit: string;
   trips: number;
   feed_version: string;
   feed_start_date: string;
   feed_end_date: string;
+  /**
+   * Who the feed was built from, as the build itself credited them. Older
+   * releases predate this and have none, which is why the page falls back to
+   * naming the timetable rather than showing an empty list.
+   */
+  sources?: Source[];
+}
+
+interface Source {
+  organisation: string;
+  licence: string;
+  url?: string;
+}
+
+/**
+ * The one source every feed has had. Only used for a release published before
+ * the build started declaring them.
+ */
+const TIMETABLE: Source = {
+  organisation: "Rail Delivery Group",
+  licence: "Rail Settlement Plan data licence",
+  url: "https://raildata.org.uk/"
+};
+
+/**
+ * Sources and licences, from the feed rather than from here.
+ *
+ * NaPTAN is Open Government Licence v3.0, which makes acknowledgement a
+ * condition of use - so a hardcoded list that forgets a source is not just
+ * out of date, it is the page failing to do the one thing it is for.
+ */
+export function sources(feed: FeedMeta | undefined): string {
+  const listed = feed?.sources?.length ? feed.sources : [TIMETABLE];
+
+  return listed.map(source => `<dt>${escape(source.organisation)}</dt><dd>${
+    source.url
+      ? `<a href="${escape(source.url)}">${escape(source.licence)}</a>`
+      : escape(source.licence)
+  }</dd>`).join("\n  ");
+}
+
+function escape(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 async function latestFeed(): Promise<FeedMeta | undefined> {
@@ -98,7 +141,7 @@ published, and a build with a referential integrity error is never released.</p>
 
 <h2>Sources and licences</h2>
 <dl>
-  <dt>Timetable</dt><dd>Rail Delivery Group, via the Rail Data Marketplace</dd>
+  ${sources(feed)}
 </dl>
 
 <h2>Building it yourself</h2>
@@ -122,7 +165,11 @@ async function main(): Promise<void> {
   console.log(`Wrote ${path.join(out, "index.html")}`);
 }
 
-main().catch(err => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// Only when run, not when imported. Importing this to test the page it builds
+// should not fetch the last release and rewrite public/.
+if (require.main === module) {
+  main().catch(err => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}

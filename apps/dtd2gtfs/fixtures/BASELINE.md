@@ -20,9 +20,9 @@ timetable. Nothing else in the feed moves.
 
 It is written whatever ran, because the timetable always needs crediting. With an enricher
 configured it gains a row per source - the nightly, which runs NaPTAN as of #143, now credits the
-Department for Transport under the Open Government Licence. **That was the point of the ticket:
-OGL makes acknowledgement a condition of use, so the feed had been published outside its licence
-since NaPTAN was turned on.**
+Department for Transport under the Open Government Licence. **That was the point of the ticket: OGL
+makes acknowledgement a condition of use.** This landed before the first nightly that would have
+used NaPTAN, so no published feed ever carried DfT coordinates uncredited.
 
 `attribution_licence` is a producer extension. The spec has `organization_name` and a URL and no
 field for the terms, which is the one thing an attribution statement has to say. `unknown_column`
