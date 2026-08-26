@@ -1495,10 +1495,26 @@ enricher before believing it.
 `provenance.json` was being written through the CSV writer, so it came out as a column of
 `[object Object]`. `GTFSOutput` gains `write` for files that are documents rather than tables.
 
-**D4 · `@gb-transit/enrich-corpus`** *(depends D1)*
-OGL, nightly refresh. TIPLOC ↔ STANOX ↔ NLC ↔ CRS mapping replaces the
-`LEFT JOIN physical_station ON location = ps.tiploc_code` that currently drops stops. Count of
-recovered stop times reported. Blocks F3.
+**D4 · `@gb-transit/enrich-corpus`** — **closed, the data is already in the feed**
+
+The plan was TIPLOC ↔ STANOX ↔ NLC ↔ CRS from CORPUS, to replace the
+`LEFT JOIN physical_station ON location = ps.tiploc_code` that drops stops.
+
+The RDM location product was subscribed to and the 21 August snapshot compared against the `TI`
+records of `RJTTF918`. **They are the same dataset.** 12,046 of CORPUS's 12,083 TIPLOCs are in the
+feed, with **zero** NLC disagreements across all of them, one CRS difference (`KDRMSVR`) and one
+STANOX difference (`BEWDLEY`) — both Severn Valley Railway.
+
+The 37 TIPLOCs CORPUS has and the feed does not — `AVIE313`, `BLAR15`, `CARR333`, `HLYHSDG` and the
+like — **have no CRS code at all.** They are sidings, loops and depot roads, so not one of them
+would become a stop.
+
+And on the thing the ticket existed to fix: the build drops 51 calls, at `QHA` (46) and `ZUX` (5).
+Neither code is in CORPUS *or* in the `TI` records, so CORPUS recovers none of them. Whatever those
+two are, a location reference dataset is not where the answer is.
+
+So the ticket would have added a package, a bucket dependency and a nightly failure mode to deliver
+one heritage railway's STANOX. F3 depended on this for the mapping and does not need it either.
 
 **D5 · `@gb-transit/enrich-knowledgebase`** *(depends D1, C5)*
 `wheelchair_boarding` from step-free access data, replacing B7's `0`. `stop_url`, `stop_desc`. Token
@@ -1832,16 +1848,17 @@ earlier.
 Everything in D and F is independently shippable once D1 exists, so enrichers can be picked up in
 parallel by different people without touching the core.
 
-**84 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
-B4–B13 batch; B24 and B25 were found by B6's validator on its first run).
+**85 tickets** listed (B22 was found while building C2; B23, D11 and D12 came out of reviewing the
+B4–B13 batch; B24 and B25 were found by B6's validator on its first run; D13 was found by building
+D12, which did not fit the seam it was said to depend on).
 
-B3 is absorbed into T1. **49 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
-B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, E1, E2, E5, E6 and E8, the last of those
-across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5 are
-deferred out of this pass. B24 and B25 are investigated and closed as source data the feed reports
-rather than corrects.
+B3 is absorbed into T1. **51 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D12, D13, E1, E2, E5, E6 and E8, the last of
+those across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5
+are deferred out of this pass. B24, B25 and **D4** are investigated and closed as data the feed
+already carries or already reports.
 
-That leaves **23 in scope** — 22 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **21 in scope** — 20 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---
