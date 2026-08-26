@@ -1557,8 +1557,17 @@ retiring it today would delete the accessibility data for 2,442 stations. B7's n
 of them.
 
 MSN names are upper case and truncated to sixteen characters - `NEWCASTLE AIRPRT` - so retiring it
-would also take every readable station name. NaPTAN has names and D3 deliberately does not take
-them, because its `CommonName` is "Aberdare Rail Station" where the departure boards say "Aberdare".
+would also take every readable station name.
+
+**That half is now answerable.** D3 declined NaPTAN's names because its `CommonName` is "Aberdare
+Rail Station" where the departure boards say "Aberdare", and the suffix turns out to be the whole of
+the objection: strip it and **2,454 of the 2,580 names both sources describe are identical**. Of the
+126 that differ, 98 are a parenthesised county qualifier, 6 are case - with NaPTAN the better of the
+two - and 22 are genuinely different names. `docs/station-names.md` lists all of them.
+
+`NaptanEnricher` can take the names on `options: {names: true}`, off by default because renaming
+every station in the feed is a decision to make deliberately. What is still needed is somebody to
+read the 22, and a home for the 9 stations NaPTAN has no record of.
 
 **So the file cannot go until D5 lands and something supplies names.** What can go once reviewed is
 the *coordinates* within it, which is a smaller and different change than the ticket describes.

@@ -1,10 +1,10 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
+import {NAPTAN, NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
 import {STATION_GROUPS, StationGroupsExtension, groupsFromFeed} from "@gb-transit/extend-station-groups";
 import {parse} from "yaml";
-import {BuildConfig, BuildContext, Enricher, Extension, parseConfig} from "@gb-transit/gtfs";
+import {BuildConfig, BuildContext, Enricher, EnricherConfig, Extension, parseConfig} from "@gb-transit/gtfs";
 import {BuildFeed, buildContext, dateRange, option, options, stationCoordinates} from "@gb-transit/gtfs";
 import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
@@ -76,23 +76,21 @@ export async function build(argv: string[]): Promise<void> {
 function registered(config: BuildConfig | undefined): Enricher[] {
   const cache = path.join(os.tmpdir(), "gb-rail-enrichment");
 
-  const available: Enricher[] = [
-    new NaptanEnricher(naptanFromApi(cache))
-  ];
+  // Built from its settings rather than filtered after the fact, because an
+  // enricher's options are constructor arguments - `options:` was parsed and
+  // then dropped on the floor before this.
+  const available: {[key: string]: (settings: EnricherConfig) => Enricher} = {
+    [NAPTAN]: settings => new NaptanEnricher(
+      naptanFromApi(cache),
+      settings.priority ?? 50,
+      settings.options.inactive !== false,
+      settings.options.names === true
+    )
+  };
 
-  const wanted = new Map((config?.enrichers ?? []).map(e => [e.key, e]));
-
-  return available
-    .filter(enricher => wanted.has(enricher.key))
-    .map(enricher => {
-      const settings = wanted.get(enricher.key)!;
-
-      // A priority in the config outranks the enricher's own, which is how one
-      // source is made to win a field it would otherwise lose.
-      return settings.priority === undefined
-        ? enricher
-        : Object.assign(Object.create(Object.getPrototypeOf(enricher)), enricher, {priority: settings.priority});
-    });
+  return (config?.enrichers ?? [])
+    .filter(settings => available[settings.key] !== undefined)
+    .map(settings => available[settings.key](settings));
 }
 
 /**
@@ -137,7 +135,7 @@ function beside(given: readonly string[]): string {
   return fs.existsSync(first) && fs.statSync(first).isDirectory() ? first : path.dirname(first);
 }
 
-const REGISTERED = ["NAPTAN"];
+const REGISTERED = [NAPTAN];
 const REGISTERED_EXTENSIONS = [STATION_GROUPS];
 
 function readConfig(path: string | undefined): BuildConfig | undefined {

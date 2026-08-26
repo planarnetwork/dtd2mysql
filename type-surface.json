@@ -22,7 +22,8 @@
     "NaptanEnricher",
     "NaptanStop",
     "naptanFromApi",
-    "parseNaptan"
+    "parseNaptan",
+    "stationName"
   ],
   "extend-station-groups": [
     "FaresGroups",

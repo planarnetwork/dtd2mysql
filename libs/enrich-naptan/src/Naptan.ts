@@ -1,4 +1,5 @@
 import {Attribution, Enricher, EnrichmentReport, MutableFeed} from "@gb-transit/gtfs";
+import {stationName} from "./StationName";
 
 /**
  * One NaPTAN record, reduced to the parts a GTFS stop wants.
@@ -36,8 +37,14 @@ const ATTRIBUTION: Attribution = {
  *
  * Only coordinates by default. NaPTAN's `CommonName` is "Aberdare Rail Station"
  * where the departure boards say "Aberdare", so taking the name as well is a
- * decision for the config's `apply:` rather than something to inflict by
- * default.
+ * decision rather than something to inflict by default - `options: {names:
+ * true}` makes it.
+ *
+ * The suffix is the whole of that objection, and `stationName` removes it: of
+ * the 2,580 stations both sources describe, **2,454 names are then identical**.
+ * The 126 that differ are mostly county style - "Acton Bridge (Cheshire)"
+ * against "Acton Bridge", "(Lancs)" against "(Lancashire)" - with NaPTAN
+ * usually the better of the two on casing and occasionally wrong on fact.
  */
 export class NaptanEnricher implements Enricher<readonly NaptanStop[]> {
 
@@ -53,7 +60,13 @@ export class NaptanEnricher implements Enricher<readonly NaptanStop[]> {
      * 14 of the matches are, and a closed station's surveyed position is still
      * better than a rounded grid reference - but it should be a choice.
      */
-    private readonly includeInactive: boolean = true
+    private readonly includeInactive: boolean = true,
+    /**
+     * Whether to take NaPTAN's station name as well as its position. Off,
+     * because it is a change to what every station in the feed is called and
+     * that is a decision to make deliberately.
+     */
+    private readonly includeNames: boolean = false
   ) {}
 
   public fetch(): Promise<readonly NaptanStop[]> {
@@ -67,6 +80,7 @@ export class NaptanEnricher implements Enricher<readonly NaptanStop[]> {
     let matched = 0;
     let unmatched = 0;
     let inactive = 0;
+    let renamed = 0;
 
     for (const station of feed.stations) {
       const naptan = byTiploc.get(station.tiploc);
@@ -87,6 +101,20 @@ export class NaptanEnricher implements Enricher<readonly NaptanStop[]> {
       feed.set(station, "stop_lat", naptan.latitude, this);
       feed.set(station, "stop_lon", naptan.longitude, this);
       feed.set(station, "located", true, this);
+
+      if (this.includeNames) {
+        const name = stationName(naptan.name);
+
+        // A station NaPTAN calls only "Rail Station" would end up nameless,
+        // which is worse than the upper case name it already had.
+        // Counted before the write, not after: `set` mutates the stop, so
+        // comparing afterwards compares the new name with itself and reports
+        // that nothing was renamed.
+        if (name !== "" && name !== station.stop_name) {
+          renamed += feed.set(station, "stop_name", name, this) ? 1 : 0;
+        }
+      }
+
       matched++;
     }
 
@@ -96,6 +124,10 @@ export class NaptanEnricher implements Enricher<readonly NaptanStop[]> {
     // which live under other NaPTAN types entirely.
     if (unmatched > 0) {
       notes.push(`${unmatched} stops are not railway stations, so NaPTAN's rail records do not cover them`);
+    }
+
+    if (renamed > 0) {
+      notes.push(`${renamed} stations were renamed to what NaPTAN calls them`);
     }
 
     if (inactive > 0) {
