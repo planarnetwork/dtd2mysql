@@ -13,6 +13,15 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## NaPTAN station names, available and off
+
+**No change to any feed by default.** `type-surface.json` gains `stationName` from `enrich-naptan`;
+`NaptanEnricher` gains a fourth constructor argument, defaulted to the behaviour it already had.
+
+With `options: {names: true}` the enricher takes NaPTAN's station names, stripped of the
+"Rail Station" suffix - `NEWCASTLE AIRPRT` becomes `Newcastle Airport`. See `docs/station-names.md`
+for where the two sources disagree, and D7 for why it matters.
+
 ## D8 · attributions.txt
 
 `golden/` gains **`attributions.txt`**, with one row: Rail Delivery Group, the source of the
