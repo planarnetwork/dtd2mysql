@@ -37,11 +37,14 @@ describe("createAttributions", () => {
     expect(rows).to.have.length(1);
   });
 
+  // Order is not asserted anywhere here: attributions.txt is sorted by
+  // organisation and licence when it is written, so the order rows come out of
+  // this in is not part of what it promises.
   it("credits the same organisation twice when the terms differ", () => {
     const rows = createAttributions([naptan, {...naptan, licence: "ODbL"}]);
 
-    expect(rows.map(r => r.attribution_licence)).to.deep.equal([
-      "Open Government Licence v3.0", "ODbL"
+    expect(rows.map(r => r.attribution_licence).sort()).to.deep.equal([
+      "ODbL", "Open Government Licence v3.0"
     ]);
   });
 
