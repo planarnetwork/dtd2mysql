@@ -18,6 +18,7 @@ dist/
 .pnp.*
 
 # local e2e baseline work (feeds, snapshots, credentials)
+.env
 .env.local
 # The feeds are large, current and perishable, and the GTFS snapshot keeps the
 # payload it fingerprinted. The scripts and the table fingerprints are the

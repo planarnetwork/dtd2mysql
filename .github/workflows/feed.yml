@@ -87,7 +87,7 @@ jobs:
       - name: Build the feed
         run: |
           mkdir -p feed
-          yarn tsx apps/dtd2gtfs/src/index.ts build --source data/feeds --out feed | tee build.log
+          yarn tsx apps/dtd2gtfs/src/index.ts build --config gtfs.config.yaml --out feed | tee build.log
 
       # A published feed that fails referential integrity must never reach a
       # release, so the validator runs before anything is attached. What counts

@@ -1,0 +1,23 @@
+# The nightly build.
+#
+# A config rather than a command line, so a change to what the published feed
+# contains arrives as a diff somebody approved rather than as an edited flag in
+# a workflow file.
+
+source:
+  - data/feeds
+
+out: feed
+
+enrichers:
+  # Where a station actually is. The DTD gives coordinates as OSGB eastings and
+  # northings rounded to 100 metres, so unaided the best the feed can do is a
+  # point somewhere in the car park; NaPTAN surveys them.
+  #
+  # Coordinates only. NaPTAN's CommonName is "Aberdare Rail Station" where the
+  # departure boards say "Aberdare", so the name is deliberately not taken.
+  NAPTAN:
+    apply:
+      - stop_lat
+      - stop_lon
+      - located
