@@ -12,6 +12,24 @@ export interface NaptanStop {
   readonly active: boolean;
 }
 
+/**
+ * One NaPTAN station entrance - an `RSE` record.
+ *
+ * The ATCO code is locality-prefixed (`0100ASHYDN0`) rather than `9100` plus a
+ * TIPLOC, so unlike a rail record it carries nothing to join on but its name
+ * and its position.
+ */
+export interface NaptanEntrance {
+  readonly atco: string;
+  readonly name: string;
+  readonly latitude: number;
+  readonly longitude: number;
+  /** What tells two doors of one station apart, when NaPTAN says. */
+  readonly indicator: string;
+  readonly street: string;
+  readonly active: boolean;
+}
+
 export const NAPTAN = "NAPTAN";
 
 const ATTRIBUTION: Attribution = {

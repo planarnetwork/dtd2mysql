@@ -13,6 +13,18 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## F3 · station entrances
+
+**No change to the golden**, which builds with no enrichers. With `NAPTAN_ENTRANCES` configured the
+feed gains `location_type=2` stops - 3,371 on the August 2026 feed, across 2,019 of 3,056 stations.
+
+`type-surface.json` gains `LocationType` from `libs/gtfs`, which is `0 | 1 | 2` where
+`location_type` was `0 | 1`, and the entrance exports from `enrich-naptan`. All additions.
+
+`MutableFeed` gains `add()`, the narrow exception to "an enricher does not create stops": it can
+only extend the hierarchy under a station that already exists, and the addition is recorded in
+`provenance.json` like any other write.
+
 ## D8 · attributions.txt
 
 `golden/` gains **`attributions.txt`**, with one row: Rail Delivery Group, the source of the

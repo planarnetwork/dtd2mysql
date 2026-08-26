@@ -7,7 +7,7 @@ export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate";
 export type {FixedLink, FixedLinkRow} from "./entity/FixedLink";
 export {RouteType} from "./entity/Route";
 export type {Route, RouteID, RouteRow} from "./entity/Route";
-export type {Stop, StopRow, CRS, TIPLOC} from "./entity/Stop";
+export type {Stop, StopRow, CRS, TIPLOC, LocationType} from "./entity/Stop";
 export type {StopTime, StopTimeRow, Platform} from "./entity/StopTime";
 export {TransferType} from "./entity/Transfer";
 export type {Transfer, TransferRow, StopID} from "./entity/Transfer";

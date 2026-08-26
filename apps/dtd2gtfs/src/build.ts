@@ -1,7 +1,12 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
+import {
+  NaptanEnricher,
+  NaptanEntranceEnricher,
+  entrancesFromApi,
+  naptanFromApi
+} from "@gb-transit/enrich-naptan";
 import {STATION_GROUPS, StationGroupsExtension, groupsFromFeed} from "@gb-transit/extend-station-groups";
 import {parse} from "yaml";
 import {BuildConfig, BuildContext, Enricher, Extension, parseConfig} from "@gb-transit/gtfs";
@@ -77,7 +82,8 @@ function registered(config: BuildConfig | undefined): Enricher[] {
   const cache = path.join(os.tmpdir(), "gb-rail-enrichment");
 
   const available: Enricher[] = [
-    new NaptanEnricher(naptanFromApi(cache))
+    new NaptanEnricher(naptanFromApi(cache)),
+    new NaptanEntranceEnricher(entrancesFromApi(cache))
   ];
 
   const wanted = new Map((config?.enrichers ?? []).map(e => [e.key, e]));
@@ -137,7 +143,7 @@ function beside(given: readonly string[]): string {
   return fs.existsSync(first) && fs.statSync(first).isDirectory() ? first : path.dirname(first);
 }
 
-const REGISTERED = ["NAPTAN"];
+const REGISTERED = ["NAPTAN", "NAPTAN_ENTRANCES"];
 const REGISTERED_EXTENSIONS = [STATION_GROUPS];
 
 function readConfig(path: string | undefined): BuildConfig | undefined {

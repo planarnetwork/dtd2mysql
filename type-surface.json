@@ -19,9 +19,17 @@
   ],
   "enrich-naptan": [
     "NAPTAN",
+    "NAPTAN_ENTRANCES",
     "NaptanEnricher",
+    "NaptanEntrance",
+    "NaptanEntranceEnricher",
     "NaptanStop",
+    "describe",
+    "entrancesFromApi",
+    "metresBetween",
     "naptanFromApi",
+    "normalise",
+    "parseEntrances",
     "parseNaptan"
   ],
   "extend-station-groups": [
@@ -119,6 +127,7 @@
     "IdGenerator",
     "KeyValue",
     "Licence",
+    "LocationType",
     "MutableFeed",
     "NOWHERE",
     "NO_DAYS",

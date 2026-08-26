@@ -1821,19 +1821,31 @@ months. Unblocks raising E2's horizon.
 Geometry from Network Rail GIS track centrelines (OGL). `shape_dist_traveled` populated. Behind an
 `extensions:` flag, since it materially inflates feed size.
 
-**F3 · Station entrances and the rest of the node set from NaPTAN** *(depends D3, D4, B23)* —
-**closes #69**
+**F3 · Station entrances from NaPTAN** *(depends D3, B23)* — **done for entrances; the platform
+cross-check is impossible** — **closes #69**
 
 **The ids and the field layout are no longer part of this.** B23 publishes the ATCO codes and moved
 CRS to `stop_code`, because neither needs NaPTAN: `9100` plus the TIPLOC is the ATCO code for a rail
 stop, and the timetable carries the TIPLOC. What is left is what genuinely needs the external node
 set.
 
-NaPTAN supplies it under OGL, so this does not depend on OSM: `RSE` (4,543 **station entrances**),
-and `RPL` (**rail platforms**) to check the platforms B23 derives against the ones NaPTAN records —
-a platform in the timetable that NaPTAN does not have, or the reverse, is a data quality signal
-worth reporting. OSM is then needed only for pathway *edges* and lift/stair attributes in D6, which
-materially reduces the ODbL exposure there.
+NaPTAN supplies the entrances under OGL, so this does not depend on OSM. OSM is then needed only for
+pathway *edges* and lift/stair attributes in D6, which materially reduces the ODbL exposure there.
+
+**The platform cross-check is not possible and the ticket was wrong to assume it.** `RPL` is not a
+national platform set: it holds **three** records — Alston, Kirkhaugh and Lintley, the South
+Tynedale heritage railway. The `9100ZZTYKKH1` quoted above *is* Kirkhaugh, so this generalised from
+a single ATCO code without counting. `PLT` has 1,633 and is entirely `9400`, which is tram and
+metro. There is nothing to check B23's platforms against, and that half of F3 is dropped rather
+than deferred.
+
+**The entrances are real**: 4,308 `RSE` records, 3,974 with a position. They do not join on an
+identifier - entrance ATCO codes are locality-prefixed (`0100ASHYDN0`) rather than `9100` plus a
+TIPLOC - so the join is by normalised name and **verified by distance**. Exact names match 71%,
+normalising the "Rail Station" / "Railway Station" / "Station" suffixes gets 86%, and of those
+3,305 of 3,536 sit within 100 m of the station they matched. The distance check is what makes the
+name match safe: it rejects five records outright, including a NaPTAN entrance for Oakham positioned
+574 km from Oakham.
 
 Remaining `stops.txt` changes:
 
@@ -1841,7 +1853,7 @@ Remaining `stops.txt` changes:
 |---|---|---|
 | `location_type` | B23 sets `1` and `0` | adds `2` entrance |
 | `parent_station` | B23 sets it on boarding points | adds entrances |
-| `stop_desc` | `cate_interchange_status` | free text; interchange status is already carried by `transfers.txt` |
+| `stop_desc` | `cate_interchange_status` | free text; interchange status is already carried by `transfers.txt`. **Not done** - an entrance carries its street or indicator, but changing it on every station is a visible change to existing rows and wants its own decision |
 
 B23 broke the three-letter join once, with the ids it will keep. F3 adds stops rather than renaming
 them, so it needs no flag and no second break.
@@ -1922,13 +1934,13 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run; D13 was found by building
 D12, which did not fit the seam it was said to depend on).
 
-B3 is absorbed into T1. **53 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
-B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E4, E5, E6 and E8, the last of
+B3 is absorbed into T1. **54 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E4, E5, E6, E8 and F3, the last of
 those across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5
 are deferred out of this pass. B24, B25 and **D4** are investigated and closed as data the feed
 already carries or already reports, and **F5** is dropped as a model GB fares do not fit.
 
-That leaves **18 in scope** — 17 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **17 in scope** — 16 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---

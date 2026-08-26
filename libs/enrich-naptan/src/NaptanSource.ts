@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {parse} from "csv-parse/sync";
-import {NaptanStop} from "./Naptan";
+import {NaptanEntrance, NaptanStop} from "./Naptan";
 
 /**
  * The DfT's open data endpoint. `stopTypes` is accepted and ignored - the
@@ -15,6 +15,7 @@ const NAPTAN_CSV = "https://naptan.api.dft.gov.uk/v1/access-nodes?dataFormat=csv
  */
 const RAIL_PREFIX = "9100";
 
+
 /**
  * Read NaPTAN, from a cached copy if there is one.
  *
@@ -24,7 +25,14 @@ const RAIL_PREFIX = "9100";
  * NaPTAN changes slowly and a stale coordinate is better than no build.
  */
 export function naptanFromApi(cacheDirectory: string, maxAgeDays = 30): () => Promise<readonly NaptanStop[]> {
-  return async () => {
+  return async () => parseNaptan(await csvFile(cacheDirectory, maxAgeDays));
+}
+
+/**
+ * The NaPTAN CSV, downloaded if there is no fresh copy.
+ */
+async function csvFile(cacheDirectory: string, maxAgeDays: number): Promise<string> {
+  {
     const file = path.join(cacheDirectory, "naptan.csv");
 
     if (!fresh(file, maxAgeDays)) {
@@ -45,8 +53,18 @@ export function naptanFromApi(cacheDirectory: string, maxAgeDays = 30): () => Pr
       fs.renameSync(partial, file);
     }
 
-    return parseNaptan(fs.readFileSync(file, "utf8"));
-  };
+    return fs.readFileSync(file, "utf8");
+  }
+}
+
+/**
+ * The entrances out of the same cached download.
+ *
+ * Separate from `naptanFromApi` so an enricher takes only what it needs, and
+ * sharing the cache so this is one file on disk however many read it.
+ */
+export function entrancesFromApi(cacheDirectory: string, maxAgeDays = 30): () => Promise<readonly NaptanEntrance[]> {
+  return async () => parseEntrances(await csvFile(cacheDirectory, maxAgeDays));
 }
 
 function coordinate(value: string | undefined): number | undefined {
@@ -76,17 +94,50 @@ function fresh(file: string, maxAgeDays: number): boolean {
  * no network, and so a malformed row is a parsing problem rather than a
  * mysterious absence later.
  */
-export function parseNaptan(csv: string): NaptanStop[] {
-  const rows: {[column: string]: string}[] = parse(csv, {
+export function parseEntrances(csv: string): NaptanEntrance[] {
+  const entrances: NaptanEntrance[] = [];
+
+  for (const row of rows(csv)) {
+    if (row.StopType !== "RSE") {
+      continue;
+    }
+
+    const latitude = coordinate(row.Latitude);
+    const longitude = coordinate(row.Longitude);
+
+    // 334 entrances ship with no position. A door that could be anywhere is
+    // not a door, and unlike a station there is nothing else to fall back on.
+    if (latitude === undefined || longitude === undefined) {
+      continue;
+    }
+
+    entrances.push({
+      atco: row.ATCOCode ?? "",
+      name: row.CommonName ?? "",
+      latitude,
+      longitude,
+      indicator: row.Indicator ?? "",
+      street: row.Street ?? "",
+      active: row.Status !== "inactive"
+    });
+  }
+
+  return entrances;
+}
+
+function rows(csv: string): {[column: string]: string}[] {
+  return parse(csv, {
     columns: true,
     bom: true,
     skip_empty_lines: true,
     relax_column_count: true
   });
+}
 
+export function parseNaptan(csv: string): NaptanStop[] {
   const stops: NaptanStop[] = [];
 
-  for (const row of rows) {
+  for (const row of rows(csv)) {
     if (row.StopType !== "RLY" || !row.ATCOCode?.startsWith(RAIL_PREFIX)) {
       continue;
     }

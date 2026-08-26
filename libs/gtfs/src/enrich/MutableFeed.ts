@@ -117,6 +117,61 @@ export class MutableFeed implements FeedView {
     return applied;
   }
 
+  /**
+   * Add a stop the DTD has no concept of, attached to one it does.
+   *
+   * The narrow exception to "an enricher does not create stops". A station
+   * entrance is not a detail of the station - it is a place, with its own
+   * position, that a rider walks through - and there is nowhere else in GTFS to
+   * put one. What keeps this from being a hole in the seam is that it can only
+   * *extend* the hierarchy: the parent has to exist already, so an enricher can
+   * describe a station the feed has in more detail and cannot invent a station
+   * the timetable never mentioned.
+   *
+   * Recorded like any other write, so provenance.json answers "where did this
+   * stop come from" as well as "why does this field say that".
+   *
+   * Returns whether it was added. A duplicate id is refused rather than
+   * overwriting, because two sources claiming the same stop is a collision to
+   * report, not a contest to resolve - they are not the same place.
+   */
+  public add(stop: Stop, by: Enricher): boolean {
+    if (this.stopIndex.has(stop.stop_id)) {
+      this.rejected++;
+
+      return false;
+    }
+
+    if (stop.parent_station === null || !this.stopIndex.has(stop.parent_station)) {
+      this.orphaned++;
+
+      return false;
+    }
+
+    this.provenance.record("stop", stop.stop_id, "added", {
+      enricher: by.key,
+      priority: by.priority,
+      value: stop.stop_name
+    });
+
+    this.stops.push(stop);
+    this.stopIndex.set(stop.stop_id, stop);
+    // The station index is built on demand and would not know about this one.
+    this.stationIndex = undefined;
+
+    return true;
+  }
+
+  /** Stops refused because something already had that id. */
+  public get duplicates(): number {
+    return this.rejected;
+  }
+
+  /** Stops refused because the station they hang from is not in the feed. */
+  public get orphans(): number {
+    return this.orphaned;
+  }
+
   public get ledger(): Provenance {
     return this.provenance;
   }
@@ -131,6 +186,8 @@ export class MutableFeed implements FeedView {
   }
 
   private refusals = 0;
+  private rejected = 0;
+  private orphaned = 0;
 
 }
 

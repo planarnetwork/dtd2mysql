@@ -29,7 +29,11 @@ export interface Stop {
   located: boolean;
   zone_id: number;
   stop_url: string;
-  location_type: 0 | 1;
+  /**
+   * 0 a boarding point, 1 a station, 2 an entrance. The entrances come from
+   * NaPTAN rather than the DTD, which has no concept of a door.
+   */
+  location_type: LocationType;
   parent_station: StopID | null;
   /**
    * The platform a boarding facility is, set only on a child stop. Null on a
@@ -39,6 +43,8 @@ export interface Stop {
   stop_timezone: string;
   wheelchair_boarding: 0 | 1 | 2;
 }
+
+export type LocationType = 0 | 1 | 2;
 
 export type StopID = string;
 export type CRS = string;
@@ -54,7 +60,7 @@ export interface StopRow {
   stop_desc: string;
   zone_id: number;
   stop_url: string;
-  location_type: 0 | 1;
+  location_type: LocationType;
   parent_station: StopID | null;
   platform_code: string | null;
   stop_timezone: string;
