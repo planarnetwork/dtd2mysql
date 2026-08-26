@@ -1551,14 +1551,26 @@ deleted until that review happens**: replacing 2,594 hand-checked coordinates on
 
 `agency.ts` is untouched and needs a live source identified.
 
-**D8 · Licence-tiered builds and `attributions.txt`** *(depends D1)*
-`attributions.txt` generated from enricher `attribution` fields. The `licence:` tier produces
-**`gtfs-slim.zip`** (OGL-compatible sources only) and **`gtfs-full.zip`** (includes ODbL). A build
-that mixes a share-alike source into the slim tier fails.
+**D8 · `attributions.txt`** — **done**. Licence tiering deferred
 
-There is deliberately no plain `gtfs.zip`, so no stable `releases/latest/download/gtfs.zip` link
-exists. E5 must state which tier a consumer wants; `gtfs-slim.zip` is the documented default
-recommendation, with `gtfs-full.zip` for consumers who can accept ODbL share-alike. Blocks E2.
+`attributions.txt` is generated from the `attribution` each enricher and extension declares, plus
+the timetable's own — RDG is not an enricher, and a feed crediting the source of its coordinates but
+not the source of its trains reads as a complete list and is not one. The declaration stays on the
+source because the thing that knows a licence is the code that fetches it; a central list goes stale
+silently.
+
+The **licence is a producer extension**: the spec has `organization_name` and a URL and no field for
+the terms, which is the one thing an attribution statement has to say.
+
+**Licence tiering is not built.** `gtfs-slim.zip` / `gtfs-full.zip` guards against mixing a
+share-alike source into a permissive build, and nothing in the feed is share-alike — NaPTAN and RDG
+are both permissive. The `shareAlike` flag is declared and recorded; the split is worth building
+when D6's ODbL data arrives and not before. So there is still a plain `gtfs.zip` and the stable
+`releases/latest/download/gtfs.zip` link E5 uses, and E2 was never blocked in practice.
+
+Deduplication is by organisation and licence, **first declaration winning**, because two sources can
+describe the same organisation and taking the last would make the published credit depend on the
+order enrichers were configured in.
 
 **D9 · `@gb-transit/enrich-darwin` — via locations** *(depends D1, B8)*
 New package; Push Port / Darwin Timetable XML, distinct from the Knowledgebase API in D5.
@@ -1852,13 +1864,13 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run; D13 was found by building
 D12, which did not fit the seam it was said to depend on).
 
-B3 is absorbed into T1. **51 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
-B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D12, D13, E1, E2, E5, E6 and E8, the last of
+B3 is absorbed into T1. **52 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E5, E6 and E8, the last of
 those across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5
 are deferred out of this pass. B24, B25 and **D4** are investigated and closed as data the feed
 already carries or already reports.
 
-That leaves **21 in scope** — 20 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **20 in scope** — 19 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---

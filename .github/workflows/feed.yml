@@ -142,20 +142,29 @@ jobs:
             const info = fs.readFileSync('feed/feed_info.txt', 'utf8').trim().split('\n');
             const [names, values] = info.map(line => line.split(','));
             const feed = Object.fromEntries(names.map((n, i) => [n, values[i]]));
+            // The sources and what they did come from the build rather than
+            // from here, so the page describing the feed cannot claim a source
+            // the feed was not built from. Absent when nothing was enriched.
+            const report = fs.existsSync('feed/enrichment-report.json')
+              ? JSON.parse(fs.readFileSync('feed/enrichment-report.json', 'utf8'))
+              : {sources: [], enrichers: [], extensions: []};
             fs.writeFileSync('feed/feed-meta.json', JSON.stringify({
               built: new Date().toISOString(),
               commit: '${{ github.sha }}',
               trips: ${{ steps.compare.outputs.trips }},
               feed_version: feed.feed_version,
               feed_start_date: feed.feed_start_date,
-              feed_end_date: feed.feed_end_date
+              feed_end_date: feed.feed_end_date,
+              sources: report.sources,
+              enrichers: report.enrichers,
+              extensions: report.extensions
             }, null, 2));
           "
           cat feed/feed-meta.json
 
       - name: Package
         run: |
-          cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json && cd ..
+          cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json enrichment-report.json && cd ..
           ls -la gtfs.zip
 
       - uses: actions/upload-artifact@v4
@@ -165,6 +174,7 @@ jobs:
             gtfs.zip
             feed/validation.json
             feed/feed-meta.json
+            feed/enrichment-report.json
           retention-days: 14
 
       # The tag is the date, so the release list reads as a history of feeds and
@@ -186,6 +196,6 @@ jobs:
                 '| Built from | ' + m.commit.slice(0, 7) + ' |'
               ].join('\n')
             ")" \
-            gtfs.zip feed/validation.json feed/feed-meta.json
+            gtfs.zip feed/validation.json feed/feed-meta.json feed/enrichment-report.json
         env:
           GH_TOKEN: ${{ github.token }}
