@@ -811,8 +811,12 @@ rail vehicle by 2020-01-01, so `1` is defensible for a train; 23% of trips are n
 
 Inferring `1` from `route_type` was considered and rejected: it is a regulatory assumption encoded
 in code, and the case it gets wrong — a rail replacement coach — is the one where a false `1`
-strands somebody. D11 sources it instead. Note that the trip flag is only half the question:
-end-to-end access also needs `stops.wheelchair_boarding`, which is D5.
+strands somebody. D11 sources it instead.
+
+The trip flag is only half the question: end-to-end access also needs `stops.wheelchair_boarding`.
+**That half is already answered** — `station-coordinates.ts` supplies it for 2,442 stations, 1,648
+of them fully accessible. `toStop` hardcodes `0` and the override puts the real value back, which
+is why D7 cannot simply delete that file. D5 would replace the source, not fill a gap.
 
 **B8 · `trip_headsign` should be the destination** — **done**
 Currently the TUID. Destination station name is available from existing stop data with no external
@@ -1517,8 +1521,13 @@ So the ticket would have added a package, a bucket dependency and a nightly fail
 one heritage railway's STANOX. F3 depended on this for the mapping and does not need it either.
 
 **D5 · `@gb-transit/enrich-knowledgebase`** *(depends D1, C5)*
-`wheelchair_boarding` from step-free access data, replacing B7's `0`. `stop_url`, `stop_desc`. Token
-via RDM. Responses cached to disk so the nightly is not at the mercy of the API.
+`wheelchair_boarding` from step-free access data, `stop_url`, `stop_desc`. Token via RDM. Responses
+cached to disk so the nightly is not at the mercy of the API.
+
+**Not "replacing B7's `0`", as this ticket used to say.** B7 set `trips.wheelchair_accessible` to
+`0`; `stops.wheelchair_boarding` was never `0` for a station in `station-coordinates.ts`, which is
+2,442 of them. D5 replaces a hand-maintained source with a live one and covers the stations the file
+misses - a smaller and better-defined job than the ticket claimed, and the thing that unblocks D7.
 
 **D6 · `@gb-transit/enrich-osm`** *(depends D1, F3)*
 **ODbL — share-alike.** Gated behind D8, so it only contributes to `gtfs-full.zip`.
@@ -1529,25 +1538,45 @@ lift, stair and `wheelchair=*` attributes and `levels.txt`. Consumes a pre-built
 never the full GB pbf at build time. Because the nodes are OGL, `gtfs-slim.zip` can still carry the
 station hierarchy — only the pathway graph is tier-restricted.
 
-**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)* — *measured, awaiting review*
+**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)* — **blocked, and the
+ticket was wrong about why**
 
-Every station previously covered by the override is covered by an enricher or explicitly listed in a
-small documented `overrides.yaml` with a reason per entry. Agency list derives from live TOC
-reference data.
+The premise was that `station-coordinates.ts` is a coordinates file that NaPTAN now supersedes. It
+is not. `toStop` overlays the whole entry with `Object.assign`, so the file is the source of three
+fields, and NaPTAN supplies exactly one of them:
 
-The measurement the ticket asks for is done and lives in `docs/coordinate-review.md`:
+| what it supplies | entries | who could replace it |
+|---|---|---|
+| `stop_lat` / `stop_lon` | 2,594 | **NaPTAN**, covering 2,580 |
+| `wheelchair_boarding` | **2,442** — 1,648 accessible, 794 partial | D5, blocked on an RDM credential |
+| `stop_name`, readable | **2,593** | nothing. NaPTAN declines on purpose |
 
-- the override file has **2,594 entries** and NaPTAN covers **2,580** of them;
-- **14 are not covered** - Bond Street, Barking Riverside, Ashford International and others NaPTAN
-  either has no record for or ships with a blank position - and those keep an override until
-  something else covers them;
-- **125 differ by more than 100 metres**, out to 3.2 km at Eskbank.
+`toStop` hardcodes `wheelchair_boarding: 0` and this file is what puts real values back, so
+retiring it today would delete the accessibility data for 2,442 stations. B7's note that
+`wheelchair_boarding` is `0` pending D5 is wrong for any station in this file, which is almost all
+of them.
 
-The large differences look like stations that moved or reopened - Eskbank and Laurencekirk are on
-reinstated lines, so the override is probably the older position - but that is a guess and the
-report exists so somebody decides rather than a script silently preferring one source. **Nothing is
-deleted until that review happens**: replacing 2,594 hand-checked coordinates on the strength of a
-99.5% match rate would be trading a known state for an unknown one.
+MSN names are upper case and truncated to sixteen characters - `NEWCASTLE AIRPRT` - so retiring it
+would also take every readable station name. NaPTAN has names and D3 deliberately does not take
+them, because its `CommonName` is "Aberdare Rail Station" where the departure boards say "Aberdare".
+
+**So the file cannot go until D5 lands and something supplies names.** What can go once reviewed is
+the *coordinates* within it, which is a smaller and different change than the ticket describes.
+
+Even that is gated. `docs/coordinate-review.md` has the measurement: 2,580 of 2,594 covered, **14
+not** - Bond Street, Barking Riverside and others NaPTAN has no record for or ships blank - and
+**125 differing by more than 100 metres**, out to 3.2 km at Eskbank. The large ones look like
+stations that moved or reopened, so the override is probably the older position, but that is a guess
+and the report exists so somebody decides rather than a script silently preferring one source.
+
+There is a second gate nobody had noticed: **the coordinates only look redundant because the nightly
+runs NaPTAN.** A build with no enrichers configured - the library default, and what every other
+consumer gets - has this file as its only good coordinates. Dropping them makes NaPTAN mandatory in
+practice, which is a decision about what `dtd2gtfs` is rather than a cleanup.
+
+`libs/gtfs/src/data/station-coordinates.spec.ts` now asserts what the file supplies beyond
+coordinates, so a future retirement fails there, saying what it costs, rather than arriving as a
+golden diff somebody rebaselines.
 
 `agency.ts` is untouched and needs a live source identified.
 

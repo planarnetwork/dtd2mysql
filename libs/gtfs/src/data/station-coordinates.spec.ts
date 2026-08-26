@@ -47,3 +47,46 @@ describe("stationCoordinates", () => {
   });
 
 });
+
+/**
+ * What else this file supplies, which its name does not say and nothing checked.
+ *
+ * `toStop` overlays the whole entry with `Object.assign`, so this is not a
+ * coordinates file - it is the source of three of the four fields it carries.
+ * D7 reads as "retire station-coordinates.ts now NaPTAN covers 2,580 of 2,594",
+ * and NaPTAN covers **only the coordinates**: deleting the file would take the
+ * accessibility data and the readable names with it.
+ *
+ * These assertions exist so that deletion fails here, saying what it costs,
+ * rather than showing up as a golden diff somebody rebaselines.
+ */
+describe("what retiring the file would cost", () => {
+
+  const entries = Object.entries(stationCoordinates);
+
+  // 1,648 fully accessible and 794 partially. B7 left wheelchair_boarding at 0
+  // in toStop and this is what puts real values back; D5 was meant to replace
+  // it and is blocked on a Rail Data Marketplace credential.
+  it("is the only source of station accessibility", () => {
+    const known = entries.filter(([, s]) => s.wheelchair_boarding !== 0);
+
+    expect(known.length).to.be.greaterThan(2000);
+  });
+
+  // MSN names are upper case and truncated to sixteen characters - NEWCASTLE
+  // AIRPRT. NaPTAN has names and deliberately does not supply them, because its
+  // CommonName is "Aberdare Rail Station" where the departure boards say
+  // "Aberdare".
+  it("is the only source of readable station names", () => {
+    const readable = entries.filter(([, s]) => s.stop_name !== s.stop_name.toUpperCase());
+
+    expect(readable.length).to.be.greaterThan(2000);
+  });
+
+  it("supplies a name for every station it knows", () => {
+    const nameless = entries.filter(([, s]) => !s.stop_name).map(([crs]) => crs);
+
+    expect(nameless).to.deep.equal([]);
+  });
+
+});
