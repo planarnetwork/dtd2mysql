@@ -1538,56 +1538,41 @@ lift, stair and `wheelchair=*` attributes and `levels.txt`. Consumes a pre-built
 never the full GB pbf at build time. Because the nodes are OGL, `gtfs-slim.zip` can still carry the
 station hierarchy — only the pathway graph is tier-restricted.
 
-**D7 · Retire `station-coordinates.ts` and `agency.ts`** *(depends D3, D5)* — **blocked, and the
-ticket was wrong about why**
+**D7 · Retire `station-coordinates.ts`** — **closed. The file stays; NaPTAN supersedes it at run
+time instead**
 
-The premise was that `station-coordinates.ts` is a coordinates file that NaPTAN now supersedes. It
-is not. `toStop` overlays the whole entry with `Object.assign`, so the file is the source of three
-fields, and NaPTAN supplies exactly one of them:
+The ticket assumed the file is a coordinates file that NaPTAN now makes redundant. It is not.
+`toStop` overlays the whole entry with `Object.assign`, so it is the source of three fields:
 
 | what it supplies | entries | who could replace it |
 |---|---|---|
 | `stop_lat` / `stop_lon` | 2,594 | **NaPTAN**, covering 2,580 |
-| `wheelchair_boarding` | **2,442** — 1,648 accessible, 794 partial | D5, blocked on an RDM credential |
-| `stop_name`, readable | **2,593** | nothing. NaPTAN declines on purpose |
+| `stop_name`, readable | **2,593** | **NaPTAN**, 95% identical once the suffix is stripped |
+| `wheelchair_boarding` | **2,442** — 1,648 accessible, 794 partial | nothing. D5, waiting on RDM |
 
-`toStop` hardcodes `wheelchair_boarding: 0` and this file is what puts real values back, so
-retiring it today would delete the accessibility data for 2,442 stations. B7's note that
+`toStop` hardcodes `wheelchair_boarding: 0` and this file is what puts real values back, so deleting
+it would take the accessibility data for 2,442 stations with it. B7's note that
 `wheelchair_boarding` is `0` pending D5 is wrong for any station in this file, which is almost all
 of them.
 
-MSN names are upper case and truncated to sixteen characters - `NEWCASTLE AIRPRT` - so retiring it
-would also take every readable station name.
+**The decision taken: NaPTAN is trusted over the file, and the file stays.** Those are not in
+tension. NaPTAN writes over the file's values at priority 50 whenever it is configured, so a build
+that runs it already gets NaPTAN's answer for every field NaPTAN has - the coordinates today and the
+names on `options: {names: true}`. The file is what a build with **no enrichers** falls back to, and
+that is the library default: `dtd2gtfs` must produce a usable feed without a network fetch, so
+deleting the fallback would make NaPTAN mandatory in practice.
 
-**That half is now answerable.** D3 declined NaPTAN's names because its `CommonName` is "Aberdare
-Rail Station" where the departure boards say "Aberdare", and the suffix turns out to be the whole of
-the objection: strip it and **2,454 of the 2,580 names both sources describe are identical**. Of the
-126 that differ, 98 are a parenthesised county qualifier, 6 are case - with NaPTAN the better of the
-two - and 22 are genuinely different names. `docs/station-names.md` lists all of them.
+This also settles the reviews the ticket was waiting on. `docs/coordinate-review.md` lists 125
+stations differing by more than 100 m and `docs/station-names.md` lists 126 names that differ; both
+now resolve to NaPTAN by policy rather than one at a time. They stay as a record of where the two
+sources disagree, which is worth having when somebody asks why a coordinate moved.
 
-`NaptanEnricher` can take the names on `options: {names: true}`, off by default because renaming
-every station in the feed is a decision to make deliberately. What is still needed is somebody to
-read the 22, and a home for the 9 stations NaPTAN has no record of.
+What is left of the original intent - not carrying unverified hand-maintained data - is served by
+the file being a fallback rather than the answer. `station-coordinates.spec.ts` asserts what it
+supplies, including the accessibility and the names, so a future deletion fails there saying what it
+costs.
 
-**So the file cannot go until D5 lands and something supplies names.** What can go once reviewed is
-the *coordinates* within it, which is a smaller and different change than the ticket describes.
-
-Even that is gated. `docs/coordinate-review.md` has the measurement: 2,580 of 2,594 covered, **14
-not** - Bond Street, Barking Riverside and others NaPTAN has no record for or ships blank - and
-**125 differing by more than 100 metres**, out to 3.2 km at Eskbank. The large ones look like
-stations that moved or reopened, so the override is probably the older position, but that is a guess
-and the report exists so somebody decides rather than a script silently preferring one source.
-
-There is a second gate nobody had noticed: **the coordinates only look redundant because the nightly
-runs NaPTAN.** A build with no enrichers configured - the library default, and what every other
-consumer gets - has this file as its only good coordinates. Dropping them makes NaPTAN mandatory in
-practice, which is a decision about what `dtd2gtfs` is rather than a cleanup.
-
-`libs/gtfs/src/data/station-coordinates.spec.ts` now asserts what the file supplies beyond
-coordinates, so a future retirement fails there, saying what it costs, rather than arriving as a
-golden diff somebody rebaselines.
-
-`agency.ts` is untouched and needs a live source identified.
+`agency.ts` is untouched and needs a live source identified. It is not this ticket.
 
 **D8 · `attributions.txt`** — **done**. Licence tiering deferred
 
@@ -1835,8 +1820,23 @@ Geometry from Network Rail GIS track centrelines (OGL). `shape_dist_traveled` po
 
 **The ids and the field layout are no longer part of this.** B23 publishes the ATCO codes and moved
 CRS to `stop_code`, because neither needs NaPTAN: `9100` plus the TIPLOC is the ATCO code for a rail
-stop, and the timetable carries the TIPLOC. What is left is what genuinely needs the external node
-set.
+stop, and the timetable carries the TIPLOC.
+
+**#69 is closed by B23, not by this.** The issue asks for platforms - "step-by-step directions to
+access the platform", St Pancras high and low level - and B23 made platforms child stops. This
+ticket claiming to close it was a misreading.
+
+**The platform cross-check is not possible.** `RPL` is not a national platform set: it holds
+**three** records - Alston, Kirkhaugh and Lintley, the South Tynedale heritage railway. The
+`9100ZZTYKKH1` quoted below *is* Kirkhaugh, so this generalised from a single ATCO code without
+counting. `PLT` has 1,633 and is entirely `9400`, which is tram and metro. That half is dropped.
+
+**The entrances were built and thrown away** (#148). 4,308 `RSE` records join to stations by
+normalised name verified by distance, and 3,371 land in the feed. They were closed unmerged because
+without `pathways.txt` an entrance is a disconnected node - there is no edge from a door to a
+platform, so nothing can route through one - and that is 3,371 rows for a consumer that does not
+exist. Their value is as anchors for D6's pathway graph, and D6 is ODbL, gated behind the licence
+tiering deferred in D8. Worth reviving when D6 is real; the branch is `restructure/station-entrances`.
 
 NaPTAN supplies it under OGL, so this does not depend on OSM: `RSE` (4,543 **station entrances**),
 and `RPL` (**rail platforms**) to check the platforms B23 derives against the ones NaPTAN records —
@@ -1931,13 +1931,14 @@ parallel by different people without touching the core.
 B4–B13 batch; B24 and B25 were found by B6's validator on its first run; D13 was found by building
 D12, which did not fit the seam it was said to depend on).
 
-B3 is absorbed into T1. **53 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
+B3 is absorbed into T1. **54 are done** — T1–T5, T6b, T8–T13, A1–A3, A5–A10, C1–C3, B0, B1, B2, B4,
 B5, B6, B7–B9, B10–B13, B15, B17, B22, B23, D1, D2, D3, D8, D12, D13, E1, E2, E4, E5, E6 and E8, the last of
 those across master and Epic A. B14, B16, B18, B19, B20 and B21 are resolved by #121. A4, C4 and C5
 are deferred out of this pass. B24, B25 and **D4** are investigated and closed as data the feed
-already carries or already reports, and **F5** is dropped as a model GB fares do not fit.
+already carries or already reports, **D7** is closed with the file kept as a fallback, and **F5** is
+dropped as a model GB fares do not fit.
 
-That leaves **18 in scope** — 17 untouched and T7 partly done — all of them in D, E, F or the
+That leaves **16 in scope** — 15 untouched and T7 partly done — all of them in D, E, F or the
 remainder of T.
 
 ---

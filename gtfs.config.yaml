@@ -14,10 +14,20 @@ enrichers:
   # northings rounded to 100 metres, so unaided the best the feed can do is a
   # point somewhere in the car park; NaPTAN surveys them.
   #
-  # Coordinates only. NaPTAN's CommonName is "Aberdare Rail Station" where the
-  # departure boards say "Aberdare", so the name is deliberately not taken.
+  # Names too, since #149: NaPTAN's CommonName is "Aberdare Rail Station" where
+  # the departure boards say "Aberdare", and stripping that suffix leaves 2,454
+  # of 2,580 names identical to the ones the override file carries.
   NAPTAN:
+    options:
+      # NaPTAN is trusted over the hand-maintained override file wherever it
+      # has an answer. The file stays as the fallback for a build that runs no
+      # enrichers, which is what the library does by default.
+      names: true
     apply:
       - stop_lat
       - stop_lon
       - located
+      # MSN names are upper case and truncated to sixteen characters, so the
+      # feed called Newcastle Airport NEWCASTLE AIRPRT. 168 stations are
+      # renamed; docs/station-names.md records where the two sources differ.
+      - stop_name
