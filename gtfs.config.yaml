@@ -31,3 +31,13 @@ enrichers:
       # feed called Newcastle Airport NEWCASTLE AIRPRT. 168 stations are
       # renamed; docs/station-names.md records where the two sources differ.
       - stop_name
+
+extensions:
+  # Group stations as GTFS Fares v2 areas: 1072 "London Terminals" is Euston,
+  # Waterloo, King's Cross and fifteen others, and a rider holding a ticket to
+  # it needs to know which stations that is.
+  #
+  # Membership comes from the fares refresh, which the workflow downloads
+  # alongside the timetable. With no `source` option the package looks beside
+  # the timetable feed, which is where it lands.
+  - STATION_GROUPS
