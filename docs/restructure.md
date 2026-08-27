@@ -1617,7 +1617,8 @@ The value is per *vehicle*, and the feed has trips, so the mapping depends on wh
 keyed by. Where nothing resolves, trips stay at `0` rather than inheriting a mode-level guess.
 Coverage report by operator, as D10.
 
-**D12 · `@gb-transit/extend-station-groups` — `areas.txt` and `stop_areas.txt`** — **done**
+**D12 · `@gb-transit/extend-station-groups` — `areas.txt` and `stop_areas.txt`** — **done, and in
+the nightly**
 
 RDG group stations: four-digit NLC groups such as `1072` "London Terminals" covering Euston,
 Waterloo, King's Cross and 15 others. Useful for journey planning and required for honest fares.
@@ -1654,7 +1655,11 @@ not depend on read order. The table does mix station groups with travelcard zone
 `area_name`, so the kind stays legible without this deciding which fares are real.
 
 On the August 2026 feed: **730 areas, 1,217 memberships, and 4 members out of 1,221 naming a station
-the feed does not contain.** One group has no member in the feed and is not published — an area with
+the feed does not contain.** The package shipped in #142 and the nightly did not run it until the
+config asked for it - `extensions:` was wired and then left empty, so the first published feed after
+it merged had no `areas.txt`. Turning it on also needed the workflow to download the **fares**
+refresh, which it never had: the timetable download alone leaves nothing for the extension to read
+and the build fails rather than quietly publishing a feed without the file. One group has no member in the feed and is not published — an area with
 no members cannot be told from one the build failed to resolve. `1072` comes out with all 18.
 
 **D12 did not fit D1.** An `Enricher` writes fields on entities the DTD already produced, through a

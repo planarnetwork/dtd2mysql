@@ -84,6 +84,15 @@ jobs:
           yarn tsx apps/dtd2mysql/src/index.ts --download-timetable data/feeds/
           ls -la data/feeds/
 
+      # The station groups extension reads the fares refresh for its group
+      # membership. A failure here fails the build rather than quietly
+      # publishing a feed without areas.txt: a file that silently comes and goes
+      # is worse than one that is never there.
+      - name: Download the fares feed
+        run: |
+          yarn tsx apps/dtd2mysql/src/index.ts --download-fares data/feeds/
+          ls -la data/feeds/
+
       - name: Build the feed
         run: |
           mkdir -p feed
