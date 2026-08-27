@@ -23,6 +23,14 @@ interface Cursor {
   stops: StopTime[];
   prevRow?: ScheduleStopTimeRow;
   departureHour: number;
+  /**
+   * Whether the last stop in `stops` is somewhere the service runs through
+   * rather than calls at. Kept here because a StopTime does not say: a passing
+   * point is a call with pickup_type and drop_off_type 1, and so is an
+   * operational stop, and only one of the two should give way to a real call at
+   * the same station.
+   */
+  lastIsPassing: boolean;
 }
 
 /**
@@ -118,6 +126,7 @@ export class ScheduleBuilder {
     if (cursor.prevRow && startsSchedule) {
       this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
       cursor.stops = [];
+      cursor.lastIsPassing = false;
     }
 
     // The origin's departure hour decides whether a later stop has rolled over
@@ -138,14 +147,23 @@ export class ScheduleBuilder {
     }
     else if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
       const stop = this.createStop(row, cursor.stops.length + 1, cursor.departureHour);
+      const passing = !!row.scheduled_pass_time;
 
       if (cursor.prevRow && cursor.prevRow.id === row.id && row.crs_code === cursor.prevRow.crs_code) {
-        if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
+        // Two timing points of one service can share a CRS - a station and the
+        // junction on its approach - and only one of them belongs in the feed.
+        // The one that boards or alights wins, and anything the service
+        // actually calls at beats one it only runs through: without that second
+        // clause a passing point displaced 28 request stops, which board on
+        // request and so have no 0 to win with.
+        if (stop.pickup_type === 0 || stop.drop_off_type === 0 || (cursor.lastIsPassing && !passing)) {
           cursor.stops[cursor.stops.length - 1] = Object.assign(stop, { stop_sequence: cursor.stops.length });
+          cursor.lastIsPassing = passing;
         }
       }
       else {
         cursor.stops.push(stop);
+        cursor.lastIsPassing = passing;
       }
     }
 
@@ -157,6 +175,7 @@ export class ScheduleBuilder {
       this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
       cursor.prevRow = undefined;
       cursor.stops = [];
+      cursor.lastIsPassing = false;
     }
   }
 
@@ -194,8 +213,14 @@ export class ScheduleBuilder {
   private createStop(row: ScheduleStopTimeRow, stopId: number, departHour: number): StopTime {
     let arrivalTime, departureTime;
 
+    // A passing point has no arrival and no departure of any kind - the service
+    // does not stop, so the pass time is the only time it has, and it is both.
+    // Checked first because the other two branches would find nothing.
+    if (row.scheduled_pass_time) {
+      arrivalTime = departureTime = this.formatTime(row.scheduled_pass_time, departHour);
+    }
     // if either public time is set, use those
-    if (row.public_arrival_time || row.public_departure_time) {
+    else if (row.public_arrival_time || row.public_departure_time) {
       arrivalTime = this.formatTime(row.public_arrival_time, departHour);
       departureTime = this.formatTime(row.public_departure_time, departHour);
     }
@@ -205,6 +230,11 @@ export class ScheduleBuilder {
       departureTime = this.formatTime(row.scheduled_departure_time, departHour);
     }
 
+    // A passing point's activity is blank in 885,596 of the 892,016 that are at
+    // a station, and the rest are X and A - passing or waiting for another
+    // train. None of them is a pickup or a drop off activity, so the mapping
+    // below already gives a passing point pickup_type 1 and drop_off_type 1
+    // without being told what it is looking at.
     const activities = row.activity.match(/.{1,2}/g) || [] as string[];
     const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) ? 0 : 1;
     const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
@@ -231,7 +261,12 @@ export class ScheduleBuilder {
       drop_off_type: coordinatedDropOff || dropOff,
       shape_dist_traveled: null,
       timepoint: 1,
-      platform: row.platform,
+      // 461,901 of the passing points at a station name a platform, and it is
+      // the line the service takes through rather than somewhere a passenger
+      // can stand. Publishing it would put boarding points in stops.txt for
+      // fast lines nothing calls at, and make the two feeds disagree about
+      // which stops exist. A passing point names the station instead.
+      platform: row.scheduled_pass_time ? null : row.platform,
       tiploc: row.tiploc
     };
   }
@@ -281,5 +316,5 @@ const routeTypeIndex: { [trainCategory: string]: RouteType } = {
 };
 
 function newCursor(): Cursor {
-  return {stops: [], departureHour: 4};
+  return {stops: [], departureHour: 4, lastIsPassing: false};
 }

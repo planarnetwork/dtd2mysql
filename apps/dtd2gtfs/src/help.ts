@@ -19,6 +19,13 @@ Build a GTFS feed from the DTD timetable feed, with no database
   --links                    also write links.txt, this project's own file of
                              fixed links. transfers.txt holds the same links;
                              links.txt is kept for one release
+  --remove-passing-points BOOL
+                             whether to drop the locations a service runs
+                             through without stopping (defaults to true).
+                             Pass false to keep them, as calls with
+                             pickup_type and drop_off_type 1 and the pass time
+                             as both arrival and departure. It is roughly a
+                             third more stop times
 
 For example:
 
@@ -35,6 +42,7 @@ A config file looks like this. Only source is required:
   range: 3 months
   licence: permissive        # or full, which allows share-alike sources
   links: false
+  removePassingPoints: true  # false keeps the locations a service passes through
   enrichers:
     NAPTAN:                  # on, with its own defaults
     KNOWLEDGEBASE:
@@ -44,6 +52,7 @@ A config file looks like this. Only source is required:
         cache: ./cache
 
 The same GTFS_RANGE and GTFS_TODAY environment variables dtd2mysql reads are
-honoured, and --range and --today override them.
+honoured, and --range and --today override them. GTFS_REMOVE_PASSING_POINTS
+does the same for --remove-passing-points.
 `);
 }

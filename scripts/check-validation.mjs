@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 
 /**
- * Hold the validator report to validator-baseline.json.
+ * Hold the validator report to .github/validator-baseline.json.
  *
  * "Any ERROR stops the release" cannot be the rule, because two of them are
  * decisions: B10 publishes an unlocated stop at 0,0 so that a validator flags
@@ -13,9 +13,22 @@ import * as fs from "node:fs";
  * is a known quantity, not a licence for more of the same. Fewer than the
  * baseline allows is reported rather than accepted silently, because that is
  * the moment to tighten it.
+ *
+ * Usage: check-validation.mjs [REPORT] [BASELINE] [OUT]
+ *
+ * The nightly builds the feed twice - once without the locations a service
+ * passes through and once with them - and each gets its own baseline. One
+ * baseline for both would mean accepting whatever the passing points introduce
+ * for the feed that does not have them, which is not a gate.
  */
-const report = JSON.parse(fs.readFileSync("report/report.json", "utf8"));
-const baseline = JSON.parse(fs.readFileSync("validator-baseline.json", "utf8"));
+const [reportPath = "report/report.json",
+       baselinePath = ".github/validator-baseline.json",
+       outPath = "feed/validation.json"] = process.argv.slice(2);
+
+const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+const baseline = JSON.parse(fs.readFileSync(baselinePath, "utf8"));
+
+console.log(`${reportPath} against ${baselinePath}`);
 
 const errors = report.notices.filter(notice => notice.severity === "ERROR");
 const counted = new Map(errors.map(error => [error.code, error.totalNotices]));
@@ -29,22 +42,22 @@ for (const [code, count] of counted) {
 }
 
 for (const [code, count] of unlisted) {
-  console.error(`\n${code}: ${count}, and validator-baseline.json does not accept it.`);
+  console.error(`\n${code}: ${count}, and ${baselinePath} does not accept it.`);
   console.error("Fix it, or add it to the baseline with the reason it is acceptable.");
 }
 
 for (const [code, count] of grown) {
-  console.error(`\n${code}: ${count}, but the baseline allows ${baseline[code].max}.`);
+  console.error(`\n${code}: ${count}, but ${baselinePath} allows ${baseline[code].max}.`);
   console.error(`Accepted because: ${baseline[code].why}`);
   console.error("More of an accepted error is not accepted. Something changed.");
 }
 
 for (const [code, {max}] of shrunk) {
   console.log(`\n${code}: ${counted.get(code) ?? 0}, below the baseline of ${max}.`);
-  console.log("Lower validator-baseline.json to keep it from coming back.");
+  console.log(`Lower ${baselinePath} to keep it from coming back.`);
 }
 
-fs.writeFileSync("feed/validation.json", JSON.stringify(report, null, 2));
+fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
 
 if (unlisted.length > 0 || grown.length > 0) {
   console.error("\nThe feed will not be released.");

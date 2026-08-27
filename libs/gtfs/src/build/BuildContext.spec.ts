@@ -95,7 +95,8 @@ describe("dateRange", () => {
     const range = dateRange({
       today: Temporal.PlainDate.from("2025-09-02"),
       range: parseRange("3 MONTH"),
-      links: false
+      links: false,
+      removePassingPoints: true
     });
 
     expect(range.from.toString()).to.equal("2025-09-02");
@@ -107,7 +108,8 @@ describe("dateRange", () => {
     const range = dateRange({
       today: Temporal.PlainDate.from("2025-08-31"),
       range: parseRange("1 MONTH"),
-      links: false
+      links: false,
+      removePassingPoints: true
     });
 
     expect(range.to.toString()).to.equal("2025-09-30");
@@ -129,6 +131,46 @@ describe("buildContext links", () => {
 
   it("writes it for GTFS_LINKS=1", () => {
     expect(buildContext(argv(), {GTFS_LINKS: "1"}).links).to.equal(true);
+  });
+
+});
+
+describe("buildContext removePassingPoints", () => {
+
+  const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
+
+  it("drops the locations a service passes through unless told otherwise", () => {
+    expect(buildContext(argv(), {}).removePassingPoints).to.equal(true);
+  });
+
+  it("keeps them for --remove-passing-points false", () => {
+    expect(buildContext(argv("--remove-passing-points", "false"), {}).removePassingPoints).to.equal(false);
+  });
+
+  it("keeps them for --remove-passing-points=false", () => {
+    expect(buildContext(argv("--remove-passing-points=false"), {}).removePassingPoints).to.equal(false);
+  });
+
+  it("keeps them for GTFS_REMOVE_PASSING_POINTS=0", () => {
+    expect(buildContext(argv(), {GTFS_REMOVE_PASSING_POINTS: "0"}).removePassingPoints).to.equal(false);
+  });
+
+  it("lets the flag win over the environment", () => {
+    const context = buildContext(argv("--remove-passing-points=true"), {GTFS_REMOVE_PASSING_POINTS: "0"});
+
+    expect(context.removePassingPoints).to.equal(true);
+  });
+
+  /**
+   * The bare flag reads as though it turns something on, and this setting is
+   * already on. Rejecting it is the only reading that cannot be wrong.
+   */
+  it("refuses a bare --remove-passing-points", () => {
+    expect(() => buildContext(argv("--remove-passing-points"), {})).to.throw(/needs a value/);
+  });
+
+  it("refuses a value it cannot read as a yes or no", () => {
+    expect(() => buildContext(argv("--remove-passing-points=maybe"), {})).to.throw(/Expected true or false/);
   });
 
 });

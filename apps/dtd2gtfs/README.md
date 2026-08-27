@@ -28,6 +28,9 @@ dtd2gtfs build [OPTIONS]
                        else a directory of text files (defaults to ./gtfs.zip)
   --range RANGE        how far ahead to build, e.g. "3 months" (defaults to '3 MONTH')
   --today YYYY-MM-DD   the date to build for (defaults to the current date)
+  --remove-passing-points BOOL
+                       whether to drop the locations a service runs through
+                       without stopping (defaults to true)
 ```
 
 The DTD feed is published as a weekly full refresh followed by daily incrementals. Pass them in the
@@ -58,7 +61,27 @@ Note that this is not the same as sorting by filename: as text every `RJTTC` sor
 and cannot be compared to yesterday's.
 
 `GTFS_RANGE` and `GTFS_TODAY` are read as well, for compatibility with `dtd2mysql`; `--range` and
-`--today` override them.
+`--today` override them. `GTFS_REMOVE_PASSING_POINTS` does the same for `--remove-passing-points`.
+
+## Passing points
+
+Half the CIF's intermediate location records are places a service runs through without stopping,
+and 892,000 of them are at a station the feed publishes. They are not calls: nobody boards and
+nobody alights. By default they are dropped.
+
+`--remove-passing-points=false` keeps them, as calls with `pickup_type` and `drop_off_type` of `1`
+and the pass time as both the arrival and the departure. Over three months of the whole network
+that is 3.46 million stop times against 2.85 million, of which 613,000 are passed rather than
+called at. The trips, routes and calendars are identical either way; `stops.txt` gains the 146
+stations that nothing calls at but something runs through.
+
+A passing point names the station rather than the platform, even where the CIF gives one — the
+platform on a pass record is the line the service takes through, not somewhere a passenger can
+stand.
+
+One caveat if you use both feeds: a call publishes its public time and a passing point has only its
+working time, and the CIF's two clocks do not always agree. In 27 places out of 3.46 million a pass
+reads as later than the call after it.
 
 ## Getting the feed
 

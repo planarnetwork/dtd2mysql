@@ -26,7 +26,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Two builds and two validator runs, the second over a feed a third larger
+    # than the first.
+    timeout-minutes: 90
     # The secrets are named for the feed, the variables for the protocol it
     # arrives over: dtd2mysql reads SFTP_*, so the names cannot be made to
     # match on either side and the mapping belongs here.
@@ -98,25 +100,60 @@ jobs:
           mkdir -p feed
           yarn tsx apps/dtd2gtfs/src/index.ts build --config gtfs.config.yaml --out feed | tee build.log
 
+      # The same timetable with the locations a service runs through kept in it:
+      # 608,000 more stop times, at 613,000 of which nobody boards and nobody
+      # alights. A journey planner wants the feed above and anything tracing
+      # where a train actually goes wants this one, so both are published rather
+      # than one of them being chosen on everybody's behalf.
+      #
+      # A second build rather than a second output of the first, because the
+      # decision is made in the source query - see BuildContext.
+      - name: Build the feed with passing points
+        run: |
+          mkdir -p feed-passing-points
+          yarn tsx apps/dtd2gtfs/src/index.ts build --config gtfs.config.yaml \
+            --out feed-passing-points --remove-passing-points=false | tee build-passing-points.log
+
       # A published feed that fails referential integrity must never reach a
       # release, so the validator runs before anything is attached. What counts
-      # as a failure is validator-baseline.json: an unlisted error, or more of
-      # a listed one than it accepts.
+      # as a failure is a baseline file: an unlisted error, or more of a listed
+      # one than it accepts. One baseline each, because accepting what the
+      # passing points introduce for the feed that does not have them would not
+      # be a gate. Either failing stops the release: a half-published pair is
+      # worse than a late one.
       - name: Validate
         run: |
           curl -sSfL -o gtfs-validator.jar \
             "https://github.com/MobilityData/gtfs-validator/releases/download/v8.0.1/gtfs-validator-8.0.1-cli.jar"
+
           java -jar gtfs-validator.jar -i feed -o report -svu
-          node scripts/check-validation.mjs
+          node scripts/check-validation.mjs \
+            report/report.json .github/validator-baseline.json feed/validation.json
+
+          java -jar gtfs-validator.jar -i feed-passing-points -o report-passing-points -svu
+          node scripts/check-validation.mjs \
+            report-passing-points/report.json \
+            .github/validator-baseline-passing-points.json \
+            feed-passing-points/validation.json
 
       # A feed that suddenly has a fifth fewer trips than yesterday is a feed
       # with something wrong in it, and it is cheaper to stop than to withdraw.
       # There is no previous release on the first run, so there is nothing to
       # compare against and nothing to complain about.
+      #
+      # Counted on the standard feed alone. Passing points add stop times and
+      # not trips, so the two feeds hold the same number and comparing both
+      # would be comparing the same number twice.
       - name: Compare with the last release
         id: compare
         run: |
           trips=$(( $(wc -l < feed/trips.txt) - 1 ))
+
+          if [ "$trips" -ne "$(( $(wc -l < feed-passing-points/trips.txt) - 1 ))" ]; then
+            echo "The two feeds disagree about how many trips there are, so one of them is wrong."
+            exit 1
+          fi
+
           echo "trips=$trips" >> "$GITHUB_OUTPUT"
           echo "This build: $trips trips"
 
@@ -157,10 +194,15 @@ jobs:
             const report = fs.existsSync('feed/enrichment-report.json')
               ? JSON.parse(fs.readFileSync('feed/enrichment-report.json', 'utf8'))
               : {sources: [], enrichers: [], extensions: []};
+            // Counted rather than described, so the release says what the two
+            // zips actually differ by rather than what they were meant to.
+            const rows = file => fs.readFileSync(file, 'utf8').trimEnd().split('\n').length - 1;
             fs.writeFileSync('feed/feed-meta.json', JSON.stringify({
               built: new Date().toISOString(),
               commit: '${{ github.sha }}',
               trips: ${{ steps.compare.outputs.trips }},
+              stop_times: rows('feed/stop_times.txt'),
+              stop_times_with_passing_points: rows('feed-passing-points/stop_times.txt'),
               feed_version: feed.feed_version,
               feed_start_date: feed.feed_start_date,
               feed_end_date: feed.feed_end_date,
@@ -174,17 +216,24 @@ jobs:
       - name: Package
         run: |
           cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json enrichment-report.json provenance.json && cd ..
-          ls -la gtfs.zip
+          cd feed-passing-points && zip -q -r ../gtfs-passing-points.zip . \
+            -x validation.json feed-meta.json enrichment-report.json provenance.json && cd ..
+          # A release asset is named by its basename, so the second feed's
+          # report cannot go up as validation.json alongside the first's.
+          cp feed-passing-points/validation.json validation-passing-points.json
+          ls -la gtfs.zip gtfs-passing-points.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: feed
           path: |
             gtfs.zip
+            gtfs-passing-points.zip
             feed/validation.json
             feed/feed-meta.json
             feed/enrichment-report.json
             feed/provenance.json
+            feed-passing-points/validation.json
           retention-days: 14
 
       # The tag is the date, so the release list reads as a history of feeds and
@@ -203,16 +252,27 @@ jobs:
                 '| Covers | ' + m.feed_start_date + ' to ' + m.feed_end_date + ' |',
                 '| Trips | ' + m.trips.toLocaleString() + ' |',
                 '| Source | ' + m.feed_version + ' |',
-                '| Built from | ' + m.commit.slice(0, 7) + ' |'
+                '| Built from | ' + m.commit.slice(0, 7) + ' |',
+                '',
+                'Two feeds, same trips.',
+                '',
+                '- \`gtfs.zip\` - where a service calls. ' +
+                  m.stop_times.toLocaleString() + ' stop times.',
+                '- \`gtfs-passing-points.zip\` - and where it runs through without stopping, ' +
+                  'as calls with \`pickup_type\` and \`drop_off_type\` 1. ' +
+                  m.stop_times_with_passing_points.toLocaleString() + ' stop times.'
               ].join('\n')
             ")" \
-            gtfs.zip feed/validation.json feed/feed-meta.json feed/enrichment-report.json \
+            gtfs.zip gtfs-passing-points.zip \
+            feed/validation.json validation-passing-points.json \
+            feed/feed-meta.json feed/enrichment-report.json \
             $([ -f feed/provenance.json ] && echo feed/provenance.json)
         env:
           GH_TOKEN: ${{ github.token }}
 
-      # A release a day, each carrying a 20 MB zip, accumulates forever. The
-      # last month is what anybody fetches; past that what is wanted is the
+      # A release a day, each carrying two zips of 20 MB and up, accumulates
+      # forever. The last month is what anybody fetches; past that what is
+      # wanted is the
       # ability to say what the feed looked like in April, and one release a
       # month answers that as well as thirty do.
       #

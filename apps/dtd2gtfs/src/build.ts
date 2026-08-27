@@ -41,14 +41,19 @@ export async function build(argv: string[]): Promise<void> {
       ...process.env,
       GTFS_TODAY: process.env.GTFS_TODAY ?? config?.today,
       GTFS_RANGE: process.env.GTFS_RANGE ?? config?.range,
-      GTFS_LINKS: process.env.GTFS_LINKS ?? (config?.links ? "1" : undefined)
+      GTFS_LINKS: process.env.GTFS_LINKS ?? (config?.links ? "1" : undefined),
+      // Written out rather than left undefined when the config says nothing,
+      // because parseConfig has already applied the default and undefined here
+      // would mean buildContext applied it a second time. One place decides.
+      GTFS_REMOVE_PASSING_POINTS: process.env.GTFS_REMOVE_PASSING_POINTS
+        ?? (config === undefined ? undefined : String(config.removePassingPoints))
     }
   );
 
   console.log(`Reading ${sources.join(", ")}`);
 
   const feed = new BuildFeed(
-    new CifFileSource(sources, stationCoordinates, dateRange(context)),
+    new CifFileSource(sources, stationCoordinates, dateRange(context), context.removePassingPoints),
     new FileOutput(),
     context,
     registered(config),

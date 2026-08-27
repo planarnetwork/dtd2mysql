@@ -713,7 +713,7 @@ The directory output was never affected: the process stays alive until the strea
 **B6 · GTFS validator in CI** *(depends B1, B2)* — **done**
 A `validate` job builds the mini fixture and runs MobilityData `gtfs-validator` 8.0.1, pinned rather
 than latest so the accepted list only moves when somebody moves it. Any ERROR fails.
-`validator-baseline.json` holds the accepted notice codes with a reason each; a new code fails, and
+`.github/validator-baseline.json` holds the accepted notice codes with a reason each; a new code fails, and
 so does an accepted one that stops occurring, so the list cannot rot.
 
 **The validator is given the fixture's build date with `-d`.** Several of its rules - feed expiry,
@@ -739,7 +739,7 @@ runs it on every build, and the first one to get that far reported two:
 That gap is real: a green PR check does not mean the published feed validates. E2's nightly runs the
 validator there, which is what closes it.
 
-**The two that remain are decisions, so "any ERROR blocks" would never pass.** `validator-baseline.json`
+**The two that remain are decisions, so "any ERROR blocks" would never pass.** `.github/validator-baseline.json`
 names them and how many of each, and `scripts/check-validation.mjs` holds the build to it: an error
 that is not listed fails, and so does a listed one that grew, because an accepted error is a known
 quantity rather than a licence for more of the same. Fewer than the baseline allows is reported and
@@ -1736,7 +1736,7 @@ takes the latest full refresh.
 
 **An unaccepted validator ERROR stops the release.** A feed that fails referential integrity must
 not reach anybody, and it is cheaper to skip a night than to withdraw a feed. What counts as
-accepted is `validator-baseline.json` - see the B6 section above for why a blanket rule could not
+accepted is `.github/validator-baseline.json` - see the B6 section above for why a blanket rule could not
 work and what the file holds.
 
 **The 5% trip swing gate collides with #121 and F4.** Removing the merge step is a +19% step change,
