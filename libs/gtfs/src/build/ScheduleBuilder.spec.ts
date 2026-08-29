@@ -237,14 +237,24 @@ describe("a passing point", () => {
   });
 
   /**
-   * The platform on a pass record is the line the service takes through the
-   * station, not somewhere a passenger can stand. Keeping it would put a
-   * boarding point in stops.txt for a fast line nothing calls at.
+   * The platform a train runs through is a real platform, and naming it means a
+   * passing call carries the same stop id a stopping call at that platform
+   * carries - which is what anything promoting one to a real stop needs.
    */
-  it("names the station rather than the line it runs through on", () => {
+  it("names the platform it runs through, like any other call", () => {
     const builder = new ScheduleBuilder();
 
     builder.load([row({stop_id: 10, crs_code: "TBW"}), passing({stop_id: 11, crs_code: "TON", platform: "4"})]);
+
+    const [, through] = builder.results.schedules[0].stopTimes;
+
+    expect(through.platform).to.equal("4");
+  });
+
+  it("falls back to the station where the pass record names no platform", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([row({stop_id: 10, crs_code: "TBW"}), passing({stop_id: 11, crs_code: "TON", platform: null})]);
 
     const [, through] = builder.results.schedules[0].stopTimes;
 

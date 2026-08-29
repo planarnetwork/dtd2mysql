@@ -28,6 +28,14 @@ The 23 extra are the CIF's two clocks disagreeing: a call publishes its public t
 point has only its working time, so `C17075` passes `SELYOAK` at `2116H` and then calls at `UNVRSYB`
 with a public arrival of `2115`. Correcting it would mean inventing a time for one of them.
 
+A passing point names its platform, per review on #152. The first version dropped it on the grounds
+that a train runs through on a line rather than a platform. Measured, that is wrong twice over: 89%
+of passing calls land on a boarding point something already stops at, so the platform is real and the
+id is the one a stopping call uses; and dropping it produced *more* stops, not fewer, because 99
+station-level children had to be minted with nothing but passing calls to host. Keeping it reuses
+what is there and adds 12 - `stops.txt` is 9,241 against 9,328, and 9,182 in the standard feed. The
+validator counts are unchanged either way, so the baseline above holds.
+
 Also fixed, and visible in neither baseline because the fixture has no case of it: where two of a
 service's timing points share a CRS, a request stop is `pickup_type` 3 rather than 0 and so had
 nothing to win the station with. 28 of them were displaced by the point the service passes on the way

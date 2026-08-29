@@ -72,12 +72,18 @@ nobody alights. By default they are dropped.
 `--remove-passing-points=false` keeps them, as calls with `pickup_type` and `drop_off_type` of `1`
 and the pass time as both the arrival and the departure. Over three months of the whole network
 that is 3.46 million stop times against 2.85 million, of which 613,000 are passed rather than
-called at. The trips, routes and calendars are identical either way; `stops.txt` gains the 146
-stations that nothing calls at but something runs through.
+called at. The trips, routes and calendars are identical either way; `stops.txt` gains 59 stops.
 
-A passing point names the station rather than the platform, even where the CIF gives one — the
-platform on a pass record is the line the service takes through, not somewhere a passenger can
-stand.
+A passing point names its platform like any other call, and falls back to the station where the
+pass record gives none. The platform a train runs through is a real platform: 89% of passing calls
+land on a boarding point the feed already publishes because something stops there, so the id a
+passing call carries is the one a stopping call at that platform carries. The 05:00 Victoria to
+Gatwick passes Clapham Junction platform 15 as `9100CLPHMJC15` — the same stop 1,857 boardable
+calls use.
+
+The 12 stops that are new are real platforms this window has no calls at: Pilning 2, New Cross Gate
+3 and 4, Wembley Central 3 and 4, Clapham Junction Main 8, Finsbury Park 3, Grove Park 2, New
+Barnet 2, Rotherham Central 4T, and Wixams 1 and 2.
 
 One caveat if you use both feeds: a call publishes its public time and a passing point has only its
 working time, and the CIF's two clocks do not always agree. In 27 places out of 3.46 million a pass

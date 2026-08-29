@@ -16,9 +16,10 @@ where a service stops but nobody boards.
 `GTFS_REMOVE_PASSING_POINTS=0` keeps them, as calls with `pickup_type` and `drop_off_type` of `1`
 and the pass time as both the arrival and the departure. Over three months of the whole network that
 is 3.46 million stop times against 2.85 million. Trips, routes and calendars are identical;
-`stops.txt` gains the 146 stations that nothing calls at but something runs through. A passing point
-names the station rather than the platform the CIF gives, because that platform is the line the
-service takes through rather than somewhere a passenger can stand.
+`stops.txt` gains 59 stops. A passing point names its platform like any other call, falling back to
+the station where the pass record gives none: 89% of passing calls land on a boarding point the feed
+already publishes because something stops there, so the id a passing call carries is the one a
+stopping call at that platform carries.
 
 Fixes a bug it uncovered: where two of a service's timing points share a CRS, the one that boards or
 alights wins, but a request stop has `pickup_type` 3 rather than 0 and so had nothing to win with. 28

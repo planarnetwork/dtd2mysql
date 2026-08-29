@@ -261,12 +261,19 @@ export class ScheduleBuilder {
       drop_off_type: coordinatedDropOff || dropOff,
       shape_dist_traveled: null,
       timepoint: 1,
-      // 461,901 of the passing points at a station name a platform, and it is
-      // the line the service takes through rather than somewhere a passenger
-      // can stand. Publishing it would put boarding points in stops.txt for
-      // fast lines nothing calls at, and make the two feeds disagree about
-      // which stops exist. A passing point names the station instead.
-      platform: row.scheduled_pass_time ? null : row.platform,
+      // A passing point names its platform like any other call. 461,901 of them
+      // give one, and the platform a train runs through is a real platform: 89%
+      // of passing calls land on a boarding point the feed already publishes
+      // because something stops there, so the id a passing call carries is the
+      // one a stopping call at that platform carries. Anything promoting a
+      // passing point to a real stop needs no translation.
+      //
+      // It also produces fewer stops, not more. Dropping the platform forced 99
+      // station-level children into existence with nothing but passing calls to
+      // host; keeping it reuses what is there and mints 12 - Pilning 2, New
+      // Cross Gate 3 and 4, Wembley Central 3 and 4, and eight more, all real
+      // platforms that this window happens to have no calls at.
+      platform: row.platform,
       tiploc: row.tiploc
     };
   }
