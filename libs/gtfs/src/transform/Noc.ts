@@ -27,8 +27,9 @@ export function toAgencyRow(agency: Agency): AgencyRow {
 /**
  * routes.txt as it is written.
  *
- * `route_short_name` and `route_long_name` keep the bare ATOC code: they are
- * text for a passenger to read, not a reference to the agency.
+ * Only `agency_id` takes the NOC form. `route_id` is the brand's own id and the
+ * names are text for a passenger to read, so neither is a reference to an
+ * agency and neither is composed here.
  */
 export function toRouteRow(route: Route): RouteRow {
   return {...route, agency_id: agencyId(route.agency_id)};

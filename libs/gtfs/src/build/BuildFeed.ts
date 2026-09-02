@@ -276,10 +276,12 @@ export class BuildFeed {
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
     const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
 
+    // Sorted by route ID, which a schedule works out for itself, so routes.txt
+    // does not depend on the order the schedules arrived in.
     const routes = chooseRoutes(schedules);
-    
-    for (const name of [...routes.keys()].sort()) {
-      this.write(routeFile, toRouteRow(routes.get(name)!));
+
+    for (const id of [...routes.keys()].sort()) {
+      this.write(routeFile, toRouteRow(routes.get(id)!));
     }
 
     // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
@@ -421,7 +423,18 @@ function ascending(a: Value, b: Value): number {
 }
 
 /**
- * Generate a map of routes, keyed by their id, from the schedules provided.
+ * The routes the schedules run on, keyed by their id.
+ *
+ * Every field of a Route but its type comes from the id, which the schedule
+ * works out for itself, so schedules sharing an id describe the same route and
+ * the last one to arrive can be kept.
+ *
+ * The type is the exception: only buses take an id of their own, so an operator
+ * running two other modes - trains and a ferry, say - has one id for both and
+ * whichever schedule arrives last says what the route is. Unresolved.
+ *
+ * Schedules with one call or none are skipped, because trips.txt skips them
+ * too and a route nothing refers to would be a dangling row.
  */
 function chooseRoutes(schedules: Schedule[]): Map<string, Route> {
   const chosen = new Map<string, Route>();
@@ -430,11 +443,12 @@ function chooseRoutes(schedules: Schedule[]): Map<string, Route> {
     if (schedule.stopTimes.length <= 1) {
       continue;
     }
-    
+
     const route = schedule.toRoute();
+
     chosen.set(route.route_id, route);
   }
-  
+
   return chosen;
 }
 

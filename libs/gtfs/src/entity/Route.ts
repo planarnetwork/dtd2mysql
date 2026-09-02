@@ -4,13 +4,13 @@ import {AgencyID} from "./Agency";
 export interface Route {
   route_id: RouteID;
   agency_id: AgencyID;
-  route_short_name: string | undefined;
-  route_long_name: string | undefined;
+  route_short_name: string | null;
+  route_long_name: string | null;
   route_type: RouteType;
-  route_text_color: string | undefined;
-  route_color: string | undefined;
-  route_url: string | undefined;
-  route_desc: string | undefined;
+  route_text_color: string | null;
+  route_color: string | null;
+  route_url: string | null;
+  route_desc: string | null;
 }
 
 export enum RouteType {
