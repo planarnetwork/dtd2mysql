@@ -123,6 +123,27 @@ describe("ScheduleBuilder", () => {
     expect(message).to.equal("connection lost");
   });
 
+  /**
+   * An operator the build has no agency for keeps its ATOC code, so it gets a
+   * route of its own rather than sharing one with every other operator the
+   * build does not know. The route is attributed to the catch-all agency until
+   * the agency list catches up, and keeps its id when it does - which is what
+   * matters when an operator starts running before the software knows about it.
+   *
+   * Only a schedule with no code at all is ZZ.
+   */
+  it("keeps an ATOC code the build has no agency for", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({ id: 1, stop_id: 10, atoc_code: "SE" }),
+      row({ id: 2, stop_id: 11, atoc_code: "QQ" }),
+      row({ id: 3, stop_id: 12, atoc_code: null })
+    ]);
+
+    expect(builder.results.schedules.map(s => s.operator)).to.deep.equal(["SE", "QQ", "ZZ"]);
+  });
+
 });
 
 describe("ScheduleBuilder ordering contract", () => {
