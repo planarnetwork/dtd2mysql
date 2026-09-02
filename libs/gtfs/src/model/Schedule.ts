@@ -19,7 +19,32 @@ export function tripId(tuid: TUID, calendar: ScheduleCalendar): string {
   return `${tuid}_${toYYYYMMDD(calendar.runsFrom)}_${toYYYYMMDD(calendar.runsTo)}`;
 }
 
-const routeInformation : {[key: string]: { route_short_name?: string, route_long_name?: string, route_color?: string, route_url?: string }} = {
+const BLACK = "000000";
+const WHITE = "FFFFFF";
+
+function getAccessibleTextColor(hex : string) {
+  // Convert hex to RGB
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+  // Calculate relative luminance according to WCAG 2.1
+  const calLuminance = (c : number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const L = 0.2126 * calLuminance(r) + 0.7152 * calLuminance(g) + 0.0722 * calLuminance(b);
+
+  // Return black or white based on the standard WCAG luminance threshold
+  return L > 0.179 ? BLACK : WHITE;
+}
+
+const routeInformation: {
+  [key: string]: {
+    route_short_name?: string,
+    route_long_name?: string,
+    route_color?: string,
+    route_text_color?: string,
+    route_url?: string
+  }
+} = {
   "AW": {route_short_name: 'TfW Rail', route_long_name: "Transport for Wales", route_color: "ff0000"},
   "CC": {route_long_name: "c2c", route_color: "b7007c"},
   "CH": {route_long_name: "Chiltern Railways", route_color: "00bfff"},
@@ -245,6 +270,7 @@ export class Schedule implements OverlayRecord {
   public toRoute(): Route {
     const routeData = routeInformation[this.bareRouteId];
     const agencyName = agencies.find(agency => agency.agency_id === this.operator)?.agency_name;
+    const routeColor = routeData?.route_color;
     
     return {
       route_id: this.routeId,
@@ -254,7 +280,7 @@ export class Schedule implements OverlayRecord {
       route_long_name: routeData?.route_long_name
           ?? (routeData?.route_short_name === undefined ? agencyName : undefined),
       route_type: this.mode,
-      route_text_color: undefined,
+      route_text_color: routeColor === undefined ? undefined : getAccessibleTextColor(routeColor),
       route_color: routeData?.route_color,
       route_url: routeData?.route_url,
       route_desc: undefined,
