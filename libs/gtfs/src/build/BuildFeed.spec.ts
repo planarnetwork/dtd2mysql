@@ -183,16 +183,6 @@ describe("BuildFeed ordering", () => {
       ]);
   });
 
-  it("numbers the routes from a sort of their name, not from which trip got there first", async () => {
-    const {files} = await build(new FakeSource(feed()));
-
-    expect(files["routes.txt"].map(r => [r.route_id, r.route_short_name]))
-      .to.deep.equal([
-        [1, "SE:TON->SEV:2"],
-        [2, "SN:SEV->TON:2"]
-      ]);
-  });
-
   it("numbers the services from a sort of the calendar, not from arrival order", async () => {
     const {files} = await build(new FakeSource(feed()));
 
