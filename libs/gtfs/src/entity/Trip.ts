@@ -1,7 +1,7 @@
 import {RSID, TUID} from "../model/OverlayRecord";
 
 export interface Trip {
-  route_id: number;
+  route_id: string;
   service_id: number;
   trip_id: string;
   trip_headsign: TUID;

@@ -25,7 +25,7 @@ export class MutableFeed implements FeedView {
 
   private readonly stopIndex: Map<StopID, Stop>;
   private readonly tripIndex: Map<string, Trip>;
-  private readonly routeIndex: Map<number, Route>;
+  private readonly routeIndex: Map<string, Route>;
   private stationIndex?: Map<CRS, Stop>;
 
   constructor(
@@ -69,7 +69,7 @@ export class MutableFeed implements FeedView {
     return this.tripIndex.get(id);
   }
 
-  public route(id: number): Route | undefined {
+  public route(id: string): Route | undefined {
     return this.routeIndex.get(id);
   }
 

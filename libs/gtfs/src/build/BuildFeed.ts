@@ -276,15 +276,10 @@ export class BuildFeed {
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
     const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
 
-    // A trip needs its route's number, and that number comes from where the
-    // route name sorts rather than from which trip reached it first.
     const routes = chooseRoutes(schedules);
-    const routeIds: { [routeShortName: string]: number } = {};
-    let routeId = 0;
-
+    
     for (const name of [...routes.keys()].sort()) {
-      routeIds[name] = ++routeId;
-      this.write(routeFile, toRouteRow({...routes.get(name)!, route_id: routeId}));
+      this.write(routeFile, toRouteRow(routes.get(name)!));
     }
 
     // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
@@ -305,7 +300,6 @@ export class BuildFeed {
 
       this.write(trips, schedule.toTrip(
         serviceIds[schedule.calendar.id],
-        routeIds[schedule.routeShortName],
         name ?? schedule.destination
       ));
       schedule.stopTimes.forEach(r => this.write(stopTimes, toStopTimeRow(r, tiplocs)));
@@ -427,40 +421,21 @@ function ascending(a: Value, b: Value): number {
 }
 
 /**
- * One route per name, and which one cannot depend on arrival order.
- *
- * Trips sharing a route can disagree about its description - 352 do, over
- * whether first class is available - because it is a property of a train being
- * flattened onto the line it runs on. Neither is right, so the one that sorts
- * first wins.
+ * Generate a map of routes, keyed by their id, from the schedules provided.
  */
 function chooseRoutes(schedules: Schedule[]): Map<string, Route> {
-  const chosen = new Map<string, {route: Route, description: string}>();
+  const chosen = new Map<string, Route>();
 
   for (const schedule of schedules) {
     if (schedule.stopTimes.length <= 1) {
       continue;
     }
-
+    
     const route = schedule.toRoute();
-    const description = describes(route);
-    const current = chosen.get(schedule.routeShortName);
-
-    if (!current || description < current.description) {
-      chosen.set(schedule.routeShortName, {route, description});
-    }
+    chosen.set(route.route_id, route);
   }
-
-  return new Map([...chosen].map(([name, {route}]) => [name, route]));
-}
-
-/**
- * A route without its number, which is assigned later.
- */
-function describes(route: Route): string {
-  const {route_id, ...rest} = route;
-
-  return canonical(rest);
+  
+  return chosen;
 }
 
 function canonical(row: object): string {
