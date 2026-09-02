@@ -16,6 +16,6 @@ route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,
 15,=LO,LO:HHY->NXG:2,LO train service from HHY to NXG,2,,,,Train. Standard class only. Reservation not possible
 16,=LT,LT:RIC->AMR:1,LT underground service from RIC to AMR,1,,,,Underground. Standard class only. Reservation not possible
 17,=QC,QC:LAR->LAR:4,QC boat service from LAR to LAR,4,,,,Boat. Standard class only. Reservation not possible
-18,=TW,TW:APN->SUN:1,TW underground service from APN to SUN,1,,,,Underground. Standard class only. Reservation not possible
-19,=ZZ,ZZ:STQ->STQ:3,ZZ bus service from STQ to STQ,3,,,,Bus. Standard class only. Reservation not possible
-20,=ZZ,ZZ:STQ->STQ:4,ZZ boat service from STQ to STQ,4,,,,Boat. Standard class only. Reservation not possible
+18,=QR,QR:STQ->STQ:3,QR bus service from STQ to STQ,3,,,,Bus. Standard class only. Reservation not possible
+19,=QR,QR:STQ->STQ:4,QR boat service from STQ to STQ,4,,,,Boat. Standard class only. Reservation not possible
+20,=TW,TW:APN->SUN:1,TW underground service from APN to SUN,1,,,,Underground. Standard class only. Reservation not possible
