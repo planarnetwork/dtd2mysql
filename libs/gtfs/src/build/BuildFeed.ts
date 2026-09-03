@@ -23,6 +23,7 @@ import {TIMETABLE_ATTRIBUTION, createAttributions} from "../transform/CreateAttr
 import {buildReport} from "./BuildReport";
 import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
+import {linkedTrips, resolveLinks, TripLink} from "../transform/LinkedTrips";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
@@ -31,6 +32,14 @@ import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
 import {Writable} from "stream";
+
+/**
+ * The trips the build will write, and the couplings between them.
+ */
+type LinkedSchedules = {
+  schedules: Schedule[],
+  links: TripLink[]
+}
 
 export class BuildFeed {
   private baseDir!: string;
@@ -90,7 +99,7 @@ export class BuildFeed {
       : Promise.resolve();
 
     const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
-    const schedules = this.getSchedules(associations, scheduleResults);
+    const {schedules, links} = this.getSchedules(associations, scheduleResults);
 
     if (schedules.length === 0) {
       throw new Error(
@@ -161,10 +170,15 @@ export class BuildFeed {
       : undefined;
 
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
+    // The couplings are appended rather than merged in: the primary key includes the trip ids, so a
+    // link at a station that already has an interchange row is a different row, not a duplicate.
     const transfersP = this.copy(
-      mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
+      [
+        ...mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
+        ...linkedTrips(links, called, map(stations, stop => stop.tiploc))
+      ],
       "transfers.txt",
-      t => [t.from_stop_id, t.to_stop_id]
+      t => [t.from_stop_id, t.to_stop_id, t.from_trip_id, t.to_trip_id]
     );
 
     const [calendars, calendarDates, serviceIds] = createCalendar(called);
@@ -320,15 +334,16 @@ export class BuildFeed {
     ]);
   }
 
-  private getSchedules(associations: Association[], scheduleResults: ScheduleResults): Schedule[] {
+  private getSchedules(associations: Association[], scheduleResults: ScheduleResults): LinkedSchedules {
     const processedAssociations: AssociationIndex = applyOverlays(associations);
     const processedSchedules: ScheduleIndex = applyOverlays(scheduleResults.schedules);
-    const associatedSchedules = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
-    const mergedSchedules = <Schedule[]>mergeSchedules(associatedSchedules);
+    const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
+    const mergedSchedules = mergeSchedules(associated.schedules);
+    const links = resolveLinks(associated.links, mergedSchedules);
     const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
 
     // remove any schedules that no longer run on any days so invalid calendars are not output
-    return schedules.filter(schedule => !schedule.calendar.isEmpty);
+    return {schedules: schedules.filter(schedule => !schedule.calendar.isEmpty), links};
   }
 
 }

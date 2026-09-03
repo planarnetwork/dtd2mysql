@@ -104,6 +104,8 @@ function fromLink(link: FixedLink): Transfer {
   return {
     from_stop_id: link.from_stop_id,
     to_stop_id: link.to_stop_id,
+    from_trip_id: null,
+    to_trip_id: null,
     transfer_type: TransferType.MinTime,
     min_transfer_time: link.duration,
     mode: link.mode,
@@ -139,7 +141,7 @@ function flag(value: unknown): 0 | 1 {
 function widen(transfer: Transfer, link: FixedLink): Transfer {
   const widened = {...transfer};
 
-  widened.min_transfer_time = Math.min(transfer.min_transfer_time, link.duration);
+  widened.min_transfer_time = Math.min(transfer.min_transfer_time ?? link.duration, link.duration);
   widened.start_time = min(transfer.start_time, link.start_time);
   widened.end_time = max(transfer.end_time, link.end_time);
   widened.start_date = min(transfer.start_date, link.start_date);
@@ -167,6 +169,8 @@ export function interchange(stop: CRS, seconds: number): Transfer {
   return {
     from_stop_id: stop,
     to_stop_id: stop,
+    from_trip_id: null,
+    to_trip_id: null,
     transfer_type: TransferType.MinTime,
     min_transfer_time: seconds,
     mode: null,

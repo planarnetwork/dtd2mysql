@@ -1,54 +1,61 @@
 
-import {Association, DateIndicator} from "../model/Association";
+import {Association, AssociationLink} from "../model/Association";
 import {Schedule} from "../model/Schedule";
 import {OverlapType, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {IdGenerator} from "../model/OverlayRecord";
 
 /**
- * Iterate through the associations matching association schedules records with base schedules and applying the
- * association as a join or split.
+ * Iterate through the associations matching association schedules records with base schedules and
+ * coupling them as a join or split.
  *
- * Splits prepend the base schedule (0, point of split) to the association schedule
- * Joins append the base schedule (point of split, end) to the association schedule
+ * The base is left as it is. The associated schedule is cut into the days it is coupled, which is
+ * the trip the link names, and the days it runs by itself.
  */
 export function applyAssociations(schedulesByTuid: ScheduleIndex,
                                   associationsIndex: AssociationIndex,
-                                  idGenerator: IdGenerator): ScheduleIndex {
+                                  idGenerator: IdGenerator): AssociatedSchedules {
+
+  const links: AssociationLink[] = [];
 
   for (const associations of Object.values(associationsIndex)) {
     // for each association
     for (const association of associations) {
       // get the date range for the associated schedules
-      const assocCalendar = association.dateIndicator === DateIndicator.Next
-        ? association.calendar.shiftForward()
-        : association.calendar;
+      const assocCalendar = association.inAssocDays(association.calendar);
 
       // get the associated schedules inside the date range of the association
       for (const assocSchedule of findSchedules(schedulesByTuid[association.assocTUID] || [], assocCalendar)) {
         // get the date range for the target base schedule (same or previous day of associated schedule NOT the association)
-        const baseCalendar = association.dateIndicator === DateIndicator.Next
-          ? assocSchedule.calendar.shiftBackward()
-          : assocSchedule.calendar;
+        const baseCalendar = association.inBaseDays(assocSchedule.calendar);
 
         // find the matching base record
         const baseSchedules = findSchedules(schedulesByTuid[association.baseTUID] || [], baseCalendar);
 
-        if (baseSchedules.length > 0) {
-          const [replacement, ...associatedSchedules] = association.apply(baseSchedules[0], assocSchedule,idGenerator);
-
-          // add the merged base and associated schedule to the TUID index
-          (schedulesByTuid[replacement.tuid] = schedulesByTuid[replacement.tuid] || []).push(replacement);
-
-          // remove the original associated schedule and replace with any substitute schedules created
-          schedulesByTuid[assocSchedule.tuid].splice(
-            schedulesByTuid[assocSchedule.tuid].indexOf(assocSchedule), 1, ...associatedSchedules
-          );
+        if (baseSchedules.length === 0) {
+          continue;
         }
+
+        const applied = association.apply(baseSchedules[0], assocSchedule, idGenerator);
+
+        if (applied === null) {
+          continue;
+        }
+
+        links.push(applied.link);
+
+        // remove the original associated schedule and replace with any substitute schedules created
+        const schedules = schedulesByTuid[assocSchedule.tuid];
+
+        schedules.splice(
+          schedules.indexOf(assocSchedule),
+          1,
+          ...(applied.alone === null ? [applied.portion] : [applied.portion, applied.alone])
+        );
       }
     }
   }
 
-  return schedulesByTuid;
+  return {schedules: schedulesByTuid, links};
 }
 
 /**
@@ -64,4 +71,12 @@ export type ScheduleIndex = {
 
 export type AssociationIndex = {
   [tuid: string]: Association[];
+}
+
+/**
+ * The schedules once the associations have been applied, and the couplings found doing it.
+ */
+export type AssociatedSchedules = {
+  schedules: ScheduleIndex,
+  links: AssociationLink[]
 }

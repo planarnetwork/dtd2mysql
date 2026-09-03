@@ -129,8 +129,15 @@ DROP TABLE IF EXISTS transfers;
 CREATE TABLE transfers (
   from_stop_id varchar(100) NOT NULL,
   to_stop_id varchar(100) NOT NULL,
+  -- The two trips an in-seat transfer couples. Empty on every other row, rather
+  -- than null, so they can stay in the primary key - the pair of stops is only
+  -- unique once the trips are part of it, because a coupling happens at a
+  -- station the feed already gives an interchange time for.
+  from_trip_id varchar(255) NOT NULL DEFAULT '',
+  to_trip_id varchar(255) NOT NULL DEFAULT '',
   transfer_type tinyint(1) unsigned NOT NULL,
-  min_transfer_time smallint(8) unsigned NOT NULL,
+  -- Null on an in-seat transfer: the passenger does not get off.
+  min_transfer_time smallint(8) unsigned DEFAULT NULL,
   -- The producer extension columns transfers.txt carries for a fixed link: the
   -- mode, the window it runs in and the days it runs on. All null on a station
   -- interchange row, which has no link to describe.
@@ -146,7 +153,7 @@ CREATE TABLE transfers (
   friday tinyint(1) unsigned DEFAULT NULL,
   saturday tinyint(1) unsigned DEFAULT NULL,
   sunday tinyint(1) unsigned DEFAULT NULL,
-  PRIMARY KEY (from_stop_id, to_stop_id, transfer_type)
+  PRIMARY KEY (from_stop_id, to_stop_id, from_trip_id, to_trip_id, transfer_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS trips;

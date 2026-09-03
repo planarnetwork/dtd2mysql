@@ -5,7 +5,7 @@ import {BuildContext, DateRange, parseRange} from "./BuildContext";
 import {Enricher} from "../enrich/Enricher";
 import {GTFSOutput} from "./GTFSOutput";
 import {ScheduleResults} from "./ScheduleBuilder";
-import {Association} from "../model/Association";
+import {Association, AssociationType, DateIndicator} from "../model/Association";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {Schedule} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
@@ -98,7 +98,8 @@ class FakeSource implements TimetableSource {
     private readonly schedules: Schedule[],
     private readonly stops: Stop[] = [],
     private readonly transfers: Transfer[] = [],
-    private readonly links: FixedLink[] = []
+    private readonly links: FixedLink[] = [],
+    private readonly associations: Association[] = []
   ) {}
 
   /**
@@ -122,7 +123,7 @@ class FakeSource implements TimetableSource {
   async getTransfers() { return this.transfers; }
   async getFeedVersion() { return "RJTTF001.ZIP"; }
   async getFixedLinks() { return this.links; }
-  async getAssociations(): Promise<Association[]> { return []; }
+  async getAssociations(): Promise<Association[]> { return this.associations; }
   async end() {}
 
   async getSchedules(): Promise<ScheduleResults> {
@@ -348,6 +349,67 @@ describe("BuildFeed with an enricher", () => {
     const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG")]));
 
     expect(files["provenance.json"]).to.equal(undefined);
+  });
+
+});
+
+describe("BuildFeed with an association", () => {
+
+  const base = schedule(1, "A", "2024-01-08", "2024-03-04", "SE", ["TON", "ASH", "RAM"]);
+  const portion = schedule(2, "B", "2024-01-08", "2024-03-04", "SE", ["ASH", "DOV"]);
+
+  const divide = new Association(
+    1, "A", "B", "ASH", DateIndicator.Same, AssociationType.Split,
+    new ScheduleCalendar(
+      Temporal.PlainDate.from("2024-01-08"), Temporal.PlainDate.from("2024-03-04"), {...NO_DAYS, 1: 1}
+    ),
+    STP.Permanent
+  );
+
+  const built = () => build(new FakeSource([base, portion], [], [], [], [divide]));
+
+  it("writes both trips whole, and no concatenation of them", async () => {
+    const {files} = await built();
+    const trips = files["trips.txt"].map(t => t.trip_id);
+
+    expect(trips).to.deep.equal(["A_20240108_20240304", "B_20240108_20240304"]);
+
+    const calls = (tripId: string) =>
+      files["stop_times.txt"].filter(s => s.trip_id === tripId).map(s => s.stop_id);
+
+    expect(calls("A_20240108_20240304")).to.deep.equal(["9100TON", "9100ASH", "9100RAM"]);
+    expect(calls("B_20240108_20240304")).to.deep.equal(["9100ASH", "9100DOV"]);
+  });
+
+  it("couples them with an in-seat transfer carrying no calendar of its own", async () => {
+    const {files} = await built();
+    const [link] = files["transfers.txt"].filter(t => t.transfer_type === 4);
+
+    expect(link.from_trip_id).to.equal("A_20240108_20240304");
+    expect(link.to_trip_id).to.equal("B_20240108_20240304");
+    expect(link.from_stop_id).to.equal("9100ASH");
+    expect(link.to_stop_id).to.equal("9100ASH");
+    expect(link.min_transfer_time).to.equal(null);
+    expect(link.start_date).to.equal(null);
+    expect(link.monday).to.equal(null);
+  });
+
+  it("puts both trips on the same service, so the days they share are the days they are coupled", async () => {
+    const {files} = await built();
+    const serviceOf = (tripId: string) => files["trips.txt"].find(t => t.trip_id === tripId).service_id;
+
+    expect(serviceOf("A_20240108_20240304")).to.equal(serviceOf("B_20240108_20240304"));
+  });
+
+  it("gives every row of transfers.txt the same columns, whichever kind it is", async () => {
+    const {files} = await build(
+      new FakeSource([base, portion], [], [transfer("TON", "TON")], [], [divide])
+    );
+    const [first, ...rest] = files["transfers.txt"];
+
+    for (const row of rest) {
+      expect(Object.keys(row)).to.deep.equal(Object.keys(first));
+    }
   });
 
 });
