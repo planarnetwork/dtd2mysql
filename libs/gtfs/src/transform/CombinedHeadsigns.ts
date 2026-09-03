@@ -36,34 +36,25 @@ export function combinedHeadsigns(
   // where each divide happens along the train that is doing the dividing, and what comes off there
   const divides = new Map<string, Divide[]>();
 
-  for (const link of links) {
-    const dividing = byTripId.get(link.from);
+  for (const link of links.filter(link => link.type === AssociationType.Split)) {
+    const at = byTripId.get(link.from)?.stopTimes.find(stopTime => stopTime.stop_id === link.location);
     const leaving = byTripId.get(link.to);
 
-    if (link.type !== AssociationType.Split || dividing === undefined || leaving === undefined) {
-      continue;
+    // dropUnknownStops can take a trip out of the feed, or the stop it divides at out of the trip.
+    // linkedTrips counts the same couplings going the same way, so nothing is lost by passing over
+    // them here.
+    if (at !== undefined && leaving !== undefined) {
+      divides.set(link.from, [
+        ...divides.get(link.from) ?? [],
+        {at: at.stop_sequence, destination: destinationOf(leaving, stopNames)}
+      ]);
     }
-
-    const at = dividing.stopTimes.find(stopTime => stopTime.stop_id === link.location);
-
-    if (at === undefined) {
-      continue;
-    }
-
-    divides.set(link.from, [
-      ...divides.get(link.from) ?? [],
-      {at: at.stop_sequence, destination: destinationOf(leaving, stopNames)}
-    ]);
-  }
-
-  if (divides.size === 0) {
-    return [...schedules];
   }
 
   return schedules.map(schedule => {
-    const dividing = schedule.stopTimes.length > 0 && divides.get(schedule.stopTimes[0].trip_id);
+    const dividing = divides.get(schedule.stopTimes[0]?.trip_id);
 
-    return dividing ? named(schedule, dividing, destinationOf(schedule, stopNames)) : schedule;
+    return dividing === undefined ? schedule : named(schedule, dividing, destinationOf(schedule, stopNames));
   });
 }
 
