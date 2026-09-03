@@ -86,23 +86,44 @@ describe("Association", () => {
     expect(result.portion.stopTimes[1].arrival_time).to.equal("25:00");
   });
 
-  it("dates a previous day portion on the base's service day", () => {
+  it("leaves a previous day portion on its own service day", () => {
     const base = schedule(1, "A", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
-      stop(1, "TON", "01:00"),
-      stop(2, "ASH", "02:00"),
+      stop(1, "ASH", "01:30"),
+      stop(2, "TON", "02:00"),
     ]);
 
+    // departs before the midnight the base has not reached, so there is no telling it on the base's
+    // day: 21:00 is three hours before that day began
     const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
-      stop(1, "DOV", "25:00"),
+      stop(1, "DOV", "21:00"),
       stop(2, "ASH", "25:30"),
     ]);
 
     const result = association(base, assoc, AssociationType.Join, "ASH", DateIndicator.Previous)
       .apply(base, assoc, idGenerator())!;
 
-    expect(result.portion.calendar.runsFrom.equals("2017-07-11")).to.be.true;
-    expect(result.portion.stopTimes[0].arrival_time).to.equal("01:00");
-    expect(result.portion.stopTimes[1].arrival_time).to.equal("01:30");
+    expect(result.portion.calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(result.portion.stopTimes.map(s => s.arrival_time)).to.deep.equal(["21:00", "25:30"]);
+  });
+
+  it("treats a date indicator it does not know as the same day", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "ASH", "12:00"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    // both sources cast the CIF field without checking it, so an unexpected value has to mean the
+    // least surprising thing rather than silently mean the day before
+    const result = association(base, assoc, AssociationType.Split, "ASH", "?" as DateIndicator)
+      .apply(base, assoc, idGenerator())!;
+
+    expect(result.portion.calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(result.portion.stopTimes.map(s => s.arrival_time)).to.deep.equal(["12:05", "13:00"]);
   });
 
   it("couples the portion only on the days all three run", () => {

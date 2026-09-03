@@ -37,11 +37,7 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
     tripIds.set(schedule.id, schedule.stopTimes[0].trip_id);
   }
 
-  if (ambiguous.size > 0) {
-    console.warn(`${ambiguous.size} schedule id(s) were handed out more than once; couplings naming them were dropped`);
-  }
-
-  return links.flatMap(link => {
+  const resolved = links.flatMap(link => {
     const from = tripIds.get(link.from);
     const to = tripIds.get(link.to);
 
@@ -49,6 +45,19 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
       ? []
       : [{from, to, location: link.location}];
   });
+
+  // A schedule can be the base of one association and the portion of another, and applying the
+  // second replaces it, so the first coupling is left naming something that no longer exists
+  const dropped = links.length - resolved.length;
+
+  if (dropped > 0) {
+    console.log(
+      `${dropped} coupling(s) dropped for a schedule a later association replaced` +
+      (ambiguous.size > 0 ? `, ${ambiguous.size} of them for a schedule id handed out more than once` : "")
+    );
+  }
+
+  return resolved;
 }
 
 /**

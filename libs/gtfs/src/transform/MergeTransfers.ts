@@ -141,7 +141,9 @@ function flag(value: unknown): 0 | 1 {
 function widen(transfer: Transfer, link: FixedLink): Transfer {
   const widened = {...transfer};
 
-  widened.min_transfer_time = Math.min(transfer.min_transfer_time ?? link.duration, link.duration);
+  widened.min_transfer_time = transfer.min_transfer_time === null
+    ? link.duration
+    : Math.min(transfer.min_transfer_time, link.duration);
   widened.start_time = min(transfer.start_time, link.start_time);
   widened.end_time = max(transfer.end_time, link.end_time);
   widened.start_date = min(transfer.start_date, link.start_date);

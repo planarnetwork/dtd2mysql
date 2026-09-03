@@ -71,15 +71,19 @@ export class Association implements OverlayRecord {
       return null;
     }
 
-    // A transfer carries no calendar, so the two trips have to agree which day they are coupled on.
-    // Where the portion runs over a midnight the base has already passed, that means the base's
-    // service day with the day change in the times: 04:28 out of Edinburgh becomes 28:28 on the day
-    // the sleeper left Euston.
-    const stopTimes = this.dateIndicator === DateIndicator.Same
-      ? assoc.stopTimes
-      : assoc.stopTimes.map(stopTime => this.reDated(stopTime));
+    // A transfer carries no calendar, so the two trips want to agree which day they are coupled on.
+    // A portion running over a midnight the base has not reached yet is told on the base's service
+    // day, with the day change in the times: 04:28 out of Edinburgh becomes 28:28 on the day the
+    // sleeper left Euston. One running *before* the base's day cannot be - GTFS has no time before
+    // 00:00 - so it keeps its own day and the coupling crosses one, which the spec allows where the
+    // trip being joined is on the subsequent service day.
+    const onBasesDay = this.dateIndicator === DateIndicator.Next;
 
-    const portion = assoc.clone(coupled, idGenerator.next().value, stopTimes);
+    const portion = assoc.clone(
+      onBasesDay ? coupled : this.inAssocDays(coupled),
+      idGenerator.next().value,
+      onBasesDay ? assoc.stopTimes.map(aDayLater) : assoc.stopTimes
+    );
     const alone = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
 
     return {
@@ -109,25 +113,21 @@ export class Association implements OverlayRecord {
       : calendar;
   }
 
-  private reDated(stopTime: StopTime): StopTime {
-    const hours = this.dateIndicator === DateIndicator.Next ? 24 : -24;
-
-    return Object.assign({}, stopTime, {
-      arrival_time: byHours(stopTime.arrival_time, hours),
-      departure_time: byHours(stopTime.departure_time, hours)
-    });
-  }
-
 }
 
 /**
- * A GTFS time moved a whole number of hours, keeping the minutes and seconds it came with. Hours are
- * not capped at 24 - that is the point of it.
+ * A call told on the day after the one it came with. Hours are not capped at 24 - that is the point
+ * of it - so 00:35 becomes 24:35.
  */
-function byHours(time: string, hours: number): string {
-  const moved = parseInt(time.substr(0, 2), 10) + hours;
+function aDayLater(stopTime: StopTime): StopTime {
+  return Object.assign({}, stopTime, {
+    arrival_time: plusADay(stopTime.arrival_time),
+    departure_time: plusADay(stopTime.departure_time)
+  });
+}
 
-  return (moved < 10 ? "0" + moved : String(moved)) + time.substr(2);
+function plusADay(time: string): string {
+  return (parseInt(time.substr(0, 2), 10) + 24) + time.substr(2);
 }
 
 export interface AssociationApplication {
