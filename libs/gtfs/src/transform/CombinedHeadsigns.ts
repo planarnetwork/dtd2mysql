@@ -8,17 +8,11 @@ import {StopTime} from "../entity/StopTime";
 /**
  * Name every destination a train is still carrying, at the stops before it divides.
  *
- * A trip is headed for where it ends, so the London Bridge to Caterham says Caterham - and a
- * passenger boarding it is not told that the front half comes off at Purley for Tattenham Corner.
- * The concatenation used to say it by accident, in a trip that ran through to one of the two.
+ * A trip is headed for where it ends, so the London Bridge to Caterham says Caterham and never
+ * mentions the front half coming off at Purley for Tattenham Corner - which the concatenation used
+ * to say by accident. The answer changes partway along, which is what `stop_headsign` is for.
  *
- * `stop_headsign` overrides the trip headsign at a stop, which is where the answer belongs, because
- * it changes partway along: "Caterham and Tattenham Corner" as far as Purley Oaks, and Caterham from
- * Purley on. A train that divides twice names all three until the first divide, and only what is
- * left after it.
- *
- * Joins need none of this. Once two trains are one they have a single destination, which is the
- * trip headsign already.
+ * Joins need none of it: once two trains are one they have a single destination.
  */
 export function combinedHeadsigns(
   schedules: readonly Schedule[],
@@ -34,16 +28,14 @@ export function combinedHeadsigns(
   }
 
   const splitLinks = links.filter(link => link.type === AssociationType.Split);
-  // where each divide happens along the train that is doing the dividing, and what comes off there
   const divides = new Map<string, Divide[]>();
 
   for (const link of splitLinks) {
     const at = byTripId.get(link.from)?.stopTimes.find(stopTime => stopTime.stop_id === link.location);
     const leaving = byTripId.get(link.to);
 
-    // dropUnknownStops can take a trip out of the feed, or the stop it divides at out of the trip.
-    // linkedTrips counts the same couplings going the same way, so nothing is lost by passing over
-    // them here.
+    // dropUnknownStops can take the trip out of the feed, or the stop out of the trip. linkedTrips
+    // reports the couplings it costs.
     if (at !== undefined && leaving !== undefined) {
       const dividing = divides.get(link.from) ?? [];
 
@@ -63,12 +55,11 @@ function named(schedule: Schedule, divides: Divide[], destination: string): Sche
   const coming = divides.toSorted((a, b) => a.at - b.at);
 
   return schedule.clone(schedule.calendar, schedule.id, schedule.stopTimes.map(stopTime => {
-    // what the train ends up as, and everything still to come off it, in the order it does
     const carrying = [destination];
 
     for (const divide of coming) {
-      // Once each. A train divides for the same place on two links where the schedule that leaves
-      // has a permanent record and an overlay of it, because those are two trips.
+      // Once each: a schedule with a permanent record and an overlay of it is two trips dividing
+      // off for the same place.
       if (divide.at > stopTime.stop_sequence && !carrying.includes(divide.destination)) {
         carrying.push(divide.destination);
       }
@@ -93,7 +84,6 @@ function and(names: string[]): string {
 }
 
 type Divide = {
-  /** the stop sequence the train divides at, which still reads as the destination it is left with */
   at: number,
   destination: string
 }
