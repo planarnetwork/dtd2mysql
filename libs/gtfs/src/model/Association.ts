@@ -41,9 +41,9 @@ export class Association implements OverlayRecord {
   /**
    * Couple the two trains, without joining them into one trip.
    *
-   * **Only the portion is narrowed.** A transfer applies on the days both its trips run, and the
-   * coupled days are a subset of the base's, so cutting one side is exact and leaves the base's
-   * through service in one piece.
+   * **Only the associated schedule is narrowed.** A transfer applies on the days both its trips
+   * run, and the coupled days are a subset of the base's, so cutting one side is exact and leaves
+   * the base's through service in one piece.
    *
    * Null where the association cannot apply: a location one of them does not call at, or no day on
    * which both run and the association is in force.
@@ -67,23 +67,23 @@ export class Association implements OverlayRecord {
     }
 
     // A transfer carries no calendar, so the two trips want to be on the same service day. Only a
-    // next day portion can be moved onto the base's: one running before it would need a time before
-    // 00:00. Those keep their own day and the coupling crosses one.
+    // next day schedule can be moved onto the base's: one running before it would need a time
+    // before 00:00. Those keep their own day and the coupling crosses one.
     const onBasesDay = this.dateIndicator === DateIndicator.Next;
 
-    const portion = assoc.clone(
+    const associated = assoc.clone(
       onBasesDay ? coupled : this.inAssocDays(coupled),
       idGenerator.next().value,
       onBasesDay ? assoc.stopTimes.map(aDayLater) : assoc.stopTimes
     );
-    const alone = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
+    const withoutIt = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
 
     return {
-      portion,
-      alone: alone === null ? null : assoc.clone(alone, idGenerator.next().value),
+      associated,
+      unassociated: withoutIt === null ? null : assoc.clone(withoutIt, idGenerator.next().value),
       link: this.assocType === AssociationType.Join
-        ? {from: portion.id, to: base.id, location: this.assocLocation}
-        : {from: base.id, to: portion.id, location: this.assocLocation}
+        ? {from: associated.id, to: base.id, location: this.assocLocation}
+        : {from: base.id, to: associated.id, location: this.assocLocation}
     };
   }
 
@@ -123,9 +123,9 @@ function plusADay(time: string): string {
 
 export interface AssociationApplication {
   /** the associated schedule on the days it is coupled, told in the base's service day */
-  portion: Schedule,
+  associated: Schedule,
   /** the associated schedule on the days it runs by itself, or null where there are none */
-  alone: Schedule | null,
+  unassociated: Schedule | null,
   link: AssociationLink
 }
 

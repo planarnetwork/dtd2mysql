@@ -356,7 +356,7 @@ describe("BuildFeed with an enricher", () => {
 describe("BuildFeed with an association", () => {
 
   const base = schedule(1, "A", "2024-01-08", "2024-03-04", "SE", ["TON", "ASH", "RAM"]);
-  const portion = schedule(2, "B", "2024-01-08", "2024-03-04", "SE", ["ASH", "DOV"]);
+  const associated = schedule(2, "B", "2024-01-08", "2024-03-04", "SE", ["ASH", "DOV"]);
 
   const divide = new Association(
     1, "A", "B", "ASH", DateIndicator.Same, AssociationType.Split,
@@ -366,7 +366,7 @@ describe("BuildFeed with an association", () => {
     STP.Permanent
   );
 
-  const built = () => build(new FakeSource([base, portion], [], [], [], [divide]));
+  const built = () => build(new FakeSource([base, associated], [], [], [], [divide]));
 
   it("writes both trips whole, and no concatenation of them", async () => {
     const {files} = await built();
@@ -403,7 +403,7 @@ describe("BuildFeed with an association", () => {
 
   it("gives every row of transfers.txt the same columns, whichever kind it is", async () => {
     const {files} = await build(
-      new FakeSource([base, portion], [], [transfer("TON", "TON")], [], [divide])
+      new FakeSource([base, associated], [], [transfer("TON", "TON")], [], [divide])
     );
     const [first, ...rest] = files["transfers.txt"];
 

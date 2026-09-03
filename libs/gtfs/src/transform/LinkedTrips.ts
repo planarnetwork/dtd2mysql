@@ -56,8 +56,8 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
     }
   }
 
-  // A schedule can be the base of one association and the portion of another, and applying the
-  // second replaces it, so the first coupling is left naming something that is no longer there
+  // A schedule can be the base of one association and the associated schedule of another, and
+  // applying the second replaces it, so the first coupling names something that is no longer there
   if (missing > 0) {
     console.log(`${missing} coupling(s) dropped for a schedule a later association replaced`);
   }
@@ -74,11 +74,11 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
  * The couplings, as transfers.txt rows.
  *
  * Neither trip is cut at the coupling, so the through service either train offers stays in one
- * piece, and the rows carry no calendar - `applyAssociations` has already cut the portion to the
+ * piece, and the rows carry no calendar - `applyAssociations` has already cut the associated schedule to the
  * days it is coupled, so the days the two trips share are the days it happens.
  *
  * Each side keeps the stop its own schedule named. The source sometimes disagrees with itself about
- * the platform - on 2026-09-20 the Cardiff portion arrives at Swansea platform 3 and the train it
+ * the platform - on 2026-09-20 the Cardiff train arrives at Swansea platform 3 and the train it
  * joins leaves platform 1 - and there is nothing to reconcile, because each stop is only ever
  * checked against its own trip.
  */

@@ -1890,8 +1890,8 @@ trains for anything that does not read `transfers.txt`.
 
 **The coupling has no calendar of its own.** A transfer applies on the days both its trips run, so
 the associated schedule is cut to `base ∩ assoc ∩ association` and the days the two trips share are
-the days they are coupled. Only the portion is narrowed: it is a subset of the base's days by
-construction, so narrowing one side is enough. Where the portion runs over a midnight the base has
+the days they are coupled. Only the associated schedule is narrowed: it is a subset of the base's
+days by construction, so narrowing one side is enough. Where it runs over a midnight the base has
 already passed, it is dated on the base's service day with the day change in the times - the 04:28
 Edinburgh to Aberdeen becomes 28:28 on the day the sleeper left Euston.
 

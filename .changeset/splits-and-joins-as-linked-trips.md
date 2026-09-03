@@ -6,8 +6,8 @@
 Emit splits and joins as GTFS linked trips instead of concatenating them
 
 A DTD association is two trains sharing a vehicle for part of their run. Folding the associated
-schedule into its base said something else - that a passenger boarding the portion rides through to
-the base's destination on one train - and where the portion arrives back where it came from, that
+schedule into its base said something else - that a passenger boarding the associated train rides
+through to the base's destination on one train - and where it arrives back where it came from, that
 trip doubles back on itself. Both schedules now keep their own stops and their own trip, and the
 association is a `transfers.txt` row with `transfer_type=4` and `from_trip_id`/`to_trip_id`.
 

@@ -54,26 +54,26 @@ describe("ApplyAssociations", () => {
       ["TON", "ASH", "RAM"]
     ]);
 
-    // each portion is dated on the day its own base ran, and keeps its own stops
-    const portions = schedules["B"];
+    // each one is dated on the day its own base ran, and keeps its own stops
+    const associated = schedules["B"];
 
-    expect(portions).to.have.length(2);
-    expect(portions[0].calendar.runsFrom.equals("2017-07-10")).to.be.true;
-    expect(portions[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV"]);
-    expect(portions[0].stopTimes[0].departure_time).to.equal("24:35:30");
-    expect(portions[1].calendar.runsFrom.equals("2017-07-11")).to.be.true;
-    expect(portions[1].stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV", "SEA"]);
+    expect(associated).to.have.length(2);
+    expect(associated[0].calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(associated[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV"]);
+    expect(associated[0].stopTimes[0].departure_time).to.equal("24:35:30");
+    expect(associated[1].calendar.runsFrom.equals("2017-07-11")).to.be.true;
+    expect(associated[1].stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV", "SEA"]);
 
     // make sure that it only matches base1 to assoc1 and base2 to assoc2
     expect(links).to.have.length(2);
     expect(links[0].from).to.equal(base1.id);
-    expect(links[0].to).to.equal(portions[0].id);
+    expect(links[0].to).to.equal(associated[0].id);
     expect(links[0].location).to.equal("ASH");
     expect(links[1].from).to.equal(base2.id);
-    expect(links[1].to).to.equal(portions[1].id);
+    expect(links[1].to).to.equal(associated[1].id);
   });
 
-  it("does not couple a portion a second time", () => {
+  it("does not couple an associated schedule a second time", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-19", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "22:30"),
       stop(2, "ASH", "23:30"),
@@ -86,8 +86,8 @@ describe("ApplyAssociations", () => {
     ]);
 
     // The second record's dates, counted in the associated schedule's days, land on the days the
-    // first one's portion was given - which are counted in the base's. Left where an association
-    // looks, the portion matches and is moved onto a base's day all over again.
+    // first one produced - which are counted in the base's. Left where an association
+    // looks, it matches and is moved onto a base's day all over again.
     const first = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
       new ScheduleCalendar(Temporal.PlainDate.from("2017-07-12"), Temporal.PlainDate.from("2017-07-14"), ALL_DAYS));
     const second = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,

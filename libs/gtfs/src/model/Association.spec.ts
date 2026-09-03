@@ -25,19 +25,19 @@ describe("Association", () => {
 
     const result = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator())!;
 
-    // the portion is the associated schedule, not a concatenation of the two
-    expect(result.portion.tuid).to.equal("B");
-    expect(result.portion.stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV"]);
+    // what comes back is the associated schedule, not a concatenation of the two
+    expect(result.associated.tuid).to.equal("B");
+    expect(result.associated.stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV"]);
     // the base keeps every stop it had
     expect(base.stopTimes.map(s => s.stop_id)).to.deep.equal(["TON", "PDW", "ASH", "RAM"]);
 
     // a split runs the base first, so that is the trip the link comes from
     expect(result.link.from).to.equal(base.id);
-    expect(result.link.to).to.equal(result.portion.id);
+    expect(result.link.to).to.equal(result.associated.id);
     expect(result.link.location).to.equal("ASH");
   });
 
-  it("links the portion to the base, for a join", () => {
+  it("links the associated schedule to the base, for a join", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "RAM", "10:00"),
       stop(2, "ASH", "12:00"),
@@ -51,17 +51,17 @@ describe("Association", () => {
 
     const result = association(base, assoc, AssociationType.Join, "ASH").apply(base, assoc, idGenerator())!;
 
-    expect(result.portion.tuid).to.equal("B");
-    expect(result.portion.stopTimes.map(s => s.stop_id)).to.deep.equal(["DOV", "ASH"]);
+    expect(result.associated.tuid).to.equal("B");
+    expect(result.associated.stopTimes.map(s => s.stop_id)).to.deep.equal(["DOV", "ASH"]);
     expect(base.stopTimes.map(s => s.stop_id)).to.deep.equal(["RAM", "ASH", "TON"]);
 
     // a join is the other way round
-    expect(result.link.from).to.equal(result.portion.id);
+    expect(result.link.from).to.equal(result.associated.id);
     expect(result.link.to).to.equal(base.id);
     expect(result.link.location).to.equal("ASH");
   });
 
-  it("dates an overnight portion on the base's service day", () => {
+  it("dates an overnight associated schedule on the base's service day", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "22:30"),
       stop(2, "PDW", "23:30"),
@@ -77,15 +77,15 @@ describe("Association", () => {
     const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
       .apply(base, assoc, idGenerator())!;
 
-    // dated on the day the base left, not the day the portion's own schedule names
-    expect(result.portion.calendar.runsFrom.equals("2017-07-10")).to.be.true;
-    expect(result.portion.calendar.runsTo.equals("2017-07-16")).to.be.true;
-    expect(result.portion.stopTimes[0].arrival_time).to.equal("24:35");
-    expect(result.portion.stopTimes[0].departure_time).to.equal("24:35:30");
-    expect(result.portion.stopTimes[1].arrival_time).to.equal("25:00");
+    // dated on the day the base left, not the day its own schedule names
+    expect(result.associated.calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(result.associated.calendar.runsTo.equals("2017-07-16")).to.be.true;
+    expect(result.associated.stopTimes[0].arrival_time).to.equal("24:35");
+    expect(result.associated.stopTimes[0].departure_time).to.equal("24:35:30");
+    expect(result.associated.stopTimes[1].arrival_time).to.equal("25:00");
   });
 
-  it("leaves a previous day portion on its own service day", () => {
+  it("leaves a previous day associated schedule on its own service day", () => {
     const base = schedule(1, "A", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
       stop(1, "ASH", "01:30"),
       stop(2, "TON", "02:00"),
@@ -101,8 +101,8 @@ describe("Association", () => {
     const result = association(base, assoc, AssociationType.Join, "ASH", DateIndicator.Previous)
       .apply(base, assoc, idGenerator())!;
 
-    expect(result.portion.calendar.runsFrom.equals("2017-07-10")).to.be.true;
-    expect(result.portion.stopTimes.map(s => s.arrival_time)).to.deep.equal(["21:00", "25:30"]);
+    expect(result.associated.calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(result.associated.stopTimes.map(s => s.arrival_time)).to.deep.equal(["21:00", "25:30"]);
   });
 
   it("treats a date indicator it does not know as the same day", () => {
@@ -121,11 +121,11 @@ describe("Association", () => {
     const result = association(base, assoc, AssociationType.Split, "ASH", "?" as DateIndicator)
       .apply(base, assoc, idGenerator())!;
 
-    expect(result.portion.calendar.runsFrom.equals("2017-07-10")).to.be.true;
-    expect(result.portion.stopTimes.map(s => s.arrival_time)).to.deep.equal(["12:05", "13:00"]);
+    expect(result.associated.calendar.runsFrom.equals("2017-07-10")).to.be.true;
+    expect(result.associated.stopTimes.map(s => s.arrival_time)).to.deep.equal(["12:05", "13:00"]);
   });
 
-  it("couples the portion only on the days all three run", () => {
+  it("couples the associated schedule only on the days all three run", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-09-16", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "10:00"),
       stop(2, "ASH", "12:00"),
@@ -151,16 +151,16 @@ describe("Association", () => {
 
     const result = divide.apply(base, assoc, idGenerator())!;
 
-    expect(result.portion.calendar.runsFrom.equals("2017-07-20")).to.equal(true);
-    expect(result.portion.calendar.runsTo.equals("2017-08-16")).to.equal(true);
-    expect(result.portion.calendar.excludeDays).to.include.all.keys("20170801", "20170805");
+    expect(result.associated.calendar.runsFrom.equals("2017-07-20")).to.equal(true);
+    expect(result.associated.calendar.runsTo.equals("2017-08-16")).to.equal(true);
+    expect(result.associated.calendar.excludeDays).to.include.all.keys("20170801", "20170805");
 
-    // and the rest of the portion still runs, uncoupled
-    expect(result.alone!.tuid).to.equal("B");
-    expect(result.alone!.calendar.runsFrom.equals("2017-07-10")).to.equal(true);
-    expect(result.alone!.calendar.runsTo.equals("2017-09-16")).to.equal(true);
-    expect(result.alone!.calendar.excludeDays).to.include.all.keys("20170720", "20170816");
-    expect(result.alone!.calendar.excludeDays).to.not.have.any.keys("20170801", "20170805");
+    // and the rest of it still runs, unassociated
+    expect(result.unassociated!.tuid).to.equal("B");
+    expect(result.unassociated!.calendar.runsFrom.equals("2017-07-10")).to.equal(true);
+    expect(result.unassociated!.calendar.runsTo.equals("2017-09-16")).to.equal(true);
+    expect(result.unassociated!.calendar.excludeDays).to.include.all.keys("20170720", "20170816");
+    expect(result.unassociated!.calendar.excludeDays).to.not.have.any.keys("20170801", "20170805");
   });
 
   it("takes the days the two schedules agree on, not just the dates", () => {
@@ -177,11 +177,11 @@ describe("Association", () => {
     const result = association(base, assoc, AssociationType.Split, "ASH").apply(base, assoc, idGenerator())!;
 
     // the base does not run at the weekend, so neither is the coupling
-    expect(result.portion.calendar.days).to.deep.equal(WEEKDAYS);
-    expect(result.alone!.calendar.days).to.deep.equal(ALL_DAYS);
+    expect(result.associated.calendar.days).to.deep.equal(WEEKDAYS);
+    expect(result.unassociated!.calendar.days).to.deep.equal(ALL_DAYS);
   });
 
-  it("does not leave the portion running alone when the association covers every day of it", () => {
+  it("leaves nothing unassociated when the association covers every day it runs", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-08-16", STP.Overlay, WEEKDAYS, [
       stop(1, "TON", "10:00"),
       stop(2, "ASH", "12:00"),
@@ -201,8 +201,8 @@ describe("Association", () => {
 
     const result = divide.apply(base, assoc, idGenerator())!;
 
-    expect(result.alone).to.equal(null);
-    expect(result.portion.calendar.isEmpty).to.equal(false);
+    expect(result.unassociated).to.equal(null);
+    expect(result.associated.calendar.isEmpty).to.equal(false);
   });
 
   it("does not apply where the association says neither join nor split", () => {
