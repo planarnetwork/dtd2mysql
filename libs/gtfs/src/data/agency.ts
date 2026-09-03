@@ -1,5 +1,5 @@
 
-import {Agency} from "../entity/Agency";
+import {Agency, AgencyID} from "../entity/Agency";
 
 export const agencies: Agency[] = [
 { agency_id: "AW", agency_name: "Transport for Wales",        agency_url: "https://tfw.wales/",                      agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0333 321 1202",  agency_fare_url: null },
@@ -44,3 +44,13 @@ export const agencies: Agency[] = [
 { agency_id: "QV", agency_name: "Arriva Bus",                 agency_url: "https://www.arrivabus.co.uk/",            agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0344 800 4411",  agency_fare_url: null },
 { agency_id: "ZZ", agency_name: "Other operator",             agency_url: "https://www.nationalrail.co.uk/",         agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0345 748 4950",  agency_fare_url: null },
 ];
+
+/**
+ * The agencies by their ATOC code.
+ *
+ * Every schedule asks whether its operator is one of these and what it is
+ * called, so the lookup is built once rather than walked per schedule.
+ */
+export const agencyIndex: ReadonlyMap<AgencyID, Agency> = new Map(
+  agencies.map(agency => [agency.agency_id, agency])
+);

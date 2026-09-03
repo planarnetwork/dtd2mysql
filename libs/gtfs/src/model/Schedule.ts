@@ -6,7 +6,8 @@ import {AgencyID} from "../entity/Agency";
 import {CRS} from "../entity/Stop";
 import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
 import {toYYYYMMDD} from "./PlainDate";
-import {agencies} from "../data/agency";
+import {agencyIndex} from "../data/agency";
+import {accessibleTextColor, LineRule, lineRulesByOperator, routeBranding} from "../data/route";
 
 /**
  * The identifier for a trip, stable across data revisions.
@@ -17,82 +18,6 @@ import {agencies} from "../data/agency";
  */
 export function tripId(tuid: TUID, calendar: ScheduleCalendar): string {
   return `${tuid}_${toYYYYMMDD(calendar.runsFrom)}_${toYYYYMMDD(calendar.runsTo)}`;
-}
-
-const BLACK = "000000";
-const WHITE = "FFFFFF";
-
-function getAccessibleTextColor(hex : string) {
-  // Convert hex to RGB
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-  // Calculate relative luminance according to WCAG 2.1
-  const calLuminance = (c : number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  const L = 0.2126 * calLuminance(r) + 0.7152 * calLuminance(g) + 0.0722 * calLuminance(b);
-
-  // Return black or white based on the standard WCAG luminance threshold
-  return L > 0.179 ? BLACK : WHITE;
-}
-
-const routeInformation: {
-  [key: string]: {
-    route_short_name?: string,
-    route_long_name?: string,
-    route_color?: string,
-    route_text_color?: string,
-    route_url?: string
-  }
-} = {
-  "AW": {route_short_name: 'TfW Rail', route_long_name: "Transport for Wales", route_color: "ff0000"},
-  "CC": {route_long_name: "c2c", route_color: "b7007c"},
-  "CH": {route_long_name: "Chiltern Railways", route_color: "00bfff"},
-  "CS": {route_long_name: "Caledonian Sleeper", route_color: "1d2e35"},
-  "EM": {route_short_name: "EMR", route_long_name: "East Midlands Railway", route_color: "713563"},
-  "ES": {route_long_name: "Eurostar", route_color: "ffd700"},
-  "GC": {route_long_name: "Grand Central", route_color: "1d1d1b"},
-  "GN": {route_long_name: "Great Northern", route_color: "0099ff"},
-  "GR": {route_short_name: "LNER", route_long_name: "London North Eastern Railway", route_color: "ce0e2d"},
-  "GW": {route_short_name: "GWR", route_long_name: "Great Western Railway", route_color: "0a493e"},
-  "GX": {route_long_name: "Gatwick Express", route_color: "eb1e2d"},
-  "HT": {route_long_name: "Hull Trains", route_color: "de005c"},
-  "HX": {route_long_name: "Heathrow Express", route_color: "532e63"},
-  "IL": {route_long_name: "Island Line", route_color: "1e90ff"},
-  "LD": {route_long_name: "Lumo", route_color: "2b6ef5"},
-  "LE": {route_long_name: "Greater Anglia", route_color: "d70428"},
-  "LF": {route_long_name: "Lumo Stirling", route_color: "2b6ef5"},
-  "LM": {route_short_name: 'WMT', route_long_name: "West Midlands Trains"},
-  'LN': {route_short_name: 'LNR', route_long_name: 'London Northwestern Railway', route_color: '00bf6f', route_url: 'https://www.londonnorthwesternrailway.co.uk/'},
-  "LO": {route_short_name: "Overground", route_long_name: "London Overground", route_color: "ff7518"},
-  "LT": {route_short_name: "Underground", route_long_name: "London Underground", route_color: "000f9f"},
-  "ME": {route_long_name: "Merseyrail", route_color: "fff200"},
-  "NT": {route_long_name: "Northern", route_color: "0f0d78"},
-  "SE": {route_long_name: "Southeastern", route_color: "389cff"},
-  "SN": {route_long_name: "Southern", route_color: "8cc63e"},
-  "SR": {route_long_name: "ScotRail", route_color: "1e467d"},
-  "SW": {route_short_name: "SWR", route_long_name: "South Western Railway", route_color: "24398c"},
-  "SX": {route_long_name: "Stansted Express", route_color: "6b717a"},
-  "TL": {route_long_name: "Thameslink", route_color: "ff5aa4"},
-  "TP": {route_short_name: "TPE", route_long_name: "TransPennine Express", route_color: "09a4ec"},
-  "TW": {route_short_name: "Metro", route_long_name: "Tyne & Wear Metro"},
-  "VT": {route_short_name: 'Avanti', route_long_name: "Avanti West Coast", route_color: "004354"},
-  'WM': {route_short_name: 'WMR', route_long_name: 'West Midlands Railway', route_color: 'e07709', route_url: 'https://www.westmidlandsrailway.co.uk/'},
-  "XC": {route_long_name: "CrossCountry", route_color: "660f21"},
-  "XR": {route_long_name: "Elizabeth line", route_color: "9364cc", route_url: "https://tfl.gov.uk/elizabeth-line/route/elizabeth/"},
-  "BAK": {route_short_name: "Bakerloo", route_color: "a65a2a", route_url: "https://tfl.gov.uk/tube/route/bakerloo/"},
-  "DST": {route_short_name: "District", route_color: "007934", route_url: "https://tfl.gov.uk/tube/route/district/"},
-  "MET": {route_short_name: "Metropolitan", route_color: "870f54", route_url: "https://tfl.gov.uk/tube/route/metropolitan/"},
-  "LIB": {route_short_name: "Liberty", route_color: "61686B", route_url: "https://tfl.gov.uk/overground/route/liberty/"},
-  "LIO": {route_short_name: "Lioness", route_color: "FFA600", route_url: "https://tfl.gov.uk/overground/route/lioness/"},
-  "MIL": {route_short_name: "Mildmay", route_color: "006FE6", route_url: "https://tfl.gov.uk/overground/route/mildmay/"},
-  "SUF": {route_short_name: "Suffragette", route_color: "18A95D", route_url: "https://tfl.gov.uk/overground/route/suffragette/"},
-  "WEA": {route_short_name: "Weaver", route_color: "9B0058", route_url: "https://tfl.gov.uk/overground/route/weaver/"},
-  "WIN": {route_short_name: "Windrush", route_color: "DC241F", route_url: "https://tfl.gov.uk/overground/route/windrush/"},
-  "ME_Northern": {route_short_name: "Northern", route_color: "0266b2", route_url: "https://www.merseytravel.gov.uk/timetables/rail/northern-line/"},
-  "ME_Wirral": {route_short_name: "Wirral", route_color: "00a94f", route_url: "https://www.merseytravel.gov.uk/timetables/rail/wirral-line/"},
-  "GRN": {route_short_name: "Green", route_color: "32B457"},
-  "YEL": {route_short_name: "Yellow", route_color: "FCB828"},
 }
 
 /**
@@ -112,7 +37,7 @@ export class Schedule implements OverlayRecord {
     public readonly firstClassAvailable: boolean,
     public readonly reservationPossible: boolean
   ) {}
-  
+
   public get tripId(): string {
     return tripId(this.tuid, this.calendar);
   }
@@ -171,119 +96,83 @@ export class Schedule implements OverlayRecord {
   }
 
   /**
-   * We are trying to assign routes which are shown in mainstream journey
-   * planners and aligning with station information boards, using the following
-   * rules:
+   * The route this schedule runs on: the brand a passenger sees rather than
+   * anything the DTD feed names.
    *
-   * For London Underground, Tyne & Wear Metro, London Overground and 
-   * Merseyrail, the official line names are used.
-   * For West Midland Trains, show "WMR" or "LNR" depending on the where the
-   * service goes.
-   * For Greater Anglia, show "Stansted Express" if it runs between the airport
-   * and London, Stratford, Tottenham Hale or Seven Sisters
-   * Otherwise, use the short form of the operator brand name.
-   * 
+   * Most operators run one brand and this is their ATOC code. The ones that run
+   * several - London Underground, the Overground, Merseyrail, the Tyne & Wear
+   * Metro, West Midlands Trains and Greater Anglia's Stansted Express - are told
+   * apart by where the service goes, by the rules in `data/route.ts`.
+   *
+   * A route id is worked out from the schedule rather than handed out in the
+   * order schedules arrive, so it is the same id in every build and can be
+   * referred to from outside the feed.
+   *
    * TODO: If it is a bus service and the actual route number is available in the
    * "headcode" field, use it.
    */
   private get bareRouteId(): string {
-    const stopAtCallback = this.stopAt.bind(this);
-    
-    if (this.operator === 'LM') {
-      const lnrTermini = ['EUS', 'WFJ', 'TRI', 'BLY', 'MKC', 'NMP', 'SAA', 'BDM', 'LIV', 'CRE'];
-      if (lnrTermini.includes(this.origin) || lnrTermini.includes(this.destination)) {
-        return 'LN'; // London Northwestern Railway
-      }
-      return 'WM'; // West Midlands railway
-    }
-    
-    if (this.operator === 'LE' && [this.origin, this.destination].includes('SSD')) {
-      if (['LST', 'SRA', 'SVS', 'TOM'].some(stopAtCallback)) {
-        return 'SX';
-      }
+    const rules = lineRulesByOperator.get(this.operator);
+
+    if (rules === undefined) {
+      return this.operator;
     }
 
-    if (this.operator === 'LO') {
-      if (['LST', 'HAC', 'SKW', 'EDR', 'ENF', 'CHN', 'WST', 'CHI'].some(stopAtCallback)) {
-        return 'WEA';
-      }
-      // some Suffragette line services run through to Willesden Junction
-      if (['HRY', 'WMW', 'LER', 'BKG'].some(stopAtCallback)) {
-        return 'SUF';
-      }
-      if (['RMF', 'UPM'].some(stopAtCallback)) {
-        return 'LIB';
-      }
-      // I am considering Stratford - Watford through-running services to be Lioness line here, however services terminating at Willesden Junction are not.
-      if (['SBP', 'HRW', 'WFH', 'WFJ'].some(stopAtCallback)) {
-        return 'LIO';
-      }
-      if (['KPA', 'SPB', 'RMD', 'SAT', 'HDH', 'CMD', 'HKC', 'SRA'].some(stopAtCallback)) {
-        return 'MIL';
-      }
-      if (['DLJ', 'SDC', 'ZCW', 'SQE', 'NXG', 'NWX', 'SYD', 'WCY', 'CYP'].some(stopAtCallback)) {
-        return 'WIN';
-      }
-      if (['EUS', 'KBN', 'QPW'].some(stopAtCallback)) {
-        return 'LIO';
-      }
-    }
-    
-    if (this.operator === 'ME') {
-      if (['HNX', 'LPY', 'SDL', 'BAH', 'HLR', 'SOP', 'KKD', 'WAO', 'MAG', 'OMS', 'RIL', 'KIR', 'HBL', 'AIN'].some(stopAtCallback)) {
-        return 'ME_Northern';
-      }
-      if (['BKQ', 'NBN', 'BID', 'WKI', 'RFY', 'PSL', 'HOO', 'ELP', 'CTR'].some(stopAtCallback)) {
-        return 'ME_Wirral';
-      }
-    }
-    
-    if (this.operator === 'LT') {
-      if (['AMR', 'ZCM', 'RIC', 'ZMP', 'HOH', 'ZBS'].some(stopAtCallback)) {
-        return 'MET';
-      }
-      if (['RMD', 'GUN', 'ZTU'].some(stopAtCallback)) {
-        return 'DST';
-      }
-      if (['QPW', 'SBP', 'HRW'].some(stopAtCallback)) {
-        return 'BAK';
-      }
-    }
-    
-    if (this.operator === 'TW') {
-      if (['APN', 'FEG', 'REG', 'SUN'].some(stopAtCallback)) {
-        return 'GRN';
-      }
-      // I can't see any Yellow line service appearing in the National Rail timetable
-    }
-    
-    return this.operator;
+    // Built here rather than per rule: a service calls at a few dozen stations
+    // and a line is recognised by asking about a few dozen more.
+    const calls = new Set(this.stopTimes.map(stopTime => stopTime.stop_id));
+    const matches = (rule: LineRule) =>
+      (rule.between === undefined || rule.between.includes(this.origin) || rule.between.includes(this.destination))
+      && (rule.calls === undefined || rule.calls.some(crs => calls.has(crs)));
+
+    return rules.find(matches)?.line ?? this.operator;
   }
-  
-  public get routeId() : string {
-    return this.mode === RouteType.Bus ? `${this.bareRouteId}_BUS` : this.mode === RouteType.ReplacementBus ? `${this.bareRouteId}_RRB` : this.bareRouteId;
+
+  /**
+   * A bus does not run on the line its operator's trains do, so it is a route
+   * of its own. Replacement buses are separated from scheduled ones because a
+   * passenger reads them differently: one is the timetable, the other is what
+   * happens when the timetable fails.
+   */
+  public get routeId(): string {
+    switch (this.mode) {
+      case RouteType.Bus: return `${this.bareRouteId}_BUS`;
+      case RouteType.ReplacementBus: return `${this.bareRouteId}_RRB`;
+      default: return this.bareRouteId;
+    }
   }
 
   /**
    * Convert to GTFS Route.
+   *
+   * GTFS asks for a short name, a long name or both. The brand supplies what it
+   * has; an operator with no brand entry falls back to the name its agency
+   * record carries, as a long name, because an agency is named in full. The id
+   * itself is the last resort, for an operator this build has never heard of.
    */
   public toRoute(): Route {
-    const routeData = routeInformation[this.bareRouteId];
-    const agencyName = agencies.find(agency => agency.agency_id === this.operator)?.agency_name;
-    const routeColor = routeData?.route_color;
-    
+    const branding = routeBranding.get(this.bareRouteId);
+    const agency = agencyIndex.get(this.operator);
+    const longName = branding?.route_long_name
+      ?? (branding?.route_short_name === undefined ? agency?.agency_name : undefined);
+    const shortName = branding?.route_short_name
+      ?? (longName === undefined ? this.bareRouteId : undefined);
+    const color = branding?.route_color;
+
     return {
       route_id: this.routeId,
-      agency_id: agencies.some(agency => agency.agency_id === this.operator) ? this.operator : 'ZZ',
-      route_short_name: routeData?.route_short_name 
-          ?? (routeData?.route_long_name === undefined && agencyName === undefined ? this.bareRouteId : undefined),
-      route_long_name: routeData?.route_long_name
-          ?? (routeData?.route_short_name === undefined ? agencyName : undefined),
+      agency_id: agency?.agency_id ?? "ZZ",
+      route_short_name: shortName ?? null,
+      route_long_name: longName ?? null,
       route_type: this.mode,
-      route_text_color: routeColor === undefined ? undefined : getAccessibleTextColor(routeColor),
-      route_color: routeData?.route_color,
-      route_url: routeData?.route_url,
-      route_desc: undefined,
+      route_text_color: color === undefined ? null : accessibleTextColor(color),
+      route_color: color ?? null,
+      route_url: branding?.route_url ?? null,
+      // What the DTD says about a train - its class and whether it can be
+      // reserved - is a property of the train, not of the line it runs on.
+      // Flattening it onto the route made trips sharing a route disagree about
+      // their own description, so it is left out.
+      route_desc: null
     };
   }
 

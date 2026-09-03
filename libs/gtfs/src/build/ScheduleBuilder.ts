@@ -4,7 +4,6 @@ import {RouteType} from "../entity/Route";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
 import {StopTime} from "../entity/StopTime";
-import {agencies} from "../data/agency";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
