@@ -261,6 +261,23 @@ describe("CifFileSource", () => {
     expect(associations[0].assocLocation).to.equal("TON");
   });
 
+  it("orders the associations so an overlay follows the permanent it overlays", async () => {
+    const feed = zip("RJTTF001", {
+      MSN,
+      MCA: [
+        tiploc("TONBDG", "TON"),
+        association("C00001", "C00002", "240201", "240301", "TONBDG ", "O"),
+        association("C00001", "C00002", "240101", "240401", "TONBDG ", "P")
+      ]
+    });
+
+    // The database returns them ORDER BY stp_indicator DESC, id, and applyOverlays takes each record
+    // as an overlay of the ones before it - so a source handing them over in file order would
+    // resolve the overlay against nothing and leave both. It is also what decides which association
+    // claims a day two of them cover, so the two sources have to agree on it.
+    expect((await source(feed).getAssociations()).map(a => a.stp)).to.deep.equal(["P", "O"]);
+  });
+
   it("drops an association at a location the feed never described", async () => {
     const feed = zip("RJTTF001", {
       MSN,
