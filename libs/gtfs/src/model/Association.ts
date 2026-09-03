@@ -41,11 +41,6 @@ export class Association implements OverlayRecord {
   /**
    * Couple the two trains, without joining them into one trip.
    *
-   * A join or a split is two trains sharing a vehicle for part of their run, which is what
-   * `transfer_type=4` says. Concatenating them claimed something else - one train through to the
-   * base's destination - and where the portion came from where the base is going, that trip doubles
-   * back on itself.
-   *
    * **Only the portion is narrowed.** A transfer applies on the days both its trips run, and the
    * coupled days are a subset of the base's, so cutting one side is exact and leaves the base's
    * through service in one piece.
@@ -71,12 +66,9 @@ export class Association implements OverlayRecord {
       return null;
     }
 
-    // A transfer carries no calendar, so the two trips want to agree which day they are coupled on.
-    // A portion running over a midnight the base has not reached yet is told on the base's service
-    // day, with the day change in the times: 04:28 out of Edinburgh becomes 28:28 on the day the
-    // sleeper left Euston. One running *before* the base's day cannot be - GTFS has no time before
-    // 00:00 - so it keeps its own day and the coupling crosses one, which the spec allows where the
-    // trip being joined is on the subsequent service day.
+    // A transfer carries no calendar, so the two trips want to be on the same service day. Only a
+    // next day portion can be moved onto the base's: one running before it would need a time before
+    // 00:00. Those keep their own day and the coupling crosses one.
     const onBasesDay = this.dateIndicator === DateIndicator.Next;
 
     const portion = assoc.clone(
@@ -116,8 +108,7 @@ export class Association implements OverlayRecord {
 }
 
 /**
- * A call told on the day after the one it came with. Hours are not capped at 24 - that is the point
- * of it - so 00:35 becomes 24:35.
+ * A call told on the day after the one it came with, so 00:35 becomes 24:35.
  */
 function aDayLater(stopTime: StopTime): StopTime {
   return Object.assign({}, stopTime, {
@@ -139,8 +130,6 @@ export interface AssociationApplication {
 }
 
 /**
- * Two trips a passenger rides through without changing train, and where one becomes the other.
- *
  * Named by `Schedule.id` because the trip ids are not settled until `mergeSchedules` has resolved
  * the collisions between them.
  */

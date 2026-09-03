@@ -63,11 +63,9 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
 /**
  * The couplings, as transfers.txt rows.
  *
- * Neither trip is cut at the coupling - the spec anchors the link with a stop id and only asks that
- * the trip calls there - so the through service either train offers stays in one piece.
- *
- * **No calendar.** `applyAssociations` has already cut the portion to the days it is coupled, and a
- * transfer applies on the days both its trips run, so the trips say when the coupling happens.
+ * Neither trip is cut at the coupling, so the through service either train offers stays in one
+ * piece, and the rows carry no calendar - `applyAssociations` has already cut the portion to the
+ * days it is coupled, so the days the two trips share are the days it happens.
  *
  * Each side keeps the stop its own schedule named. The source sometimes disagrees with itself about
  * the platform - on 2026-09-20 the Cardiff portion arrives at Swansea platform 3 and the train it

@@ -2,8 +2,7 @@ import {Duration} from "../model/Duration";
 
 /**
  * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same), a fixed
- * leg between two different stations (a walk or tube), or a split or join, where the passenger stays on board and
- * the vehicle becomes another trip.
+ * leg between two different stations (a walk or tube), or a split or join.
  */
 export interface Transfer {
   from_stop_id: StopID,
@@ -18,7 +17,7 @@ export interface Transfer {
 
   transfer_type: TransferType,
 
-  /** Null on a coupling, where the passenger does not get off. */
+  /** Null on a coupling. */
   min_transfer_time: Duration | null,
 
   /**
@@ -59,7 +58,6 @@ export enum TransferType {
   Timed = 1,
   MinTime = 2,
   NotPossible = 3,
-  /** the passenger stays on board and the vehicle becomes the other trip */
   InSeat = 4
 }
 

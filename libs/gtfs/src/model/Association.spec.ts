@@ -28,10 +28,10 @@ describe("Association", () => {
     // the portion is the associated schedule, not a concatenation of the two
     expect(result.portion.tuid).to.equal("B");
     expect(result.portion.stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV"]);
-    // the base keeps every stop it had, so the through service is still one trip
+    // the base keeps every stop it had
     expect(base.stopTimes.map(s => s.stop_id)).to.deep.equal(["TON", "PDW", "ASH", "RAM"]);
 
-    // a passenger on the base stays on board and finds themselves on the portion
+    // a split runs the base first, so that is the trip the link comes from
     expect(result.link.from).to.equal(base.id);
     expect(result.link.to).to.equal(result.portion.id);
     expect(result.link.location).to.equal("ASH");
@@ -55,7 +55,7 @@ describe("Association", () => {
     expect(result.portion.stopTimes.map(s => s.stop_id)).to.deep.equal(["DOV", "ASH"]);
     expect(base.stopTimes.map(s => s.stop_id)).to.deep.equal(["RAM", "ASH", "TON"]);
 
-    // the join runs the other way round: the portion is what a passenger is on first
+    // a join is the other way round
     expect(result.link.from).to.equal(result.portion.id);
     expect(result.link.to).to.equal(base.id);
     expect(result.link.location).to.equal("ASH");
@@ -77,8 +77,7 @@ describe("Association", () => {
     const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
       .apply(base, assoc, idGenerator())!;
 
-    // a transfer carries no calendar, so the two trips have to agree which day
-    // they are coupled on - and the day the base left is the one they share
+    // dated on the day the base left, not the day the portion's own schedule names
     expect(result.portion.calendar.runsFrom.equals("2017-07-10")).to.be.true;
     expect(result.portion.calendar.runsTo.equals("2017-07-16")).to.be.true;
     expect(result.portion.stopTimes[0].arrival_time).to.equal("24:35");

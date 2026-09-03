@@ -138,7 +138,7 @@ CREATE TABLE transfers (
   from_trip_id varchar(64) NOT NULL DEFAULT '',
   to_trip_id varchar(64) NOT NULL DEFAULT '',
   transfer_type tinyint(1) unsigned NOT NULL,
-  -- Null on an in-seat transfer: the passenger does not get off.
+  -- Null on an in-seat transfer.
   min_transfer_time smallint(8) unsigned DEFAULT NULL,
   -- The producer extension columns transfers.txt carries for a fixed link: the
   -- mode, the window it runs in and the days it runs on. All null on a station
