@@ -1,6 +1,6 @@
 
 import {Schedule} from "../model/Schedule";
-import {AssociationLink} from "../model/Association";
+import {AssociationLink, AssociationType} from "../model/Association";
 import {Transfer, TransferType} from "../entity/Transfer";
 import {CRS, TIPLOC} from "../entity/Stop";
 import {stopId} from "./Platforms";
@@ -11,7 +11,8 @@ import {stopId} from "./Platforms";
 export interface TripLink {
   from: string,
   to: string,
-  location: CRS
+  location: CRS,
+  type: AssociationType
 }
 
 /**
@@ -52,7 +53,7 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
       clashing++;
     }
     else {
-      resolved.push({from, to, location: link.location});
+      resolved.push({from, to, location: link.location, type: link.type});
     }
   }
 

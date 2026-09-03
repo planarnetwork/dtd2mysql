@@ -32,6 +32,7 @@ export type {BankHoliday, Days, ExcludeDays} from "./model/ScheduleCalendar";
 export {addLateNightServices} from "./transform/AddLateNightServices";
 export {applyAssociations} from "./transform/ApplyAssociations";
 export type {AssociatedSchedules, AssociationIndex, ScheduleIndex} from "./transform/ApplyAssociations";
+export {combinedHeadsigns} from "./transform/CombinedHeadsigns";
 export {linkedTrips, resolveLinks} from "./transform/LinkedTrips";
 export type {TripLink} from "./transform/LinkedTrips";
 export {applyOverlays} from "./transform/ApplyOverlays";

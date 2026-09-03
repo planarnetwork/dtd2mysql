@@ -24,3 +24,9 @@ tables never joined. Both are now `varchar(32)`, as are the two new `transfers` 
 four are in a primary key. `min_transfer_time` becomes nullable. A database imported with an earlier
 version has to be reimported, and anything reading these tables - a view, a foreign key, a join
 treating a trip id as a number - has to be updated with it.
+
+`stop_times.txt` gains `stop_headsign`, which was empty on every row. A train that divides names
+every destination it is still carrying at the stops before it does - "Caterham and Tattenham Corner"
+as far as Purley Oaks, and nothing from Purley on, where the trip headsign is right by itself. This
+is what the concatenation used to say by accident. Note it is the first value in the feed that needs
+CSV quoting, because a headsign naming three destinations has a comma in it.

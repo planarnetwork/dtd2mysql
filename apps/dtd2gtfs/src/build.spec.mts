@@ -25,13 +25,44 @@ let built: string;
 const feed = (file: string) => fs.readFileSync(path.join(built, file), "utf8");
 const columns = (file: string) => {
   const lines = feed(file).split("\n").filter(line => line !== "");
-  const names = lines[0].split(",");
+  const names = values(lines[0]);
 
-  return lines.slice(1).map(line => {
-    const values = line.split(",");
+  return lines.slice(1).map(line => Object.fromEntries(names.map((name, i) => [name, values(line)[i]])));
+};
 
-    return Object.fromEntries(names.map((name, i) => [name, values[i]]));
-  });
+/**
+ * One CSV line, with quoted fields kept whole.
+ *
+ * A headsign naming more than one destination has a comma in it - "Inverness, Aberdeen and Fort
+ * William" - and is the only thing in the feed that has ever needed quoting, so splitting on every
+ * comma used to be enough and no longer is.
+ */
+const values = (line: string): string[] => {
+  const found: string[] = [];
+  let value = "";
+  let quoted = false;
+
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') {
+      // "" inside a quoted field is one literal quote
+      if (quoted && line[i + 1] === '"') {
+        value += '"';
+        i++;
+      }
+      else {
+        quoted = !quoted;
+      }
+    }
+    else if (line[i] === "," && !quoted) {
+      found.push(value);
+      value = "";
+    }
+    else {
+      value += line[i];
+    }
+  }
+
+  return [...found, value];
 };
 
 beforeAll(async () => {
@@ -178,7 +209,22 @@ describe("the feed the mini fixture produces", () => {
   });
 
   it("puts no platform in stop_headsign", () => {
-    expect(columns("stop_times.txt").every(s => s.stop_headsign === "")).to.equal(true);
+    // B13: the platform belongs on the stop, and a headsign saying "3" is what that mistake looked
+    // like. It says where the train goes, so a bare platform number never appears in it.
+    const headsigns = columns("stop_times.txt").map(s => s.stop_headsign).filter(h => h !== "");
+
+    expect(headsigns.filter(h => /^\d/.test(h))).to.deep.equal([]);
+  });
+
+  it("names every destination a dividing train is still carrying", () => {
+    // the Highlander runs as one to Edinburgh and divides there, so it is headed for all three as
+    // far as Carlisle and for Inverness alone from Edinburgh on
+    const sleeper = columns("stop_times.txt")
+      .filter(s => s.trip_id === "C04569_20260518_20261207")
+      .map(s => [s.stop_id, s.stop_headsign]);
+
+    expect(sleeper[4]).to.deep.equal(["9100CARLILE3", "Inverness, Aberdeen and Fort William"]);
+    expect(sleeper[5]).to.deep.equal(["9100EDINBUR2", ""]);
   });
 
   it("does not publish a station it cannot locate and nothing calls at", () => {

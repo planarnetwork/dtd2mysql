@@ -24,6 +24,7 @@ import {buildReport} from "./BuildReport";
 import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {linkedTrips, resolveLinks, TripLink} from "../transform/LinkedTrips";
+import {combinedHeadsigns} from "../transform/CombinedHeadsigns";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
@@ -123,7 +124,10 @@ export class BuildFeed {
     const stations = new Map(
       stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
     );
-    const called = dropUnknownStops(schedules, new Set(stations.keys()));
+    const stopNames = map(stations, stop => stop.stop_name);
+    // Named after the stops are settled, because which stop a train divides at decides where the
+    // answer changes, and dropUnknownStops can move it.
+    const called = combinedHeadsigns(dropUnknownStops(schedules, new Set(stations.keys())), links, stopNames);
     // Only the stops are offered to an enricher. Trips and routes are streamed
     // straight to their files rather than held, and materialising 276,000 trips
     // to enrich a handful is the wrong trade until something needs it.
@@ -190,12 +194,7 @@ export class BuildFeed {
       "feed_info.txt",
       f => [f.feed_publisher_name]
     );
-    const tripsP = this.copyTrips(
-      called,
-      serviceIds,
-      map(stations, stop => stop.stop_name),
-      map(stations, stop => stop.tiploc)
-    );
+    const tripsP = this.copyTrips(called, serviceIds, stopNames, map(stations, stop => stop.tiploc));
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has

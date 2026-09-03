@@ -82,8 +82,8 @@ export class Association implements OverlayRecord {
       associated,
       unassociated: withoutIt === null ? null : assoc.clone(withoutIt, idGenerator.next().value),
       link: this.assocType === AssociationType.Join
-        ? {from: associated.id, to: base.id, location: this.assocLocation}
-        : {from: base.id, to: associated.id, location: this.assocLocation}
+        ? {from: associated.id, to: base.id, location: this.assocLocation, type: this.assocType}
+        : {from: base.id, to: associated.id, location: this.assocLocation, type: this.assocType}
     };
   }
 
@@ -136,7 +136,9 @@ export interface AssociationApplication {
 export interface AssociationLink {
   from: number,
   to: number,
-  location: CRS
+  location: CRS,
+  /** which way round it is: a split leaves from the train that divides, a join arrives at it */
+  type: AssociationType
 }
 
 export enum DateIndicator {

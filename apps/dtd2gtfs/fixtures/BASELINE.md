@@ -42,6 +42,26 @@ days the association is in force, so the days the two trips share are the days t
 arriving after the train it joins has left; that contradiction is still in the feed, but it is now a
 coupling between two trips that each read forwards.
 
+**`stop_times.txt` gains `stop_headsign`, which was empty on every row.** A trip is headed for where
+it ends, so the London Bridge to Caterham says Caterham - and stops naming the front half coming off
+at Purley for Tattenham Corner. The concatenation used to say it by accident, in a trip that ran
+through to one of the two, so this is information the change would otherwise lose. `stop_headsign`
+overrides the trip headsign at a stop, which is where the answer belongs, because it changes partway
+along: **"Caterham and Tattenham Corner" as far as Purley Oaks, and nothing from Purley on**, where
+the trip headsign is right by itself.
+
+In the fixture that is the Highlander, headed **"Inverness, Aberdeen and Fort William"** to Carlisle
+and Inverness alone from Edinburgh, where both divides happen. Feed-wide it is 8,744 stop times
+across 1,264 trips and 58 distinct headsigns, at most three destinations. A destination is named once
+however many trips divide off for it - a schedule with a permanent record and an overlay of it is two
+trips going to the same place. Joins get nothing: once two trains are one they have one destination,
+which the trip headsign already gives.
+
+**It is the first quoted value in the feed.** `"Inverness, Aberdeen and Fort William"` has a comma in
+it, so the CSV writer quotes it, and nothing in any file has ever needed that. The `columns` helper
+in `build.spec.mts` split on every comma and now parses quoted fields; a consumer doing the same will
+need the same fix.
+
 **What a split cannot say.** The coupling reads "stay on board and you are on the portion", while the
 base carries on to its own destination as well. Which of the two a passenger stays on depends on
 which coaches they are in, and GTFS has no way to say that - so a planner may offer both. Publishing

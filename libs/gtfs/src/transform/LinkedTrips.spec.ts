@@ -5,7 +5,7 @@ import {StopTime} from "../entity/StopTime";
 import {CRS, TIPLOC} from "../entity/Stop";
 import {Schedule} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
-import {AssociationLink} from "../model/Association";
+import {AssociationLink, AssociationType} from "../model/Association";
 import {linkedTrips, resolveLinks} from "./LinkedTrips";
 
 describe("resolveLinks", () => {
@@ -14,7 +14,7 @@ describe("resolveLinks", () => {
     const [links] = [[link(1, 2)]];
 
     expect(resolveLinks(links, [schedule(1, "A", ["TON", "ASH"]), schedule(2, "B", ["ASH", "DOV"])]))
-      .to.deep.equal([{from: "A_20240101_20240201", to: "B_20240101_20240201", location: "ASH"}]);
+      .to.deep.equal([{from: "A_20240101_20240201", to: "B_20240101_20240201", location: "ASH", type: AssociationType.Split}]);
   });
 
   it("drops a coupling naming a schedule that is no longer there", () => {
@@ -38,7 +38,7 @@ describe("resolveLinks", () => {
 describe("linkedTrips", () => {
 
   const trips = [schedule(1, "A", ["TON", "ASH", "RAM"]), schedule(2, "B", ["ASH", "DOV"])];
-  const coupling = {from: "A_20240101_20240201", to: "B_20240101_20240201", location: "ASH"};
+  const coupling = {from: "A_20240101_20240201", to: "B_20240101_20240201", location: "ASH", type: AssociationType.Split};
 
   it("writes the coupling against the boarding point each trip calls at", () => {
     const [row] = linkedTrips([coupling], trips, tiplocs);
@@ -88,7 +88,7 @@ const tiplocs: ReadonlyMap<CRS, TIPLOC> = new Map([
 ]);
 
 function link(from: number, to: number): AssociationLink {
-  return {from, to, location: "ASH"};
+  return {from, to, location: "ASH", type: AssociationType.Split};
 }
 
 function schedule(id: number, tuid: string, stops: CRS[], platform: string | null = null): Schedule {
