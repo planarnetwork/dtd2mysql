@@ -178,7 +178,7 @@ export class BuildFeed {
         ...linkedTrips(links, called, map(stations, stop => stop.tiploc))
       ],
       "transfers.txt",
-      t => [t.from_stop_id, t.to_stop_id, t.from_trip_id, t.to_trip_id]
+      t => [t.from_stop_id, t.to_stop_id, t.from_trip_id, t.to_trip_id, t.transfer_type]
     );
 
     const [calendars, calendarDates, serviceIds] = createCalendar(called);

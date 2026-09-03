@@ -205,6 +205,24 @@ describe("Association", () => {
     expect(result.portion.calendar.isEmpty).to.equal(false);
   });
 
+  it("does not apply where the association says neither join nor split", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "ASH", "12:00"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    // every blank category in a refresh is a cancellation, which applyOverlays resolves before this
+    // is reached - but the category is cast unchecked too, and a record that says nothing should not
+    // be read as a join
+    expect(association(base, assoc, AssociationType.NA, "ASH").apply(base, assoc, idGenerator()))
+      .to.equal(null);
+  });
+
   it("does not apply where a schedule does not call at the association location", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "10:00"),

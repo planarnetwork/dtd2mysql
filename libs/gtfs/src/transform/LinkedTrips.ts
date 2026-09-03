@@ -37,24 +37,34 @@ export function resolveLinks(links: readonly AssociationLink[], schedules: reado
     tripIds.set(schedule.id, schedule.stopTimes[0].trip_id);
   }
 
-  const resolved = links.flatMap(link => {
+  const resolved: TripLink[] = [];
+  let missing = 0;
+  let clashing = 0;
+
+  for (const link of links) {
     const from = tripIds.get(link.from);
     const to = tripIds.get(link.to);
 
-    return from === undefined || to === undefined || ambiguous.has(link.from) || ambiguous.has(link.to)
-      ? []
-      : [{from, to, location: link.location}];
-  });
+    if (from === undefined || to === undefined) {
+      missing++;
+    }
+    else if (ambiguous.has(link.from) || ambiguous.has(link.to)) {
+      clashing++;
+    }
+    else {
+      resolved.push({from, to, location: link.location});
+    }
+  }
 
   // A schedule can be the base of one association and the portion of another, and applying the
-  // second replaces it, so the first coupling is left naming something that no longer exists
-  const dropped = links.length - resolved.length;
+  // second replaces it, so the first coupling is left naming something that is no longer there
+  if (missing > 0) {
+    console.log(`${missing} coupling(s) dropped for a schedule a later association replaced`);
+  }
 
-  if (dropped > 0) {
-    console.log(
-      `${dropped} coupling(s) dropped for a schedule a later association replaced` +
-      (ambiguous.size > 0 ? `, ${ambiguous.size} of them for a schedule id handed out more than once` : "")
-    );
+  // Said whether or not a coupling named one, because the ids clashing is the thing worth knowing
+  if (ambiguous.size > 0) {
+    console.log(`${ambiguous.size} schedule id(s) were handed out more than once, dropping ${clashing} coupling(s)`);
   }
 
   return resolved;

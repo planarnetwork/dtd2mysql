@@ -82,8 +82,9 @@ CREATE TABLE shapes (
 DROP TABLE IF EXISTS stop_times;
 CREATE TABLE stop_times (
   -- A trip id is a string the build composes, not a counter: TUID and the dates the calendar runs
-  -- between, e.g. G38968_20261018_20261018. The longest in a three month feed is 26 characters.
-  trip_id varchar(64) NOT NULL,
+  -- between, e.g. G38968_20261018_20261018. The longest in a three month feed is 26 characters, and
+  -- every one of them is ASCII - which matters, because this key is embedded in three more indexes.
+  trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   arrival_time time DEFAULT NULL,
   departure_time time DEFAULT NULL,
   stop_id varchar(100) NOT NULL,
@@ -135,8 +136,8 @@ CREATE TABLE transfers (
   -- than null, so they can stay in the primary key - the pair of stops is only
   -- unique once the trips are part of it, because a coupling happens at a
   -- station the feed already gives an interchange time for.
-  from_trip_id varchar(64) NOT NULL DEFAULT '',
-  to_trip_id varchar(64) NOT NULL DEFAULT '',
+  from_trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  to_trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   transfer_type tinyint(1) unsigned NOT NULL,
   -- Null on an in-seat transfer.
   min_transfer_time smallint(8) unsigned DEFAULT NULL,
@@ -162,7 +163,7 @@ DROP TABLE IF EXISTS trips;
 CREATE TABLE trips (
   route_id varchar(255) NOT NULL,
   service_id smallint(12) unsigned NOT NULL,
-  trip_id varchar(64) NOT NULL,
+  trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   trip_headsign varchar(50) DEFAULT NULL,
   trip_short_name varchar(50) DEFAULT NULL,
   direction_id tinyint(1) unsigned DEFAULT NULL,

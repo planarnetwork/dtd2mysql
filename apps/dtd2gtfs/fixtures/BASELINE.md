@@ -42,6 +42,12 @@ association is actually in force, so the days the two trips share are the days t
 arriving after the train it joins has left; that contradiction is still in the feed, but it is now a
 coupling between two trips that each read forwards.
 
+**What a split cannot say.** The coupling reads "stay on board and you are on the portion", while the
+base carries on to its own destination as well. Which of the two a passenger stays on depends on
+which coaches they are in, and GTFS has no way to say that - so a planner may offer both. Publishing
+the portions separately is still nearer the truth than a concatenation that offered only one of
+them, but it is a limitation rather than a complete answer.
+
 The fixture baseline accepts **`transfer_with_suspicious_mid_trip_in_seat`** (WARNING, 56). The
 coupling is anchored part way along the base on purpose, because the base is not cut at it. The
 validator says intentional mid-trip transfers can ignore this, and cutting the bases to silence it

@@ -16,6 +16,7 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
                                   idGenerator: IdGenerator): AssociatedSchedules {
 
   const links: AssociationLink[] = [];
+  const portions: Schedule[] = [];
 
   for (const associations of Object.values(associationsIndex)) {
     // for each association
@@ -42,17 +43,22 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
         }
 
         links.push(applied.link);
+        portions.push(applied.portion);
 
         // remove the original associated schedule and replace with any substitute schedules created
         const schedules = schedulesByTuid[assocSchedule.tuid];
 
-        schedules.splice(
-          schedules.indexOf(assocSchedule),
-          1,
-          ...(applied.alone === null ? [applied.portion] : [applied.portion, applied.alone])
-        );
+        schedules.splice(schedules.indexOf(assocSchedule), 1, ...(applied.alone === null ? [] : [applied.alone]));
       }
     }
+  }
+
+  // Only once every association has been applied. A portion's calendar is told in the base's service
+  // days, so leaving it where the next association looks for associated schedules would match it
+  // against a calendar counted the other way and couple it a second time. What is left behind is the
+  // days it runs uncoupled, which is what a second association should be drawing from.
+  for (const portion of portions) {
+    (schedulesByTuid[portion.tuid] = schedulesByTuid[portion.tuid] || []).push(portion);
   }
 
   return {schedules: schedulesByTuid, links};

@@ -73,6 +73,38 @@ describe("ApplyAssociations", () => {
     expect(links[1].to).to.equal(portions[1].id);
   });
 
+  it("does not couple a portion a second time", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-19", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "22:30"),
+      stop(2, "ASH", "23:30"),
+    ]);
+
+    // runs the day after the base, so applying an association moves it onto the base's day at 24:18
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-20", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "00:18"),
+      stop(2, "DOV", "00:40"),
+    ]);
+
+    // The second record's dates, counted in the associated schedule's days, land on the days the
+    // first one's portion was given - which are counted in the base's. Left where an association
+    // looks, the portion matches and is moved onto a base's day all over again.
+    const first = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-12"), Temporal.PlainDate.from("2017-07-14"), ALL_DAYS));
+    const second = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-11"), Temporal.PlainDate.from("2017-07-13"), ALL_DAYS));
+
+    const {schedules, links} = applyAssociations(
+      applyOverlays([base, assoc]) as ScheduleIndex,
+      {"A_B_ASH": [first, second]} as AssociationIndex,
+      idGenerator()
+    );
+
+    // 00:18 becomes 24:18 and stops there
+    expect(schedules["B"].map(s => s.stopTimes[0].arrival_time).sort())
+      .to.deep.equal(["00:18", "24:18", "24:18"]);
+    expect(links).to.have.length(2);
+  });
+
   it("gives every schedule it produces an id of its own", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "10:00"),
