@@ -151,9 +151,11 @@ const WHITE = "FFFFFF";
 /**
  * Black or white, whichever can be read on the colour given.
  *
- * GTFS defaults `route_text_color` to black, which is unreadable on the darker
- * half of the palette above. The threshold is the WCAG 2.1 relative luminance
- * of a colour whose contrast with black and with white is equal.
+ * Written for every route that has a colour rather than left to the consumer,
+ * because a consumer that falls back to a colour of its own has no way to know
+ * that half the palette above is dark enough for black text to disappear into.
+ * The threshold is the WCAG 2.1 relative luminance at which the contrast with
+ * black and the contrast with white are equal.
  */
 export function accessibleTextColor(hex: string): string {
   const channel = (offset: number) => parseInt(hex.substring(offset, offset + 2), 16) / 255;

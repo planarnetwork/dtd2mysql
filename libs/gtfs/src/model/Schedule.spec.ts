@@ -40,14 +40,16 @@ describe("the route a schedule runs on", () => {
   it("is the line, for an operator that runs several", () => {
     // Richmond to Stratford is the Mildmay line, and only that.
     expect(service("LO", ["RMD", "SRA"]).routeId).to.equal("MIL");
+    // Rickmansworth to Baker Street is the Metropolitan, Richmond to Turnham
+    // Green the District.
+    expect(service("LT", ["RIC", "ZBS"]).routeId).to.equal("MET");
+    expect(service("LT", ["RMD", "ZTU"]).routeId).to.equal("DST");
   });
 
   it("takes the first line whose stations it reaches", () => {
     // A service reaching two lines' stations - Watford Junction is Lioness and
     // Stratford is Mildmay - takes whichever rule is written first.
     expect(service("LO", ["WFJ", "SBP", "SRA"]).routeId).to.equal("LIO");
-    expect(service("LT", ["RIC", "ZTU"]).routeId).to.equal("MET");
-    expect(service("LT", ["RMD", "ZTU"]).routeId).to.equal("DST");
   });
 
   it("tells the West Midlands Trains brands apart by where the service ends", () => {
