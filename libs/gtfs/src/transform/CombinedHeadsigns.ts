@@ -45,10 +45,10 @@ export function combinedHeadsigns(
     // linkedTrips counts the same couplings going the same way, so nothing is lost by passing over
     // them here.
     if (at !== undefined && leaving !== undefined) {
-      divides.set(link.from, [
-        ...divides.get(link.from) ?? [],
-        {at: at.stop_sequence, destination: destinationOf(leaving, stopNames)}
-      ]);
+      const dividing = divides.get(link.from) ?? [];
+
+      dividing.push({at: at.stop_sequence, destination: destinationOf(leaving, stopNames)});
+      divides.set(link.from, dividing);
     }
   }
 
@@ -60,16 +60,19 @@ export function combinedHeadsigns(
 }
 
 function named(schedule: Schedule, divides: Divide[], destination: string): Schedule {
-  const inOrder = [...divides].sort((a, b) => a.at - b.at);
+  const coming = divides.toSorted((a, b) => a.at - b.at);
 
   return schedule.clone(schedule.calendar, schedule.id, schedule.stopTimes.map(stopTime => {
-    // Still on board here: what the train ends up as, and everything that has yet to come off it.
-    // Named once each - a train divides for the same place on more than one link where the schedule
-    // it divides off has a permanent record and an overlay of it, and they are two trips.
-    const carrying = [...new Set([
-      destination,
-      ...inOrder.filter(divide => divide.at > stopTime.stop_sequence).map(divide => divide.destination)
-    ])];
+    // what the train ends up as, and everything still to come off it, in the order it does
+    const carrying = [destination];
+
+    for (const divide of coming) {
+      // Once each. A train divides for the same place on two links where the schedule that leaves
+      // has a permanent record and an overlay of it, because those are two trips.
+      if (divide.at > stopTime.stop_sequence && !carrying.includes(divide.destination)) {
+        carrying.push(divide.destination);
+      }
+    }
 
     return carrying.length > 1 ? withHeadsign(stopTime, and(carrying)) : stopTime;
   }));
