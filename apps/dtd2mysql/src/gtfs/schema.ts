@@ -132,14 +132,12 @@ DROP TABLE IF EXISTS transfers;
 CREATE TABLE transfers (
   from_stop_id varchar(100) NOT NULL,
   to_stop_id varchar(100) NOT NULL,
-  -- The two trips an in-seat transfer couples. Empty on every other row, rather
-  -- than null, so they can stay in the primary key - the pair of stops is only
-  -- unique once the trips are part of it, because a coupling happens at a
-  -- station the feed already gives an interchange time for.
+  -- Empty rather than null so they can stay in the primary key, which the pair of
+  -- stops is not unique without - a coupling happens at a station that already has
+  -- an interchange time.
   from_trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   to_trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   transfer_type tinyint(1) unsigned NOT NULL,
-  -- Null on an in-seat transfer.
   min_transfer_time smallint(8) unsigned DEFAULT NULL,
   -- The producer extension columns transfers.txt carries for a fixed link: the
   -- mode, the window it runs in and the days it runs on. All null on a station

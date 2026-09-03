@@ -34,9 +34,6 @@ import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
 import {Writable} from "stream";
 
-/**
- * The trips the build will write, and the couplings between them.
- */
 type LinkedSchedules = {
   schedules: Schedule[],
   links: TripLink[]

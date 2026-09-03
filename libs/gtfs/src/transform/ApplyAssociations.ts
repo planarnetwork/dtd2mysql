@@ -79,9 +79,6 @@ export type AssociationIndex = {
   [tuid: string]: Association[];
 }
 
-/**
- * The schedules once the associations have been applied, and the couplings found doing it.
- */
 export type AssociatedSchedules = {
   schedules: ScheduleIndex,
   links: AssociationLink[]

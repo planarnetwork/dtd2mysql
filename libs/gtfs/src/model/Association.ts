@@ -122,9 +122,8 @@ function plusADay(time: string): string {
 }
 
 export interface AssociationApplication {
-  /** the associated schedule on the days it is coupled, told in the base's service day */
+  /** told in the base's service day, which is not always its own */
   associated: Schedule,
-  /** the associated schedule on the days it runs by itself, or null where there are none */
   unassociated: Schedule | null,
   link: AssociationLink
 }

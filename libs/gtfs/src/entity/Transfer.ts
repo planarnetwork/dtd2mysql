@@ -7,17 +7,9 @@ import {Duration} from "../model/Duration";
 export interface Transfer {
   from_stop_id: StopID,
   to_stop_id: StopID,
-
-  /**
-   * The two trips a coupling names, and null on every other row. Part of the file's primary key, so
-   * a coupling at a station that already has an interchange time is a different row.
-   */
   from_trip_id: string | null,
   to_trip_id: string | null,
-
   transfer_type: TransferType,
-
-  /** Null on a coupling. */
   min_transfer_time: Duration | null,
 
   /**
