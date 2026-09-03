@@ -33,10 +33,11 @@ export function combinedHeadsigns(
     }
   }
 
+  const splitLinks = links.filter(link => link.type === AssociationType.Split);
   // where each divide happens along the train that is doing the dividing, and what comes off there
   const divides = new Map<string, Divide[]>();
 
-  for (const link of links.filter(link => link.type === AssociationType.Split)) {
+  for (const link of splitLinks) {
     const at = byTripId.get(link.from)?.stopTimes.find(stopTime => stopTime.stop_id === link.location);
     const leaving = byTripId.get(link.to);
 
