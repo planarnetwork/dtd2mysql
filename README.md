@@ -32,6 +32,10 @@ This is a monorepo. The published CLI is one workspace among several:
 | `libs/gtfs` | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | `libs/gtfs-output` | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
 | `libs/enrich-naptan` | `@gb-transit/enrich-naptan` | Station coordinates and names from NaPTAN |
+| `libs/extend-station-groups` | `@gb-transit/extend-station-groups` | Group stations as Fares v2 areas |
+| `apps/website` | — | The download page, deployed to GitHub Pages |
+
+Each package has a README of its own describing what it is for and how to use it.
 
 The libraries are published under `@gb-transit` and `dtd2mysql` depends on them the way any
 other consumer would, so a GTFS build that reads from something other than this tool's MySQL
