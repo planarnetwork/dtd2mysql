@@ -143,7 +143,8 @@ function* ids(): IterableIterator<number> {
 const context: BuildContext = {
   today: Temporal.PlainDate.from("2024-01-01"),
   range: parseRange("3 MONTH"),
-  links: true
+  links: true,
+  removePassingPoints: true
 };
 
 async function build(source: TimetableSource, enrichers: Enricher[] = []): Promise<MemoryOutput> {

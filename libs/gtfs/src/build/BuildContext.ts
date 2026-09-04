@@ -16,6 +16,22 @@ export interface BuildContext {
    * links. Kept behind `--links` for one minor version.
    */
   readonly links: boolean;
+
+  /**
+   * Whether to drop the locations a service runs through without stopping.
+   *
+   * Half the CIF's intermediate location records carry a pass time rather than
+   * an arrival and a departure, and 892,000 of them are at a station the feed
+   * publishes. They are not calls: nobody boards and nobody alights. Dropping
+   * them is the right default for a feed a journey planner reads, and keeping
+   * them is the right answer for anything tracing where a train actually goes,
+   * so the same build produces both.
+   *
+   * Kept as a property of the build rather than of the source because it
+   * decides what the feed contains, which is the same kind of decision as the
+   * window it covers.
+   */
+  readonly removePassingPoints: boolean;
 }
 
 /**
@@ -118,6 +134,34 @@ export function options(argv: string[], name: string): string[] {
 }
 
 /**
+ * Read a setting that is on unless something turns it off.
+ *
+ * `--links` can be a bare flag because absent means off. A setting that
+ * defaults to on cannot: the only thing left to say is "off", and a bare
+ * `--remove-passing-points` reads as though it turns the thing on. So it takes
+ * a value, and an unreadable one is an error rather than a falsy default -
+ * `--remove-passing-points off` silently meaning "on" is how a feed ends up
+ * quietly missing what somebody asked for.
+ */
+export function flag(text: string | undefined, otherwise: boolean, name: string): boolean {
+  if (text === undefined) {
+    return otherwise;
+  }
+
+  const value = text.trim().toLowerCase();
+
+  if (["true", "1", "yes", "on"].includes(value)) {
+    return true;
+  }
+
+  if (["false", "0", "no", "off"].includes(value)) {
+    return false;
+  }
+
+  throw new Error(`Cannot read "${text}" as a yes or no for ${name}. Expected true or false.`);
+}
+
+/**
  * Resolve the build context from the command line and the environment.
  *
  * `--today` wins over GTFS_TODAY, which wins over the real date; `--range` wins
@@ -127,10 +171,12 @@ export function options(argv: string[], name: string): string[] {
 export function buildContext(argv: string[], env: NodeJS.ProcessEnv = process.env): BuildContext {
   const today = option(argv, "today") ?? env.GTFS_TODAY;
   const range = option(argv, "range") ?? env.GTFS_RANGE;
+  const passingPoints = option(argv, "remove-passing-points") ?? env.GTFS_REMOVE_PASSING_POINTS;
 
   return {
     today: today ? Temporal.PlainDate.from(today) : Temporal.Now.plainDateISO(),
     range: parseRange(range ?? "3 MONTH"),
-    links: argv.includes("--links") || env.GTFS_LINKS === "1"
+    links: argv.includes("--links") || env.GTFS_LINKS === "1",
+    removePassingPoints: flag(passingPoints, true, "--remove-passing-points")
   };
 }

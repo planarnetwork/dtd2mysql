@@ -71,6 +71,15 @@ How far ahead the feed reaches, and the date it is built for, come from `GTFS_RA
 GTFS_TODAY=2026-08-10 GTFS_RANGE="6 MONTH" dtd2mysql --gtfs /path/to/output/
 ```
 
+The locations a service runs through without stopping are dropped. To keep them, as calls with
+`pickup_type` and `drop_off_type` of `1` and the pass time as both the arrival and the departure:
+
+```
+dtd2mysql --gtfs /path/to/output/ --remove-passing-points=false
+```
+
+It is roughly a fifth more stop times, and `GTFS_REMOVE_PASSING_POINTS=0` says the same thing.
+
 ### Import a GTFS feed
 
 Load a GTFS feed back into the database, which is how the fares and routeing data are joined to it.

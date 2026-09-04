@@ -195,7 +195,13 @@ function buildFeed(output: GTFSOutput): BuildFeed {
   const context = buildContext(process.argv);
 
   return new BuildFeed(
-    new MySqlTimetableSource(databaseConnection(), databaseStream(), stationCoordinates, dateRange(context)),
+    new MySqlTimetableSource(
+      databaseConnection(),
+      databaseStream(),
+      stationCoordinates,
+      dateRange(context),
+      context.removePassingPoints
+    ),
     output,
     context
   );

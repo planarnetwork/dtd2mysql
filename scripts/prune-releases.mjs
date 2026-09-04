@@ -3,7 +3,8 @@ import {execFileSync} from "node:child_process";
 /**
  * Keep the feed releases worth keeping, and say which.
  *
- * A daily feed accumulates a release a day forever, each carrying a 20 MB zip.
+ * A daily feed accumulates a release a day forever, each carrying two zips of
+ * 20 MB and up.
  * The last month is what anybody actually fetches; beyond that what is wanted is
  * the ability to say what the feed looked like in April, which one release a
  * month answers as well as thirty do.
