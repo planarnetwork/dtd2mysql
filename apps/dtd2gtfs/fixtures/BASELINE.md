@@ -42,6 +42,22 @@ days the association is in force, so the days the two trips share are the days t
 arriving after the train it joins has left; that contradiction is still in the feed, but it is now a
 coupling between two trips that each read forwards.
 
+**A schedule that runs the day after its base is published twice.** The coupling wants both trips on
+one service day, so the associated schedule is told in the base's - which turns a Swansea departure
+at 08:41 into 32:41 the day before, no use to anyone boarding it there. It is now also published on
+the day its own record gives, at its own times, every day it runs. `golden/trips.txt` goes from 128
+to 150: `C04543` is a Monday at 28:28 for the coupling and a Tuesday at 04:28 for a passenger.
+
+Not where it departs before 02:00, because `addLateNightServices` would move that copy straight back
+onto the base's day and leave the same trip twice. Feed-wide: 155 trips and 1,479 stop times more,
+`transfers.txt` unchanged.
+
+**A trip that joins another is headed for where it ends up.** The Carstairs portion terminated at
+Carstairs in the timetable and read that way, when everyone on it carries on to Euston - 1,537 trips
+feed-wide. Unlike a divide the answer does not change partway along, so it is `trip_headsign` rather
+than the stops. A divide whose base terminates at the divide keeps its own destination and says the
+rest with `stop_headsign`, as any divide does.
+
 **`stop_times.txt` gains `stop_headsign`, which was empty on every row.** A trip is headed for where
 it ends, so the London Bridge to Caterham says Caterham - and stops naming the front half coming off
 at Purley for Tattenham Corner. The concatenation used to say it by accident, in a trip that ran

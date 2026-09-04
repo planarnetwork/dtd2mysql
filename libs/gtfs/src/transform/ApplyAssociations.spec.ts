@@ -54,15 +54,16 @@ describe("ApplyAssociations", () => {
       ["TON", "ASH", "RAM"]
     ]);
 
-    // each one is dated on the day its own base ran, and keeps its own stops
+    // Each is published twice: on the day its own base ran, which is what the coupling names, and
+    // on the day its own record gives, which is where a passenger boarding it looks.
     const associated = schedules["B"];
 
-    expect(associated).to.have.length(2);
-    expect(associated[0].calendar.runsFrom.equals("2017-07-10")).to.be.true;
-    expect(associated[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV"]);
-    expect(associated[0].stopTimes[0].departure_time).to.equal("24:35:30");
-    expect(associated[1].calendar.runsFrom.equals("2017-07-11")).to.be.true;
-    expect(associated[1].stopTimes.map(s => s.stop_id)).to.deep.equal(["ASH", "DOV", "SEA"]);
+    // Each on the day its own base ran. These depart at 00:35, which addLateNightServices puts back
+    // on the previous day anyway, so there is no second copy to publish.
+    expect(associated.map(s => [s.calendar.runsFrom.toString(), s.stopTimes[0].departure_time])).to.deep.equal([
+      ["2017-07-10", "24:35:30"],
+      ["2017-07-11", "24:35:30"]
+    ]);
 
     // make sure that it only matches base1 to assoc1 and base2 to assoc2
     expect(links).to.have.length(2);

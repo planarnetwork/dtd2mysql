@@ -30,3 +30,10 @@ every destination it is still carrying at the stops before it does - "Caterham a
 as far as Purley Oaks, and nothing from Purley on, where the trip headsign is right by itself. This
 is what the concatenation used to say by accident. Note it is the first value in the feed that needs
 CSV quoting, because a headsign naming three destinations has a comma in it.
+
+A schedule that runs the day after its base is published twice: on the base's service day, which is
+what the coupling names, and on the day its own record gives, which is where a passenger boarding it
+looks. Without the second an 08:41 departure is only findable as 32:41 the day before.
+
+A trip that joins another is headed for where it ends up rather than where it is attached, so the
+Tattenham Corner portion reads London Bridge instead of Purley.

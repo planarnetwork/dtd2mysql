@@ -69,6 +69,35 @@ function named(schedule: Schedule, divides: Divide[], destination: string): Sche
   }));
 }
 
+/**
+ * Where a train that joins another ends up, for the trips that do.
+ *
+ * The Tattenham Corner portion terminates at Purley in the timetable, so its trip is headed there -
+ * but it is attached to the Caterham train and everyone on it carries on to London Bridge, which is
+ * what the front of it says. Unlike a divide the answer does not change partway along, so it is the
+ * trip headsign rather than the stops.
+ */
+export function onwardHeadsigns(
+  links: readonly TripLink[],
+  schedules: readonly Schedule[],
+  stopNames: ReadonlyMap<CRS, string>
+): Map<string, string> {
+  const byTripId = new Map(
+    schedules.filter(s => s.stopTimes.length > 0).map(s => [s.stopTimes[0].trip_id, s])
+  );
+  const onward = new Map<string, string>();
+
+  for (const link of links) {
+    const carriesOn = byTripId.get(link.to);
+
+    if (link.type === AssociationType.Join && carriesOn !== undefined) {
+      onward.set(link.from, destinationOf(carriesOn, stopNames));
+    }
+  }
+
+  return onward;
+}
+
 function withHeadsign(stopTime: StopTime, stop_headsign: string): StopTime {
   return Object.assign({}, stopTime, {stop_headsign});
 }

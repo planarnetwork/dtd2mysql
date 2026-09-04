@@ -7,7 +7,7 @@ import {Schedule} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
 import {AssociationType} from "../model/Association";
 import {TripLink} from "./LinkedTrips";
-import {combinedHeadsigns} from "./CombinedHeadsigns";
+import {combinedHeadsigns, onwardHeadsigns} from "./Headsigns";
 
 describe("combinedHeadsigns", () => {
 
@@ -96,6 +96,33 @@ describe("combinedHeadsigns", () => {
     const [named] = combinedHeadsigns([schedule("A", ["LBG", "CAT"]), tattenham], [divide], names);
 
     expect(named.stopTimes.every(s => s.stop_headsign === null)).to.equal(true);
+  });
+
+});
+
+describe("onwardHeadsigns", () => {
+
+  // Tattenham Corner to Purley, where it joins the Caterham train and carries on to London Bridge
+  const arriving = schedule("B", ["TAT", "RDH", "PUR"]);
+  const onward = schedule("A", ["CAT", "PUR", "ECR", "LBG"]);
+  const join = {from: "B", to: "A", location: "PUR", type: AssociationType.Join};
+
+  it("heads a joining trip for where it ends up, not where it is attached", () => {
+    expect(onwardHeadsigns([join], [arriving, onward], names).get("B")).to.equal("London Bridge");
+  });
+
+  it("says nothing about the train that carries on, which is headed right already", () => {
+    expect(onwardHeadsigns([join], [arriving, onward], names).has("A")).to.equal(false);
+  });
+
+  it("says nothing about a divide, where the answer changes partway along instead", () => {
+    const divide = {from: "A", to: "B", location: "PUR", type: AssociationType.Split};
+
+    expect(onwardHeadsigns([divide], [arriving, onward], names).size).to.equal(0);
+  });
+
+  it("says nothing where the trip it joins is not in the feed", () => {
+    expect(onwardHeadsigns([join], [arriving], names).size).to.equal(0);
   });
 
 });

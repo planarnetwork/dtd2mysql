@@ -48,7 +48,7 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
         // remove the original associated schedule and replace with any substitute schedules created
         const schedules = schedulesByTuid[assocSchedule.tuid];
 
-        schedules.splice(schedules.indexOf(assocSchedule), 1, ...(applied.unassociated === null ? [] : [applied.unassociated]));
+        schedules.splice(schedules.indexOf(assocSchedule), 1, ...(applied.asDated === null ? [] : [applied.asDated]));
       }
     }
   }

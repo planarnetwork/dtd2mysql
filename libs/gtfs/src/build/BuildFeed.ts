@@ -24,7 +24,7 @@ import {buildReport} from "./BuildReport";
 import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {linkedTrips, resolveLinks, TripLink} from "../transform/LinkedTrips";
-import {combinedHeadsigns} from "../transform/CombinedHeadsigns";
+import {combinedHeadsigns, onwardHeadsigns} from "../transform/Headsigns";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
@@ -191,7 +191,9 @@ export class BuildFeed {
       "feed_info.txt",
       f => [f.feed_publisher_name]
     );
-    const tripsP = this.copyTrips(called, serviceIds, stopNames, map(stations, stop => stop.tiploc));
+    const tripsP = this.copyTrips(
+      called, serviceIds, stopNames, map(stations, stop => stop.tiploc), onwardHeadsigns(links, called, stopNames)
+    );
 
     // Every file has to be opened before the output can be asked whether it has
     // finished writing them, and copy() only opens its file once its query has
@@ -279,7 +281,8 @@ export class BuildFeed {
     schedules: Schedule[],
     serviceIds: ServiceIdIndex,
     stopNames: ReadonlyMap<CRS, string>,
-    tiplocs: ReadonlyMap<CRS, TIPLOC>
+    tiplocs: ReadonlyMap<CRS, TIPLOC>,
+    onward: ReadonlyMap<string, string>
   ): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
@@ -312,7 +315,7 @@ export class BuildFeed {
 
       this.write(trips, schedule.toTrip(
         serviceIds[schedule.calendar.id],
-        name ?? schedule.destination
+        onward.get(schedule.stopTimes[0].trip_id) ?? name ?? schedule.destination
       ));
       schedule.stopTimes.forEach(r => this.write(stopTimes, toStopTimeRow(r, tiplocs)));
     }

@@ -186,13 +186,29 @@ describe("the feed the mini fixture produces", () => {
       }
     }
 
+    // A trip that joins another is headed where it ends up rather than where it ends - the Carstairs
+    // portion reads London Euston, because that is where everyone on it is going and what the front
+    // of the train says. Those are the trips a coupling arrives on.
+    const joining = new Set(
+      columns("transfers.txt")
+        .filter(t => t.transfer_type === "4" && t.from_stop_id === last.get(t.from_trip_id)?.stop)
+        .map(t => t.from_trip_id)
+    );
     const trips = columns("trips.txt");
 
     expect(trips.length).to.be.greaterThan(0);
+    expect(joining.size).to.be.greaterThan(0);
 
-    for (const trip of trips) {
+    for (const trip of trips.filter(t => !joining.has(t.trip_id))) {
       expect(trip.trip_headsign).to.equal(names.get(parent.get(last.get(trip.trip_id)!.stop)!));
     }
+  });
+
+  it("heads a joining trip for where it ends up, not where it ends", () => {
+    const trips = new Map(columns("trips.txt").map(t => [t.trip_id, t.trip_headsign]));
+    const carstairs = [...trips].filter(([id]) => id.startsWith("C04558_20260518"));
+
+    expect(carstairs.map(([, headsign]) => headsign)).to.deep.equal(["London Euston"]);
   });
 
   it("does not put the TUID in the headsign", () => {
