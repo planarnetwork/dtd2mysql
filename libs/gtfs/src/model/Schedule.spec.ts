@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {STP} from "../model/OverlayRecord";
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {schedule} from "../transform/MergeSchedules.spec";
-import {StopTime} from "../entity/StopTime";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 import {Schedule} from "./Schedule";
 import {RouteType} from "../entity/Route";
 import {AgencyID} from "../entity/Agency";
@@ -164,8 +164,8 @@ function stop(stopId: string, time: string): StopTime {
     stop_id: stopId,
     stop_sequence: 1,
     stop_headsign: null,
-    pickup_type: 0,
-    drop_off_type: 0,
+    pickup_type: PickupDropOffType.SCHEDULED,
+    drop_off_type: PickupDropOffType.SCHEDULED,
     shape_dist_traveled: null,
     timepoint: 0,
     platform: null,

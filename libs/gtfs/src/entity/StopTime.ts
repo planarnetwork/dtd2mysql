@@ -12,8 +12,8 @@ export interface StopTime {
    * never needs. Always null.
    */
   stop_headsign: null;
-  pickup_type: 0 | 1 | 2 | 3;
-  drop_off_type: 0 | 1 | 2 | 3;
+  pickup_type: PickupDropOffType;
+  drop_off_type: PickupDropOffType;
   shape_dist_traveled: null;
   timepoint: 0 | 1;
   /**
@@ -48,8 +48,15 @@ export interface StopTimeRow {
   stop_id: StopID;
   stop_sequence: number;
   stop_headsign: null;
-  pickup_type: 0 | 1 | 2 | 3;
-  drop_off_type: 0 | 1 | 2 | 3;
+  pickup_type: PickupDropOffType;
+  drop_off_type: PickupDropOffType;
   shape_dist_traveled: null;
   timepoint: 0 | 1;
+}
+
+export enum PickupDropOffType {
+  SCHEDULED = 0,
+  NONE = 1,
+  PHONE_AGENCY = 2,
+  COORDINATE_WITH_DRIVER = 3,
 }

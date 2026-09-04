@@ -3,12 +3,12 @@ import {Schedule, tripId} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
-import {StopTime} from "../entity/StopTime";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
-const coordinatedActivity = ["R "];
-const notAdvertised = "N ";
+const requestStopActivity = "R ";
+const notAdvertisedActivity = "N ";
 
 /**
  * Where a run of rows for one schedule is accumulated.
@@ -139,7 +139,7 @@ export class ScheduleBuilder {
       const stop = this.createStop(row, cursor.stops.length + 1, cursor.departureHour);
 
       if (cursor.prevRow && cursor.prevRow.id === row.id && row.crs_code === cursor.prevRow.crs_code) {
-        if (stop.pickup_type === 0 || stop.drop_off_type === 0) {
+        if (stop.pickup_type === PickupDropOffType.SCHEDULED || stop.drop_off_type === PickupDropOffType.SCHEDULED) {
           cursor.stops[cursor.stops.length - 1] = Object.assign(stop, { stop_sequence: cursor.stops.length });
         }
       }
@@ -189,6 +189,19 @@ export class ScheduleBuilder {
       row.reservations !== null
     );
   }
+  
+  private static getPickupDropoffType(row: ScheduleStopTimeRow, pickupOrDropoffActivities: string[]) : PickupDropOffType {
+    const activities = row.activity.match(/.{1,2}/g) || [] as string[];
+    if (activities.includes(notAdvertisedActivity)) {
+      return PickupDropOffType.NONE;
+    }
+    
+    if (activities.includes(requestStopActivity)) {
+      return PickupDropOffType.COORDINATE_WITH_DRIVER;
+    }
+    
+    return pickupOrDropoffActivities.some(a => activities.includes(a)) ? PickupDropOffType.SCHEDULED : PickupDropOffType.NONE;
+  }
 
   private createStop(row: ScheduleStopTimeRow, stopId: number, departHour: number): StopTime {
     let arrivalTime, departureTime;
@@ -203,11 +216,6 @@ export class ScheduleBuilder {
       arrivalTime = this.formatTime(row.scheduled_arrival_time, departHour);
       departureTime = this.formatTime(row.scheduled_departure_time, departHour);
     }
-
-    const activities = row.activity.match(/.{1,2}/g) || [] as string[];
-    const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) ? 0 : 1;
-    const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
-    const dropOff = dropOffActivities.find(a => activities.includes(a)) ? 0 : 1;
 
     const arrival = arrivalTime || departureTime;
     const departure = departureTime || arrivalTime;
@@ -226,8 +234,8 @@ export class ScheduleBuilder {
       // it means "this service terminates here", not "platform 3". The platform
       // belongs on a platform-level stop, which needs the station hierarchy.
       stop_headsign: null,
-      pickup_type: coordinatedDropOff || pickup,
-      drop_off_type: coordinatedDropOff || dropOff,
+      pickup_type: ScheduleBuilder.getPickupDropoffType(row, pickupActivities),
+      drop_off_type: ScheduleBuilder.getPickupDropoffType(row, dropOffActivities),
       shape_dist_traveled: null,
       timepoint: 1,
       platform: row.platform,
