@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {EventEmitter} from "events";
 import {ScheduleBuilder} from "../build/ScheduleBuilder";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
+import {PickupDropOffType} from "../entity/StopTime";
 
 /**
  * The schedules query returns a stream of rows, so feed the builder an emitter that behaves
@@ -143,6 +144,36 @@ describe("ScheduleBuilder", () => {
 
     expect(builder.results.schedules.map(s => s.operator)).to.deep.equal(["SE", "QQ", "ZZ"]);
   });
+  
+  it("generates the correct pick up and drop off types", async () => {
+    const builder = new ScheduleBuilder();
+
+    await builder.loadSchedules(stream([
+      row({ stop_id: 10, crs_code: "AAA", public_arrival_time: null, public_departure_time: "10:01:00", activity: "TB" }),
+      row({ stop_id: 11, crs_code: "BBB", public_arrival_time: null, public_departure_time: "10:06:00", activity: "U " }),
+      row({ stop_id: 12, crs_code: "CCC", public_arrival_time: "10:10:00", public_departure_time: "10:11:00", activity: "R " }),
+      row({ stop_id: 14, crs_code: "DDD", public_arrival_time: null, public_departure_time: null, activity: "T N " }),
+      row({ stop_id: 16, crs_code: "EEE", public_arrival_time: "10:20:00", public_departure_time: "10:21:00", activity: "T " }),
+      row({ stop_id: 18, crs_code: "FFF", public_arrival_time: "10:25:00", public_departure_time: null, activity: "D " }),
+      row({ stop_id: 19, crs_code: "GGG", public_arrival_time: null, public_departure_time: null, activity: "TFN " }),
+    ]));
+
+    const schedule = builder.results.schedules[0];
+    expect(schedule.stopTimes[0].drop_off_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[0].pickup_type).to.equal(PickupDropOffType.SCHEDULED);
+    expect(schedule.stopTimes[1].drop_off_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[1].pickup_type).to.equal(PickupDropOffType.SCHEDULED);
+    expect(schedule.stopTimes[2].drop_off_type).to.equal(PickupDropOffType.COORDINATE_WITH_DRIVER);
+    expect(schedule.stopTimes[2].pickup_type).to.equal(PickupDropOffType.COORDINATE_WITH_DRIVER);
+    expect(schedule.stopTimes[3].drop_off_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[3].pickup_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[4].drop_off_type).to.equal(PickupDropOffType.SCHEDULED);
+    expect(schedule.stopTimes[4].pickup_type).to.equal(PickupDropOffType.SCHEDULED);
+    expect(schedule.stopTimes[5].drop_off_type).to.equal(PickupDropOffType.SCHEDULED);
+    expect(schedule.stopTimes[5].pickup_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[6].drop_off_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[6].pickup_type).to.equal(PickupDropOffType.NONE);
+  })
 
 });
 

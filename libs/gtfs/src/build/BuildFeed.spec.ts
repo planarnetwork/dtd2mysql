@@ -1,7 +1,7 @@
-import {describe, it, expect} from "vitest";
+import {describe, expect, it} from "vitest";
 import {Writable} from "stream";
 import {BuildFeed} from "./BuildFeed";
-import {BuildContext, DateRange, parseRange} from "./BuildContext";
+import {BuildContext, parseRange} from "./BuildContext";
 import {Enricher} from "../enrich/Enricher";
 import {GTFSOutput} from "./GTFSOutput";
 import {ScheduleResults} from "./ScheduleBuilder";
@@ -10,7 +10,7 @@ import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {Schedule} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
 import {STP} from "../model/OverlayRecord";
-import {StopTime} from "../entity/StopTime";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 import {Stop} from "../entity/Stop";
 import {Transfer} from "../entity/Transfer";
 import {interchange} from "../transform/MergeTransfers";
@@ -48,8 +48,8 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
   stop_id: stop,
   stop_sequence: sequence,
   stop_headsign: null,
-  pickup_type: 0,
-  drop_off_type: 0,
+  pickup_type: PickupDropOffType.SCHEDULED,
+  drop_off_type: PickupDropOffType.SCHEDULED,
   shape_dist_traveled: null,
   timepoint: 1,
     platform: null,
