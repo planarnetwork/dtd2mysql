@@ -13,7 +13,8 @@ import {IdGenerator} from "../model/OverlayRecord";
  */
 export function applyAssociations(schedulesByTuid: ScheduleIndex,
                                   associationsIndex: AssociationIndex,
-                                  idGenerator: IdGenerator): AssociatedSchedules {
+                                  idGenerator: IdGenerator,
+                                  duplicateOvernightAssociations: boolean): AssociatedSchedules {
 
   const links: AssociationLink[] = [];
   const associated: Schedule[] = [];
@@ -36,27 +37,33 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
           continue;
         }
 
-        const applied = association.apply(baseSchedules[0], assocSchedule, idGenerator);
+        const applied = association.apply(baseSchedules[0], assocSchedule, idGenerator, duplicateOvernightAssociations);
 
         if (applied === null) {
           continue;
         }
 
         links.push(applied.link);
-        associated.push(applied.associated);
+        associated.push(applied.asDated);
+        if (applied.duplicated) {
+          associated.push(applied.duplicated);
+        }
 
         // remove the original associated schedule and replace with any substitute schedules created
         const schedules = schedulesByTuid[assocSchedule.tuid];
 
-        schedules.splice(schedules.indexOf(assocSchedule), 1, ...(applied.asDated === null ? [] : [applied.asDated]));
+        schedules.splice(
+            schedules.indexOf(assocSchedule),
+            1,
+            ...applied.unassociated === null ? [] : [applied.unassociated]
+        );
       }
     }
   }
 
-  // Only once every association has been applied. An associated schedule's calendar is told in the
-  // base's service days, so leaving it where the next association looks would match it against a
-  // calendar counted the other way and couple it a second time. What is left behind is the days it
-  // runs uncoupled, which is what a second association should be drawing from.
+  // Only once every association has been applied. Leaving an association's schedule where the next 
+  // association looks would match it against another calendar couple it a second time. What is left
+  // behind is the days it runs uncoupled, which is what a second association should be drawing from.
   for (const schedule of associated) {
     (schedulesByTuid[schedule.tuid] = schedulesByTuid[schedule.tuid] || []).push(schedule);
   }

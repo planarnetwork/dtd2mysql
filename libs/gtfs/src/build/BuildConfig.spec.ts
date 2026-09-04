@@ -18,6 +18,7 @@ describe("parseConfig", () => {
     expect(config.licence).to.equal("permissive");
     expect(config.enrichers).to.deep.equal([]);
     expect(config.extensions).to.deep.equal([]);
+    expect(config.duplicateOvernightAssociations).to.equal(false);
   });
 
   it("insists on a source, since there is nothing to build without one", () => {

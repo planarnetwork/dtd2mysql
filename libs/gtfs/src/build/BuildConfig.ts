@@ -19,6 +19,7 @@ export interface BuildConfig {
   readonly licence: Licence;
   readonly enrichers: readonly EnricherConfig[];
   readonly extensions: readonly ExtensionConfig[];
+  readonly duplicateOvernightAssociations: boolean;
 }
 
 /**
@@ -100,7 +101,8 @@ export function parseConfig(
     links: config.links === true,
     licence: licence as Licence,
     enrichers: enrichers(config.enrichers, known),
-    extensions: extensions(config.extensions, knownExtensions)
+    extensions: extensions(config.extensions, knownExtensions),
+    duplicateOvernightAssociations: Boolean(config.duplicateOvernightAssociations),
   };
 }
 

@@ -16,6 +16,12 @@ export interface BuildContext {
    * links. Kept behind `--links` for one minor version.
    */
   readonly links: boolean;
+
+  /**
+   * Whether associated schedules running the next day are duplicated into the
+   * base schedules' service day.
+   */
+  readonly duplicateOvernightAssociations: boolean;
 }
 
 /**
@@ -131,6 +137,7 @@ export function buildContext(argv: string[], env: NodeJS.ProcessEnv = process.en
   return {
     today: today ? Temporal.PlainDate.from(today) : Temporal.Now.plainDateISO(),
     range: parseRange(range ?? "3 MONTH"),
-    links: argv.includes("--links") || env.GTFS_LINKS === "1"
+    links: argv.includes("--links") || env.GTFS_LINKS === "1",
+    duplicateOvernightAssociations: argv.includes("--duplicate-overnight-associations") || Boolean(env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS)
   };
 }

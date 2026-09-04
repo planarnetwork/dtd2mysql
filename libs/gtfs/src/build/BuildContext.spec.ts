@@ -95,7 +95,8 @@ describe("dateRange", () => {
     const range = dateRange({
       today: Temporal.PlainDate.from("2025-09-02"),
       range: parseRange("3 MONTH"),
-      links: false
+      links: false,
+      duplicateOvernightAssociations: false,
     });
 
     expect(range.from.toString()).to.equal("2025-09-02");
@@ -107,7 +108,8 @@ describe("dateRange", () => {
     const range = dateRange({
       today: Temporal.PlainDate.from("2025-08-31"),
       range: parseRange("1 MONTH"),
-      links: false
+      links: false,
+      duplicateOvernightAssociations: false
     });
 
     expect(range.to.toString()).to.equal("2025-09-30");
@@ -131,4 +133,21 @@ describe("buildContext links", () => {
     expect(buildContext(argv(), {GTFS_LINKS: "1"}).links).to.equal(true);
   });
 
+});
+
+describe("buildContext duplicate overnight associations", () => {
+  const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
+
+  it("does not duplicate associations unless asked", () => {
+    expect(buildContext(argv(), {}).duplicateOvernightAssociations).to.equal(false);
+  });
+
+  it("writes it for --duplicate-overnight-associations", () => {
+    expect(buildContext(argv("--duplicate-overnight-associations"), {}).duplicateOvernightAssociations).to.equal(true);
+  });
+
+  it("writes it for GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS=1", () => {
+    expect(buildContext(argv(), {GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: "true"}).duplicateOvernightAssociations).to.equal(true);
+  });
+  
 });

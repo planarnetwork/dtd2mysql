@@ -48,8 +48,13 @@ export class Association implements OverlayRecord {
    *
    * Null where the association cannot apply: a location one of them does not call at, or no day on
    * which both run and the association is in force.
+   * 
+   * GTFS does not require that the base schedule and the assoc schedule to operate on the same day.
+   * However, the `duplicateOvernight` parameter is given as a workaround for journey planners which can only
+   * handle linked trips running on the same day, by creating a duplicate of the associated portion
+   * departing on the day the base departs, and shifting the times by a day.
    */
-  public apply(base: Schedule, assoc: Schedule, idGenerator: IdGenerator): AssociationApplication | null {
+  public apply(base: Schedule, assoc: Schedule, idGenerator: IdGenerator, duplicateOvernight: boolean): AssociationApplication | null {
     // this should never happen, unless data feed is corrupted. It will prevent us from update failure
     if (base.stopAt(this.assocLocation) === undefined || assoc.stopAt(this.assocLocation) === undefined) {
       return null;
@@ -66,31 +71,35 @@ export class Association implements OverlayRecord {
     if (coupled.isEmpty) {
       return null;
     }
+    
+    const asDated = assoc.clone(this.inAssocDays(coupled), idGenerator.next().value, assoc.stopTimes);
 
-    // A transfer carries no calendar, so the two trips want to be on the same service day. Only a
-    // next day schedule can be moved onto the base's: one running before it would need a time
+    // Some legacy journey planner can only handle linked trips which run on the same service day. If dayShift is true,
+    // we create a duplicate of the assoc schedule which runs on the base day.
+    // 
+    // In the duplicated schedule, a train leaving Edinburgh at 04:30 coming off a sleeper portion
+    // reads as 28:40 the day before, which helps those journey planners to link it to the base.
+    
+    // Only a next day schedule can be copied onto the base's: one running before it would need a time
     // before 00:00. Those keep their own day and the coupling crosses one.
-    const moved = this.dateIndicator === DateIndicator.Next;
+    //
+    // If addLateNightServices will move the assoc schedule on the next day back, they will run on the same GTFS day
+    // so the duplication is not needed.
+    const needToDuplicate = duplicateOvernight && this.dateIndicator === DateIndicator.Next && !isLateNight(assoc);
 
-    const associated = assoc.clone(
-      moved ? coupled : this.inAssocDays(coupled),
-      idGenerator.next().value,
-      moved ? assoc.stopTimes.map(aDayLater) : assoc.stopTimes
-    );
-
-    // Moving it is for the coupling's benefit, not the passenger's: a train leaving Swansea at 08:41
-    // reads as 32:41 the day before, which is no use to anyone boarding it there. So it is published
-    // on its own day too - unless addLateNightServices would put it straight back, which would leave
-    // the same trip twice.
-    const onItsOwn = moved && !isLateNight(assoc);
-    const asDated = onItsOwn ? assoc.calendar : assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
+    const duplicated = needToDuplicate 
+        ? assoc.clone(coupled, idGenerator.next().value, assoc.stopTimes.map(aDayLater)) 
+        : null;
+    
+    const unassociatedCalendar = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
 
     return {
-      associated,
-      asDated: asDated === null ? null : assoc.clone(asDated, idGenerator.next().value),
+      asDated,
+      duplicated,
       link: this.assocType === AssociationType.Join
-        ? {from: associated.id, to: base.id, location: this.assocLocation, type: this.assocType}
-        : {from: base.id, to: associated.id, location: this.assocLocation, type: this.assocType}
+        ? {from: (duplicated ?? asDated).id, to: base.id, location: this.assocLocation, type: this.assocType}
+        : {from: base.id, to: (duplicated ?? asDated).id, location: this.assocLocation, type: this.assocType},
+      unassociated: unassociatedCalendar === null ? null : assoc.clone(unassociatedCalendar, idGenerator.next().value)
     };
   }
 
@@ -129,10 +138,18 @@ function plusADay(time: string): string {
 }
 
 export interface AssociationApplication {
-  /** told in the base's service day, which is what the coupling names */
-  associated: Schedule,
-  /** told in the day its own record gives, or null where no day is left for it */
-  asDated: Schedule | null,
+  /** told in the day its own record gives */
+  asDated: Schedule,
+  /** 
+   * told in the base's service day, which is what the coupling names, 
+   * or null if the assoc and the base run on the same service day 
+   */
+  duplicated: Schedule | null,
+  /**
+   * a copy of the schedule where the association does not apply,
+   * null if the association fully applies.
+   */
+  unassociated: Schedule | null,
   link: AssociationLink
 }
 

@@ -97,7 +97,7 @@ export class BuildFeed {
       : Promise.resolve();
 
     const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
-    const {schedules, links} = this.getSchedules(associations, scheduleResults);
+    const {schedules, links} = this.getSchedules(associations, scheduleResults, this.context.duplicateOvernightAssociations);
 
     if (schedules.length === 0) {
       throw new Error(
@@ -333,10 +333,10 @@ export class BuildFeed {
     ]);
   }
 
-  private getSchedules(associations: Association[], scheduleResults: ScheduleResults): LinkedSchedules {
+  private getSchedules(associations: Association[], scheduleResults: ScheduleResults, duplicateOvernightAssociations: boolean): LinkedSchedules {
     const processedAssociations: AssociationIndex = applyOverlays(associations);
     const processedSchedules: ScheduleIndex = applyOverlays(scheduleResults.schedules);
-    const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
+    const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator, duplicateOvernightAssociations);
     const mergedSchedules = mergeSchedules(associated.schedules);
     const links = resolveLinks(associated.links, mergedSchedules);
     const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);

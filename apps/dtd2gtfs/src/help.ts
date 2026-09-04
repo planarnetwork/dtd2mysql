@@ -19,6 +19,10 @@ Build a GTFS feed from the DTD timetable feed, with no database
   --links                    also write links.txt, this project's own file of
                              fixed links. transfers.txt holds the same links;
                              links.txt is kept for one release
+  --duplicate-overnight-associations
+                             duplicate associated schedules which runs on the
+                             next day to have a copy which runs on the same
+                             service day as the base schedule
 
 For example:
 
@@ -35,6 +39,7 @@ A config file looks like this. Only source is required:
   range: 3 months
   licence: permissive        # or full, which allows share-alike sources
   links: false
+  duplicateOvernightAssociations: true
   enrichers:
     NAPTAN:                  # on, with its own defaults
     KNOWLEDGEBASE:
