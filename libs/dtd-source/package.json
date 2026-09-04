@@ -1,6 +1,6 @@
 {
   "name": "@gb-transit/dtd-source",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Download and sequencing of the DTD feed files from the RSP SFTP server",
   "license": "GPL-3.0",
   "repository": {
