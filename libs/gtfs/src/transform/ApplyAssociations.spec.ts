@@ -59,7 +59,7 @@ describe("ApplyAssociations", () => {
     // on the day its own record gives, which is where a passenger boarding it looks.
     const associated = schedules["B"];
 
-    // Each on the day its own base ran. These depart at 00:35, which addLateNightServices puts back
+    // Each on the day its own base ran. These depart at 00:35, which shiftLateNightServices puts back
     // on the previous day anyway, so there is no second copy to publish.
     expect(associated.map(s => [s.calendar.runsFrom.toString(), s.stopTimes[0].departure_time])).to.deep.equal([
       ["2017-07-11", "00:35:30"],

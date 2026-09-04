@@ -154,7 +154,7 @@ describe("Association", () => {
     const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
       .apply(base, assoc, idGenerator(), true)!;
 
-    // 00:35 is published as 24:35 the day before whether we do it or addLateNightServices does, so a
+    // 00:35 is published as 24:35 the day before whether we do it or shiftLateNightServices does, so a
     // copy on its own day would be the same trip twice
     expect(result.duplicated).to.equal(null);
   });

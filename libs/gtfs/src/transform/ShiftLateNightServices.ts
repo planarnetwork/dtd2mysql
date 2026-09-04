@@ -11,7 +11,7 @@ import {IdGenerator} from "../model/OverlayRecord";
  * Therefore, trains which depart before the change on changeover days should be recorded as on the
  * previous service day instead.
  */
-export function addLateNightServices(schedules: Schedule[], idGenerator: IdGenerator): Schedule[] {
+export function shiftLateNightServices(schedules: Schedule[], idGenerator: IdGenerator): Schedule[] {
   const result: Schedule[] = [];
 
   for (const schedule of schedules) {
@@ -23,14 +23,7 @@ export function addLateNightServices(schedules: Schedule[], idGenerator: IdGener
     }
 
     if (isLateNight(schedule)) {
-      const newSchedule = schedule.clone(schedule.calendar.shiftBackward(), idGenerator.next().value);
-
-      for (const stop of newSchedule.stopTimes) {
-        stop.departure_time = (parseInt(stop.departure_time.substr(0, 2), 10) + 24) + stop.departure_time.substr(2);
-        stop.arrival_time = (parseInt(stop.arrival_time.substr(0, 2), 10) + 24) + stop.arrival_time.substr(2);
-      }
-
-      result.push(newSchedule);
+      result.push(schedule.copyToPreviousServiceDay());
     } else {
       result.push(schedule);
     }

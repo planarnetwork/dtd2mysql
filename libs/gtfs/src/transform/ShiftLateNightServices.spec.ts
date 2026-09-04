@@ -2,13 +2,13 @@ import {describe, it, expect} from 'vitest';
 import {STP} from "../model/OverlayRecord";
 import {schedule} from "./MergeSchedules.spec";
 import {stop} from "./ApplyAssociations.spec";
-import {addLateNightServices} from "../transform/AddLateNightServices";
+import {shiftLateNightServices} from "./ShiftLateNightServices";
 import {Days} from "../model/ScheduleCalendar";
 
-describe("AddLateNightServices", () => {
+describe("ShiftLateNightServices", () => {
   const WEEK_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 0, 6: 0 };
 
-  it("merges schedules where they are the same", () => {
+  it("shifts schedules depending on the origin departure time", () => {
     const baseSchedules = [
       schedule(1, "A", "2018-10-01", "2018-10-31", STP.Permanent, WEEK_DAYS, [
         stop(1, "TON", "01:30"),
@@ -22,7 +22,7 @@ describe("AddLateNightServices", () => {
       ]),
     ];
 
-    const schedules = addLateNightServices(baseSchedules, idGenerator());
+    const schedules = shiftLateNightServices(baseSchedules, idGenerator());
 
     expect(schedules[0].calendar.runsFrom.equals("20180930")).to.be.true;
     expect(schedules[0].calendar.runsTo.equals("20181030")).to.be.true;
@@ -51,7 +51,7 @@ describe("AddLateNightServices", () => {
       ])
     ];
 
-    const schedules = addLateNightServices(baseSchedules, idGenerator());
+    const schedules = shiftLateNightServices(baseSchedules, idGenerator());
 
     expect(schedules.length).to.equal(2);
     expect(schedules[0].stopTimes.length).to.equal(0);

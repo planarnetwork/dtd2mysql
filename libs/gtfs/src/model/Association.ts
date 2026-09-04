@@ -4,7 +4,7 @@ import {ScheduleCalendar} from "./ScheduleCalendar";
 import {CRS} from "../entity/Stop";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
 import {StopTime} from "../entity/StopTime";
-import {isLateNight} from "../transform/AddLateNightServices";
+import {isLateNight} from "../transform/ShiftLateNightServices";
 
 export class Association implements OverlayRecord {
 
@@ -72,7 +72,7 @@ export class Association implements OverlayRecord {
       return null;
     }
     
-    const asDated = assoc.clone(this.inAssocDays(coupled), idGenerator.next().value, assoc.stopTimes);
+    const asDated = assoc.clone(this.inAssocDays(coupled), idGenerator.next().value);
 
     // Some legacy journey planner can only handle linked trips which run on the same service day. If dayShift is true,
     // we create a duplicate of the assoc schedule which runs on the base day.
@@ -83,12 +83,12 @@ export class Association implements OverlayRecord {
     // Only a next day schedule can be copied onto the base's: one running before it would need a time
     // before 00:00. Those keep their own day and the coupling crosses one.
     //
-    // If addLateNightServices will move the assoc schedule on the next day back, they will run on the same GTFS day
+    // If shiftLateNightServices will move the assoc schedule on the next day back, they will run on the same GTFS day
     // so the duplication is not needed.
     const needToDuplicate = duplicateOvernight && this.dateIndicator === DateIndicator.Next && !isLateNight(assoc);
 
     const duplicated = needToDuplicate 
-        ? assoc.clone(coupled, idGenerator.next().value, assoc.stopTimes.map(aDayLater)) 
+        ? assoc.copyToPreviousServiceDay().clone(coupled, idGenerator.next().value)
         : null;
     
     const unassociatedCalendar = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
@@ -121,20 +121,6 @@ export class Association implements OverlayRecord {
       : calendar;
   }
 
-}
-
-/**
- * A call told on the day after the one it came with, so 00:35 becomes 24:35.
- */
-function aDayLater(stopTime: StopTime): StopTime {
-  return Object.assign({}, stopTime, {
-    arrival_time: plusADay(stopTime.arrival_time),
-    departure_time: plusADay(stopTime.departure_time)
-  });
-}
-
-function plusADay(time: string): string {
-  return (parseInt(time.substr(0, 2), 10) + 24) + time.substr(2);
 }
 
 export interface AssociationApplication {

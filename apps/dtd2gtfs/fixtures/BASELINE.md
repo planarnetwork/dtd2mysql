@@ -48,7 +48,7 @@ at 08:41 into 32:41 the day before, no use to anyone boarding it there. It is no
 the day its own record gives, at its own times, every day it runs. `golden/trips.txt` goes from 128
 to 150: `C04543` is a Monday at 28:28 for the coupling and a Tuesday at 04:28 for a passenger.
 
-Not where it departs before 02:00, because `addLateNightServices` would move that copy straight back
+Not where it departs before 02:00, because `shiftLateNightServices` would move that copy straight back
 onto the base's day and leave the same trip twice. Feed-wide: 155 trips and 1,479 stop times more,
 `transfers.txt` unchanged.
 

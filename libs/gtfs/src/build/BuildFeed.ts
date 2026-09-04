@@ -30,7 +30,7 @@ import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
 import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
-import {addLateNightServices} from "../transform/AddLateNightServices";
+import {shiftLateNightServices} from "../transform/ShiftLateNightServices";
 import {finished} from "node:stream/promises";
 import {Writable} from "stream";
 
@@ -339,7 +339,7 @@ export class BuildFeed {
     const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator, duplicateOvernightAssociations);
     const mergedSchedules = mergeSchedules(associated.schedules);
     const links = resolveLinks(associated.links, mergedSchedules);
-    const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
+    const schedules = shiftLateNightServices(mergedSchedules, scheduleResults.idGenerator);
 
     // remove any schedules that no longer run on any days so invalid calendars are not output
     return {schedules: schedules.filter(schedule => !schedule.calendar.isEmpty), links};
