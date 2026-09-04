@@ -101,7 +101,7 @@ jobs:
           yarn tsx apps/dtd2gtfs/src/index.ts build --config gtfs.config.yaml --out feed | tee build.log
 
       # The same timetable with the locations a service runs through kept in it:
-      # 608,000 more stop times, at 613,000 of which nobody boards and nobody
+      # 592,000 more stop times, at 597,000 of which nobody boards and nobody
       # alights. A journey planner wants the feed above and anything tracing
       # where a train actually goes wants this one, so both are published rather
       # than one of them being chosen on everybody's behalf.

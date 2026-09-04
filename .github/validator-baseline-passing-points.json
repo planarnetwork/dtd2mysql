@@ -4,7 +4,7 @@
     "why": "B10: a stop with no coordinate that something references is published at 0,0 and named in a warning, rather than at a plausible centroid that would hide it. QBN/QBS are the two. Goes to 0 when D3 or D7 gives them coordinates."
   },
   "stop_time_with_arrival_before_previous_departure_time": {
-    "max": 27,
-    "why": "The 4 that .github/validator-baseline.json accepts, plus 23 the passing points bring with them. A call publishes its public time and a passing point has only its working time, and the CIF's two clocks disagree: C17075 passes SELYOAK at 2116H and calls at UNVRSYB with a working arrival of 2117H and a public one of 2115, so the pass reads as later than the call after it. Correcting it would mean inventing a time for one of them. Recount after a refresh changes how many services are timed that way."
+    "max": 24,
+    "why": "The 1 that .github/validator-baseline.json accepts, plus 23 the passing points bring with them. A call publishes its public time and a passing point has only its working time, and the CIF's two clocks disagree: C17075 passes SELYOAK at 2116H and calls at UNVRSYB with a working arrival of 2117H and a public one of 2115, so the pass reads as later than the call after it. Correcting it would mean inventing a time for one of them. Recount after a refresh changes how many services are timed that way."
   }
 }

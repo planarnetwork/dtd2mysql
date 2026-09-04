@@ -23,10 +23,15 @@ read it, and `.github/validator-baseline-passing-points.json` joins it. The seco
 feed built with `--remove-passing-points=false`, which the nightly now publishes as
 `gtfs-passing-points.zip` alongside the standard one.
 
-It accepts 27 `stop_time_with_arrival_before_previous_departure_time` against the standard feed's 4.
+It accepts 24 `stop_time_with_arrival_before_previous_departure_time` against the standard feed's 1.
 The 23 extra are the CIF's two clocks disagreeing: a call publishes its public time and a passing
 point has only its working time, so `C17075` passes `SELYOAK` at `2116H` and then calls at `UNVRSYB`
 with a public arrival of `2115`. Correcting it would mean inventing a time for one of them.
+
+Measured after merging master, where F4 took the standard feed from 4 to 1 by decomposing the
+`G38297`/`G38968` join at Swansea into two trips that each read forwards. The same three go from this
+feed, so it is 24 rather than the 27 this branch was written against; the 23 the passing points
+themselves bring are unchanged.
 
 A passing point names its platform, per review on #152. The first version dropped it on the grounds
 that a train runs through on a line rather than a platform. Measured, that is wrong twice over: 89%
@@ -39,7 +44,8 @@ validator counts are unchanged either way, so the baseline above holds.
 Also fixed, and visible in neither baseline because the fixture has no case of it: where two of a
 service's timing points share a CRS, a request stop is `pickup_type` 3 rather than 0 and so had
 nothing to win the station with. 28 of them were displaced by the point the service passes on the way
-in, which moved `3,3` on the full feed from 17,291 to 17,263. Both feeds now agree at 17,291.
+in, which moved `3,3` on the full feed from 17,363 to 17,335. Both feeds now agree at 17,363. The
+count moved with #162 and #163, which changed what an activity maps to; the 28 did not.
 
 ## An unadvertised stop is not a drop off either
 
