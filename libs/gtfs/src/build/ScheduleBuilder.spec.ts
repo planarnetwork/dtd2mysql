@@ -159,20 +159,20 @@ describe("ScheduleBuilder", () => {
     ]));
 
     const schedule = builder.results.schedules[0];
-    expect(schedule.stopTimes[0].drop_off_type).to.equal(PickupDropOffType.NONE);
-    expect(schedule.stopTimes[0].pickup_type).to.equal(PickupDropOffType.SCHEDULED);
-    expect(schedule.stopTimes[1].drop_off_type).to.equal(PickupDropOffType.NONE);
-    expect(schedule.stopTimes[1].pickup_type).to.equal(PickupDropOffType.SCHEDULED);
-    expect(schedule.stopTimes[2].drop_off_type).to.equal(PickupDropOffType.COORDINATE_WITH_DRIVER);
-    expect(schedule.stopTimes[2].pickup_type).to.equal(PickupDropOffType.COORDINATE_WITH_DRIVER);
-    expect(schedule.stopTimes[3].drop_off_type).to.equal(PickupDropOffType.NONE);
-    expect(schedule.stopTimes[3].pickup_type).to.equal(PickupDropOffType.NONE);
-    expect(schedule.stopTimes[4].drop_off_type).to.equal(PickupDropOffType.SCHEDULED);
-    expect(schedule.stopTimes[4].pickup_type).to.equal(PickupDropOffType.SCHEDULED);
-    expect(schedule.stopTimes[5].drop_off_type).to.equal(PickupDropOffType.SCHEDULED);
-    expect(schedule.stopTimes[5].pickup_type).to.equal(PickupDropOffType.NONE);
-    expect(schedule.stopTimes[6].drop_off_type).to.equal(PickupDropOffType.NONE);
-    expect(schedule.stopTimes[6].pickup_type).to.equal(PickupDropOffType.NONE);
+    expect(schedule.stopTimes[0].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[0].pickup_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[1].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[1].pickup_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[2].drop_off_type).to.equal(PickupDropOffType.CoordinateWithDriver);
+    expect(schedule.stopTimes[2].pickup_type).to.equal(PickupDropOffType.CoordinateWithDriver);
+    expect(schedule.stopTimes[3].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[3].pickup_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[4].drop_off_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[4].pickup_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[5].drop_off_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[5].pickup_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[6].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[6].pickup_type).to.equal(PickupDropOffType.None);
   })
 
 });

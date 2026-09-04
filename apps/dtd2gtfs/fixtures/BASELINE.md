@@ -13,6 +13,26 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## An unadvertised stop is not a drop off either
+
+**#162.** Activity `N`, "stop not advertised", gated `pickup_type` and not `drop_off_type`, so a
+stop the public cannot use was published as one they could alight at. It now gates both, and it
+takes precedence over `R` - an unadvertised request stop is no stop at all, where it used to come
+out as `3`, "coordinate with the driver".
+
+`golden/stop_times.txt` moves **23 rows from `1,0` to `1,1`**, and nothing else in the feed moves.
+Every one of them is the last stop of a linked trip leg, activity `TF N`: `C04558` at Carstairs
+(12 rows) and `C04551` at Edinburgh (11). Those are the joining stops F4 created - the passenger
+stays in their seat across the `transfer_type=4` link rather than getting off, which is exactly
+what the source says by not advertising the call. The legs are pick up only for their whole length
+and now have no drop off at all, which reads oddly in isolation and is correct: the drop off is on
+the trip they are coupled to.
+
+Entered after the commit rather than with it. The CI step that requires this file to move ran on a
+shallow checkout, where `git diff base...HEAD` fails with `no merge base` and the `|| true` on it
+turned the failure into "no baselines changed" - the guard has passed every pull request without
+checking one.
+
 ## F4 · Splits and joins as linked trips
 
 **Closes #81 and #80.** Associated schedules are no longer concatenated into their base. Both

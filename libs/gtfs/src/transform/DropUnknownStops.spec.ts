@@ -8,7 +8,7 @@ import {STP} from "../model/OverlayRecord";
 
 const call = (crs: string, sequence: number): StopTime => ({
   trip_id: "T", arrival_time: "10:00:00", departure_time: "10:01:00", stop_id: crs,
-  stop_sequence: sequence, stop_headsign: null, pickup_type: PickupDropOffType.SCHEDULED, drop_off_type: PickupDropOffType.SCHEDULED,
+  stop_sequence: sequence, stop_headsign: null, pickup_type: PickupDropOffType.Scheduled, drop_off_type: PickupDropOffType.Scheduled,
   shape_dist_traveled: null, timepoint: 1, platform: null, tiploc: null
 });
 

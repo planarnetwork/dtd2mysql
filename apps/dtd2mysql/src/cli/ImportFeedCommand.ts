@@ -2,7 +2,7 @@ import AdmZip from "adm-zip";
 import * as fs from 'fs';
 import {CLICommand} from "./CLICommand";
 import {FeedConfig} from "@gb-transit/dtd-schema";
-import {FeedFile, MultiRecordFile, Record as FeedRecord} from "@gb-transit/feed-parser";
+import {FeedFile, Record as FeedRecord} from "@gb-transit/feed-parser";
 import {MySQLSchema} from "../database/MySQLSchema";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import * as path from "path";
