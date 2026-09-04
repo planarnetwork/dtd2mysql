@@ -17,10 +17,11 @@ TRUNCATE transfers;
 LOAD DATA LOCAL INFILE 'transfers.txt' INTO TABLE transfers
 FIELDS TERMINATED BY ','
 IGNORE 1 LINES
-(from_stop_id, to_stop_id, transfer_type, min_transfer_time,
+(from_stop_id, to_stop_id, from_trip_id, to_trip_id, transfer_type, @min_transfer_time,
  @mode, @start_time, @end_time, @start_date, @end_date,
  @monday, @tuesday, @wednesday, @thursday, @friday, @saturday, @sunday)
-SET mode = NULLIF(@mode, ''),
+SET min_transfer_time = NULLIF(@min_transfer_time, ''),
+    mode = NULLIF(@mode, ''),
     start_time = NULLIF(@start_time, ''),
     end_time = NULLIF(@end_time, ''),
     start_date = NULLIF(@start_date, ''),

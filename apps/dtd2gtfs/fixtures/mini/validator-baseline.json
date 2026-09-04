@@ -15,6 +15,7 @@
     "service_extends_far_in_the_future": "a calendar running to 2099 in the source",
     "service_window_outside_feed_period": "same calendars, against the three month build window",
     "unknown_column": "the twelve producer extension columns B2 added to transfers.txt, which the spec permits and the validator does not know",
+    "transfer_with_suspicious_mid_trip_in_seat": "F4 anchors a coupling part way along a trip on purpose. A DTD join or split is two trains sharing a vehicle for part of their run, and neither of them is cut at the coupling, so the base carries on through its own destination and the stop the link names is not its last. The spec allows it - the first-stop/last-stop rule is a SHOULD, and to_trip_id is defined against the stop rather than the start of the trip - and the validator says as much: intentional mid-trip transfers can ignore this. Cutting the bases to silence it would add a trip per association and turn a through journey into a change of trains for anything that does not read transfers.txt",
     "unused_station": "stations with no service inside the window, so nothing calls at them and they have no boarding point beneath them. They are still real stations, and a station is location_type=1 whether or not the window happens to contain a call at it"
   },
   "accepted": [
@@ -26,6 +27,7 @@
     "service_window_outside_feed_period",
     "transfer_distance_above_2_km",
     "transfer_distance_too_large",
+    "transfer_with_suspicious_mid_trip_in_seat",
     "unexpected_enum_value",
     "unknown_column",
     "unused_station"

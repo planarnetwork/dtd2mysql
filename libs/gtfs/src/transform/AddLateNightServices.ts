@@ -22,9 +22,7 @@ export function addLateNightServices(schedules: Schedule[], idGenerator: IdGener
       continue;
     }
 
-    const departureHour = parseInt(schedule.stopTimes[0].departure_time.substr(0, 2), 10);
-
-    if (departureHour <= 1) {
+    if (isLateNight(schedule)) {
       const newSchedule = schedule.clone(schedule.calendar.shiftBackward(), idGenerator.next().value);
 
       for (const stop of newSchedule.stopTimes) {
@@ -39,4 +37,12 @@ export function addLateNightServices(schedules: Schedule[], idGenerator: IdGener
   }
 
   return result;
+}
+
+/**
+ * Whether this is one of the services that gets moved onto the previous day.
+ */
+export function isLateNight(schedule: Schedule): boolean {
+  return schedule.stopTimes.length > 0
+    && parseInt(schedule.stopTimes[0].departure_time.substr(0, 2), 10) <= 1;
 }

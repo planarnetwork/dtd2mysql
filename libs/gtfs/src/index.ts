@@ -17,6 +17,7 @@ export type {FeedRow} from "./entity/FeedRow";
 
 // The transit model - pure domain objects with no IO
 export {Association, AssociationType, DateIndicator} from "./model/Association";
+export type {AssociationApplication, AssociationLink} from "./model/Association";
 export {SECONDS_IN_DAY, formatDuration, parseDuration} from "./model/Duration";
 export type {Duration} from "./model/Duration";
 export {STP} from "./model/OverlayRecord";
@@ -30,7 +31,10 @@ export type {BankHoliday, Days, ExcludeDays} from "./model/ScheduleCalendar";
 // Transforms - overlays, associations, merging and calendars
 export {addLateNightServices} from "./transform/AddLateNightServices";
 export {applyAssociations} from "./transform/ApplyAssociations";
-export type {AssociationIndex, ScheduleIndex} from "./transform/ApplyAssociations";
+export type {AssociatedSchedules, AssociationIndex, ScheduleIndex} from "./transform/ApplyAssociations";
+export {combinedHeadsigns, onwardHeadsigns} from "./transform/Headsigns";
+export {linkedTrips, resolveLinks} from "./transform/LinkedTrips";
+export type {TripLink} from "./transform/LinkedTrips";
 export {applyOverlays} from "./transform/ApplyOverlays";
 export type {OverlayIndex} from "./transform/ApplyOverlays";
 export {createCalendar} from "./transform/CreateCalendar";
