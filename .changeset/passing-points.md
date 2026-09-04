@@ -5,7 +5,7 @@
 "dtd2mysql": minor
 ---
 
-Add `--remove-passing-points`, which is on, so the feed is unchanged by default.
+Add `--remove-passing-points`, which defaults to `true`, so the feed is unchanged by default.
 
 Half the CIF's intermediate location records are places a service runs through without stopping,
 and 892,000 of them are at a station the feed publishes. They have always been dropped at the source
