@@ -139,7 +139,7 @@ export class ScheduleBuilder {
       const stop = this.createStop(row, cursor.stops.length + 1, cursor.departureHour);
 
       if (cursor.prevRow && cursor.prevRow.id === row.id && row.crs_code === cursor.prevRow.crs_code) {
-        if (stop.pickup_type === PickupDropOffType.SCHEDULED || stop.drop_off_type === PickupDropOffType.SCHEDULED) {
+        if (stop.pickup_type === PickupDropOffType.Scheduled || stop.drop_off_type === PickupDropOffType.Scheduled) {
           cursor.stops[cursor.stops.length - 1] = Object.assign(stop, { stop_sequence: cursor.stops.length });
         }
       }
@@ -189,18 +189,19 @@ export class ScheduleBuilder {
       row.reservations !== null
     );
   }
-  
-  private static getPickupDropoffType(row: ScheduleStopTimeRow, pickupOrDropoffActivities: string[]) : PickupDropOffType {
-    const activities = row.activity.match(/.{1,2}/g) || [] as string[];
-    if (activities.includes(notAdvertisedActivity)) {
-      return PickupDropOffType.NONE;
+
+  private static getPickupDropOffType(activity: string, pickupOrDropOffActivities: string[]): PickupDropOffType {
+    if (hasActivity(activity, notAdvertisedActivity)) {
+      return PickupDropOffType.None;
     }
-    
-    if (activities.includes(requestStopActivity)) {
-      return PickupDropOffType.COORDINATE_WITH_DRIVER;
+
+    if (hasActivity(activity, requestStopActivity)) {
+      return PickupDropOffType.CoordinateWithDriver;
     }
-    
-    return pickupOrDropoffActivities.some(a => activities.includes(a)) ? PickupDropOffType.SCHEDULED : PickupDropOffType.NONE;
+
+    return pickupOrDropOffActivities.some(a => hasActivity(activity, a))
+      ? PickupDropOffType.Scheduled
+      : PickupDropOffType.None;
   }
 
   private createStop(row: ScheduleStopTimeRow, stopId: number, departHour: number): StopTime {
@@ -234,8 +235,8 @@ export class ScheduleBuilder {
       // it means "this service terminates here", not "platform 3". The platform
       // belongs on a platform-level stop, which needs the station hierarchy.
       stop_headsign: null,
-      pickup_type: ScheduleBuilder.getPickupDropoffType(row, pickupActivities),
-      drop_off_type: ScheduleBuilder.getPickupDropoffType(row, dropOffActivities),
+      pickup_type: ScheduleBuilder.getPickupDropOffType(row.activity, pickupActivities),
+      drop_off_type: ScheduleBuilder.getPickupDropOffType(row.activity, dropOffActivities),
       shape_dist_traveled: null,
       timepoint: 1,
       platform: row.platform,
@@ -289,4 +290,14 @@ const routeTypeIndex: { [trainCategory: string]: RouteType } = {
 
 function newCursor(): Cursor {
   return {stops: [], departureHour: 4};
+}
+
+function hasActivity(activity: string, code: string): boolean {
+  for (let i = 0; i < activity.length; i += 2) {
+    if (activity.startsWith(code, i)) {
+      return true;
+    }
+  }
+
+  return false;
 }

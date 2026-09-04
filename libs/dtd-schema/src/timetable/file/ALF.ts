@@ -1,7 +1,4 @@
-
 import {BooleanField, DateField, FieldMap, FieldValue, IntField, ParsedRecord, Record, RecordAction, SingleRecordFile, TextField, TimeField, VariableLengthText} from "@gb-transit/feed-parser";
-
-import memoize from "memoized-class-decorator";
 
 /**
  * Short format DTD date (e.g. 31/05/2017)

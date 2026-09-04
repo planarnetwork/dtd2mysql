@@ -55,8 +55,8 @@ export interface StopTimeRow {
 }
 
 export enum PickupDropOffType {
-  SCHEDULED = 0,
-  NONE = 1,
-  PHONE_AGENCY = 2,
-  COORDINATE_WITH_DRIVER = 3,
+  Scheduled = 0,
+  None = 1,
+  PhoneAgency = 2,
+  CoordinateWithDriver = 3
 }

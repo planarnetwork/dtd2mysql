@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, it, expect} from "vitest";
 import {Writable} from "stream";
 import {BuildFeed} from "./BuildFeed";
 import {BuildContext, parseRange} from "./BuildContext";
@@ -48,8 +48,8 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
   stop_id: stop,
   stop_sequence: sequence,
   stop_headsign: null,
-  pickup_type: PickupDropOffType.SCHEDULED,
-  drop_off_type: PickupDropOffType.SCHEDULED,
+  pickup_type: PickupDropOffType.Scheduled,
+  drop_off_type: PickupDropOffType.Scheduled,
   shape_dist_traveled: null,
   timepoint: 1,
     platform: null,
