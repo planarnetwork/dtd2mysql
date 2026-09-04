@@ -79,16 +79,19 @@ export class Association implements OverlayRecord {
     // 
     // In the duplicated schedule, a train leaving Edinburgh at 04:30 coming off a sleeper portion
     // reads as 28:40 the day before, which helps those journey planners to link it to the base.
-    
+    //
     // Only a next day schedule can be copied onto the base's: one running before it would need a time
     // before 00:00. Those keep their own day and the coupling crosses one.
     //
     // If shiftLateNightServices will move the assoc schedule on the next day back, they will run on the same GTFS day
-    // so the duplication is not needed.
-    const needToDuplicate = duplicateOvernight && this.dateIndicator === DateIndicator.Next && !isLateNight(assoc);
+    // so the duplication is not needed. In contrast, if the base schedule starts late night but the assoc schedule on 
+    // the same day doesn't, a duplication is required instead
+    const needToDuplicate = duplicateOvernight && !isLateNight(assoc) && (
+        this.dateIndicator === DateIndicator.Next || this.dateIndicator === DateIndicator.Same && isLateNight(base)
+    );
 
     const duplicated = needToDuplicate 
-        ? assoc.copyToPreviousServiceDay().clone(coupled, idGenerator.next().value)
+        ? asDated.clone(asDated.calendar, idGenerator.next().value).copyToPreviousServiceDay()
         : null;
     
     const unassociatedCalendar = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));

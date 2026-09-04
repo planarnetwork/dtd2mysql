@@ -159,6 +159,45 @@ describe("Association", () => {
     expect(result.duplicated).to.equal(null);
   });
 
+  it("duplicates when the base is late night and the assoc is late morning", () => {
+    const base = schedule(1, "A", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "00:30"),
+      stop(2, "ASH", "02:30"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "02:35"),
+      stop(2, "DOV", "04:35"),
+    ]);
+
+    const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Same)
+        .apply(base, assoc, idGenerator(), true)!;
+
+    // 00:30 is published as 24:30 the day before in shiftLateNightServices, but 02:35 isn't.
+    // So we need to copy the 02:35 trip to be associated to the 24:30 base.
+    expect(result.duplicated!.calendar.runsFrom.equals("20170710")).to.be.true;
+    expect(result.duplicated!.stopTimes[0].departure_time).to.equal("26:35:30");
+  });
+
+  it("does not duplicate when the base is late night and the assoc is also late night", () => {
+    const base = schedule(1, "A", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "00:30"),
+      stop(2, "ASH", "01:30"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "01:35"),
+      stop(2, "DOV", "03:35"),
+    ]);
+
+    const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Same)
+        .apply(base, assoc, idGenerator(), true)!;
+
+    // Both 00:30 and 01:35 are published on the previous day, so the association is by default on the same day.
+    // So we need to copy the 02:35 trip to be associated to the 24:30 base.
+    expect(result.duplicated).to.equal(null);
+  });
+
   it("does not duplicate a previous day associated schedule", () => {
     const base = schedule(1, "A", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
       stop(1, "ASH", "04:30"),
