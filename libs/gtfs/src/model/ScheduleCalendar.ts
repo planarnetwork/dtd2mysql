@@ -46,6 +46,19 @@ export class ScheduleCalendar {
   }
 
   /**
+   * The days both calendars run. Ranges that do not meet leave `runsFrom` after `runsTo`, which
+   * `isEmpty` already answers for, so there is nothing to return null for.
+   */
+  public intersect(other: ScheduleCalendar): ScheduleCalendar {
+    return this.clone(
+      maxDate(this.runsFrom, other.runsFrom),
+      minDate(this.runsTo, other.runsTo),
+      without(other.days),
+      {...this.excludeDays, ...other.excludeDays}
+    );
+  }
+
+  /**
    * Count the number of days that the overlay shares with this schedule and return true if the max has been exceeded
    */
   public getOverlap(overlay: ScheduleCalendar): OverlapType {
@@ -238,3 +251,19 @@ export enum OverlapType {
 }
 
 export const NO_DAYS: Days = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+
+/**
+ * The days a mask does not have. `clone` takes the days to *remove*, so this is what leaves the days
+ * two masks share.
+ */
+function without(days: Days): Days {
+  return {
+    0: days[0] ? 0 : 1,
+    1: days[1] ? 0 : 1,
+    2: days[2] ? 0 : 1,
+    3: days[3] ? 0 : 1,
+    4: days[4] ? 0 : 1,
+    5: days[5] ? 0 : 1,
+    6: days[6] ? 0 : 1
+  };
+}

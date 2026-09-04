@@ -3,7 +3,7 @@ import {STP, TUID} from "../model/OverlayRecord";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyOverlays} from "../transform/ApplyOverlays";
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
-import {StopTime} from "../entity/StopTime";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 import {Schedule} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
 
@@ -78,8 +78,8 @@ function stopTime(stop: string, tripId: string): StopTime {
     stop_id: stop,
     stop_sequence: 1,
     stop_headsign: null,
-    pickup_type: 0,
-    drop_off_type: 0,
+    pickup_type: PickupDropOffType.Scheduled,
+    drop_off_type: PickupDropOffType.Scheduled,
     shape_dist_traveled: null,
     timepoint: 0,
     platform: null,

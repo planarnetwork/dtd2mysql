@@ -1739,11 +1739,11 @@ not reach anybody, and it is cheaper to skip a night than to withdraw a feed. Wh
 accepted is `.github/validator-baseline.json` - see the B6 section above for why a blanket rule could not
 work and what the file holds.
 
-**The 5% trip swing gate collides with #121 and F4.** Removing the merge step is a +19% step change,
-and F4 turns every joined service into two trips. Whichever lands second trips the gate. There is no
-previous release yet, so the comparison is skipped on the first run and the gate effectively starts
-from whatever ships first - which is the documented one-off reset, taken by default rather than by
-decision.
+**The 5% trip swing gate collides with #121.** Removing the merge step is a +19% step change, so it
+trips the gate. There is no previous release yet, so the comparison is skipped on the first run and
+the gate effectively starts from whatever ships first - which is the documented one-off reset, taken
+by default rather than by decision. **F4 does not collide with it**: it moves the trip count by
++0.002%, and the claim that it doubled the joined services was wrong - see F4.
 
 Verified by running it: download, build and validate all execute against the real feed. The
 credentials are held as `DTD_HOSTNAME`, `DTD_USERNAME` and `DTD_PASSWORD` and mapped to the
@@ -1860,7 +1860,7 @@ Remaining `stops.txt` changes:
 B23 broke the three-letter join once, with the ids it will keep. F3 adds stops rather than renaming
 them, so it needs no flag and no second break.
 
-**F4 · Splits and joins as transfers** *(depends C1)* — **closes #81 and #80**
+**F4 · Splits and joins as transfers** *(depends C1)* — **done, closes #81 and #80**
 `transfers.txt` rows with `transfer_type=4/5` and `from_trip_id`/`to_trip_id` for VV/JJ
 associations, in place of concatenating the portions into one trip.
 
@@ -1871,10 +1871,32 @@ concatenation: two services that share a unit are not one passenger journey, and
 `transfer_type=4` for precisely that relationship. Emitting linked trips makes the shape
 unrepresentable rather than needing a rule to exclude it.
 
-**Expect a large change in trip count.** Every joined or split service currently emitted as one trip
-becomes two, so this collides with E2's 5% swing gate the same way #121 does, and wants the same
-treatment: land it before the gate exists, or reset the gate deliberately. It moves the golden and
-the T10 baseline.
+**The trip count barely moves, and the swing gate was never the obstacle.** This section used to say
+every joined or split service becomes two trips and that it collides with E2's 5% gate. That was
+wrong, and the premise is worth recording because it held the ticket up: the build already emitted
+the base schedule *alongside* the concatenation, so an association was always two trips, and the
+shared leg was published twice. Measured on `RJTTF918` over a three month window, master against the
+change: **trips 279,497 -> 279,503 (+6, +0.002%)**, **stop_times 2,909,952 -> 2,890,110 (-19,842,
+-0.68%)**, `transfers.txt` 5,460 -> 8,319. The stop times that go are the duplicated leg. It moves
+the golden and the T10 baseline; it does not go near the gate.
+
+**Neither schedule is cut.** The base keeps every stop it had, so the through service it offers is
+still one trip, and the link is anchored part way along it. The spec allows that - the
+first-stop/last-stop rule is a SHOULD and `to_trip_id` is defined against the stop rather than the
+start of the trip - at the cost of `transfer_with_suspicious_mid_trip_in_seat`, a WARNING the
+validator itself says intentional mid-trip transfers can ignore. Cutting the bases to silence it
+would add a trip per association (measured: +2,697) and turn a through journey into a change of
+trains for anything that does not read `transfers.txt`.
+
+**The coupling has no calendar of its own.** A transfer applies on the days both its trips run, so
+the associated schedule is cut to `base ∩ assoc ∩ association` and the days the two trips share are
+the days they are coupled. Only the associated schedule is narrowed: it is a subset of the base's
+days by construction, so narrowing one side is enough. Where it runs over a midnight the base has
+already passed, it is dated on the base's service day with the day change in the times - the 04:28
+Edinburgh to Aberdeen becomes 28:28 on the day the sleeper left Euston.
+
+Result on the full feed: `stop_time_with_arrival_before_previous_departure_time` **4 -> 1** (only
+B25's `Z03536` is left), and the 54 trips that retraced their own route are gone.
 
 **F5 · GTFS-Fares v2** — **dropped.** GB fares do not fit the model
 

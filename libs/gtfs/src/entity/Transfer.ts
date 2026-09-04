@@ -1,14 +1,16 @@
 import {Duration} from "../model/Duration";
 
 /**
- * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same) or a fixed
- * leg between two different stations (a walk or tube).
+ * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same), a fixed
+ * leg between two different stations (a walk or tube), or a split or join.
  */
 export interface Transfer {
   from_stop_id: StopID,
   to_stop_id: StopID,
+  from_trip_id: string | null,
+  to_trip_id: string | null,
   transfer_type: TransferType,
-  min_transfer_time: Duration,
+  min_transfer_time: Duration | null,
 
   /**
    * Everything the DTD says about a fixed link that GTFS has no field for.
@@ -47,7 +49,8 @@ export enum TransferType {
   Recommended = 0,
   Timed = 1,
   MinTime = 2,
-  NotPossible = 3
+  NotPossible = 3,
+  InSeat = 4
 }
 
 /**

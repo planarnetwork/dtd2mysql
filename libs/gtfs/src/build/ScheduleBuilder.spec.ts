@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {EventEmitter} from "events";
 import {ScheduleBuilder} from "../build/ScheduleBuilder";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
+import {PickupDropOffType} from "../entity/StopTime";
 
 /**
  * The schedules query returns a stream of rows, so feed the builder an emitter that behaves
@@ -123,6 +124,57 @@ describe("ScheduleBuilder", () => {
 
     expect(message).to.equal("connection lost");
   });
+
+  /**
+   * An operator the build has no agency for keeps its ATOC code, so it gets a
+   * route of its own rather than sharing one with every other operator the
+   * build does not know. The route is attributed to the catch-all agency until
+   * the agency list catches up, and keeps its id when it does - which is what
+   * matters when an operator starts running before the software knows about it.
+   *
+   * Only a schedule with no code at all is ZZ.
+   */
+  it("keeps an ATOC code the build has no agency for", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({ id: 1, stop_id: 10, atoc_code: "SE" }),
+      row({ id: 2, stop_id: 11, atoc_code: "QQ" }),
+      row({ id: 3, stop_id: 12, atoc_code: null })
+    ]);
+
+    expect(builder.results.schedules.map(s => s.operator)).to.deep.equal(["SE", "QQ", "ZZ"]);
+  });
+  
+  it("generates the correct pick up and drop off types", async () => {
+    const builder = new ScheduleBuilder();
+
+    await builder.loadSchedules(stream([
+      row({ stop_id: 10, crs_code: "AAA", public_arrival_time: null, public_departure_time: "10:01:00", activity: "TB" }),
+      row({ stop_id: 11, crs_code: "BBB", public_arrival_time: null, public_departure_time: "10:06:00", activity: "U " }),
+      row({ stop_id: 12, crs_code: "CCC", public_arrival_time: "10:10:00", public_departure_time: "10:11:00", activity: "R " }),
+      row({ stop_id: 14, crs_code: "DDD", public_arrival_time: null, public_departure_time: null, activity: "T N " }),
+      row({ stop_id: 16, crs_code: "EEE", public_arrival_time: "10:20:00", public_departure_time: "10:21:00", activity: "T " }),
+      row({ stop_id: 18, crs_code: "FFF", public_arrival_time: "10:25:00", public_departure_time: null, activity: "D " }),
+      row({ stop_id: 19, crs_code: "GGG", public_arrival_time: null, public_departure_time: null, activity: "TFN " }),
+    ]));
+
+    const schedule = builder.results.schedules[0];
+    expect(schedule.stopTimes[0].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[0].pickup_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[1].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[1].pickup_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[2].drop_off_type).to.equal(PickupDropOffType.CoordinateWithDriver);
+    expect(schedule.stopTimes[2].pickup_type).to.equal(PickupDropOffType.CoordinateWithDriver);
+    expect(schedule.stopTimes[3].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[3].pickup_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[4].drop_off_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[4].pickup_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[5].drop_off_type).to.equal(PickupDropOffType.Scheduled);
+    expect(schedule.stopTimes[5].pickup_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[6].drop_off_type).to.equal(PickupDropOffType.None);
+    expect(schedule.stopTimes[6].pickup_type).to.equal(PickupDropOffType.None);
+  })
 
 });
 

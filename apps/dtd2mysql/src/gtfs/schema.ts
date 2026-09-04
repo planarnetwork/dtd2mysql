@@ -81,7 +81,10 @@ CREATE TABLE shapes (
 
 DROP TABLE IF EXISTS stop_times;
 CREATE TABLE stop_times (
-  trip_id mediumint(12) unsigned NOT NULL,
+  -- A trip id is a string the build composes, not a counter: TUID and the dates the calendar runs
+  -- between, e.g. G38968_20261018_20261018. The longest in a three month feed is 26 characters, and
+  -- every one of them is ASCII - which matters, because this key is embedded in three more indexes.
+  trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   arrival_time time DEFAULT NULL,
   departure_time time DEFAULT NULL,
   stop_id varchar(100) NOT NULL,
@@ -129,8 +132,13 @@ DROP TABLE IF EXISTS transfers;
 CREATE TABLE transfers (
   from_stop_id varchar(100) NOT NULL,
   to_stop_id varchar(100) NOT NULL,
+  -- Empty rather than null so they can stay in the primary key, which the pair of
+  -- stops is not unique without - a coupling happens at a station that already has
+  -- an interchange time.
+  from_trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
+  to_trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT '',
   transfer_type tinyint(1) unsigned NOT NULL,
-  min_transfer_time smallint(8) unsigned NOT NULL,
+  min_transfer_time smallint(8) unsigned DEFAULT NULL,
   -- The producer extension columns transfers.txt carries for a fixed link: the
   -- mode, the window it runs in and the days it runs on. All null on a station
   -- interchange row, which has no link to describe.
@@ -146,14 +154,14 @@ CREATE TABLE transfers (
   friday tinyint(1) unsigned DEFAULT NULL,
   saturday tinyint(1) unsigned DEFAULT NULL,
   sunday tinyint(1) unsigned DEFAULT NULL,
-  PRIMARY KEY (from_stop_id, to_stop_id, transfer_type)
+  PRIMARY KEY (from_stop_id, to_stop_id, from_trip_id, to_trip_id, transfer_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS trips;
 CREATE TABLE trips (
   route_id varchar(255) NOT NULL,
   service_id smallint(12) unsigned NOT NULL,
-  trip_id mediumint(12) unsigned NOT NULL,
+  trip_id varchar(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   trip_headsign varchar(50) DEFAULT NULL,
   trip_short_name varchar(50) DEFAULT NULL,
   direction_id tinyint(1) unsigned DEFAULT NULL,

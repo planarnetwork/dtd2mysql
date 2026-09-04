@@ -1,5 +1,88 @@
 # dtd2mysql
 
+## 9.0.0
+
+### Major Changes
+
+- 2a1ca37: Emit splits and joins as GTFS linked trips instead of concatenating them
+
+  A DTD association is two trains sharing a vehicle for part of their run. Folding the associated
+  schedule into its base said something else - that a passenger boarding the associated train rides
+  through to the base's destination on one train - and where it arrives back where it came from, that
+  trip doubles back on itself. Both schedules now keep their own stops and their own trip, and the
+  association is a `transfers.txt` row with `transfer_type=4` and `from_trip_id`/`to_trip_id`.
+
+  `transfers.txt` gains `from_trip_id` and `to_trip_id` after `to_stop_id`, empty on every interchange
+  and fixed-link row, and `min_transfer_time` is empty on a linked-trips row.
+
+  **Breaking for consumers.** A through journey over a join or a split is no longer one trip, so
+  anything that does not read `transfers.txt` will show a change of trains where it used to show a
+  through service.
+
+  **Breaking for `--gtfs-import`.** `trips.trip_id` and `stop_times.trip_id` were `mediumint(12)
+unsigned` while the build has always written a string, so every trip id loaded as `0` and the two
+  tables never joined. Both are now `varchar(32)`, as are the two new `transfers` columns, and all
+  four are in a primary key. `min_transfer_time` becomes nullable. A database imported with an earlier
+  version has to be reimported, and anything reading these tables - a view, a foreign key, a join
+  treating a trip id as a number - has to be updated with it.
+
+  `stop_times.txt` gains `stop_headsign`, which was empty on every row. A train that divides names
+  every destination it is still carrying at the stops before it does - "Caterham and Tattenham Corner"
+  as far as Purley Oaks, and nothing from Purley on, where the trip headsign is right by itself. This
+  is what the concatenation used to say by accident. Note it is the first value in the feed that needs
+  CSV quoting, because a headsign naming three destinations has a comma in it.
+
+  A schedule that runs the day after its base is published twice: on the base's service day, which is
+  what the coupling names, and on the day its own record gives, which is where a passenger boarding it
+  looks. Without the second an 08:41 departure is only findable as 32:41 the day before.
+
+  A trip that joins another is headed for where it ends up rather than where it is attached, so the
+  Tattenham Corner portion reads London Bridge instead of Purley.
+
+### Patch Changes
+
+- b675f63: Publish routes as the brands a passenger sees, with stable ids.
+
+  A route used to be one operator's journey between two places - `SE:TON->SEV:2` -
+  numbered in the order the routes were written, so `routes.txt` ran to thousands
+  of rows and a `route_id` meant nothing outside the build it came from. A route
+  is now the brand on the departure board: `GW` is Great Western Railway, `WIN` is
+  the Windrush line, `SX` is the Stansted Express. The id is worked out from the
+  schedule, so it is the same id in every build and can be referred to from
+  outside the feed.
+
+  `route_short_name` and `route_long_name` are the operator's own names for the
+  brand, `route_color` is the colour it uses on a route map and
+  `route_text_color` is black or white, whichever can be read on it. The six
+  operators that run more than one line - London Underground, the Overground,
+  Merseyrail, the Tyne & Wear Metro, West Midlands Trains and Greater Anglia's
+  Stansted Express - have their line worked out from where the service calls;
+  `libs/gtfs/src/data/route.ts` holds the rules and the branding, and is the one
+  file to edit when a brand changes. Buses and replacement buses keep routes of
+  their own, because neither runs on the line its operator's trains do.
+
+  `route_desc` is no longer written. It carried the class and reservation
+  availability of a train, which is a property of the train and not of the line it
+  runs on: trips sharing a route disagreed about it.
+
+  For a consumer of `@gb-transit/gtfs`: `RouteID` is a string rather than a
+  number, `Trip.route_id` with it, and the optional fields of `Route` are `null`
+  rather than `undefined`, as everywhere else in the feed. `Schedule.toTrip` no
+  longer takes a route number, and `Schedule.routeShortName` is `Schedule.routeId`.
+
+  An operator the build has no agency for keeps its ATOC code, so it gets a route
+  of its own named after that code and attributed to the catch-all `ZZ` agency.
+  That route keeps its id when the agency list catches up with the operator, which
+  is the case a stable id is for: `LF` ran before the software knew about Lumo
+  (West Coast).
+
+- Updated dependencies [b675f63, 2a1ca37]
+  - @gb-transit/dtd-schema@1.0.0
+  - @gb-transit/dtd-source@1.0.0
+  - @gb-transit/feed-parser@1.0.0
+  - @gb-transit/gtfs@1.0.0
+  - @gb-transit/gtfs-output@1.0.0
+
 ## 8.0.1
 
 ### Patch Changes

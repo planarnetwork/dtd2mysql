@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {STP, TUID} from "../model/OverlayRecord";
-import {StopTime} from "../entity/StopTime";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 import {CRS} from "../entity/Stop";
 import {Association, AssociationType, DateIndicator} from "../model/Association";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/ApplyAssociations";
@@ -18,18 +18,18 @@ describe("ApplyAssociations", () => {
       stop(4, "RAM", "25:00"),
     ]);
 
-    const assoc1 = schedule(1, "B", "2017-07-11", "2017-07-11", STP.Overlay, ALL_DAYS, [
+    const assoc1 = schedule(2, "B", "2017-07-11", "2017-07-11", STP.Overlay, ALL_DAYS, [
       stop(1, "ASH", "00:35"),
       stop(2, "DOV", "01:00"),
     ]);
 
-    const base2 = schedule(1, "A", "2017-07-11", "2017-07-11", STP.Overlay, ALL_DAYS, [
+    const base2 = schedule(3, "A", "2017-07-11", "2017-07-11", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "22:30"),
       stop(2, "ASH", "24:30"),
       stop(3, "RAM", "25:00"),
     ]);
 
-    const assoc2 = schedule(1, "B", "2017-07-12", "2017-07-12", STP.Overlay, ALL_DAYS, [
+    const assoc2 = schedule(4, "B", "2017-07-12", "2017-07-12", STP.Overlay, ALL_DAYS, [
       stop(1, "ASH", "00:35"),
       stop(2, "DOV", "01:00"),
       stop(3, "SEA", "01:30"),
@@ -39,43 +39,100 @@ describe("ApplyAssociations", () => {
     const calendar = new ScheduleCalendar(Temporal.PlainDate.from("2017-07-01"), Temporal.PlainDate.from("2017-07-31"), ALL_DAYS);
     const association1 = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next, calendar);
 
-    const resultByTuid = applyAssociations(
+    const {schedules, links} = applyAssociations(
       applyOverlays([base1, assoc1, base2, assoc2]) as ScheduleIndex,
       applyOverlays([association1]) as AssociationIndex,
       idGenerator()
     );
 
-    const [result1, result2, other] = resultByTuid["A_B"];
+    // nothing is concatenated, so there is no combined TUID at all
+    expect(schedules["A_B"]).to.be.undefined;
+
+    // the bases are untouched, stops and calendars both
+    expect(schedules["A"].map(s => s.stopTimes.map(t => t.stop_id))).to.deep.equal([
+      ["TON", "PDW", "ASH", "RAM"],
+      ["TON", "ASH", "RAM"]
+    ]);
+
+    // Each is published twice: on the day its own base ran, which is what the coupling names, and
+    // on the day its own record gives, which is where a passenger boarding it looks.
+    const associated = schedules["B"];
+
+    // Each on the day its own base ran. These depart at 00:35, which addLateNightServices puts back
+    // on the previous day anyway, so there is no second copy to publish.
+    expect(associated.map(s => [s.calendar.runsFrom.toString(), s.stopTimes[0].departure_time])).to.deep.equal([
+      ["2017-07-10", "24:35:30"],
+      ["2017-07-11", "24:35:30"]
+    ]);
 
     // make sure that it only matches base1 to assoc1 and base2 to assoc2
-    expect(result1.tuid).to.equal("A_B");
-    expect(result1.calendar.runsFrom.equals("2017-07-10")).to.be.true;
-    expect(result1.calendar.runsTo.equals("2017-07-10")).to.be.true;
-    expect(result1.stopTimes[0].stop_id).to.equal("TON");
-    expect(result1.stopTimes[0].stop_sequence).to.equal(1);
-    expect(result1.stopTimes[1].stop_id).to.equal("PDW");
-    expect(result1.stopTimes[1].stop_sequence).to.equal(2);
-    expect(result1.stopTimes[2].stop_id).to.equal("ASH");
-    expect(result1.stopTimes[2].stop_sequence).to.equal(3);
-    expect(result1.stopTimes[2].departure_time).to.equal("24:35:00");
-    expect(result1.stopTimes[3].stop_id).to.equal("DOV");
-    expect(result1.stopTimes[3].stop_sequence).to.equal(4);
-    expect(result1.stopTimes[3].departure_time).to.equal("25:00:00");
-    expect(result2.tuid).to.equal("A_B");
-    expect(result2.calendar.runsFrom.equals("2017-07-11")).to.be.true;
-    expect(result2.calendar.runsTo.equals("2017-07-11")).to.be.true;
-    expect(result2.stopTimes[0].stop_id).to.equal("TON");
-    expect(result2.stopTimes[0].stop_sequence).to.equal(1);
-    expect(result2.stopTimes[1].stop_id).to.equal("ASH");
-    expect(result2.stopTimes[1].stop_sequence).to.equal(2);
-    expect(result2.stopTimes[1].departure_time).to.equal("24:35:00");
-    expect(result2.stopTimes[2].stop_id).to.equal("DOV");
-    expect(result2.stopTimes[2].stop_sequence).to.equal(3);
-    expect(result2.stopTimes[2].departure_time).to.equal("25:00:00");
-    expect(result2.stopTimes[3].stop_id).to.equal("SEA");
-    expect(result2.stopTimes[3].stop_sequence).to.equal(4);
-    expect(result2.stopTimes[3].departure_time).to.equal("25:30:00");
-    expect(other).to.be.undefined;
+    expect(links).to.have.length(2);
+    expect(links[0].from).to.equal(base1.id);
+    expect(links[0].to).to.equal(associated[0].id);
+    expect(links[0].location).to.equal("ASH");
+    expect(links[1].from).to.equal(base2.id);
+    expect(links[1].to).to.equal(associated[1].id);
+  });
+
+  it("does not couple an associated schedule a second time", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-19", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "22:30"),
+      stop(2, "ASH", "23:30"),
+    ]);
+
+    // runs the day after the base, so applying an association moves it onto the base's day at 24:18
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-20", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "00:18"),
+      stop(2, "DOV", "00:40"),
+    ]);
+
+    // The second record's dates, counted in the associated schedule's days, land on the days the
+    // first one produced - which are counted in the base's. Left where an association
+    // looks, it matches and is moved onto a base's day all over again.
+    const first = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-12"), Temporal.PlainDate.from("2017-07-14"), ALL_DAYS));
+    const second = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-11"), Temporal.PlainDate.from("2017-07-13"), ALL_DAYS));
+
+    const {schedules, links} = applyAssociations(
+      applyOverlays([base, assoc]) as ScheduleIndex,
+      {"A_B_ASH": [first, second]} as AssociationIndex,
+      idGenerator()
+    );
+
+    // 00:18 becomes 24:18 and stops there
+    expect(schedules["B"].map(s => s.stopTimes[0].arrival_time).sort())
+      .to.deep.equal(["00:18", "24:18", "24:18"]);
+    expect(links).to.have.length(2);
+  });
+
+  it("gives every schedule it produces an id of its own", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "10:00"),
+      stop(2, "ASH", "12:00"),
+    ]);
+
+    // runs a fortnight, but the association only covers the first week of it
+    const assoc = schedule(2, "B", "2017-07-10", "2017-07-23", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "12:05"),
+      stop(2, "DOV", "13:00"),
+    ]);
+
+    const calendar = new ScheduleCalendar(
+      Temporal.PlainDate.from("2017-07-10"), Temporal.PlainDate.from("2017-07-16"), ALL_DAYS
+    );
+
+    const {schedules} = applyAssociations(
+      applyOverlays([base, assoc]) as ScheduleIndex,
+      applyOverlays([association("A", "B", AssociationType.Split, "ASH", DateIndicator.Same, calendar)]) as AssociationIndex,
+      idGenerator()
+    );
+
+    // the ids are what a link names a trip by until the trip ids are settled, so
+    // two schedules sharing one would couple the wrong pair of trains
+    const ids = Object.values(schedules).flat().map(s => s.id);
+
+    expect(new Set(ids).size).to.equal(ids.length);
   });
 
 });
@@ -91,8 +148,8 @@ export function stop(stopSequence: number, location: CRS, time: string): StopTim
     stop_id: location,
     stop_sequence: stopSequence,
     stop_headsign: null,
-    pickup_type: 0,
-    drop_off_type: 0,
+    pickup_type: PickupDropOffType.Scheduled,
+    drop_off_type: PickupDropOffType.Scheduled,
     shape_dist_traveled: null,
     timepoint: 0,
     platform: null,
@@ -119,7 +176,7 @@ function association(base: TUID,
 }
 
 function *idGenerator(): IterableIterator<number> {
-  let id = 0;
+  let id = 100;
   while (true) {
     yield id++;
   }

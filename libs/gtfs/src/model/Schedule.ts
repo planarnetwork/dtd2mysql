@@ -6,6 +6,8 @@ import {AgencyID} from "../entity/Agency";
 import {CRS} from "../entity/Stop";
 import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
 import {toYYYYMMDD} from "./PlainDate";
+import {agencyIndex} from "../data/agency";
+import {accessibleTextColor, LineRule, lineRulesByOperator, routeBranding} from "../data/route";
 
 /**
  * The identifier for a trip, stable across data revisions.
@@ -30,12 +32,12 @@ export class Schedule implements OverlayRecord {
     public readonly rsid: RSID,
     public readonly calendar: ScheduleCalendar,
     public readonly mode: RouteType,
-    public readonly operator: AgencyID | null,
+    public readonly operator: AgencyID,
     public readonly stp: STP,
     public readonly firstClassAvailable: boolean,
     public readonly reservationPossible: boolean
   ) {}
-  
+
   public get tripId(): string {
     return tripId(this.tuid, this.calendar);
   }
@@ -80,9 +82,9 @@ export class Schedule implements OverlayRecord {
    * "no information". Nothing in the DTD feed says otherwise, and claiming
    * either way would be inventing an answer.
    */
-  public toTrip(serviceId: number, routeId: number, destination: string): Trip {
+  public toTrip(serviceId: number, destination: string): Trip {
     return {
-      route_id: routeId,
+      route_id: this.routeId,
       service_id: serviceId,
       trip_id: this.stopTimes[0].trip_id,
       trip_headsign: destination,
@@ -94,49 +96,84 @@ export class Schedule implements OverlayRecord {
   }
 
   /**
-   * What makes two schedules the same route: who runs it, where it goes between
-   * and how. Routes are numbered from a sort of this, so the number does not
-   * depend on which trip reached the route first.
+   * The route this schedule runs on: the brand a passenger sees rather than
+   * anything the DTD feed names.
+   *
+   * Most operators run one brand and this is their ATOC code. The ones that run
+   * several - London Underground, the Overground, Merseyrail, the Tyne & Wear
+   * Metro, West Midlands Trains and Greater Anglia's Stansted Express - are told
+   * apart by where the service goes, by the rules in `data/route.ts`.
+   *
+   * A route id is worked out from the schedule rather than handed out in the
+   * order schedules arrive, so it is the same id in every build and can be
+   * referred to from outside the feed.
+   *
+   * TODO: If it is a bus service and the actual route number is available in the
+   * "headcode" field, use it.
    */
-  public get routeShortName(): string {
-    return `${this.operator || "Z"}:${this.origin}->${this.destination}:${this.mode}`;
+  private get bareRouteId(): string {
+    const rules = lineRulesByOperator.get(this.operator);
+
+    if (rules === undefined) {
+      return this.operator;
+    }
+
+    // Built here rather than per rule: a service calls at a few dozen stations
+    // and a line is recognised by asking about a few dozen more.
+    const calls = new Set(this.stopTimes.map(stopTime => stopTime.stop_id));
+    const matches = (rule: LineRule) =>
+      (rule.between === undefined || rule.between.includes(this.origin) || rule.between.includes(this.destination))
+      && (rule.calls === undefined || rule.calls.some(crs => calls.has(crs)));
+
+    return rules.find(matches)?.line ?? this.operator;
   }
 
   /**
-   * Convert to GTFS Route. The caller numbers it.
+   * A bus does not run on the line its operator's trains do, so it is a route
+   * of its own. Replacement buses are separated from scheduled ones because a
+   * passenger reads them differently: one is the timetable, the other is what
+   * happens when the timetable fails.
    */
-  public toRoute(): Route {
-    return {
-      route_id: this.id,
-      agency_id: this.operator || "ZZ",
-      route_short_name: this.routeShortName,
-      route_long_name: `${this.operator || "Z"} ${this.modeDescription.toLowerCase()} service from ${this.origin} to ${this.destination}`,
-      route_type: this.mode,
-      route_text_color: null,
-      route_color: null,
-      route_url: null,
-      route_desc: [this.modeDescription, this.classDescription, this.reservationDescription].join(". ")
-    };
-  }
-
-  private get modeDescription(): string {
+  public get routeId(): string {
     switch (this.mode) {
-      case RouteType.Rail: return "Train";
-      case RouteType.Subway: return "Underground";
-      case RouteType.Tram: return "Tram";
-      case RouteType.Bus: return "Bus";
-      case RouteType.ReplacementBus: return "Replacement bus";
-      case RouteType.Ferry: return "Boat";
-      default: return "Train";
+      case RouteType.Bus: return `${this.bareRouteId}_BUS`;
+      case RouteType.ReplacementBus: return `${this.bareRouteId}_RRB`;
+      default: return this.bareRouteId;
     }
   }
 
-  private get classDescription(): string {
-    return this.firstClassAvailable ? "First class available" : "Standard class only";
-  }
+  /**
+   * Convert to GTFS Route.
+   *
+   * GTFS asks for a short name, a long name or both. The brand supplies what it
+   * has; an operator with no brand entry falls back to the name its agency
+   * record carries, as a long name, because an agency is named in full. The id
+   * itself is the last resort, for an operator this build has never heard of.
+   */
+  public toRoute(): Route {
+    const branding = routeBranding.get(this.bareRouteId);
+    const agency = agencyIndex.get(this.operator);
+    const longName = branding?.route_long_name
+      ?? (branding?.route_short_name === undefined ? agency?.agency_name : undefined);
+    const shortName = branding?.route_short_name
+      ?? (longName === undefined ? this.bareRouteId : undefined);
+    const color = branding?.route_color;
 
-  private get reservationDescription(): string {
-    return this.reservationPossible ? "Reservation possible" : "Reservation not possible";
+    return {
+      route_id: this.routeId,
+      agency_id: agency?.agency_id ?? "ZZ",
+      route_short_name: shortName ?? null,
+      route_long_name: longName ?? null,
+      route_type: this.mode,
+      route_text_color: color === undefined ? null : accessibleTextColor(color),
+      route_color: color ?? null,
+      route_url: branding?.route_url ?? null,
+      // What the DTD says about a train - its class and whether it can be
+      // reserved - is a property of the train, not of the line it runs on.
+      // Flattening it onto the route made trips sharing a route disagree about
+      // their own description, so it is left out.
+      route_desc: null
+    };
   }
 
   public before(location: CRS): StopTime[] {

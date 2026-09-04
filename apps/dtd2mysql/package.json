@@ -1,6 +1,6 @@
 {
   "name": "dtd2mysql",
-  "version": "8.0.1",
+  "version": "9.0.0",
   "description": "Command line tool to put the GB rail DTD feed into a MySQL compatible database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -48,7 +48,7 @@
     "adm-zip": "0.6.0",
     "byline": "5.0.0",
     "memoized-class-decorator": "1.6.1",
-    "mysql2": "3.23.0",
+    "mysql2": "3.23.1",
     "proj4": "2.20.9"
   },
   "devDependencies": {

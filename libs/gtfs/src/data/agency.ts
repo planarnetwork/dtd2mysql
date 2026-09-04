@@ -1,5 +1,5 @@
 
-import {Agency} from "../entity/Agency";
+import {Agency, AgencyID} from "../entity/Agency";
 
 export const agencies: Agency[] = [
 { agency_id: "AW", agency_name: "Transport for Wales",        agency_url: "https://tfw.wales/",                      agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0333 321 1202",  agency_fare_url: null },
@@ -34,7 +34,23 @@ export const agencies: Agency[] = [
 { agency_id: "TW", agency_name: "Nexus (Tyne & Wear Metro)",  agency_url: "https://www.nexus.org.uk/metro",          agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0191 20 20 747", agency_fare_url: null },
 { agency_id: "CS", agency_name: "Caledonian Sleeper",         agency_url: "https://www.sleeper.scot/",               agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0330 060 0500",  agency_fare_url: null },
 { agency_id: "XR", agency_name: "Elizabeth line",             agency_url: "https://tfl.gov.uk/modes/elizabeth-line/", agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0343 222 1234", agency_fare_url: null },
-{ agency_id: "QC", agency_name: "Caledonian MacBrayne",       agency_url: "https://www.calmac.co.uk/",               agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0800 066 5000",  agency_fare_url: null },
+{ agency_id: "QC", agency_name: "Caledonian MacBrayne",       agency_url: "https://www.calmac.co.uk/en-gb#/",        agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0800 066 5000",  agency_fare_url: null },
+{ agency_id: "QE", agency_name: "Transdev",                   agency_url: "https://www.transdevbus.co.uk/",          agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "01422 553 576",  agency_fare_url: null },
+{ agency_id: "QF", agency_name: "Thames Travel",              agency_url: "https://www.oxfordbus.co.uk/",            agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "01865 785 400",  agency_fare_url: null },
+{ agency_id: "QH", agency_name: "Hovertravel",                agency_url: "https://www.hovertravel.co.uk/",          agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0198 371 7717",  agency_fare_url: null },
+{ agency_id: "QR", agency_name: "Red Funnel",                 agency_url: "https://www.redfunnel.co.uk/",            agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "023 8001 9192",  agency_fare_url: null },
 { agency_id: "QS", agency_name: "Stena Line",                 agency_url: "https://www.stenaline.co.uk/",            agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0344 770 7070",  agency_fare_url: null },
+{ agency_id: "QU", agency_name: "First Bus",                  agency_url: "https://www.firstbus.co.uk/",             agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0345 646 0707",  agency_fare_url: null },
+{ agency_id: "QV", agency_name: "Arriva Bus",                 agency_url: "https://www.arrivabus.co.uk/",            agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0344 800 4411",  agency_fare_url: null },
 { agency_id: "ZZ", agency_name: "Other operator",             agency_url: "https://www.nationalrail.co.uk/",         agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0345 748 4950",  agency_fare_url: null },
 ];
+
+/**
+ * The agencies by their ATOC code.
+ *
+ * Every schedule asks whether its operator is one of these and what it is
+ * called, so the lookup is built once rather than walked per schedule.
+ */
+export const agencyIndex: ReadonlyMap<AgencyID, Agency> = new Map(
+  agencies.map(agency => [agency.agency_id, agency])
+);

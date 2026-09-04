@@ -41,6 +41,107 @@ service's timing points share a CRS, a request stop is `pickup_type` 3 rather th
 nothing to win the station with. 28 of them were displaced by the point the service passes on the way
 in, which moved `3,3` on the full feed from 17,291 to 17,263. Both feeds now agree at 17,291.
 
+## An unadvertised stop is not a drop off either
+
+**#162.** Activity `N`, "stop not advertised", gated `pickup_type` and not `drop_off_type`, so a
+stop the public cannot use was published as one they could alight at. It now gates both, and it
+takes precedence over `R` - an unadvertised request stop is no stop at all, where it used to come
+out as `3`, "coordinate with the driver".
+
+`golden/stop_times.txt` moves **23 rows from `1,0` to `1,1`**, and nothing else in the feed moves.
+Every one of them is the last stop of a linked trip leg, activity `TF N`: `C04558` at Carstairs
+(12 rows) and `C04551` at Edinburgh (11). Those are the joining stops F4 created - the passenger
+stays in their seat across the `transfer_type=4` link rather than getting off, which is exactly
+what the source says by not advertising the call. The legs are pick up only for their whole length
+and now have no drop off at all, which reads oddly in isolation and is correct: the drop off is on
+the trip they are coupled to.
+
+Entered after the commit rather than with it. The CI step that requires this file to move ran on a
+shallow checkout, where `git diff base...HEAD` fails with `no merge base` and the `|| true` on it
+turned the failure into "no baselines changed" - the guard has passed every pull request without
+checking one.
+
+## F4 · Splits and joins as linked trips
+
+**Closes #81 and #80.** Associated schedules are no longer concatenated into their base. Both
+schedules keep their own stops and their own trip, and the association is written as a
+`transfers.txt` row with `transfer_type=4` and `from_trip_id`/`to_trip_id`.
+
+`golden/trips.txt` **stays at 128 trips**. The 56 concatenated ones - `C04547_C04566`,
+`C04551_C04566`, `C04558_C04561`, `C04569_C04543`, `C04569_C04577` - are replaced one for one by the
+associated schedule under its own TUID, and `golden/transfers.txt` gains 56 `transfer_type=4` rows.
+The trip count does not move because the base was always emitted alongside the concatenation; what
+goes is the duplication, and `golden/stop_times.txt` loses the leg that was written twice.
+
+`transfers.txt` gains **`from_trip_id` and `to_trip_id`**, in the spec's field order after
+`to_stop_id`. Both are empty on every interchange and fixed-link row. `min_transfer_time` is now
+empty on a linked-trips row, where the passenger does not get off. The MySQL `transfers` table takes
+the two columns into its primary key, because the pair of stops is only unique once the trips are
+part of it - a coupling happens at a station the feed already gives an interchange time for.
+
+**`C04569`/`C04543` is the case to read.** The Aberdeen portion is now its own trip, dated on the
+Monday the sleeper left Euston and departing Edinburgh at **28:28**, linked from the base's 28:20.
+A transfer carries no calendar, so the two trips have to agree which day they are coupled on, and
+the day the base ran is the one they share - `applyAssociations` cuts the associated schedule to the
+days the association is in force, so the days the two trips share are the days the coupling happens.
+
+`validator-baseline.json` (root) drops `stop_time_with_arrival_before_previous_departure_time` from
+4 to 1. Three of the four were `G38297`/`G38968` at Swansea, where the source has the joining train
+arriving after the train it joins has left; that contradiction is still in the feed, but it is now a
+coupling between two trips that each read forwards.
+
+**A schedule that runs the day after its base is published twice.** The coupling wants both trips on
+one service day, so the associated schedule is told in the base's - which turns a Swansea departure
+at 08:41 into 32:41 the day before, no use to anyone boarding it there. It is now also published on
+the day its own record gives, at its own times, every day it runs. `golden/trips.txt` goes from 128
+to 150: `C04543` is a Monday at 28:28 for the coupling and a Tuesday at 04:28 for a passenger.
+
+Not where it departs before 02:00, because `addLateNightServices` would move that copy straight back
+onto the base's day and leave the same trip twice. Feed-wide: 155 trips and 1,479 stop times more,
+`transfers.txt` unchanged.
+
+**A trip that joins another is headed for where it ends up.** The Carstairs portion terminated at
+Carstairs in the timetable and read that way, when everyone on it carries on to Euston - 1,537 trips
+feed-wide. Unlike a divide the answer does not change partway along, so it is `trip_headsign` rather
+than the stops. A divide whose base terminates at the divide keeps its own destination and says the
+rest with `stop_headsign`, as any divide does.
+
+**`stop_times.txt` gains `stop_headsign`, which was empty on every row.** A trip is headed for where
+it ends, so the London Bridge to Caterham says Caterham - and stops naming the front half coming off
+at Purley for Tattenham Corner. The concatenation used to say it by accident, in a trip that ran
+through to one of the two, so this is information the change would otherwise lose. `stop_headsign`
+overrides the trip headsign at a stop, which is where the answer belongs, because it changes partway
+along: **"Caterham and Tattenham Corner" as far as Purley Oaks, and nothing from Purley on**, where
+the trip headsign is right by itself.
+
+In the fixture that is the Highlander, headed **"Inverness, Aberdeen and Fort William"** to Carlisle
+and Inverness alone from Edinburgh, where both divides happen. Feed-wide it is 8,744 stop times
+across 1,264 trips and 58 distinct headsigns, at most three destinations. A destination is named once
+however many trips divide off for it - a schedule with a permanent record and an overlay of it is two
+trips going to the same place. Joins get nothing: once two trains are one they have one destination,
+which the trip headsign already gives.
+
+**It is the first quoted value in the feed.** `"Inverness, Aberdeen and Fort William"` has a comma in
+it, so the CSV writer quotes it, and nothing in any file has ever needed that. The `columns` helper
+in `build.spec.mts` split on every comma and now parses quoted fields; a consumer doing the same will
+need the same fix.
+
+**What a split cannot say.** The coupling reads "stay on board and you are on the portion", while the
+base carries on to its own destination as well. Which of the two a passenger stays on depends on
+which coaches they are in, and GTFS has no way to say that - so a planner may offer both. Publishing
+the portions separately is still nearer the truth than a concatenation that offered only one of
+them, but it is a limitation rather than a complete answer.
+
+The fixture baseline accepts **`transfer_with_suspicious_mid_trip_in_seat`** (WARNING, 56). The
+coupling is anchored part way along the base on purpose, because the base is not cut at it. The
+validator says intentional mid-trip transfers can ignore this, and cutting the bases to silence it
+would add a trip per association and turn a through journey into a change of trains for anything
+that does not read `transfers.txt`.
+
+`type-surface.json` gains `AssociationApplication`, `AssociationLink`, `AssociatedSchedules`,
+`TripLink` and `linkedTrips`. `applyAssociations` now returns the schedules and the links rather
+than the schedule index alone.
+
 ## NaPTAN station names, available and off
 
 **No change to any feed by default.** `type-surface.json` gains `stationName` from `enrich-naptan`;

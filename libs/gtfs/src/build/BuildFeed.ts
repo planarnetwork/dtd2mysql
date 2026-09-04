@@ -23,6 +23,8 @@ import {TIMETABLE_ATTRIBUTION, createAttributions} from "../transform/CreateAttr
 import {buildReport} from "./BuildReport";
 import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
+import {linkedTrips, resolveLinks, TripLink} from "../transform/LinkedTrips";
+import {combinedHeadsigns, onwardHeadsigns} from "../transform/Headsigns";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
@@ -31,6 +33,11 @@ import * as fs from "fs";
 import {addLateNightServices} from "../transform/AddLateNightServices";
 import {finished} from "node:stream/promises";
 import {Writable} from "stream";
+
+type LinkedSchedules = {
+  schedules: Schedule[],
+  links: TripLink[]
+}
 
 export class BuildFeed {
   private baseDir!: string;
@@ -90,7 +97,7 @@ export class BuildFeed {
       : Promise.resolve();
 
     const [associations, scheduleResults] = await Promise.all([associationsP, scheduleResultsP]);
-    const schedules = this.getSchedules(associations, scheduleResults);
+    const {schedules, links} = this.getSchedules(associations, scheduleResults);
 
     if (schedules.length === 0) {
       throw new Error(
@@ -114,7 +121,10 @@ export class BuildFeed {
     const stations = new Map(
       stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
     );
-    const called = dropUnknownStops(schedules, new Set(stations.keys()));
+    const stopNames = map(stations, stop => stop.stop_name);
+    // Named after the stops are settled, because which stop a train divides at decides where the
+    // answer changes, and dropUnknownStops can move it.
+    const called = combinedHeadsigns(dropUnknownStops(schedules, new Set(stations.keys())), links, stopNames);
     // Only the stops are offered to an enricher. Trips and routes are streamed
     // straight to their files rather than held, and materialising 276,000 trips
     // to enrich a handful is the wrong trade until something needs it.
@@ -161,10 +171,15 @@ export class BuildFeed {
       : undefined;
 
     const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
+    // The couplings are appended rather than merged in: the primary key includes the trip ids, so a
+    // link at a station that already has an interchange row is a different row, not a duplicate.
     const transfersP = this.copy(
-      mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
+      [
+        ...mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
+        ...linkedTrips(links, called, map(stations, stop => stop.tiploc))
+      ],
       "transfers.txt",
-      t => [t.from_stop_id, t.to_stop_id]
+      t => [t.from_stop_id, t.to_stop_id, t.from_trip_id, t.to_trip_id, t.transfer_type]
     );
 
     const [calendars, calendarDates, serviceIds] = createCalendar(called);
@@ -177,10 +192,7 @@ export class BuildFeed {
       f => [f.feed_publisher_name]
     );
     const tripsP = this.copyTrips(
-      called,
-      serviceIds,
-      map(stations, stop => stop.stop_name),
-      map(stations, stop => stop.tiploc)
+      called, serviceIds, stopNames, map(stations, stop => stop.tiploc), onwardHeadsigns(links, called, stopNames)
     );
 
     // Every file has to be opened before the output can be asked whether it has
@@ -269,22 +281,20 @@ export class BuildFeed {
     schedules: Schedule[],
     serviceIds: ServiceIdIndex,
     stopNames: ReadonlyMap<CRS, string>,
-    tiplocs: ReadonlyMap<CRS, TIPLOC>
+    tiplocs: ReadonlyMap<CRS, TIPLOC>,
+    onward: ReadonlyMap<string, string>
   ): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/trips.txt`);
     const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
     const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
 
-    // A trip needs its route's number, and that number comes from where the
-    // route name sorts rather than from which trip reached it first.
+    // Sorted by route ID, which a schedule works out for itself, so routes.txt
+    // does not depend on the order the schedules arrived in.
     const routes = chooseRoutes(schedules);
-    const routeIds: { [routeShortName: string]: number } = {};
-    let routeId = 0;
 
-    for (const name of [...routes.keys()].sort()) {
-      routeIds[name] = ++routeId;
-      this.write(routeFile, toRouteRow({...routes.get(name)!, route_id: routeId}));
+    for (const id of [...routes.keys()].sort()) {
+      this.write(routeFile, toRouteRow(routes.get(id)!));
     }
 
     // Sorting the schedules by trip ID sorts trips.txt, and sorts stop_times.txt
@@ -305,8 +315,7 @@ export class BuildFeed {
 
       this.write(trips, schedule.toTrip(
         serviceIds[schedule.calendar.id],
-        routeIds[schedule.routeShortName],
-        name ?? schedule.destination
+        onward.get(schedule.stopTimes[0].trip_id) ?? name ?? schedule.destination
       ));
       schedule.stopTimes.forEach(r => this.write(stopTimes, toStopTimeRow(r, tiplocs)));
     }
@@ -324,15 +333,16 @@ export class BuildFeed {
     ]);
   }
 
-  private getSchedules(associations: Association[], scheduleResults: ScheduleResults): Schedule[] {
+  private getSchedules(associations: Association[], scheduleResults: ScheduleResults): LinkedSchedules {
     const processedAssociations: AssociationIndex = applyOverlays(associations);
     const processedSchedules: ScheduleIndex = applyOverlays(scheduleResults.schedules);
-    const associatedSchedules = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
-    const mergedSchedules = <Schedule[]>mergeSchedules(associatedSchedules);
+    const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator);
+    const mergedSchedules = mergeSchedules(associated.schedules);
+    const links = resolveLinks(associated.links, mergedSchedules);
     const schedules = addLateNightServices(mergedSchedules, scheduleResults.idGenerator);
 
     // remove any schedules that no longer run on any days so invalid calendars are not output
-    return schedules.filter(schedule => !schedule.calendar.isEmpty);
+    return {schedules: schedules.filter(schedule => !schedule.calendar.isEmpty), links};
   }
 
 }
@@ -427,15 +437,21 @@ function ascending(a: Value, b: Value): number {
 }
 
 /**
- * One route per name, and which one cannot depend on arrival order.
+ * The routes the schedules run on, keyed by their id.
  *
- * Trips sharing a route can disagree about its description - 352 do, over
- * whether first class is available - because it is a property of a train being
- * flattened onto the line it runs on. Neither is right, so the one that sorts
- * first wins.
+ * Every field of a Route but its type comes from the id, which the schedule
+ * works out for itself, so schedules sharing an id describe the same route and
+ * the last one to arrive can be kept.
+ *
+ * The type is the exception: only buses take an id of their own, so an operator
+ * running two other modes - trains and a ferry, say - has one id for both and
+ * whichever schedule arrives last says what the route is. Unresolved.
+ *
+ * Schedules with one call or none are skipped, because trips.txt skips them
+ * too and a route nothing refers to would be a dangling row.
  */
 function chooseRoutes(schedules: Schedule[]): Map<string, Route> {
-  const chosen = new Map<string, {route: Route, description: string}>();
+  const chosen = new Map<string, Route>();
 
   for (const schedule of schedules) {
     if (schedule.stopTimes.length <= 1) {
@@ -443,24 +459,11 @@ function chooseRoutes(schedules: Schedule[]): Map<string, Route> {
     }
 
     const route = schedule.toRoute();
-    const description = describes(route);
-    const current = chosen.get(schedule.routeShortName);
 
-    if (!current || description < current.description) {
-      chosen.set(schedule.routeShortName, {route, description});
-    }
+    chosen.set(route.route_id, route);
   }
 
-  return new Map([...chosen].map(([name, {route}]) => [name, route]));
-}
-
-/**
- * A route without its number, which is assigned later.
- */
-function describes(route: Route): string {
-  const {route_id, ...rest} = route;
-
-  return canonical(rest);
+  return chosen;
 }
 
 function canonical(row: object): string {

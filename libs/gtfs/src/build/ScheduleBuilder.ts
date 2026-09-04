@@ -3,13 +3,12 @@ import {Schedule, tripId} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
-import {StopTime} from "../entity/StopTime";
-import {agencies} from "../data/agency";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];
-const coordinatedActivity = ["R "];
-const notAdvertised = "N ";
+const requestStopActivity = "R ";
+const notAdvertisedActivity = "N ";
 
 /**
  * Where a run of rows for one schedule is accumulated.
@@ -155,8 +154,10 @@ export class ScheduleBuilder {
         // The one that boards or alights wins, and anything the service
         // actually calls at beats one it only runs through: without that second
         // clause a passing point displaced 28 request stops, which board on
-        // request and so have no 0 to win with.
-        if (stop.pickup_type === 0 || stop.drop_off_type === 0 || (cursor.lastIsPassing && !passing)) {
+        // request and so have no Scheduled to win with.
+        if (stop.pickup_type === PickupDropOffType.Scheduled
+          || stop.drop_off_type === PickupDropOffType.Scheduled
+          || (cursor.lastIsPassing && !passing)) {
           cursor.stops[cursor.stops.length - 1] = Object.assign(stop, { stop_sequence: cursor.stops.length });
           cursor.lastIsPassing = passing;
         }
@@ -203,11 +204,25 @@ export class ScheduleBuilder {
         }
       ),
       mode,
-      agencies.some((a) => a.agency_id === row.atoc_code) ? row.atoc_code : "ZZ",
+      row.atoc_code ?? "ZZ",
       row.stp_indicator,
       mode === RouteType.Rail && row.train_class !== "S",
       row.reservations !== null
     );
+  }
+
+  private static getPickupDropOffType(activity: string, pickupOrDropOffActivities: string[]): PickupDropOffType {
+    if (hasActivity(activity, notAdvertisedActivity)) {
+      return PickupDropOffType.None;
+    }
+
+    if (hasActivity(activity, requestStopActivity)) {
+      return PickupDropOffType.CoordinateWithDriver;
+    }
+
+    return pickupOrDropOffActivities.some(a => hasActivity(activity, a))
+      ? PickupDropOffType.Scheduled
+      : PickupDropOffType.None;
   }
 
   private createStop(row: ScheduleStopTimeRow, stopId: number, departHour: number): StopTime {
@@ -230,16 +245,6 @@ export class ScheduleBuilder {
       departureTime = this.formatTime(row.scheduled_departure_time, departHour);
     }
 
-    // A passing point's activity is blank in 885,596 of the 892,016 that are at
-    // a station, and the rest are X and A - passing or waiting for another
-    // train. None of them is a pickup or a drop off activity, so the mapping
-    // below already gives a passing point pickup_type 1 and drop_off_type 1
-    // without being told what it is looking at.
-    const activities = row.activity.match(/.{1,2}/g) || [] as string[];
-    const pickup = pickupActivities.find(a => activities.includes(a)) && !activities.includes(notAdvertised) ? 0 : 1;
-    const coordinatedDropOff = coordinatedActivity.find(a => activities.includes(a)) ? 3 : 0;
-    const dropOff = dropOffActivities.find(a => activities.includes(a)) ? 0 : 1;
-
     const arrival = arrivalTime || departureTime;
     const departure = departureTime || arrivalTime;
 
@@ -257,8 +262,13 @@ export class ScheduleBuilder {
       // it means "this service terminates here", not "platform 3". The platform
       // belongs on a platform-level stop, which needs the station hierarchy.
       stop_headsign: null,
-      pickup_type: coordinatedDropOff || pickup,
-      drop_off_type: coordinatedDropOff || dropOff,
+      // A passing point's activity is blank in 885,596 of the 892,016 that are
+      // at a station, and the rest are X and A - passing or waiting for another
+      // train. None of them is a pickup or a drop off activity, so the mapping
+      // already gives a passing point pickup_type 1 and drop_off_type 1 without
+      // being told what it is looking at.
+      pickup_type: ScheduleBuilder.getPickupDropOffType(row.activity, pickupActivities),
+      drop_off_type: ScheduleBuilder.getPickupDropOffType(row.activity, dropOffActivities),
       shape_dist_traveled: null,
       timepoint: 1,
       // A passing point names its platform like any other call. 461,901 of them
@@ -324,4 +334,14 @@ const routeTypeIndex: { [trainCategory: string]: RouteType } = {
 
 function newCursor(): Cursor {
   return {stops: [], departureHour: 4, lastIsPassing: false};
+}
+
+function hasActivity(activity: string, code: string): boolean {
+  for (let i = 0; i < activity.length; i += 2) {
+    if (activity.startsWith(code, i)) {
+      return true;
+    }
+  }
+
+  return false;
 }

@@ -1,6 +1,6 @@
 {
   "name": "@gb-transit/enrich-naptan",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Station coordinates and names from NaPTAN",
   "license": "GPL-3.0",
   "repository": {
