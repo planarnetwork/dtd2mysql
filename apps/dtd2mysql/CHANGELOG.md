@@ -41,15 +41,6 @@ unsigned` while the build has always written a string, so every trip id loaded a
 
 ### Patch Changes
 
-- Updated dependencies [2a1ca37]
-  - @gb-transit/gtfs@1.0.0
-  - @gb-transit/dtd-source@0.2.2
-  - @gb-transit/gtfs-output@0.2.2
-
-## 8.0.2
-
-### Patch Changes
-
 - b675f63: Publish routes as the brands a passenger sees, with stable ids.
 
   A route used to be one operator's journey between two places - `SE:TON->SEV:2` -
@@ -85,10 +76,12 @@ unsigned` while the build has always written a string, so every trip id loaded a
   is the case a stable id is for: `LF` ran before the software knew about Lumo
   (West Coast).
 
-- Updated dependencies [b675f63]
-  - @gb-transit/gtfs@0.3.0
-  - @gb-transit/dtd-source@0.2.1
-  - @gb-transit/gtfs-output@0.2.1
+- Updated dependencies [b675f63, 2a1ca37]
+  - @gb-transit/dtd-schema@1.0.0
+  - @gb-transit/dtd-source@1.0.0
+  - @gb-transit/feed-parser@1.0.0
+  - @gb-transit/gtfs@1.0.0
+  - @gb-transit/gtfs-output@1.0.0
 
 ## 8.0.1
 

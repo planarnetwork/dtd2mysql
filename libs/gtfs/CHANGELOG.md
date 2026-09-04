@@ -39,8 +39,6 @@ unsigned` while the build has always written a string, so every trip id loaded a
   A trip that joins another is headed for where it ends up rather than where it is attached, so the
   Tattenham Corner portion reads London Bridge instead of Purley.
 
-## 0.3.0
-
 ### Minor Changes
 
 - b675f63: Publish routes as the brands a passenger sees, with stable ids.

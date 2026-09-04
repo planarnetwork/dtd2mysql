@@ -1,6 +1,6 @@
 {
   "name": "@gb-transit/extend-station-groups",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "RDG group stations as GTFS Fares v2 areas.txt and stop_areas.txt",
   "license": "GPL-3.0",
   "repository": {
