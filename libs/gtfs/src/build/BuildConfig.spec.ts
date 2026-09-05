@@ -15,6 +15,7 @@ describe("parseConfig", () => {
 
     expect(config.out).to.equal("gtfs.zip");
     expect(config.links).to.equal(false);
+    expect(config.removePassingPoints).to.equal(true);
     expect(config.licence).to.equal("permissive");
     expect(config.enrichers).to.deep.equal([]);
     expect(config.extensions).to.deep.equal([]);
@@ -36,6 +37,19 @@ describe("parseConfig", () => {
   it("rejects a licence tier it cannot honour", () => {
     expect(() => parseConfig({...minimal, licence: "whatever"}))
       .to.throw(/licence must be one of: permissive, full. Got whatever./);
+  });
+
+  it("keeps the locations a service passes through when told to", () => {
+    expect(parseConfig({...minimal, removePassingPoints: false}).removePassingPoints).to.equal(false);
+  });
+
+  /**
+   * `removePassingPoints !== false` would read "no" as true and quietly build a
+   * feed a third larger than the one that was asked for.
+   */
+  it("refuses a removePassingPoints that is not a yes or a no", () => {
+    expect(() => parseConfig({...minimal, removePassingPoints: "no"}))
+      .to.throw(/removePassingPoints must be true or false. Got "no"./);
   });
 
 });

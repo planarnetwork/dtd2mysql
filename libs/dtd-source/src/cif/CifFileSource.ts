@@ -57,13 +57,19 @@ export class CifFileSource implements TimetableSource {
   private readonly timetable = once(async () => {
     const [reference, stops] = await Promise.all([this.reference(), this.stops()]);
 
-    return readTimetable(this.sources, reference, stops.dropped, this.range);
+    return readTimetable(this.sources, reference, stops.dropped, this.range, this.removePassingPoints);
   });
 
   constructor(
     private readonly sources: string[],
     private readonly stationCoordinates: StationCoordinates,
-    private readonly range: DateRange
+    private readonly range: DateRange,
+    /**
+     * Whether to drop the locations a service runs through without stopping.
+     * `AND scheduled_pass_time is null` in the passenger query, which is where
+     * the same setting lives in MySqlTimetableSource.
+     */
+    private readonly removePassingPoints: boolean = true
   ) {}
 
   /**
@@ -210,7 +216,8 @@ async function readTimetable(
   sources: string[],
   reference: Reference,
   exclude: ReadonlySet<string>,
-  range: DateRange
+  range: DateRange,
+  removePassingPoints: boolean
 ): Promise<Timetable> {
   const {stations} = reference;
   const crsByTiploc = new Map<string, string>();
@@ -224,7 +231,7 @@ async function readTimetable(
   const mca = timetable["MCA"] as MultiRecordFile;
   const cfa = timetable["CFA"] as MultiRecordFile;
   const ztr = timetable["ZTR"] as MultiRecordFile;
-  const loader = new ScheduleLoader(range, crsByTiploc, exclude);
+  const loader = new ScheduleLoader(range, crsByTiploc, exclude, removePassingPoints);
 
   for (const source of sources) {
     const zip = new FeedZip(source);
@@ -279,7 +286,8 @@ class ScheduleLoader {
   constructor(
     private readonly range: DateRange,
     private readonly crsByTiploc: Map<string, string>,
-    private readonly exclude: ReadonlySet<string>
+    private readonly exclude: ReadonlySet<string>,
+    private readonly removePassingPoints: boolean
   ) {}
 
   public readTimetableLine(file: MultiRecordFile, line: string): void {
@@ -439,8 +447,9 @@ class ScheduleLoader {
 
   /**
    * The passenger query: stop times joined to physical_station on the TIPLOC, so
-   * a location that is not a station drops out, and passing times excluded. A
-   * schedule with no stop time records at all survives as a single row of nulls.
+   * a location that is not a station drops out, and passing times excluded
+   * unless the build asked for them. A schedule with no stop time records at all
+   * survives as a single row of nulls.
    */
   private scheduleRows(pending: Pending): ScheduleStopTimeRow[] {
     const {values, extra, stops} = pending;
@@ -469,7 +478,7 @@ class ScheduleLoader {
     for (const stop of stops) {
       const crs = this.crsByTiploc.get(stop.location as string);
 
-      if (crs === undefined || stop.scheduled_pass_time !== null) {
+      if (crs === undefined || (this.removePassingPoints && stop.scheduled_pass_time !== null)) {
         continue;
       }
 
@@ -486,6 +495,11 @@ class ScheduleLoader {
    * The z-train query. The join to z_stop_time is an inner one, so a z-train
    * with no stops does not appear at all, and the location is already a CRS
    * code rather than a TIPLOC.
+   *
+   * The pass filter applies here too, though no ZTR yet published carries a
+   * pass time - RJTTF918 has 10,165 intermediate records and not one of them.
+   * It is here so the option means one thing rather than two, and so a ZTR that
+   * starts carrying them does not put them in the feed that asked for none.
    */
   private zTrainRows(pending: Pending): ScheduleStopTimeRow[] {
     const {values, extra, stops} = pending;
@@ -506,9 +520,11 @@ class ScheduleLoader {
       reservations: null
     };
 
-    return stops.map((stop, index) =>
-      ({...common, ...stopColumns(stop, stop.location as string, index + 1, null)}) as ScheduleStopTimeRow
-    );
+    return stops
+      .filter(stop => !this.removePassingPoints || stop.scheduled_pass_time === null)
+      .map((stop, index) =>
+        ({...common, ...stopColumns(stop, stop.location as string, index + 1, null)}) as ScheduleStopTimeRow
+      );
   }
 
   /**
@@ -554,6 +570,7 @@ function stopColumns(stop: Row, crs: string, sequence: number, tiploc: string | 
     public_departure_time: stop.public_departure_time,
     scheduled_arrival_time: stop.scheduled_arrival_time,
     scheduled_departure_time: stop.scheduled_departure_time,
+    scheduled_pass_time: stop.scheduled_pass_time,
     platform: stop.platform,
     tiploc,
     activity: stop.activity
@@ -567,6 +584,7 @@ const NO_STOP = {
   public_departure_time: null,
   scheduled_arrival_time: null,
   scheduled_departure_time: null,
+  scheduled_pass_time: null,
   platform: null,
   tiploc: null,
   activity: null

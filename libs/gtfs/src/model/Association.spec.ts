@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest';
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {STP} from "../model/OverlayRecord";
-import {StopTime} from "../entity/StopTime";
+import {PickupDropOffType, StopTime} from "../entity/StopTime";
 import {Schedule} from "../model/Schedule";
 import {CRS} from "../entity/Stop";
 import {Association, AssociationType, DateIndicator} from "../model/Association";
@@ -404,8 +404,8 @@ function stop(stopSequence: number, location: CRS, time: string, tripId: string 
     stop_id: location,
     stop_sequence: stopSequence,
     stop_headsign: null,
-    pickup_type: 0,
-    drop_off_type: 0,
+    pickup_type: PickupDropOffType.Scheduled,
+    drop_off_type: PickupDropOffType.Scheduled,
     shape_dist_traveled: null,
     timepoint: 0,
     platform: null,

@@ -34,7 +34,12 @@ export class MySqlTimetableSource implements TimetableSource {
     private readonly db: DatabaseConnection,
     private readonly stream: Pool,
     private readonly stationCoordinates: StationCoordinates,
-    private readonly range: DateRange
+    private readonly range: DateRange,
+    /**
+     * Whether to drop the locations a service runs through without stopping.
+     * See BuildContext: on unless the build asked for them.
+     */
+    private readonly removePassingPoints: boolean = true
   ) {}
 
   /**
@@ -149,6 +154,11 @@ export class MySqlTimetableSource implements TimetableSource {
       );
     }
     const window = [this.range.to.toString(), this.range.from.toString()];
+    // Where a service runs through without stopping. Half the CIF's intermediate
+    // records are these, so the clause is the difference between a 2.9 million
+    // and a 3.8 million row feed. No ZTR published so far carries a pass time,
+    // but the z-train query says the same thing so the option means one thing.
+    const stopsHere = this.removePassingPoints ? "AND scheduled_pass_time is null" : "";
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -159,6 +169,7 @@ export class MySqlTimetableSource implements TimetableSource {
           IF(train_status="S", "SS", train_category) AS train_category,
           scheduled_arrival_time AS scheduled_arrival_time,
           scheduled_departure_time AS scheduled_departure_time,
+          scheduled_pass_time AS scheduled_pass_time,
           platform, location AS tiploc, atoc_code, stop_time.id AS stop_id, activity, reservations, train_class
         FROM schedule
         LEFT JOIN schedule_extra ON schedule.id = schedule_extra.schedule
@@ -170,7 +181,7 @@ export class MySqlTimetableSource implements TimetableSource {
         )
         AND runs_from < ?
         AND runs_to >= ?
-        AND scheduled_pass_time is null
+        ${stopsHere}
         ORDER BY stp_indicator DESC, id, stop_id
       `, window)),
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -179,12 +190,14 @@ export class MySqlTimetableSource implements TimetableSource {
           monday, tuesday, wednesday, thursday, friday, saturday, sunday,
           stp_indicator, location AS crs_code, train_category,
           public_arrival_time, public_departure_time, scheduled_arrival_time, scheduled_departure_time,
+          scheduled_pass_time,
           platform, NULL AS tiploc, atoc_code, z_stop_time.id AS stop_id, activity, NULL AS reservations, "S" AS train_class
         FROM z_schedule
         LEFT JOIN z_schedule_extra ON z_schedule.id = z_schedule_extra.schedule
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
         WHERE runs_from < ?
         AND runs_to >= ?
+        ${stopsHere}
         ORDER BY stop_id
       `, window))
     ]);

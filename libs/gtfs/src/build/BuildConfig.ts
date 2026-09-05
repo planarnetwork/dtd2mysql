@@ -16,10 +16,20 @@ export interface BuildConfig {
   readonly today?: string;
   readonly range?: string;
   readonly links: boolean;
+  /**
+   * Whether to drop the locations a service passes through without stopping.
+   * On unless the config says otherwise - see BuildContext.
+   */
+  readonly removePassingPoints: boolean;
+  /**
+   * Whether an associated schedule that runs the day after its base is also
+   * published on the base's service day. Off unless the config says so - see
+   * BuildContext.
+   */
+  readonly duplicateOvernightAssociations: boolean;
   readonly licence: Licence;
   readonly enrichers: readonly EnricherConfig[];
   readonly extensions: readonly ExtensionConfig[];
-  readonly duplicateOvernightAssociations: boolean;
 }
 
 /**
@@ -58,7 +68,10 @@ export interface ExtensionConfig {
 }
 
 const LICENCES: Licence[] = ["permissive", "full"];
-const TOP_LEVEL = ["source", "out", "today", "range", "links", "licence", "enrichers", "extensions"];
+const TOP_LEVEL = [
+  "source", "out", "today", "range", "links", "removePassingPoints",
+  "duplicateOvernightAssociations", "licence", "enrichers", "extensions"
+];
 
 /**
  * Check a parsed config and say precisely what is wrong with it.
@@ -99,10 +112,19 @@ export function parseConfig(
     today: config.today === undefined ? undefined : String(config.today),
     range: config.range === undefined ? undefined : String(config.range),
     links: config.links === true,
+    // Not `!== false`, which would read `removePassingPoints: "no"` as true.
+    // A config is the reviewable form of a build and a value it silently
+    // reverses is worse than one it refuses.
+    removePassingPoints: boolean(config.removePassingPoints, true, "removePassingPoints"),
+    // Read the same way for the same reason. `Boolean(...)` would take
+    // `duplicateOvernightAssociations: "no"` for a yes and publish every
+    // overnight portion twice, which is a lot of feed to explain afterwards.
+    duplicateOvernightAssociations: boolean(
+      config.duplicateOvernightAssociations, false, "duplicateOvernightAssociations"
+    ),
     licence: licence as Licence,
     enrichers: enrichers(config.enrichers, known),
-    extensions: extensions(config.extensions, knownExtensions),
-    duplicateOvernightAssociations: Boolean(config.duplicateOvernightAssociations),
+    extensions: extensions(config.extensions, knownExtensions)
   };
 }
 
@@ -193,6 +215,18 @@ function enrichers(raw: unknown, known: readonly string[]): EnricherConfig[] {
       options: settings.options === undefined ? {} : object(settings.options, `${key}.options`)
     };
   });
+}
+
+function boolean(value: unknown, otherwise: boolean, what: string): boolean {
+  if (value === undefined || value === null) {
+    return otherwise;
+  }
+
+  if (typeof value !== "boolean") {
+    throw new Error(`${what} must be true or false. Got ${JSON.stringify(value)}.`);
+  }
+
+  return value;
 }
 
 function object(value: unknown, what: string): {[key: string]: unknown} {

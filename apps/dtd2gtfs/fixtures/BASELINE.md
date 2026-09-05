@@ -13,6 +13,60 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## Passing points, available and off
+
+**No change to any feed by default**, and the mini golden is untouched: `--remove-passing-points` is
+on, so a build that says nothing drops the locations a service runs through exactly as it did.
+
+`validator-baseline.json` moves to `.github/`, beside the workflows that are the only things that
+read it, and `.github/validator-baseline-passing-points.json` joins it. The second baseline holds the
+feed built with `--remove-passing-points=false`, which the nightly now publishes as
+`gtfs-passing-points.zip` alongside the standard one.
+
+It accepts 24 `stop_time_with_arrival_before_previous_departure_time` against the standard feed's 1.
+The 23 extra are the CIF's two clocks disagreeing: a call publishes its public time and a passing
+point has only its working time, so `C17075` passes `SELYOAK` at `2116H` and then calls at `UNVRSYB`
+with a public arrival of `2115`. Correcting it would mean inventing a time for one of them.
+
+Measured after merging master, where F4 took the standard feed from 4 to 1 by decomposing the
+`G38297`/`G38968` join at Swansea into two trips that each read forwards. The same three go from this
+feed, so it is 24 rather than the 27 this branch was written against; the 23 the passing points
+themselves bring are unchanged.
+
+A passing point names its platform, per review on #152. The first version dropped it on the grounds
+that a train runs through on a line rather than a platform. Measured, that is wrong twice over: 89%
+of passing calls land on a boarding point something already stops at, so the platform is real and the
+id is the one a stopping call uses; and dropping it produced *more* stops, not fewer, because 99
+station-level children had to be minted with nothing but passing calls to host. Keeping it reuses
+what is there and adds 12 - `stops.txt` is 9,241 against 9,328, and 9,182 in the standard feed. The
+validator counts are unchanged either way, so the baseline above holds.
+
+Also fixed, and visible in neither baseline because the fixture has no case of it: where two of a
+service's timing points share a CRS, a request stop is `pickup_type` 3 rather than 0 and so had
+nothing to win the station with. 28 of them were displaced by the point the service passes on the way
+in, which moved `3,3` on the full feed from 17,363 to 17,335. Both feeds now agree at 17,363. The
+count moved with #162 and #163, which changed what an activity maps to; the 28 did not.
+
+## An unadvertised stop is not a drop off either
+
+**#162.** Activity `N`, "stop not advertised", gated `pickup_type` and not `drop_off_type`, so a
+stop the public cannot use was published as one they could alight at. It now gates both, and it
+takes precedence over `R` - an unadvertised request stop is no stop at all, where it used to come
+out as `3`, "coordinate with the driver".
+
+`golden/stop_times.txt` moves **23 rows from `1,0` to `1,1`**, and nothing else in the feed moves.
+Every one of them is the last stop of a linked trip leg, activity `TF N`: `C04558` at Carstairs
+(12 rows) and `C04551` at Edinburgh (11). Those are the joining stops F4 created - the passenger
+stays in their seat across the `transfer_type=4` link rather than getting off, which is exactly
+what the source says by not advertising the call. The legs are pick up only for their whole length
+and now have no drop off at all, which reads oddly in isolation and is correct: the drop off is on
+the trip they are coupled to.
+
+Entered after the commit rather than with it. The CI step that requires this file to move ran on a
+shallow checkout, where `git diff base...HEAD` fails with `no merge base` and the `|| true` on it
+turned the failure into "no baselines changed" - the guard has passed every pull request without
+checking one.
+
 ## F4 · Splits and joins as linked trips
 
 **Closes #81 and #80.** Associated schedules are no longer concatenated into their base. Both

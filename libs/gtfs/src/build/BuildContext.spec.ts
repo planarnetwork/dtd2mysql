@@ -96,7 +96,8 @@ describe("dateRange", () => {
       today: Temporal.PlainDate.from("2025-09-02"),
       range: parseRange("3 MONTH"),
       links: false,
-      duplicateOvernightAssociations: false,
+      removePassingPoints: true,
+      duplicateOvernightAssociations: false
     });
 
     expect(range.from.toString()).to.equal("2025-09-02");
@@ -109,6 +110,7 @@ describe("dateRange", () => {
       today: Temporal.PlainDate.from("2025-08-31"),
       range: parseRange("1 MONTH"),
       links: false,
+      removePassingPoints: true,
       duplicateOvernightAssociations: false
     });
 
@@ -135,19 +137,71 @@ describe("buildContext links", () => {
 
 });
 
-describe("buildContext duplicate overnight associations", () => {
+describe("buildContext removePassingPoints", () => {
+
   const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
 
-  it("does not duplicate associations unless asked", () => {
+  it("drops the locations a service passes through unless told otherwise", () => {
+    expect(buildContext(argv(), {}).removePassingPoints).to.equal(true);
+  });
+
+  it("keeps them for --remove-passing-points false", () => {
+    expect(buildContext(argv("--remove-passing-points", "false"), {}).removePassingPoints).to.equal(false);
+  });
+
+  it("keeps them for --remove-passing-points=false", () => {
+    expect(buildContext(argv("--remove-passing-points=false"), {}).removePassingPoints).to.equal(false);
+  });
+
+  it("keeps them for GTFS_REMOVE_PASSING_POINTS=0", () => {
+    expect(buildContext(argv(), {GTFS_REMOVE_PASSING_POINTS: "0"}).removePassingPoints).to.equal(false);
+  });
+
+  it("lets the flag win over the environment", () => {
+    const context = buildContext(argv("--remove-passing-points=true"), {GTFS_REMOVE_PASSING_POINTS: "0"});
+
+    expect(context.removePassingPoints).to.equal(true);
+  });
+
+  /**
+   * The bare flag reads as though it turns something on, and this setting is
+   * already on. Rejecting it is the only reading that cannot be wrong.
+   */
+  it("refuses a bare --remove-passing-points", () => {
+    expect(() => buildContext(argv("--remove-passing-points"), {})).to.throw(/needs a value/);
+  });
+
+  it("refuses a value it cannot read as a yes or no", () => {
+    expect(() => buildContext(argv("--remove-passing-points=maybe"), {})).to.throw(/Expected true or false/);
+  });
+
+});
+
+describe("buildContext duplicateOvernightAssociations", () => {
+
+  const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
+
+  it("does not duplicate an overnight association unless asked", () => {
     expect(buildContext(argv(), {}).duplicateOvernightAssociations).to.equal(false);
   });
 
-  it("writes it for --duplicate-overnight-associations", () => {
+  it("duplicates for --duplicate-overnight-associations", () => {
     expect(buildContext(argv("--duplicate-overnight-associations"), {}).duplicateOvernightAssociations).to.equal(true);
   });
 
-  it("writes it for GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS=1", () => {
-    expect(buildContext(argv(), {GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: "true"}).duplicateOvernightAssociations).to.equal(true);
+  it("duplicates for GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS=1", () => {
+    expect(buildContext(argv(), {GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: "1"}).duplicateOvernightAssociations).to.equal(true);
   });
-  
+
+  /**
+   * `Boolean(env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS)` would read every one
+   * of these as a yes, which is the opposite of what each of them says.
+   */
+  it("does not duplicate for a GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS that says no", () => {
+    for (const value of ["0", "false", "no", "off"]) {
+      expect(buildContext(argv(), {GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: value}).duplicateOvernightAssociations)
+        .to.equal(false);
+    }
+  });
+
 });

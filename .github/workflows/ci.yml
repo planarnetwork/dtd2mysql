@@ -30,7 +30,7 @@ jobs:
           [ -n "$base" ] || exit 0
           git fetch -q --depth=1 origin "$base" 2>/dev/null || true
           changed=$(git diff --name-only "$base"...HEAD -- \
-            'apps/*/fixtures/*/golden/**' 'type-surface.json' 'validator-baseline.json' || true)
+            'apps/*/fixtures/*/golden/**' 'type-surface.json' '.github/validator-baseline*.json' || true)
           [ -n "$changed" ] || exit 0
           echo "Baselines changed:"; echo "$changed"
           if ! git diff --name-only "$base"...HEAD -- 'apps/*/fixtures/BASELINE.md' | grep -q .; then

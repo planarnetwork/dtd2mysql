@@ -88,6 +88,15 @@ export interface ScheduleStopTimeRow {
   public_departure_time: string | null,
   scheduled_arrival_time: string | null,
   scheduled_departure_time: string | null,
+  /**
+   * Set where the service runs through the location without stopping, and null
+   * where it stops. A row that has one has no arrival or departure of either
+   * kind, so it is the only time the call has.
+   *
+   * Only present at all when the build asked to keep passing points; a source
+   * that removes them never emits a row with one.
+   */
+  scheduled_pass_time: string | null,
   platform: string,
   // The TIPLOC of the timing point, which the stop id is built from. Null where
   // the source has none: a z-train's location is a CRS code already.

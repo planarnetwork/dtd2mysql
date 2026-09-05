@@ -1,4 +1,4 @@
-import {Client, ClientSFTPCallback, ConnectConfig, FileEntry, SFTPWrapper, TransferOptions} from "ssh2";
+import {Client, ConnectConfig, FileEntry, SFTPWrapper, TransferOptions} from "ssh2";
 import { promisify } from "util";
 
 
