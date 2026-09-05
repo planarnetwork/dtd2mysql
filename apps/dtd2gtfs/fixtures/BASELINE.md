@@ -13,6 +13,44 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## An overnight portion is published once, on its own day
+
+**#160, following #158.** A schedule that runs the day after its base was published twice: once told
+in the base's service day, at times past 24:00, and once on the day its own record gives. Both are
+the same train, so a departure board built from the timetable showed it leaving twice.
+
+Only the second is published now. `golden/trips.txt` goes from 150 back to **128** and
+`golden/stop_times.txt` from 1,590 to 1,326: every `C04543_*` and `C04577_*` told in the base's day
+is gone, and the Tuesday 04:28 the Aberdeen portion actually leaves Edinburgh at is what remains.
+This supersedes the second half of the F4 entry below, which recorded the double publication when it
+arrived.
+
+`golden/transfers.txt` **stays at 293 rows** and every one of them still resolves; 22 of them now
+name the next day's trip - `C04569_20260518_20261207` couples to `C04543_20260519_20261208` rather
+than to a copy dated the 18th. A transfer carries no calendar and GTFS does not ask the two trips it
+names to run on one service day, so this is the correct reading of a coupling that happens over
+midnight, and `applyAssociations` still cuts the associated schedule to the days the association is
+in force.
+
+Journey planners that cannot follow a coupling across a service day get the copy back behind
+`--duplicate-overnight-associations` / `duplicateOvernightAssociations: true`, which is off. With it
+on the coupling names the copy rather than the dated trip, and the feed carries the same train twice
+on purpose. The nightly does not pass it, so no published feed moves except as described above.
+
+Feed-wide it is 108 trips and 1,057 stop times, with `transfers.txt` unchanged at 7,732.
+
+**All three validator baselines are unchanged, measured rather than assumed.** The mini feed raises
+the same twelve accepted notice types and no error. Both feed-wide baselines were checked by
+building the whole network on this branch and on master and validating all four feeds: no notice
+type appears or disappears, the two errors either baseline caps hold at their maxima
+(`point_near_origin` 2, `stop_time_with_arrival_before_previous_departure_time` 1 standard and 22
+with passing points), and the only counts that move are two INFO types neither file lists -
+`big_gap_in_service` 3,690 to 3,689 and `service_window_outside_feed_period` 5,394 to 5,393, one
+each for the duplicate that is gone.
+
+The passing points feed reports 22 against a baseline of 24. Master reports 22 too, so that is the
+refresh moving under it rather than anything here, and it is left for whoever recounts it next.
+
 ## Passing points, available and off
 
 **No change to any feed by default**, and the mini golden is untouched: `--remove-passing-points` is
@@ -68,6 +106,11 @@ turned the failure into "no baselines changed" - the guard has passed every pull
 checking one.
 
 ## F4 · Splits and joins as linked trips
+
+*Superseded in part by the overnight entry above: a coupling now names the associated schedule on
+the day its own record gives, and neither the 28:28 copy nor the second publication described below
+is in the feed. What this entry says about concatenation, `transfers.txt` and the MySQL table still
+holds.*
 
 **Closes #81 and #80.** Associated schedules are no longer concatenated into their base. Both
 schedules keep their own stops and their own trip, and the association is written as a

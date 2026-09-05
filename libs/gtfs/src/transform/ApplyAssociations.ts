@@ -45,7 +45,8 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
 
         links.push(applied.link);
         associated.push(applied.asDated);
-        if (applied.duplicated) {
+
+        if (applied.duplicated !== null) {
           associated.push(applied.duplicated);
         }
 
@@ -53,17 +54,17 @@ export function applyAssociations(schedulesByTuid: ScheduleIndex,
         const schedules = schedulesByTuid[assocSchedule.tuid];
 
         schedules.splice(
-            schedules.indexOf(assocSchedule),
-            1,
-            ...applied.unassociated === null ? [] : [applied.unassociated]
+          schedules.indexOf(assocSchedule),
+          1,
+          ...(applied.unassociated === null ? [] : [applied.unassociated])
         );
       }
     }
   }
 
-  // Only once every association has been applied. Leaving an association's schedule where the next 
-  // association looks would match it against another calendar couple it a second time. What is left
-  // behind is the days it runs uncoupled, which is what a second association should be drawing from.
+  // Only once every association has been applied. Leaving a coupled schedule where the next
+  // association looks would match it against another calendar and couple it a second time. What is
+  // left behind is the days it runs uncoupled, which is what a second association should draw from.
   for (const schedule of associated) {
     (schedulesByTuid[schedule.tuid] = schedulesByTuid[schedule.tuid] || []).push(schedule);
   }

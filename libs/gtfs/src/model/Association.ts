@@ -3,7 +3,6 @@ import {Schedule} from "./Schedule";
 import {ScheduleCalendar} from "./ScheduleCalendar";
 import {CRS} from "../entity/Stop";
 import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
-import {StopTime} from "../entity/StopTime";
 import {isLateNight} from "../transform/ShiftLateNightServices";
 
 export class Association implements OverlayRecord {
@@ -48,11 +47,11 @@ export class Association implements OverlayRecord {
    *
    * Null where the association cannot apply: a location one of them does not call at, or no day on
    * which both run and the association is in force.
-   * 
-   * GTFS does not require that the base schedule and the assoc schedule to operate on the same day.
-   * However, the `duplicateOvernight` parameter is given as a workaround for journey planners which can only
-   * handle linked trips running on the same day, by creating a duplicate of the associated portion
-   * departing on the day the base departs, and shifting the times by a day.
+   *
+   * GTFS does not ask the two trips a coupling names to run on one service day, so the associated
+   * schedule is published on the day its own record gives it and the transfer is allowed to cross a
+   * day. `duplicateOvernight` is a workaround for journey planners that cannot follow one: it also
+   * publishes the associated schedule on the base's service day, at times past 24:00.
    */
   public apply(base: Schedule, assoc: Schedule, idGenerator: IdGenerator, duplicateOvernight: boolean): AssociationApplication | null {
     // this should never happen, unless data feed is corrupted. It will prevent us from update failure
@@ -71,29 +70,31 @@ export class Association implements OverlayRecord {
     if (coupled.isEmpty) {
       return null;
     }
-    
+
     const asDated = assoc.clone(this.inAssocDays(coupled), idGenerator.next().value);
 
-    // Some legacy journey planner can only handle linked trips which run on the same service day. If dayShift is true,
-    // we create a duplicate of the assoc schedule which runs on the base day.
-    // 
-    // In the duplicated schedule, a train leaving Edinburgh at 04:30 coming off a sleeper portion
-    // reads as 28:40 the day before, which helps those journey planners to link it to the base.
-    //
-    // Only a next day schedule can be copied onto the base's: one running before it would need a time
-    // before 00:00. Those keep their own day and the coupling crosses one.
-    //
-    // If shiftLateNightServices will move the assoc schedule on the next day back, they will run on the same GTFS day
-    // so the duplication is not needed. In contrast, if the base schedule starts late night but the assoc schedule on 
-    // the same day doesn't, a duplication is required instead
-    const needToDuplicate = duplicateOvernight && !isLateNight(assoc) && (
-        this.dateIndicator === DateIndicator.Next || this.dateIndicator === DateIndicator.Same && isLateNight(base)
-    );
+    // How far apart the two trips end up is not the date indicator by itself. `shiftLateNightServices`
+    // moves anything departing before 02:00 onto the previous service day, and it does that to the
+    // base and to the associated schedule independently, so it both closes days the indicator opens
+    // and opens days it does not. A next day association whose associated portion leaves at 00:35
+    // needs no copy - the shift puts it on the base's day anyway - while a same day one whose base
+    // leaves at 00:30 does, because the shift takes the base off the day they shared.
+    const dayGap = this.dayOffset - dayShift(assoc) + dayShift(base);
 
-    const duplicated = needToDuplicate 
-        ? asDated.clone(asDated.calendar, idGenerator.next().value).copyToPreviousServiceDay()
-        : null;
-    
+    // A copy closes exactly one day, so it is worth making for a gap of one and nothing else. A gap
+    // of -1 wants a copy on the day after, which would need a time before 00:00; a gap of 2 wants two
+    // of them. Publishing one that does not close the gap leaves the same train in the feed twice and
+    // still couples across a day, which is the worst of both.
+    //
+    // And not where the associated schedule is itself late night: `shiftLateNightServices` is about
+    // to move it onto the very day the copy would sit on, at the very times the copy would carry, so
+    // the copy would be the same trip written out again. That is a gap of one this cannot close.
+    const duplicated = duplicateOvernight && dayGap === 1 && !isLateNight(assoc)
+      // The base's day, at times past 24:00 - a train leaving Edinburgh at 04:30 reads as 28:30 the
+      // day before, no use to anyone boarding it there, which is why it is a copy and not a move.
+      ? asDated.copyToPreviousServiceDay(idGenerator.next().value)
+      : null;
+
     const unassociatedCalendar = assoc.calendar.addExcludeDays(this.inAssocDays(coupled));
 
     return {
@@ -104,6 +105,18 @@ export class Association implements OverlayRecord {
         : {from: base.id, to: (duplicated ?? asDated).id, location: this.assocLocation, type: this.assocType},
       unassociated: unassociatedCalendar === null ? null : assoc.clone(unassociatedCalendar, idGenerator.next().value)
     };
+  }
+
+  /**
+   * How many service days after the base's own the associated schedule's record dates it.
+   *
+   * A date indicator neither source checks before casting reads as the same day, which is what
+   * `inBaseDays` and `inAssocDays` make of one too.
+   */
+  private get dayOffset(): number {
+    return this.dateIndicator === DateIndicator.Next ? 1
+      : this.dateIndicator === DateIndicator.Previous ? -1
+      : 0;
   }
 
   /**
@@ -126,17 +139,24 @@ export class Association implements OverlayRecord {
 
 }
 
+/**
+ * Whether `shiftLateNightServices` will take a day off this schedule before it is written.
+ */
+function dayShift(schedule: Schedule): number {
+  return isLateNight(schedule) ? 1 : 0;
+}
+
 export interface AssociationApplication {
-  /** told in the day its own record gives */
+  /** the coupled days, told on the day the associated schedule's own record gives them */
   asDated: Schedule,
-  /** 
-   * told in the base's service day, which is what the coupling names, 
-   * or null if the assoc and the base run on the same service day 
+  /**
+   * the same days told on the base's service day, at times past 24:00, or null unless
+   * `duplicateOvernight` asked for it and a day was there to close
    */
   duplicated: Schedule | null,
   /**
-   * a copy of the schedule where the association does not apply,
-   * null if the association fully applies.
+   * the days the associated schedule runs uncoupled, or null where the association covers
+   * every day it runs
    */
   unassociated: Schedule | null,
   link: AssociationLink

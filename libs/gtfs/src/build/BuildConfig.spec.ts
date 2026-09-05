@@ -52,6 +52,20 @@ describe("parseConfig", () => {
       .to.throw(/removePassingPoints must be true or false. Got "no"./);
   });
 
+  it("duplicates an overnight association when told to", () => {
+    expect(parseConfig({...minimal, duplicateOvernightAssociations: true}).duplicateOvernightAssociations)
+      .to.equal(true);
+  });
+
+  /**
+   * `Boolean(duplicateOvernightAssociations)` would read "no" as a yes and publish every overnight
+   * portion twice, which is a lot of feed to account for afterwards.
+   */
+  it("refuses a duplicateOvernightAssociations that is not a yes or a no", () => {
+    expect(() => parseConfig({...minimal, duplicateOvernightAssociations: "no"}))
+      .to.throw(/duplicateOvernightAssociations must be true or false. Got "no"./);
+  });
+
 });
 
 describe("parseConfig extensions", () => {

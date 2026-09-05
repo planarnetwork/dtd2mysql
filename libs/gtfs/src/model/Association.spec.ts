@@ -35,7 +35,7 @@ describe("Association", () => {
     expect(result.link.from).to.equal(base.id);
     expect(result.link.to).to.equal(result.asDated.id);
     expect(result.link.location).to.equal("ASH");
-    
+
     // this is not an overnight association, so it should not be duplicated
     expect(result.duplicated).to.equal(null);
   });
@@ -100,13 +100,13 @@ describe("Association", () => {
     expect(duplicated.stopTimes[0].departure_time).to.equal("32:41:30");
     expect(duplicated.stopTimes[1].arrival_time).to.equal("33:30");
 
-    // The link should refer to the duplicated trip, not the dated trip
+    // the coupling names the copy, which is the whole point of making one
     expect(result.link.from).to.equal(base.id);
     expect(result.link.to).to.equal(duplicated.id);
     expect(result.link.location).to.equal("ASH");
   });
 
-  it("does not publishes on the base's day when duplicateOvernight is false", () => {
+  it("does not publish it on the base's day when duplicateOvernight is false", () => {
     const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "22:30"),
       stop(2, "PDW", "23:30"),
@@ -120,7 +120,7 @@ describe("Association", () => {
     ]);
 
     const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
-        .apply(base, assoc, idGenerator(), false)!;
+      .apply(base, assoc, idGenerator(), false)!;
 
     const asDated = result.asDated;
     // dated on the day its own schedule names
@@ -130,11 +130,10 @@ describe("Association", () => {
     expect(asDated.stopTimes[0].departure_time).to.equal("08:41:30");
     expect(asDated.stopTimes[1].arrival_time).to.equal("09:30");
 
-    // the duplication should only be enabled when the flag is specified
-    const duplicated = result.duplicated;
-    expect(duplicated).to.equal(null);
+    // nothing is copied unless the flag asked for it
+    expect(result.duplicated).to.equal(null);
 
-    // The link should refer to the dated trip
+    // and the coupling names the trip that is there, which crosses a service day
     expect(result.link.from).to.equal(base.id);
     expect(result.link.to).to.equal(asDated.id);
     expect(result.link.location).to.equal("ASH");
@@ -171,15 +170,15 @@ describe("Association", () => {
     ]);
 
     const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Same)
-        .apply(base, assoc, idGenerator(), true)!;
+      .apply(base, assoc, idGenerator(), true)!;
 
-    // 00:30 is published as 24:30 the day before in shiftLateNightServices, but 02:35 isn't.
-    // So we need to copy the 02:35 trip to be associated to the 24:30 base.
+    // shiftLateNightServices moves the 00:30 base onto the previous day and leaves the 02:35
+    // portion where it is, so a same day association ends up a day apart and the copy closes it
     expect(result.duplicated!.calendar.runsFrom.equals("20170710")).to.be.true;
     expect(result.duplicated!.stopTimes[0].departure_time).to.equal("26:35:30");
   });
 
-  it("does not duplicate when the base is late night and the assoc is also late night", () => {
+  it("does not duplicate when the base and the associated schedule are both late night", () => {
     const base = schedule(1, "A", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
       stop(1, "TON", "00:30"),
       stop(2, "ASH", "01:30"),
@@ -191,11 +190,78 @@ describe("Association", () => {
     ]);
 
     const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Same)
-        .apply(base, assoc, idGenerator(), true)!;
+      .apply(base, assoc, idGenerator(), true)!;
 
-    // Both 00:30 and 01:35 are published on the previous day, so the association is by default on the same day.
-    // So we need to copy the 02:35 trip to be associated to the 24:30 base.
+    // shiftLateNightServices moves both onto the previous day, so they share one after all
     expect(result.duplicated).to.equal(null);
+  });
+
+  /**
+   * A copy closes one service day. These are two apart, so making one would publish the portion a
+   * second time and still leave the coupling crossing a day - the cost of the workaround without
+   * the thing it buys.
+   */
+  it("does not duplicate a next day schedule whose base is late night", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "00:45"),
+      stop(2, "ASH", "01:30"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "08:41"),
+      stop(2, "DOV", "09:30"),
+    ]);
+
+    const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
+      .apply(base, assoc, idGenerator(), true)!;
+
+    // the base is published on the 9th and the portion on the 11th; a copy would sit on the 10th
+    expect(result.duplicated).to.equal(null);
+    expect(result.link.to).to.equal(result.asDated.id);
+  });
+
+  /**
+   * The day is there to close and a copy cannot close it: shiftLateNightServices is about to move
+   * asDated onto the very day the copy would sit on, at the very times it would carry.
+   */
+  it("does not duplicate a next day schedule where both are late night", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "00:45"),
+      stop(2, "ASH", "01:30"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "00:30"),
+      stop(2, "DOV", "01:00"),
+    ]);
+
+    const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
+      .apply(base, assoc, idGenerator(), true)!;
+
+    expect(result.duplicated).to.equal(null);
+    expect(result.link.to).to.equal(result.asDated.id);
+  });
+
+  /**
+   * Both reach the feed, and resolveLinks names a trip by the id until mergeSchedules has settled
+   * the trip ids. Two schedules under one id is a coupling it drops rather than one it gets wrong.
+   */
+  it("gives the copy an id of its own", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-16", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "22:30"),
+      stop(2, "ASH", "23:30"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-17", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "08:41"),
+      stop(2, "DOV", "09:30"),
+    ]);
+
+    const result = association(base, assoc, AssociationType.Split, "ASH", DateIndicator.Next)
+      .apply(base, assoc, idGenerator(), true)!;
+
+    expect(result.duplicated!.id).to.not.equal(result.asDated.id);
+    expect(result.duplicated!.id).to.not.equal(result.unassociated?.id);
   });
 
   it("does not duplicate a previous day associated schedule", () => {

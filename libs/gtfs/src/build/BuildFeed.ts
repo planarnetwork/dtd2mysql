@@ -339,7 +339,7 @@ export class BuildFeed {
     const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator, duplicateOvernightAssociations);
     const mergedSchedules = mergeSchedules(associated.schedules);
     const links = resolveLinks(associated.links, mergedSchedules);
-    const schedules = shiftLateNightServices(mergedSchedules, scheduleResults.idGenerator);
+    const schedules = shiftLateNightServices(mergedSchedules);
 
     // remove any schedules that no longer run on any days so invalid calendars are not output
     return {schedules: schedules.filter(schedule => !schedule.calendar.isEmpty), links};

@@ -1,5 +1,4 @@
 import {Schedule} from "../model/Schedule";
-import {IdGenerator} from "../model/OverlayRecord";
 
 /**
  * Loop through every schedule and replace any early morning services with a copy on the previous day.
@@ -10,8 +9,11 @@ import {IdGenerator} from "../model/OverlayRecord";
  *
  * Therefore, trains which depart before the change on changeover days should be recorded as on the
  * previous service day instead.
+ *
+ * Each schedule is replaced rather than joined by a second one, so the copy keeps the id the
+ * original was handed and no caller needs to supply a new one.
  */
-export function shiftLateNightServices(schedules: Schedule[], idGenerator: IdGenerator): Schedule[] {
+export function shiftLateNightServices(schedules: Schedule[]): Schedule[] {
   const result: Schedule[] = [];
 
   for (const schedule of schedules) {
@@ -37,5 +39,5 @@ export function shiftLateNightServices(schedules: Schedule[], idGenerator: IdGen
  */
 export function isLateNight(schedule: Schedule): boolean {
   return schedule.stopTimes.length > 0
-    && parseInt(schedule.stopTimes[0].departure_time.substr(0, 2), 10) <= 1;
+    && parseInt(schedule.stopTimes[0].departure_time.substring(0, 2), 10) <= 1;
 }
