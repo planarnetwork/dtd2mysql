@@ -96,7 +96,8 @@ describe("dateRange", () => {
       today: Temporal.PlainDate.from("2025-09-02"),
       range: parseRange("3 MONTH"),
       links: false,
-      removePassingPoints: true
+      removePassingPoints: true,
+      duplicateOvernightAssociations: false
     });
 
     expect(range.from.toString()).to.equal("2025-09-02");
@@ -109,7 +110,8 @@ describe("dateRange", () => {
       today: Temporal.PlainDate.from("2025-08-31"),
       range: parseRange("1 MONTH"),
       links: false,
-      removePassingPoints: true
+      removePassingPoints: true,
+      duplicateOvernightAssociations: false
     });
 
     expect(range.to.toString()).to.equal("2025-09-30");
@@ -171,6 +173,35 @@ describe("buildContext removePassingPoints", () => {
 
   it("refuses a value it cannot read as a yes or no", () => {
     expect(() => buildContext(argv("--remove-passing-points=maybe"), {})).to.throw(/Expected true or false/);
+  });
+
+});
+
+describe("buildContext duplicateOvernightAssociations", () => {
+
+  const argv = (...args: string[]) => ["node", "dtd2mysql", "--gtfs", "out", ...args];
+
+  it("does not duplicate an overnight association unless asked", () => {
+    expect(buildContext(argv(), {}).duplicateOvernightAssociations).to.equal(false);
+  });
+
+  it("duplicates for --duplicate-overnight-associations", () => {
+    expect(buildContext(argv("--duplicate-overnight-associations"), {}).duplicateOvernightAssociations).to.equal(true);
+  });
+
+  it("duplicates for GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS=1", () => {
+    expect(buildContext(argv(), {GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: "1"}).duplicateOvernightAssociations).to.equal(true);
+  });
+
+  /**
+   * `Boolean(env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS)` would read every one
+   * of these as a yes, which is the opposite of what each of them says.
+   */
+  it("does not duplicate for a GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS that says no", () => {
+    for (const value of ["0", "false", "no", "off"]) {
+      expect(buildContext(argv(), {GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: value}).duplicateOvernightAssociations)
+        .to.equal(false);
+    }
   });
 
 });

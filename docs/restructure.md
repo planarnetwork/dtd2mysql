@@ -54,7 +54,7 @@ restructure has landed. See §2 and C4.
 - **`src/feed/`** — the `Record`/`Field`/`FeedFile` abstraction. Declarative fixed-width and CSV
   parsing driven entirely by `config/*/file/*.ts`. Format-agnostic, tested, no coupling to rail.
 - **`src/gtfs/native/` and `src/gtfs/command/`** — `ScheduleCalendar`, `Association`,
-  `applyOverlays`, `applyAssociations`, `mergeSchedules`, `createCalendar`, `addLateNightServices`.
+  `applyOverlays`, `applyAssociations`, `mergeSchedules`, `createCalendar`, `shiftLateNightServices`.
   Pure functions over pure domain objects, no DB, no IO, and the only part with real test coverage.
 
 ### What blocks the goal
@@ -365,7 +365,7 @@ zip**, so a behaviour change appears as a readable diff in review. It must delib
 - associations VV / JJ / NP with each date indicator, including the transitive closure of
   associated TUIDs (the connected-component logic F1 also needs — build once, use twice)
 - late-night rollover through `formatTime`'s +24h path, and a schedule with **no** stop times, which
-  `addLateNightServices` used to crash on
+  `shiftLateNightServices` used to crash on
 - Z-trains from ZTR, including a location absent from `physical_station` (see B15)
 - every `routeTypeIndex` entry: OO, XX, XZ, BR, BS, OL, XC, SS
 - activity codes R, T, TB, TF, U, D, N, and a **null** activity
@@ -641,7 +641,7 @@ current feed trigger it, so `--gtfs` could not produce a feed at all.
 
 Fixed by skipping stop creation when `stop_id` is null (guarding `activity` alone would only move
 the throw two lines down), catching throws in the result listener so a bad row fails the build
-loudly, and teaching `addLateNightServices` that `stopTimes[0]` may not exist. Added the
+loudly, and teaching `shiftLateNightServices` that `stopTimes[0]` may not exist. Added the
 `ScheduleBuilder` spec, which did not exist.
 
 **B1 · Emit `feed_info.txt`** *(coordinate with B14)* — **done**

@@ -18,7 +18,7 @@ export interface TripLink {
 /**
  * Tell each coupling which trips it names.
  *
- * `mergeSchedules` is what settles a trip id, and `addLateNightServices` carries the one it settled
+ * `mergeSchedules` is what settles a trip id, and `shiftLateNightServices` carries the one it settled
  * onto the clones it makes, so this is the point where a link can be resolved once and stay right.
  */
 export function resolveLinks(links: readonly AssociationLink[], schedules: readonly Schedule[]): TripLink[] {

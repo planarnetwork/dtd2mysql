@@ -144,7 +144,8 @@ const context: BuildContext = {
   today: Temporal.PlainDate.from("2024-01-01"),
   range: parseRange("3 MONTH"),
   links: true,
-  removePassingPoints: true
+  removePassingPoints: true,
+  duplicateOvernightAssociations: false
 };
 
 async function build(source: TimetableSource, enrichers: Enricher[] = []): Promise<MemoryOutput> {

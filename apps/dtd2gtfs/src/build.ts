@@ -46,7 +46,9 @@ export async function build(argv: string[]): Promise<void> {
       // because parseConfig has already applied the default and undefined here
       // would mean buildContext applied it a second time. One place decides.
       GTFS_REMOVE_PASSING_POINTS: process.env.GTFS_REMOVE_PASSING_POINTS
-        ?? (config === undefined ? undefined : String(config.removePassingPoints))
+        ?? (config === undefined ? undefined : String(config.removePassingPoints)),
+      GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS: process.env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS
+        ?? (config?.duplicateOvernightAssociations ? "1" : undefined)
     }
   );
 

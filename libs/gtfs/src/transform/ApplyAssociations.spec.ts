@@ -42,7 +42,8 @@ describe("ApplyAssociations", () => {
     const {schedules, links} = applyAssociations(
       applyOverlays([base1, assoc1, base2, assoc2]) as ScheduleIndex,
       applyOverlays([association1]) as AssociationIndex,
-      idGenerator()
+      idGenerator(),
+      true
     );
 
     // nothing is concatenated, so there is no combined TUID at all
@@ -58,11 +59,11 @@ describe("ApplyAssociations", () => {
     // on the day its own record gives, which is where a passenger boarding it looks.
     const associated = schedules["B"];
 
-    // Each on the day its own base ran. These depart at 00:35, which addLateNightServices puts back
+    // Each on the day its own base ran. These depart at 00:35, which shiftLateNightServices puts back
     // on the previous day anyway, so there is no second copy to publish.
     expect(associated.map(s => [s.calendar.runsFrom.toString(), s.stopTimes[0].departure_time])).to.deep.equal([
-      ["2017-07-10", "24:35:30"],
-      ["2017-07-11", "24:35:30"]
+      ["2017-07-11", "00:35:30"],
+      ["2017-07-12", "00:35:30"]
     ]);
 
     // make sure that it only matches base1 to assoc1 and base2 to assoc2
@@ -80,10 +81,11 @@ describe("ApplyAssociations", () => {
       stop(2, "ASH", "23:30"),
     ]);
 
-    // runs the day after the base, so applying an association moves it onto the base's day at 24:18
+    // runs the day after the base, so with the flag on each application copies it onto the base's
+    // day at 28:18 as well as leaving it where its own record dates it
     const assoc = schedule(2, "B", "2017-07-11", "2017-07-20", STP.Overlay, ALL_DAYS, [
-      stop(1, "ASH", "00:18"),
-      stop(2, "DOV", "00:40"),
+      stop(1, "ASH", "04:18"),
+      stop(2, "DOV", "04:40"),
     ]);
 
     // The second record's dates, counted in the associated schedule's days, land on the days the
@@ -97,12 +99,44 @@ describe("ApplyAssociations", () => {
     const {schedules, links} = applyAssociations(
       applyOverlays([base, assoc]) as ScheduleIndex,
       {"A_B_ASH": [first, second]} as AssociationIndex,
-      idGenerator()
+      idGenerator(),
+      true
     );
 
-    // 00:18 becomes 24:18 and stops there
+    // three 04:18 - the days it runs uncoupled, and the coupled days of each association - and one
+    // 28:18 for each of those two associations, told on the day its base left
     expect(schedules["B"].map(s => s.stopTimes[0].arrival_time).sort())
-      .to.deep.equal(["00:18", "24:18", "24:18"]);
+      .to.deep.equal(["04:18", "04:18", "04:18", "28:18", "28:18"]);
+    expect(links).to.have.length(2);
+  });
+
+  it("copies nothing onto the base's day unless asked", () => {
+    const base = schedule(1, "A", "2017-07-10", "2017-07-19", STP.Overlay, ALL_DAYS, [
+      stop(1, "TON", "22:30"),
+      stop(2, "ASH", "23:30"),
+    ]);
+
+    const assoc = schedule(2, "B", "2017-07-11", "2017-07-20", STP.Overlay, ALL_DAYS, [
+      stop(1, "ASH", "04:18"),
+      stop(2, "DOV", "04:40"),
+    ]);
+
+    const first = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-12"), Temporal.PlainDate.from("2017-07-14"), ALL_DAYS));
+    const second = association("A", "B", AssociationType.Split, "ASH", DateIndicator.Next,
+      new ScheduleCalendar(Temporal.PlainDate.from("2017-07-11"), Temporal.PlainDate.from("2017-07-13"), ALL_DAYS));
+
+    const {schedules, links} = applyAssociations(
+      applyOverlays([base, assoc]) as ScheduleIndex,
+      {"A_B_ASH": [first, second]} as AssociationIndex,
+      idGenerator(),
+      false
+    );
+
+    // the same three schedules, and no second copy of either coupled one. Every day the train runs
+    // is published exactly once, which is what the default is for
+    expect(schedules["B"].map(s => s.stopTimes[0].arrival_time).sort())
+      .to.deep.equal(["04:18", "04:18", "04:18"]);
     expect(links).to.have.length(2);
   });
 
@@ -125,7 +159,8 @@ describe("ApplyAssociations", () => {
     const {schedules} = applyAssociations(
       applyOverlays([base, assoc]) as ScheduleIndex,
       applyOverlays([association("A", "B", AssociationType.Split, "ASH", DateIndicator.Same, calendar)]) as AssociationIndex,
-      idGenerator()
+      idGenerator(),
+      true
     );
 
     // the ids are what a link names a trip by until the trip ids are settled, so

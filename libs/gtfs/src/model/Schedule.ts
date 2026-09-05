@@ -54,6 +54,10 @@ export class Schedule implements OverlayRecord {
    * Clone the current record with the new calendar and id, and optionally a
    * different set of calls.
    *
+   * The id is not optional: `resolveLinks` names a trip by it until `mergeSchedules` has settled
+   * the trip ids, and two schedules sharing one couples the wrong pair of trains rather than
+   * failing. A caller that means to keep it says so.
+   *
    * The stop times are copied because callers shift the times of a clone in place.
    */
   public clone(calendar: ScheduleCalendar, scheduleId: number, stopTimes: StopTime[] = this.stopTimes): Schedule {
@@ -188,5 +192,29 @@ export class Schedule implements OverlayRecord {
     return <StopTime>this.stopTimes.find(s => s.stop_id === location);
   }
 
+  /**
+   * The same train, told on the day before the one it came with: 00:35 becomes 24:35.
+   *
+   * `scheduleId` defaults to this record's, which is what a caller replacing the record wants.
+   * One keeping both has to hand out a new one, or the two are indistinguishable to `resolveLinks`.
+   */
+  public copyToPreviousServiceDay(scheduleId: number = this.id): Schedule {
+    const copy = this.clone(this.calendar.shiftBackward(), scheduleId);
+
+    for (const stop of copy.stopTimes) {
+      stop.departure_time = plusADay(stop.departure_time);
+      stop.arrival_time = plusADay(stop.arrival_time);
+    }
+
+    return copy;
+  }
+
+}
+
+/**
+ * A time told on the day before the one it came with, so 00:35 reads as 24:35.
+ */
+function plusADay(time: string): string {
+  return (parseInt(time.substring(0, 2), 10) + 24) + time.substring(2);
 }
 
