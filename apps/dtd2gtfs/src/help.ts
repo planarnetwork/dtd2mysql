@@ -26,6 +26,12 @@ Build a GTFS feed from the DTD timetable feed, with no database
                              pickup_type and drop_off_type 1 and the pass time
                              as both arrival and departure. It is roughly a
                              third more stop times
+  --duplicate-overnight-associations
+                             also publish an associated schedule that runs the
+                             day after its base on the base's own service day,
+                             at times past 24:00. For journey planners that
+                             cannot follow a coupling across a service day; it
+                             leaves the same train in the feed twice
 
 For example:
 
@@ -43,6 +49,7 @@ A config file looks like this. Only source is required:
   licence: permissive        # or full, which allows share-alike sources
   links: false
   removePassingPoints: true  # false keeps the locations a service passes through
+  duplicateOvernightAssociations: false   # true publishes an overnight portion twice
   enrichers:
     NAPTAN:                  # on, with its own defaults
     KNOWLEDGEBASE:

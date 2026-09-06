@@ -32,6 +32,17 @@ export interface BuildContext {
    * window it covers.
    */
   readonly removePassingPoints: boolean;
+
+  /**
+   * Whether an associated schedule that runs the day after its base is also
+   * published on the base's service day, at times past 24:00.
+   *
+   * GTFS does not ask the two trips a coupling names to run on one service
+   * day, and the feed is correct without this. Some journey planners cannot
+   * follow a transfer across a day, and the copy is for them; it leaves the
+   * same train in the feed twice, so it is off unless asked for.
+   */
+  readonly duplicateOvernightAssociations: boolean;
 }
 
 /**
@@ -177,6 +188,10 @@ export function buildContext(argv: string[], env: NodeJS.ProcessEnv = process.en
     today: today ? Temporal.PlainDate.from(today) : Temporal.Now.plainDateISO(),
     range: parseRange(range ?? "3 MONTH"),
     links: argv.includes("--links") || env.GTFS_LINKS === "1",
-    removePassingPoints: flag(passingPoints, true, "--remove-passing-points")
+    removePassingPoints: flag(passingPoints, true, "--remove-passing-points"),
+    // A bare flag, read the way `--links` is, because absent means off. `flag`
+    // is for the settings that default to on, where there is a value to refuse.
+    duplicateOvernightAssociations: argv.includes("--duplicate-overnight-associations")
+      || env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS === "1"
   };
 }

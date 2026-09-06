@@ -21,6 +21,12 @@ export interface BuildConfig {
    * On unless the config says otherwise - see BuildContext.
    */
   readonly removePassingPoints: boolean;
+  /**
+   * Whether an associated schedule that runs the day after its base is also
+   * published on the base's service day. Off unless the config says so - see
+   * BuildContext.
+   */
+  readonly duplicateOvernightAssociations: boolean;
   readonly licence: Licence;
   readonly enrichers: readonly EnricherConfig[];
   readonly extensions: readonly ExtensionConfig[];
@@ -63,7 +69,8 @@ export interface ExtensionConfig {
 
 const LICENCES: Licence[] = ["permissive", "full"];
 const TOP_LEVEL = [
-  "source", "out", "today", "range", "links", "removePassingPoints", "licence", "enrichers", "extensions"
+  "source", "out", "today", "range", "links", "removePassingPoints",
+  "duplicateOvernightAssociations", "licence", "enrichers", "extensions"
 ];
 
 /**
@@ -109,6 +116,12 @@ export function parseConfig(
     // A config is the reviewable form of a build and a value it silently
     // reverses is worse than one it refuses.
     removePassingPoints: boolean(config.removePassingPoints, true, "removePassingPoints"),
+    // Read the same way for the same reason. `Boolean(...)` would take
+    // `duplicateOvernightAssociations: "no"` for a yes and publish every
+    // overnight portion twice, which is a lot of feed to explain afterwards.
+    duplicateOvernightAssociations: boolean(
+      config.duplicateOvernightAssociations, false, "duplicateOvernightAssociations"
+    ),
     licence: licence as Licence,
     enrichers: enrichers(config.enrichers, known),
     extensions: extensions(config.extensions, knownExtensions)

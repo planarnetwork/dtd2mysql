@@ -321,4 +321,69 @@ describe("the feed the mini fixture produces", () => {
     expect(dates.map(d => d.date)).to.deep.equal(["20260906", "20260913"]);
   });
 
+  it("publishes an overnight portion once, on the day its own record dates it", () => {
+    // The Aberdeen portion of the sleeper leaves Edinburgh at 04:28 on the Tuesday, having left
+    // Euston on the Monday. That is where a passenger boarding it looks, so that is where it is
+    // published, and the coupling in transfers.txt is allowed to cross the service day.
+    const trips = columns("trips.txt").map(t => t.trip_id);
+
+    expect(trips).to.include("C04543_20260519_20261208");
+    expect(trips).to.not.include("C04543_20260518_20261207");
+
+    const link = columns("transfers.txt")
+      .find(t => t.from_trip_id === "C04569_20260518_20261207" && t.to_trip_id.startsWith("C04543_"));
+
+    expect(link?.to_trip_id).to.equal("C04543_20260519_20261208");
+  });
+
+});
+
+/**
+ * The config file is the reviewable form of a build, so an option it names has to reach the build.
+ * `duplicateOvernightAssociations` was read into BuildConfig and then dropped: nothing carried it to
+ * BuildContext, which is what applyAssociations is given, so a config asking for it got a feed
+ * without it and no error to say so.
+ */
+describe("a build that asks for overnight associations to be duplicated", () => {
+
+  let withDuplicates: string;
+
+  beforeAll(async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
+    const config = path.join(dir, "gtfs.config.yaml");
+
+    withDuplicates = path.join(dir, "feed");
+
+    fs.writeFileSync(config, [
+      `source: ${JSON.stringify(path.join(fixtures, "RJTTF001.ZIP"))}`,
+      `out: ${JSON.stringify(withDuplicates)}`,
+      `today: ${TODAY}`,
+      "duplicateOvernightAssociations: true"
+    ].join("\n"));
+
+    await build(["node", "dtd2gtfs", "build", "--config", config]);
+  }, 60_000);
+
+  it("publishes the portion on the base's service day as well as its own", () => {
+    const trips = fs.readFileSync(path.join(withDuplicates, "trips.txt"), "utf8");
+
+    expect(trips).to.include("C04543_20260519_20261208");
+    expect(trips).to.include("C04543_20260518_20261207");
+  });
+
+  it("tells the copy in the base's service day, at times past 24:00", () => {
+    const copied = fs.readFileSync(path.join(withDuplicates, "stop_times.txt"), "utf8")
+      .split("\n")
+      .filter(line => line.startsWith("C04543_20260518_20261207,"));
+
+    expect(copied[0]).to.include("28:28:00");
+  });
+
+  it("names the copy in the coupling, which is the point of making one", () => {
+    const transfers = fs.readFileSync(path.join(withDuplicates, "transfers.txt"), "utf8");
+
+    expect(transfers).to.include("C04569_20260518_20261207,C04543_20260518_20261207");
+    expect(transfers).to.not.include("C04569_20260518_20261207,C04543_20260519_20261208");
+  });
+
 });

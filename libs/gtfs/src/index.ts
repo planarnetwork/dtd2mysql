@@ -29,7 +29,7 @@ export {NO_DAYS, OverlapType, ScheduleCalendar} from "./model/ScheduleCalendar";
 export type {BankHoliday, Days, ExcludeDays} from "./model/ScheduleCalendar";
 
 // Transforms - overlays, associations, merging and calendars
-export {addLateNightServices} from "./transform/AddLateNightServices";
+export {shiftLateNightServices} from "./transform/ShiftLateNightServices";
 export {applyAssociations} from "./transform/ApplyAssociations";
 export type {AssociatedSchedules, AssociationIndex, ScheduleIndex} from "./transform/ApplyAssociations";
 export {combinedHeadsigns, onwardHeadsigns} from "./transform/Headsigns";
