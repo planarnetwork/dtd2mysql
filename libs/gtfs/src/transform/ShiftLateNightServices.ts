@@ -73,7 +73,6 @@ function runsInTheRepeatedHour(schedule: Schedule): boolean {
     && departureHour(schedule) === 1
     && schedule.calendar.runsFrom.equals(schedule.calendar.runsTo)
     && isLastSundayOfOctober(schedule.calendar.runsFrom)
-    // last: recognising the line walks the calls
     && schedule.routeId === WINDRUSH;
 }
 
