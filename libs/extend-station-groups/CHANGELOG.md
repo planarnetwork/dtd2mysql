@@ -1,5 +1,14 @@
 # @gb-transit/extend-station-groups
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [783c178]
+- Updated dependencies [0f6bf84]
+  - @gb-transit/gtfs@2.0.0
+  - @gb-transit/dtd-source@1.1.0
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,5 +1,13 @@
 # @gb-transit/website
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [783c178]
+- Updated dependencies [0f6bf84]
+  - @gb-transit/gtfs@2.0.0
+
 ## 0.0.2
 
 ### Patch Changes
