@@ -34,8 +34,7 @@ export function shiftLateNightServices(schedules: Schedule[]): Schedule[] {
     }
   }
 
-  // Once a year, and expected to stop matching whenever the operator changes how it publishes these,
-  // so it says so rather than leaving the answer to a diff of two feeds.
+  // fires once a year, and stops matching if the operator changes how it publishes these
   if (exempt > 0) {
     console.log(`Keeping ${exempt} schedules in the repeated hour of the autumn clock change`);
   }
@@ -56,27 +55,16 @@ const LONDON_OVERGROUND: AgencyID = "LO";
 const WINDRUSH = "WIN";
 
 /**
- * Whether this train runs in the second pass of the hour the autumn change repeats, and so stays on
- * the day its own record dates it.
+ * Whether this train runs in the second pass of the hour the clocks repeat, which the shift would
+ * publish an hour before it happens.
  *
- * On the last Sunday of October 01:00 to 01:59 happens twice, in BST and again in GMT. The shift
- * reads a departure as the first pass, which is right for a service day ending before the change and
- * wrong for one running through it: 01:05 GMT is 26:05 of the Saturday service day, and telling it
- * as 25:05 puts it alongside the train that already ran an hour earlier.
+ * The CIF does not say which pass a schedule means, so it is taken from the shape London Overground
+ * publishes the Windrush night service in: STP schedules dated to that Sunday alone. The 9Z
+ * signalling IDs #165 names would say it directly, but the headcode does not reach `Schedule`.
  *
- * Nothing in the CIF says which pass a schedule means, so it is recognised by the shape London
- * Overground publishes the Windrush night service in - the only one in Great Britain running through
- * the change. It covers the repeated hour with short term plan schedules dated to that Sunday alone,
- * four in each direction between Highbury & Islington and New Cross Gate; the standard schedules
- * cover the first pass and are shifted as usual. Those schedules also carry signalling IDs starting
- * `9Z`, which is not read here because the CIF headcode does not reach `Schedule` - see the TODO on
- * `Schedule.bareRouteId`.
- *
- * The dates are the record's own rather than the days it is left running: `applyOverlays` adds
- * exclude days without moving the range, so a wide record whittled down to that Sunday by a
- * higher-priority overlay is not one the operator dated to it.
- *
- * Ordered cheapest first - `routeId` walks the calls to recognise the line, so it is asked last.
+ * The dates are the record's own, not the days it is left running - `applyOverlays` excludes days
+ * without moving the range, so a wide record can be narrowed onto that Sunday without being dated
+ * to it.
  */
 function runsInTheRepeatedHour(schedule: Schedule): boolean {
   return schedule.stopTimes.length > 0
@@ -85,12 +73,11 @@ function runsInTheRepeatedHour(schedule: Schedule): boolean {
     && departureHour(schedule) === 1
     && schedule.calendar.runsFrom.equals(schedule.calendar.runsTo)
     && isLastSundayOfOctober(schedule.calendar.runsFrom)
+    // last: recognising the line walks the calls
     && schedule.routeId === WINDRUSH;
 }
 
-/**
- * A Sunday in October with no Sunday left after it, which is the 31st in 2027 and the 25th in 2026.
- */
+/** A Sunday with no Sunday left after it: the 25th in 2026, the 31st in 2027. */
 function isLastSundayOfOctober(date: Temporal.PlainDate): boolean {
   return date.month === 10
     && dayOfWeek(date) === 0

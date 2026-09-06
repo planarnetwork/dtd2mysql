@@ -457,10 +457,9 @@ describe("Association", () => {
   });
 
   /**
-   * `dayShift` has to be asked of `asDated` rather than of `assoc`. Whether the shift moves a train
-   * now depends on its calendar, and `coupled` has just narrowed one: this portion's record spans two
-   * Sundays and is shifted, while the coupled days are the change day alone, which is not. Asking the
-   * wrong one leaves the base on the Saturday, the portion on the Sunday and no copy to close the day.
+   * The portion's record spans two Sundays and is shifted; the coupled days are the change day
+   * alone, which is not. Reading `assoc` leaves the base on the Saturday and the portion on the
+   * Sunday with no copy to close the day.
    */
   it("counts the day gap against the calendar the coupling leaves", () => {
     const base = schedule(1, "A", "2026-10-25", "2026-10-25", STP.Permanent, SUNDAY, [

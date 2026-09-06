@@ -80,8 +80,8 @@ export class Association implements OverlayRecord {
     // needs no copy - the shift puts it on the base's day anyway - while a same day one whose base
     // leaves at 00:30 does, because the shift takes the base off the day they shared.
     //
-    // Asked of `asDated` rather than of `assoc`, because `asDated` is the one that reaches the shift
-    // and the answer depends on the calendar `coupled` has just narrowed.
+    // Asked of `asDated`, not `assoc`: it is the one that reaches the shift, and the answer depends
+    // on the calendar `coupled` has just narrowed.
     const dayGap = this.dayOffset - dayShift(asDated) + dayShift(base);
 
     // A copy closes exactly one day, so it is worth making for a gap of one and nothing else. A gap

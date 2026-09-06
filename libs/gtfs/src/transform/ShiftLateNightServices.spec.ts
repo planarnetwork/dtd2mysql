@@ -78,10 +78,7 @@ describe("ShiftLateNightServices", () => {
     expect(shifted.stopTimes[0].departure_time).to.equal("25:30:30");
   });
 
-  /**
-   * The extra hour the clocks give back in October, and the London Overground night service that
-   * runs through it. See `runsInTheRepeatedHour`.
-   */
+  /** See `runsInTheRepeatedHour`. */
   describe("on the day the clocks go back", () => {
     const SUNDAY: Days = { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
 
@@ -126,11 +123,7 @@ describe("ShiftLateNightServices", () => {
       expect(shifted.calendar.runsFrom.equals("20261017")).to.be.true;
     });
 
-    /**
-     * `applyOverlays` narrows by adding exclude days and leaves the range alone, so what a schedule
-     * is left running is not what its record dates it to. A wide record whittled down to the change
-     * day by a higher priority overlay is not one the operator published for the repeated hour.
-     */
+    /** Narrowed onto the change day by an overlay, not dated to it by the operator. */
     it("shifts a record the overlays have whittled down to the change day", () => {
       const wide = overground(1, "2026-10-04", "2026-11-29", "01:05");
       const index = applyOverlays([
@@ -145,10 +138,7 @@ describe("ShiftLateNightServices", () => {
       expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
     });
 
-    /**
-     * The evidence is about the Windrush night service. Another Overground line does not run through
-     * the change, so a one-off on it at that hour is an ordinary late night train.
-     */
+    /** No other Overground line runs through the change, so this is an ordinary late night train. */
     it("shifts an Overground schedule on another line", () => {
       const [shifted] = shiftLateNightServices([
         schedule(1, "A", "2026-10-25", "2026-10-25", STP.New, SUNDAY, [
@@ -161,10 +151,7 @@ describe("ShiftLateNightServices", () => {
       expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
     });
 
-    /**
-     * Only 01:00 to 01:59 happens twice. Midnight comes round once whatever the clocks do, so a
-     * 00:45 departure is the end of the Saturday service day as it is on any other night.
-     */
+    /** Only 01:00 to 01:59 repeats; midnight comes round once whatever the clocks do. */
     it("shifts a schedule departing before the repeated hour", () => {
       const [shifted] = shiftLateNightServices([overground(1, "2026-10-25", "2026-10-25", "00:45")]);
 
@@ -184,10 +171,7 @@ describe("ShiftLateNightServices", () => {
       expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
     });
 
-    /**
-     * 2027's last Sunday is the 31st, so a rule reading "after the 24th" and one reading "no Sunday
-     * left in the month" only differ here.
-     */
+    /** 2027's change day is the 31st, where "after the 24th" and "no Sunday left" diverge. */
     it("recognises a change day that falls on the last day of the month", () => {
       const [kept] = shiftLateNightServices([overground(1, "2027-10-31", "2027-10-31", "01:05")]);
 
