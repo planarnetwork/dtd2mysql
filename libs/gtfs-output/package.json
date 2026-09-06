@@ -1,6 +1,6 @@
 {
   "name": "@gb-transit/gtfs-output",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Writers for a GTFS feed: a directory of text files, or a zip",
   "license": "GPL-3.0",
   "repository": {
