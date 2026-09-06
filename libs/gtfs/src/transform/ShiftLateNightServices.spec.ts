@@ -3,6 +3,7 @@ import {STP} from "../model/OverlayRecord";
 import {schedule} from "./MergeSchedules.spec";
 import {stop} from "./ApplyAssociations.spec";
 import {shiftLateNightServices} from "./ShiftLateNightServices";
+import {applyOverlays} from "./ApplyOverlays";
 import {Days} from "../model/ScheduleCalendar";
 
 describe("ShiftLateNightServices", () => {
@@ -123,6 +124,41 @@ describe("ShiftLateNightServices", () => {
       ]);
 
       expect(shifted.calendar.runsFrom.equals("20261017")).to.be.true;
+    });
+
+    /**
+     * `applyOverlays` narrows by adding exclude days and leaves the range alone, so what a schedule
+     * is left running is not what its record dates it to. A wide record whittled down to the change
+     * day by a higher priority overlay is not one the operator published for the repeated hour.
+     */
+    it("shifts a record the overlays have whittled down to the change day", () => {
+      const wide = overground(1, "2026-10-04", "2026-11-29", "01:05");
+      const index = applyOverlays([
+        wide,
+        overground(2, "2026-10-04", "2026-10-18", "01:05"),
+        overground(3, "2026-11-01", "2026-11-29", "01:05")
+      ]);
+
+      const narrowed = index["A"].find(s => s.id === 1)!;
+      const [shifted] = shiftLateNightServices([narrowed]);
+
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    /**
+     * The evidence is about the Windrush night service. Another Overground line does not run through
+     * the change, so a one-off on it at that hour is an ordinary late night train.
+     */
+    it("shifts an Overground schedule on another line", () => {
+      const [shifted] = shiftLateNightServices([
+        schedule(1, "A", "2026-10-25", "2026-10-25", STP.New, SUNDAY, [
+          stop(1, "RMF", "01:05"),
+          stop(2, "UPM", "01:15")
+        ], "LO")
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261024")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
     });
 
     /**

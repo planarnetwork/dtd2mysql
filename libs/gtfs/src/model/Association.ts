@@ -79,7 +79,10 @@ export class Association implements OverlayRecord {
     // and opens days it does not. A next day association whose associated portion leaves at 00:35
     // needs no copy - the shift puts it on the base's day anyway - while a same day one whose base
     // leaves at 00:30 does, because the shift takes the base off the day they shared.
-    const dayGap = this.dayOffset - dayShift(assoc) + dayShift(base);
+    //
+    // Asked of `asDated` rather than of `assoc`, because `asDated` is the one that reaches the shift
+    // and the answer depends on the calendar `coupled` has just narrowed.
+    const dayGap = this.dayOffset - dayShift(asDated) + dayShift(base);
 
     // A copy closes exactly one day, so it is worth making for a gap of one and nothing else. A gap
     // of -1 wants a copy on the day after, which would need a time before 00:00; a gap of 2 wants two
@@ -89,7 +92,7 @@ export class Association implements OverlayRecord {
     // And not where the associated schedule is itself late night: `shiftLateNightServices` is about
     // to move it onto the very day the copy would sit on, at the very times the copy would carry, so
     // the copy would be the same trip written out again. That is a gap of one this cannot close.
-    const duplicated = duplicateOvernight && dayGap === 1 && !isLateNight(assoc)
+    const duplicated = duplicateOvernight && dayGap === 1 && !isLateNight(asDated)
       // The base's day, at times past 24:00 - a train leaving Edinburgh at 04:30 reads as 28:30 the
       // day before, no use to anyone boarding it there, which is why it is a copy and not a move.
       ? asDated.copyToPreviousServiceDay(idGenerator.next().value)

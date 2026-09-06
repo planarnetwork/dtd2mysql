@@ -11,28 +11,33 @@ import {dayOfWeek} from "../model/PlainDate";
  * a DST change happening inside a service day.
  *
  * Therefore, trains which depart before the change on changeover days should be recorded as on the
- * previous service day instead. The exception is a train running in the second pass of the hour the
- * autumn change repeats, which `runsInTheRepeatedHour` describes.
+ * previous service day instead, unless they run in the hour the autumn change repeats - see
+ * `runsInTheRepeatedHour`.
  *
  * Each schedule is replaced rather than joined by a second one, so the copy keeps the id the
  * original was handed and no caller needs to supply a new one.
  */
 export function shiftLateNightServices(schedules: Schedule[]): Schedule[] {
   const result: Schedule[] = [];
+  let exempt = 0;
 
   for (const schedule of schedules) {
-    // a schedule with no stop times has no departure to shift, and will be dropped before
-    // any trip is written
-    if (schedule.stopTimes.length === 0) {
-      result.push(schedule);
+    if (isLateNight(schedule)) {
+      result.push(schedule.copyToPreviousServiceDay());
       continue;
     }
 
-    if (isLateNight(schedule)) {
-      result.push(schedule.copyToPreviousServiceDay());
-    } else {
-      result.push(schedule);
+    result.push(schedule);
+
+    if (runsInTheRepeatedHour(schedule)) {
+      exempt++;
     }
+  }
+
+  // Once a year, and expected to stop matching whenever the operator changes how it publishes these,
+  // so it says so rather than leaving the answer to a diff of two feeds.
+  if (exempt > 0) {
+    console.log(`Keeping ${exempt} schedules in the repeated hour of the autumn clock change`);
   }
 
   return result;
@@ -48,43 +53,44 @@ export function isLateNight(schedule: Schedule): boolean {
 }
 
 const LONDON_OVERGROUND: AgencyID = "LO";
+const WINDRUSH = "WIN";
 
 /**
- * The trains that run in the second pass of an hour the clocks repeat, and so must not be moved.
+ * Whether this train runs in the second pass of the hour the autumn change repeats, and so stays on
+ * the day its own record dates it.
  *
- * On the last Sunday of October 01:00 to 01:59 happens twice, once in BST and again in GMT. The
- * shift reads a departure time as the first pass, which is right for a service day that ends before
- * the change, and wrong for one that runs straight through it: 01:05 GMT is 26:05 of the Saturday
- * service day, not 25:05, and telling it as 25:05 puts it alongside the train that already ran an
- * hour earlier.
+ * On the last Sunday of October 01:00 to 01:59 happens twice, in BST and again in GMT. The shift
+ * reads a departure as the first pass, which is right for a service day ending before the change and
+ * wrong for one running through it: 01:05 GMT is 26:05 of the Saturday service day, and telling it
+ * as 25:05 puts it alongside the train that already ran an hour earlier.
  *
- * Nothing in the CIF says which pass a schedule means, so it is recognised by the shape the operator
- * publishes it in. The London Overground night service is the only one in Great Britain that runs
- * through the change, and it covers the repeated hour with short term plan schedules dated to that
- * Sunday alone - four in each direction between Highbury & Islington and New Cross Gate. The
- * standard schedules run in the first pass and are shifted as usual.
+ * Nothing in the CIF says which pass a schedule means, so it is recognised by the shape London
+ * Overground publishes the Windrush night service in - the only one in Great Britain running through
+ * the change. It covers the repeated hour with short term plan schedules dated to that Sunday alone,
+ * four in each direction between Highbury & Islington and New Cross Gate; the standard schedules
+ * cover the first pass and are shifted as usual. Those schedules also carry signalling IDs starting
+ * `9Z`, which is not read here because the CIF headcode does not reach `Schedule` - see the TODO on
+ * `Schedule.bareRouteId`.
  *
- * Restricted to schedules departing between 01:00 and 01:59 because that is the repeated hour;
- * an 00:45 departure happens once whatever the clocks do.
+ * The dates are the record's own rather than the days it is left running: `applyOverlays` adds
+ * exclude days without moving the range, so a wide record whittled down to that Sunday by a
+ * higher-priority overlay is not one the operator dated to it.
+ *
+ * Ordered cheapest first - `routeId` walks the calls to recognise the line, so it is asked last.
  */
 function runsInTheRepeatedHour(schedule: Schedule): boolean {
-  if (schedule.operator !== LONDON_OVERGROUND || schedule.stp === STP.Permanent) {
-    return false;
-  }
-
-  if (departureHour(schedule) !== 1) {
-    return false;
-  }
-
-  const dates = schedule.calendar.runningDates();
-  const first = dates.next();
-
-  // the one day it runs, and no other, is the day the hour repeats
-  return !first.done
-    && dates.next().done === true
-    && isLastSundayOfOctober(first.value);
+  return schedule.stopTimes.length > 0
+    && schedule.operator === LONDON_OVERGROUND
+    && schedule.stp !== STP.Permanent
+    && departureHour(schedule) === 1
+    && schedule.calendar.runsFrom.equals(schedule.calendar.runsTo)
+    && isLastSundayOfOctober(schedule.calendar.runsFrom)
+    && schedule.routeId === WINDRUSH;
 }
 
+/**
+ * A Sunday in October with no Sunday left after it, which is the 31st in 2027 and the 25th in 2026.
+ */
 function isLastSundayOfOctober(date: Temporal.PlainDate): boolean {
   return date.month === 10
     && dayOfWeek(date) === 0
