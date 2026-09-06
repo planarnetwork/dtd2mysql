@@ -6,6 +6,7 @@ import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {PickupDropOffType, StopTime} from "../entity/StopTime";
 import {Schedule} from "../model/Schedule";
 import {RouteType} from "../entity/Route";
+import {AgencyID} from "../entity/Agency";
 
 describe("MergeSchedules", () => {
 
@@ -93,7 +94,8 @@ export function schedule(id: number,
                          to: string,
                          stp: STP = STP.Overlay,
                          days: Days = ALL_DAYS,
-                         stops: StopTime[] = []): Schedule {
+                         stops: StopTime[] = [],
+                         operator: AgencyID = "LN"): Schedule {
 
   return new Schedule(
     id,
@@ -107,7 +109,7 @@ export function schedule(id: number,
       {}
     ),
     RouteType.Rail,
-    "LN",
+    operator,
     stp,
     true,
     true

@@ -31,18 +31,24 @@ export class ScheduleCalendar {
   }
 
   /**
+   * Every date the calendar actually runs: inside the range, on a day the mask has and not excluded.
+   *
+   * A generator because most callers want to know whether there is a first one, or a second, rather
+   * than the whole list - a calendar can span a year.
+   */
+  public* runningDates(): Generator<Temporal.PlainDate> {
+    for (let date = this.runsFrom; compare(date, this.runsTo) <= 0; date = date.add({ days: 1 })) {
+      if (this.days[dayOfWeek(date)] && !this.excludeDays[toYYYYMMDD(date)]) {
+        yield date;
+      }
+    }
+  }
+
+  /**
    * Returns true if the calendar does not run on any days e.g. when the whole day range has been excluded
    */
   public get isEmpty(): boolean {
-    const start = this.runsFrom;
-    const end = this.runsTo;
-
-    for (let date = start; compare(date, end) <= 0; date = date.add({ days: 1 })) {
-      if (this.days[dayOfWeek(date)] && !this.excludeDays[toYYYYMMDD(date)]) {
-        return false;
-      }
-    }
-    return true;
+    return this.runningDates().next().done === true;
   }
 
   /**
