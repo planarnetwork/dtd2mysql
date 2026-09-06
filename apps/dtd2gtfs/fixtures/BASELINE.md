@@ -13,6 +13,35 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## The passing points feed accepts 25 backwards times, not 24
+
+**The nightly has failed every night since #152 landed.**
+`.github/validator-baseline-passing-points.json` takes
+`stop_time_with_arrival_before_previous_departure_time` from 24 to **25**. No code changed under it:
+#152 merged at 21:04 on 4 September, after that morning's nightly, so the 5th was the first run to
+build the second feed at all. The gate has never passed, rather than having passed and broken. Runs
+`33956103396` and `34023683835` both report 25, and both stop before the release step - no feed has
+been published from either.
+
+Rebuilt from the 6 September refresh over the same 2026-09-06 to 2026-12-06 window and validated
+with the same 8.0.1 jar: **25**, with `point_near_origin` holding at 2 and no other error. The
+standard feed is unmoved at 1, so this is the passing points alone.
+
+Enumerated rather than counted. 24 of the 25 are a passing point followed by a call, which is the
+two-clocks disagreement the baseline already describes; the 25th is `Z03536`, the one the standard
+baseline accepts. Six schedules produce all of them - `C02034`, `C02035`, `C04552`, `C17075`,
+`C31860` and `Z03536` - and a schedule contributes one occurrence per dated trip it runs, which is
+why the total wanders without anything being wrong.
+
+Against the 22 measured on #160's branch, the 3 are `C31860`, which is new to the refresh and passes
+`BLAYDON` at `1646H` before calling at `GTSHDMC1` with a public arrival of `1646`, and two more
+dated trips of `C02034` on 8 and 29 November. Both are the same shape as the 22, so nothing here is
+a defect that appeared - it is the calendar under five schedules moving.
+
+Raised rather than given headroom. The number is a function of how many days those five run, so it
+will move again; the `why` now names them, so the next recount is a rebuild and a diff of that list
+rather than a rediscovery. A cap that is a known quantity is the whole value of the file.
+
 ## An overnight portion is published once, on its own day
 
 **#160, following #158.** A schedule that runs the day after its base was published twice: once told
