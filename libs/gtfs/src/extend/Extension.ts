@@ -1,4 +1,4 @@
-import {FeedRow} from "@gb-transit/gtfs-schema";
+import {Columns, FeedRow} from "@gb-transit/gtfs-schema";
 import {Attribution} from "../enrich/Enricher";
 import {FeedView} from "./FeedView";
 
@@ -60,6 +60,13 @@ export interface ExtensionFile {
   /** `areas.txt`. A name, not a path: the build decides where it goes. */
   readonly filename: string;
 
+  /**
+   * The columns of the file, in the order they are written. Declared for the
+   * same reason a core file's are: the header is the producer's statement about
+   * the file, not whatever keys the first row happened to have.
+   */
+  readonly columns: Columns<FeedRow>;
+
   readonly rows: readonly FeedRow[];
 
   /**
@@ -82,10 +89,16 @@ export type KeyValue = string | number | null | undefined;
  */
 export function extensionFile<T extends FeedRow>(
   filename: string,
+  columns: Columns<T>,
   rows: readonly T[],
   key: (row: T) => KeyValue[]
 ): ExtensionFile {
-  return {filename, rows, key: key as (row: FeedRow) => KeyValue[]};
+  return {
+    filename,
+    columns: columns as Columns<FeedRow>,
+    rows,
+    key: key as (row: FeedRow) => KeyValue[]
+  };
 }
 
 export interface ExtensionOutput {

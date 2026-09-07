@@ -4,8 +4,8 @@ typings/
 npm-debug.log
 dist/
 *.txt
-# the committed golden feed, which is the point of it being text
-!apps/cif2gtfs/fixtures/**/*.txt
+# the committed golden feeds, which is the point of them being text
+!apps/*/fixtures/**/*.txt
 *.d.ts
 *.tsbuildinfo
 
@@ -34,3 +34,6 @@ apps/website/public/
 # Tarballs written by the release, one per workspace, and removed as soon as
 # npm has taken them.
 *.tgz
+
+# Downloaded by the validate job and by hand; 40MB and versioned by the workflow.
+gtfs-validator.jar

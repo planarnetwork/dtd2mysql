@@ -1,0 +1,53 @@
+{
+  "name": "gtfsmerge",
+  "version": "2.1.1",
+  "description": "Merge GTFS data sets",
+  "main": "./dist/api.js",
+  "types": "./dist/api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "bin": "bin/gtfsmerge.sh",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "yarn build && tsx ./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "apps/gtfsmerge"
+  },
+  "keywords": [
+    "gtfs",
+    "merge",
+    "timetable",
+    "transit"
+  ],
+  "author": "Linus Norton",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/planarnetwork/dtd2mysql/issues"
+  },
+  "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
+  "engines": {
+    "node": ">=26"
+  },
+  "dependencies": {
+    "@gb-transit/gtfs": "workspace:^",
+    "@gb-transit/gtfs-output": "workspace:^",
+    "@gb-transit/gtfs-read": "workspace:^",
+    "@gb-transit/gtfs-schema": "workspace:^",
+    "cheap-ruler": "3.0.2"
+  },
+  "devDependencies": {
+    "fflate": "^0.8.3",
+    "typescript": "7.0.2"
+  }
+}

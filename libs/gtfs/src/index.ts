@@ -18,6 +18,9 @@ export type {Transfer, TransferRow, StopID} from "@gb-transit/gtfs-schema";
 export type {Trip, TripRow} from "@gb-transit/gtfs-schema";
 export type {FeedInfo, FeedInfoRow} from "@gb-transit/gtfs-schema";
 export type {FeedRow} from "@gb-transit/gtfs-schema";
+export {fileSchema, GTFS_COLUMNS} from "@gb-transit/gtfs-schema";
+export type {Columns, FileSchema, GTFSColumn, GTFSFileName} from "@gb-transit/gtfs-schema";
+export type {Shape, ShapeID, ShapeRow} from "@gb-transit/gtfs-schema";
 
 // The transit model - pure domain objects with no IO
 export {Association, AssociationType, DateIndicator} from "./model/Association";
@@ -60,7 +63,7 @@ export {agencyId, toAgencyRow, toRouteRow} from "./transform/Noc";
 export {BuildFeed} from "./build/BuildFeed";
 export {buildContext, dateRange, option, options, parseRange} from "./build/BuildContext";
 export type {BuildContext, DateRange} from "./build/BuildContext";
-export type {GTFSOutput} from "./build/GTFSOutput";
+export type {GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
 export {buildReport} from "./build/BuildReport";
 export type {BuildReport, SourceReport} from "./build/BuildReport";
 export {ScheduleBuilder} from "./build/ScheduleBuilder";

@@ -1,27 +1,23 @@
-import csvWriter from 'csv-write-stream';
 import * as fs from "fs";
-import {GTFSOutput} from "@gb-transit/gtfs";
-import {finished} from "node:stream/promises";
-import {Writable} from "stream";
+import {Columns, FeedRow, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
+import {CSVRowWriter} from "./CSVRowWriter";
 
 export class FileOutput implements GTFSOutput {
 
   private readonly files: Promise<void>[] = [];
 
   /**
-   * A CSV writer piped into a file.
+   * A CSV writer onto a file.
    *
-   * The writer is what the build holds, and it finishes as soon as it has
-   * handed its last row on - which is not when the row is on disk. The file at
-   * the other end of the pipe is the thing to wait for, so it is collected here
-   * and awaited by end().
+   * What the build holds is the writer, and the writer finishes as soon as it
+   * has handed its last row on - which is not when the row is on disk. The file
+   * at the other end is the thing to wait for, so it is collected here and
+   * awaited by end().
    */
-  public open(filename: string): Writable {
-    const writer = csvWriter();
-    const file = fs.createWriteStream(filename);
+  public open<R extends FeedRow>(filename: string, columns: Columns<R>): RowWriter<R> {
+    const writer = new CSVRowWriter(columns, fs.createWriteStream(filename));
 
-    writer.pipe(file);
-    this.files.push(finished(file));
+    this.files.push(writer.finished());
 
     return writer;
   }

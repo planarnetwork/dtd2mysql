@@ -16,29 +16,21 @@ jobs:
         version: ['26']
       fail-fast: false
     steps:
+      # Deep, because the baseline guard diffs against the branch point and a
+      # three dot diff needs a merge base. A shallow checkout has none, which is
+      # why this check silently passed for as long as it existed: the diff
+      # failed, `|| true` swallowed it, and an empty result read as nothing
+      # changed.
       - uses: actions/checkout@v5
-      # A conflict marker in a workflow file makes it unparseable, which GitHub
-      # reports as a run that failed before any job started - easy to read as the
-      # workflow simply not triggering.
+        with:
+          fetch-depth: 0
       # A baseline records current behaviour, so changing one is normal - but it
-      # has to be a decision. Without this the golden can be regenerated and
+      # has to be a decision. Without this a golden can be regenerated and
       # committed without anybody reading the diff, which is the only thing that
-      # makes it worth committing as text.
+      # makes it worth committing as text. The rule itself is in the script, and
+      # has its own tests.
       - name: Baseline changes are explained
-        run: |
-          base="${{ github.event.pull_request.base.sha }}"
-          [ -n "$base" ] || exit 0
-          git fetch -q --depth=1 origin "$base" 2>/dev/null || true
-          changed=$(git diff --name-only "$base"...HEAD -- \
-            'apps/*/fixtures/*/golden/**' 'type-surface.json' '.github/validator-baseline*.json' || true)
-          [ -n "$changed" ] || exit 0
-          echo "Baselines changed:"; echo "$changed"
-          if ! git diff --name-only "$base"...HEAD -- 'apps/*/fixtures/BASELINE.md' | grep -q .; then
-            echo
-            echo "A baseline changed with no entry in apps/cif2gtfs/fixtures/BASELINE.md."
-            echo "Say which ticket moved it and what the diff shows."
-            exit 1
-          fi
+        run: node scripts/check-baselines.mjs "${{ github.event.pull_request.base.sha }}"
 
       # The feed workflow holds DTD credentials. pull_request_target runs with
       # the base repository's secrets against a fork's code, which is how a
@@ -73,6 +65,8 @@ jobs:
       # whose include matches the file.
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
       - run: yarn tsx apps/cif2gtfs/src/index.ts --help
+      - run: yarn tsx apps/transxchange2gtfs/src/index.ts --help
+      - run: yarn tsx apps/gtfsmerge/src/index.ts --help
 
   # Nothing above unit tests could run without a database, so every claim about
   # the importer has been checked by hand. This is where that stops.
@@ -106,36 +100,14 @@ jobs:
           restore-keys: yarn-${{ runner.os }}-
       - run: yarn install --immutable
       - run: yarn build
-      # The mini fixture is a real DTD zip, so importing it exercises the whole
-      # parse-and-insert path against a real MariaDB - the fixed width records,
-      # the generated ids and the schema DDL.
-      - name: Import the mini fixture
-        run: yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP
-      - name: Build a feed from the database
-        run: |
-          mkdir -p "$RUNNER_TEMP/from-db"
-          GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/from-db"
-      # The whole point of having two sources: the same feed, whichever way the
-      # timetable is read.
-      - name: The file source produces the same feed
-        run: |
-          mkdir -p "$RUNNER_TEMP/from-files"
-          yarn tsx apps/cif2gtfs/src/index.ts build \
-            --source apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP \
-            --out "$RUNNER_TEMP/from-files" --today 2026-08-10
-          diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/from-files"
-      # Importing twice must land the same rows. Records that generate their own
-      # id are the risk here, and a collision only shows on a second import.
-      - name: Importing the same feed twice changes nothing
-        run: |
-          yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP
-          mkdir -p "$RUNNER_TEMP/twice"
-          GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/twice"
-          diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/twice"
+      # The importer against a real MariaDB: the whole parse-and-insert path, the
+      # same feed from either source, and a second import landing the same rows.
+      - name: The importer round trips
+        run: node scripts/check-database.mjs "$RUNNER_TEMP/database"
 
-  # The mini fixture is built and held to the MobilityData validator. Separate
-  # from unit because it needs a JVM and a 40 MB jar, and because a validator
-  # release adding a notice should not read as the tests breaking.
+  # Every feed this repository builds is held to the MobilityData validator.
+  # Separate from unit because it needs a JVM and a 40 MB jar, and because a
+  # validator release adding a notice should not read as the tests breaking.
   validate:
     runs-on: ubuntu-latest
     env:
@@ -167,7 +139,11 @@ jobs:
             "https://github.com/MobilityData/gtfs-validator/releases/download/v$VALIDATOR_VERSION/gtfs-validator-$VALIDATOR_VERSION-cli.jar"
       - run: yarn install --immutable
       - run: yarn build
-      - run: node apps/cif2gtfs/dist/validate.mjs gtfs-validator.jar
+      # All three feeds: the rail one, the bus one, and the merge of them. The
+      # merged feed is the one worth having here - the merge renumbers every
+      # service, route and trip id across two feeds, and a dangling reference
+      # from that is what a hand-written fixture cannot produce.
+      - run: node tests/dist/validate.mjs gtfs-validator.jar
 
   package:
     runs-on: ubuntu-latest
@@ -183,160 +159,10 @@ jobs:
           restore-keys: yarn-${{ runner.os }}-
       - run: yarn install --immutable
       - run: yarn build
-      # Tests run against source, so main, types, bin and files breakage is
-      # invisible to them. Pack every workspace, install the dtd2mysql tarball
-      # into a clean directory and run the CLI from it. The @gb-transit packages
-      # are resolved from the tarballs built here rather than from the registry,
-      # so the check works before they are first published and tests this commit
-      # rather than the last release.
-      - name: Install the packaged tarballs and run the CLI
-        run: |
-          mkdir -p "$RUNNER_TEMP/tarballs"
-          for pkg in gtfs-schema feed-parser dtd-schema dtd-source gtfs gtfs-output; do
-            yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
-          done
-          yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
-          mkdir -p "$RUNNER_TEMP/install" && cd "$RUNNER_TEMP/install"
-          cat > package.json <<EOF
-          {
-            "name": "dtd2mysql-pack-smoke-test",
-            "private": true,
-            "version": "1.0.0",
-            "overrides": {
-              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
-              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
-              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
-              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
-              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
-              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz"
-            }
-          }
-          EOF
-          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
-          ./node_modules/.bin/dtd2mysql --help | tee help.txt
-          grep -q "Usage: dtd2mysql" help.txt
-          grep -q -- "--gtfs-zip" help.txt
-      # cif2gtfs is published too, so the same mistake would ship the same way.
-      # It gets its own install directory: the two CLIs share every @gb-transit
-      # dependency, and resolving one from the other's tree would pass whatever
-      # this one's tarball left out.
-      - name: Install the packaged cif2gtfs and run the CLI
-        run: |
-          for pkg in enrich-naptan extend-station-groups; do
-            yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
-          done
-          yarn workspace cif2gtfs pack --out "$RUNNER_TEMP/tarballs/cif2gtfs.tgz"
-          mkdir -p "$RUNNER_TEMP/install-gtfs" && cd "$RUNNER_TEMP/install-gtfs"
-          cat > package.json <<EOF
-          {
-            "name": "cif2gtfs-pack-smoke-test",
-            "private": true,
-            "version": "1.0.0",
-            "overrides": {
-              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
-              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
-              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
-              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
-              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
-              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz",
-              "@gb-transit/enrich-naptan": "file:$RUNNER_TEMP/tarballs/enrich-naptan.tgz",
-              "@gb-transit/extend-station-groups": "file:$RUNNER_TEMP/tarballs/extend-station-groups.tgz"
-            }
-          }
-          EOF
-          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/cif2gtfs.tgz"
-          ./node_modules/.bin/cif2gtfs --help | tee help.txt
-          grep -q "cif2gtfs" help.txt
-      # As above: --help barely touches the package. Building the mini fixture
-      # from the tarball resolves every @gb-transit dependency and runs the whole
-      # build, which is what catches a files or main mistake that --help sails
-      # past. It is diffed against the same golden the unit tests use, so the
-      # packaged CLI has to produce the feed this commit produces rather than
-      # merely produce one.
-      - name: The packaged cif2gtfs builds the golden feed
-        run: |
-          cd "$RUNNER_TEMP/install-gtfs"
-          ./node_modules/.bin/cif2gtfs build \
-            --source "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP" \
-            --out ./feed --today 2026-08-10 > run.txt 2>&1
-          cat run.txt
-          diff -r ./feed "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/golden"
-          # a stack trace here means the entry point lost its error handling
-          ! grep -q "at Object.<anonymous>" run.txt
-      # gtfs-loader is a library rather than a CLI, and it is the only package
-      # that publishes both CommonJS and ESM. Nothing else exercises that: the
-      # tests run against source, and both formats come out of the same source,
-      # so a broken exports map, a missing dist/esm/package.json marker or an
-      # ESM specifier that node cannot resolve is invisible until somebody
-      # installs it. Its own directory, as above, so it resolves nothing the
-      # other two installs left lying around.
-      - name: The packaged loader can be required and imported
-        run: |
-          yarn workspace @gb-transit/gtfs-loader pack --out "$RUNNER_TEMP/tarballs/gtfs-loader.tgz"
-          mkdir -p "$RUNNER_TEMP/install-loader" && cd "$RUNNER_TEMP/install-loader"
-          cat > package.json <<EOF
-          {
-            "name": "gtfs-loader-pack-smoke-test",
-            "private": true,
-            "version": "1.0.0",
-            "overrides": {
-              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz"
-            }
-          }
-          EOF
-          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/gtfs-loader.tgz"
-          # the browser is why the package is dual built, so nothing of the feed
-          # build's node-only dependencies may have followed it in
-          [ ! -d node_modules/proj4 ] || { echo "proj4 reached the loader"; exit 1; }
-          [ ! -d node_modules/memoized-class-decorator ] || { echo "the memoisation decorator reached the loader"; exit 1; }
-          node -e '
-            const m = require("@gb-transit/gtfs-loader");
-            for (const name of ["loadGTFS", "normalise", "isCall", "coupledTripIds", "readZip", "CSVParser"]) {
-              if (typeof m[name] !== "function") { throw new Error(name + " is missing from the CommonJS build"); }
-            }
-          '
-          node --input-type=module -e '
-            import {loadGTFS, normalise, isCall, coupledTripIds, readZip, CSVParser} from "@gb-transit/gtfs-loader";
-            for (const f of [loadGTFS, normalise, isCall, coupledTripIds, readZip, CSVParser]) {
-              if (typeof f !== "function") { throw new Error("a name is missing from the ESM build"); }
-            }
-          '
-      # And that it reads a real feed once installed, not just that it loads.
-      # The golden is the only feed this repository commits, and it carries the
-      # transfer_type 4 rows cif2gtfs writes, so this is where the two halves of
-      # the round trip meet as published packages.
-      - name: The packaged loader reads the golden feed
-        run: |
-          cd "$RUNNER_TEMP/install-loader"
-          (cd "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/golden" && zip -qr "$RUNNER_TEMP/install-loader/mini.zip" .)
-          node --input-type=module -e '
-            import {loadGTFS, normalise} from "@gb-transit/gtfs-loader";
-            import * as fs from "node:fs";
-            const feed = await loadGTFS(fs.createReadStream("mini.zip"));
-            console.log(`trips ${feed.trips.length} stops ${Object.keys(feed.stops).length} links ${feed.links.length}`);
-            if (feed.trips.length === 0 || feed.links.length === 0) { throw new Error("the golden feed read as empty"); }
-            normalise(feed);
-          '
-      # --help barely touches the package. Running a real command with no
-      # database loads the container, resolves every schema module and exercises
-      # the error path - which is what catches a files or main mistake, or a
-      # missing @gb-transit dependency, that --help sails straight past.
-      - name: The packaged CLI runs a real command
-        run: |
-          cd "$RUNNER_TEMP/install"
-          set +e
-          # The CLI checks its configuration and then the output path before it
-          # connects, so both have to be satisfied to reach the connection - and
-          # reaching it is the point: by then every package has resolved, the
-          # container has wired up and agency.txt is already written.
-          mkdir -p ./out
-          DATABASE_HOSTNAME=127.0.0.1 DATABASE_PORT=1 DATABASE_NAME=nothing \
-            ./node_modules/.bin/dtd2mysql --gtfs ./out > run.txt 2>&1
-          status=$?
-          set -e
-          cat run.txt
-          [ "$status" -eq 1 ] || { echo "expected exit 1, got $status"; exit 1; }
-          grep -q "ECONNREFUSED" run.txt
-          grep -q "Writing agency.txt" run.txt
-          # a stack trace here means the entry point lost its error handling
-          ! grep -q "at Object.<anonymous>" run.txt
+      # Tests run against source, so main, types, bin, exports and files breakage
+      # is invisible to them: a package can pass every spec and still ship a
+      # tarball that cannot be required. This packs every workspace, installs
+      # each published thing on its own, and does something real with it. It
+      # runs locally too, which is the point of it not being written in YAML.
+      - name: The packaged tarballs work
+        run: node scripts/check-packaged.mjs "$RUNNER_TEMP/packaged"

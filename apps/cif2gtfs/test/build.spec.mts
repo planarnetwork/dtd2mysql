@@ -1,0 +1,380 @@
+import {describe, it, expect, beforeAll} from "vitest";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import {zipSync, strToU8} from "fflate";
+import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
+import {build} from "../src/build.js";
+
+/**
+ * The whole build, end to end, over a feed small enough to read.
+ *
+ * `fixtures/mini/RJTTF001.ZIP` is a slice of a real refresh - the TUIDs listed in
+ * its README plus everything reachable from them through associations - and
+ * `fixtures/mini/golden` is what it produces. The golden is committed as text so
+ * that a change in behaviour arrives as a readable diff in review rather than as
+ * a hash that moved.
+ *
+ * To take a change: `UPDATE_GOLDEN=1 yarn vitest run` and read the diff before
+ * committing it.
+ */
+const fixtures = path.join(import.meta.dirname, "..", "fixtures", "mini");
+const golden = path.join(fixtures, "golden");
+const TODAY = "2026-08-10";
+
+let built: string;
+
+const feed = (file: string) => fs.readFileSync(path.join(built, file), "utf8");
+
+/**
+ * The rows of one built file.
+ *
+ * Read with @gb-transit/gtfs-read rather than by splitting on commas here. This
+ * spec used to carry its own CSV parser, because a headsign naming more than one
+ * destination - "Inverness, Aberdeen and Fort William" - is quoted and splitting
+ * on every comma got it wrong. The reader handles that, and reading the feed
+ * back with the package built for it also means these assertions are checking
+ * what a consumer would actually see.
+ */
+let rows: Awaited<ReturnType<typeof readFeedRows>>;
+const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
+
+beforeAll(async () => {
+  built = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
+
+  await build([
+    "node", "cif2gtfs", "build",
+    "--source", path.join(fixtures, "RJTTF001.ZIP"),
+    "--out", built,
+    "--today", TODAY
+  ]);
+
+  if (process.env.UPDATE_GOLDEN) {
+    fs.rmSync(golden, {recursive: true, force: true});
+    fs.mkdirSync(golden, {recursive: true});
+
+    for (const file of fs.readdirSync(built)) {
+      fs.copyFileSync(path.join(built, file), path.join(golden, file));
+    }
+  }
+
+  // The built directory as a zip, so the reader can be pointed at it. Zipping
+  // is cheaper than teaching the reader about directories, and it exercises the
+  // path a consumer actually takes.
+  const entries: Record<string, Uint8Array> = {};
+
+  for (const file of fs.readdirSync(built).filter(f => f.endsWith(".txt"))) {
+    entries[file] = strToU8(fs.readFileSync(path.join(built, file), "utf8"));
+  }
+
+  rows = await readFeedRows(zipSync(entries));
+}, 60_000);
+
+describe("the mini fixture", () => {
+
+  const files = [
+    "agency.txt", "stops.txt", "transfers.txt", "feed_info.txt",
+    "routes.txt", "trips.txt", "stop_times.txt", "calendar.txt", "calendar_dates.txt"
+  ];
+
+  it.each(files)("produces the golden %s", file => {
+    expect(feed(file)).to.equal(fs.readFileSync(path.join(golden, file), "utf8"));
+  });
+
+  it("produces the same feed twice", async () => {
+    const again = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
+
+    await build(["node", "cif2gtfs", "build", "--source", path.join(fixtures, "RJTTF001.ZIP"),
+                 "--out", again, "--today", TODAY]);
+
+    for (const file of files) {
+      expect(fs.readFileSync(path.join(again, file), "utf8")).to.equal(feed(file));
+    }
+  }, 60_000);
+
+});
+
+describe("the feed the mini fixture produces", () => {
+
+  it("references only stops it declares", () => {
+    const declared = new Set(columns("stops.txt").map(s => s.stop_id));
+    const called = new Set(columns("stop_times.txt").map(s => s.stop_id));
+
+    expect([...called].filter(stop => !declared.has(stop))).to.deep.equal([]);
+  });
+
+  it("references only routes and services it declares", () => {
+    const routes = new Set(columns("routes.txt").map(r => r.route_id));
+    const services = new Set(columns("calendar.txt").map(c => c.service_id));
+    const trips = columns("trips.txt");
+
+    expect(trips.filter(t => !routes.has(t.route_id))).to.deep.equal([]);
+    expect(trips.filter(t => !services.has(t.service_id))).to.deep.equal([]);
+  });
+
+  it("gives every trip at least two stops", () => {
+    const stops = new Map<string, number>();
+
+    for (const stop of columns("stop_times.txt")) {
+      stops.set(stop.trip_id, (stops.get(stop.trip_id) ?? 0) + 1);
+    }
+
+    expect([...stops].filter(([, count]) => count < 2)).to.deep.equal([]);
+    expect(columns("trips.txt").filter(t => !stops.has(t.trip_id))).to.deep.equal([]);
+  });
+
+  it("never ends a calendar before it starts", () => {
+    expect(columns("calendar.txt").filter(c => c.start_date > c.end_date)).to.deep.equal([]);
+  });
+
+  it("moves forward through a trip", () => {
+    const late: string[] = [];
+    let previous = {trip: "", time: ""};
+
+    for (const stop of columns("stop_times.txt")) {
+      if (stop.trip_id === previous.trip && stop.arrival_time < previous.time) {
+        late.push(`${stop.trip_id} at ${stop.stop_id}`);
+      }
+
+      previous = {trip: stop.trip_id, time: stop.departure_time};
+    }
+
+    expect(late).to.deep.equal([]);
+  });
+
+  it("gives every trip a unique ID", () => {
+    const ids = columns("trips.txt").map(t => t.trip_id);
+
+    expect(ids.length).to.equal(new Set(ids).size);
+  });
+
+  it("does not read the MSN header as a station", () => {
+    // The header line begins with A, like every station record, and read as one
+    // it became stop 4/0 with a name of "F" and coordinates in the South
+    // Atlantic
+    expect(columns("stops.txt").find(s => s.stop_id === "4/0")).to.equal(undefined);
+  });
+
+  it("names every trip after the station it ends at", () => {
+    // The last call is at a platform; the headsign is the station it belongs to,
+    // because a train moved to a different platform is going to the same place.
+    const parent = new Map(columns("stops.txt").map(s => [s.stop_id, s.parent_station || s.stop_id]));
+    const names = new Map(columns("stops.txt").map(s => [s.stop_id, s.stop_name]));
+    const last = new Map<string, {sequence: number, stop: string}>();
+
+    for (const stopTime of columns("stop_times.txt")) {
+      const sequence = Number(stopTime.stop_sequence);
+      const seen = last.get(stopTime.trip_id);
+
+      if (!seen || sequence > seen.sequence) {
+        last.set(stopTime.trip_id, {sequence, stop: stopTime.stop_id});
+      }
+    }
+
+    // A trip that joins another is headed where it ends up rather than where it ends - the Carstairs
+    // portion reads London Euston, because that is where everyone on it is going and what the front
+    // of the train says. Those are the trips a coupling arrives on.
+    const joining = new Set(
+      columns("transfers.txt")
+        .filter(t => t.transfer_type === 4 && t.from_stop_id === last.get(t.from_trip_id ?? "")?.stop)
+        .map(t => t.from_trip_id)
+    );
+    const trips = columns("trips.txt");
+
+    expect(trips.length).to.be.greaterThan(0);
+    expect(joining.size).to.be.greaterThan(0);
+
+    for (const trip of trips.filter(t => !joining.has(t.trip_id))) {
+      expect(trip.trip_headsign).to.equal(names.get(parent.get(last.get(trip.trip_id)!.stop)!));
+    }
+  });
+
+  it("heads a joining trip for where it ends up, not where it ends", () => {
+    const trips = new Map(columns("trips.txt").map(t => [t.trip_id, t.trip_headsign]));
+    const carstairs = [...trips].filter(([id]) => id.startsWith("C04558_20260518"));
+
+    expect(carstairs.map(([, headsign]) => headsign)).to.deep.equal(["London Euston"]);
+  });
+
+  it("does not put the TUID in the headsign", () => {
+    const trips = columns("trips.txt");
+
+    expect(trips.every(t => t.trip_headsign !== t.trip_id.split("_")[0])).to.equal(true);
+  });
+
+  it("claims nothing about wheelchairs or bicycles", () => {
+    const trips = columns("trips.txt");
+
+    expect(trips.every(t => t.wheelchair_accessible === 0)).to.equal(true);
+    expect(trips.every(t => t.bikes_allowed === 0)).to.equal(true);
+  });
+
+  it("puts no platform in stop_headsign", () => {
+    // B13: the platform belongs on the stop, and a headsign saying "3" is what that mistake looked
+    // like. It says where the train goes, so a bare platform number never appears in it.
+    // An empty stop_headsign reads back as undefined, which is how the writer
+    // was given it.
+    const headsigns = columns("stop_times.txt")
+      .map(s => s.stop_headsign)
+      .filter(h => h !== undefined && h !== "");
+
+    expect(headsigns.filter(h => /^\d/.test(h!))).to.deep.equal([]);
+  });
+
+  it("names every destination a dividing train is still carrying", () => {
+    // the Highlander runs as one to Edinburgh and divides there, so it is headed for all three as
+    // far as Carlisle and for Inverness alone from Edinburgh on
+    const sleeper = columns("stop_times.txt")
+      .filter(s => s.trip_id === "C04569_20260518_20261207")
+      .map(s => [s.stop_id, s.stop_headsign]);
+
+    expect(sleeper[4]).to.deep.equal(["9100CARLILE3", "Inverness, Aberdeen and Fort William"]);
+    // An empty stop_headsign reads back as undefined, which is what the writer
+    // wrote it from - the trip headsign holds from here on.
+    expect(sleeper[5]).to.deep.equal(["9100EDINBUR2", undefined]);
+  });
+
+  it("does not publish a station it cannot locate and nothing calls at", () => {
+    // The CIE stations have an all-zero easting and northing, which used to
+    // project into the South Atlantic. No train in the feed calls at one, so
+    // rather than invent a coordinate for a place nothing goes, they are left
+    // out until a source can locate them.
+    const zeroEasting = columns("stops.txt").filter(s => s.stop_name.includes("(CIE"));
+
+    expect(zeroEasting).to.deep.equal([]);
+  });
+
+  it("gives every published stop a coordinate", () => {
+    const stops = columns("stops.txt");
+
+    expect(stops.length).to.be.greaterThan(0);
+    expect(stops.every(s => s.stop_lat !== "" && s.stop_lon !== "")).to.equal(true);
+  });
+
+  it("leaves no transfer pointing at a stop it does not publish", () => {
+    const published = new Set(columns("stops.txt").map(s => s.stop_id));
+    const dangling = columns("transfers.txt").filter(t => !published.has(t.from_stop_id));
+
+    expect(dangling).to.deep.equal([]);
+  });
+
+  it("carries the replacement buses and the ferry from the ZTR", () => {
+    const types = new Set(columns("routes.txt").map(r => r.route_type));
+
+    // 3 bus, 4 ferry, 1 underground, 2 rail
+    expect(types).to.include(3);
+    expect(types).to.include(4);
+  });
+
+  it("rolls a service that departs after midnight into the previous day", () => {
+    const late = columns("stop_times.txt").filter(s => s.departure_time >= "24:00:00");
+
+    expect(late.length).to.be.greaterThan(0);
+  });
+
+  it("excludes the days an overlay covers from the schedule it overlays", () => {
+    const excluded = columns("calendar_dates.txt");
+
+    expect(excluded.length).to.be.greaterThan(0);
+    expect(excluded.every(d => d.exception_type === 2)).to.equal(true);
+  });
+
+  it("writes no trip for a cancellation, which carries no stops", () => {
+    // C02507 runs 17/05 to 13/09 and is cancelled from 17/05 to 09/08. The
+    // cancellation has no LO/LI/LT records at all and reaches the build as a row
+    // with every stop time column null, which is the shape that used to hang it.
+    const trips = columns("trips.txt").map(t => t.trip_id);
+
+    expect(trips).to.include("C02507_20260517_20260913");
+    expect(trips).to.not.include("C02507_20260517_20260809");
+  });
+
+  it("takes a cancelled day off the schedule it cancels", () => {
+    // C00070 is cancelled on 31/10/2026, which falls inside the window
+    const trip = columns("trips.txt").find(t => t.trip_id.startsWith("C00070_"))!;
+    const dates = columns("calendar_dates.txt")
+      .filter(d => d.service_id === trip.service_id)
+      .map(d => d.date);
+
+    expect(dates).to.include("20261031");
+  });
+
+  it("leaves a cancellation that ends before the window alone", () => {
+    // C02507 is cancelled from 17/05 to 09/08 and the build starts on 10/08, so
+    // the cancellation is not returned by the query at all. The calendar it
+    // cancels still starts on 17/05, which reads as though the train ran on
+    // Sundays it did not.
+    const trip = columns("trips.txt").find(t => t.trip_id === "C02507_20260517_20260913")!;
+    const calendar = columns("calendar.txt").find(c => c.service_id === trip.service_id)!;
+    const dates = columns("calendar_dates.txt").filter(d => d.service_id === trip.service_id);
+
+    expect(calendar.start_date).to.equal("20260517");
+    expect(dates.map(d => d.date)).to.deep.equal(["20260906", "20260913"]);
+  });
+
+  it("publishes an overnight portion once, on the day its own record dates it", () => {
+    // The Aberdeen portion of the sleeper leaves Edinburgh at 04:28 on the Tuesday, having left
+    // Euston on the Monday. That is where a passenger boarding it looks, so that is where it is
+    // published, and the coupling in transfers.txt is allowed to cross the service day.
+    const trips = columns("trips.txt").map(t => t.trip_id);
+
+    expect(trips).to.include("C04543_20260519_20261208");
+    expect(trips).to.not.include("C04543_20260518_20261207");
+
+    const link = columns("transfers.txt")
+      .find(t => t.from_trip_id === "C04569_20260518_20261207" && !!t.to_trip_id?.startsWith("C04543_"));
+
+    expect(link?.to_trip_id).to.equal("C04543_20260519_20261208");
+  });
+
+});
+
+/**
+ * The config file is the reviewable form of a build, so an option it names has to reach the build.
+ * `duplicateOvernightAssociations` was read into BuildConfig and then dropped: nothing carried it to
+ * BuildContext, which is what applyAssociations is given, so a config asking for it got a feed
+ * without it and no error to say so.
+ */
+describe("a build that asks for overnight associations to be duplicated", () => {
+
+  let withDuplicates: string;
+
+  beforeAll(async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
+    const config = path.join(dir, "gtfs.config.yaml");
+
+    withDuplicates = path.join(dir, "feed");
+
+    fs.writeFileSync(config, [
+      `source: ${JSON.stringify(path.join(fixtures, "RJTTF001.ZIP"))}`,
+      `out: ${JSON.stringify(withDuplicates)}`,
+      `today: ${TODAY}`,
+      "duplicateOvernightAssociations: true"
+    ].join("\n"));
+
+    await build(["node", "cif2gtfs", "build", "--config", config]);
+  }, 60_000);
+
+  it("publishes the portion on the base's service day as well as its own", () => {
+    const trips = fs.readFileSync(path.join(withDuplicates, "trips.txt"), "utf8");
+
+    expect(trips).to.include("C04543_20260519_20261208");
+    expect(trips).to.include("C04543_20260518_20261207");
+  });
+
+  it("tells the copy in the base's service day, at times past 24:00", () => {
+    const copied = fs.readFileSync(path.join(withDuplicates, "stop_times.txt"), "utf8")
+      .split("\n")
+      .filter(line => line.startsWith("C04543_20260518_20261207,"));
+
+    expect(copied[0]).to.include("28:28:00");
+  });
+
+  it("names the copy in the coupling, which is the point of making one", () => {
+    const transfers = fs.readFileSync(path.join(withDuplicates, "transfers.txt"), "utf8");
+
+    expect(transfers).to.include("C04569_20260518_20261207,C04543_20260518_20261207");
+    expect(transfers).to.not.include("C04569_20260518_20261207,C04543_20260519_20261208");
+  });
+
+});

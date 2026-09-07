@@ -9,6 +9,9 @@
   ],
   "references": [
     {
+      "path": "../gtfs-schema"
+    },
+    {
       "path": "../gtfs"
     }
   ],

@@ -29,6 +29,15 @@
       "path": "./libs/gtfs-loader/tsconfig.esm.json"
     },
     {
+      "path": "./libs/gtfs-read"
+    },
+    {
+      "path": "./libs/naptan"
+    },
+    {
+      "path": "./libs/txc-source"
+    },
+    {
       "path": "./libs/enrich-naptan"
     },
     {
@@ -41,7 +50,16 @@
       "path": "./apps/cif2gtfs"
     },
     {
+      "path": "./apps/transxchange2gtfs"
+    },
+    {
+      "path": "./apps/gtfsmerge"
+    },
+    {
       "path": "./apps/website"
+    },
+    {
+      "path": "./tests"
     }
   ]
 }

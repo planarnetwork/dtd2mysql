@@ -8,6 +8,7 @@ export default defineConfig({
     projects: [
       "libs/*",
       "apps/*",
+      "tests",
       "scripts"
     ]
   }

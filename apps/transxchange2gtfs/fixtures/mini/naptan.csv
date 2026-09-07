@@ -1,0 +1,5 @@
+ATCOCode,NaptanCode,CommonName,Street,Indicator,LocalityName,ParentLocalityName,Longitude,Latitude
+0400AMSHM001,bucgjpm,Amersham Station,Station Approach,->NE,Amersham on the Hill,Amersham,-0.60759,51.67421
+0400AMSHM002,bucgjpw,Hill Avenue,Hill Avenue,SW,Amersham on the Hill,Amersham,-0.60050,51.67180
+0400AMSHM003,bucgjtd,Amersham Broadway,Sycamore Road,C1,Amersham on the Hill,Amersham,-0.59700,51.66940
+0400AMSHM004,bucgjwm,Old Amersham,High Street,T2,Old Amersham,Amersham,-0.59380,51.66720

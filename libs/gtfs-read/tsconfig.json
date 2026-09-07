@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../gtfs-schema"
+    },
+    {
+      "path": "../gtfs-loader"
+    }
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.spec.mts"
+  ]
+}

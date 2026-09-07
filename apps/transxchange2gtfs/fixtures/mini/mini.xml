@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TransXChange xmlns="http://www.transxchange.org.uk/" SchemaVersion="2.4">
+  <StopPoints>
+    <AnnotatedStopPointRef>
+      <StopPointRef>0400AMSHM001</StopPointRef>
+      <CommonName>Amersham Station</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Amersham on the Hill</LocalityQualifier>
+      <Location><Latitude>51.67421</Latitude><Longitude>-0.60759</Longitude></Location>
+    </AnnotatedStopPointRef>
+    <AnnotatedStopPointRef>
+      <StopPointRef>0400AMSHM002</StopPointRef>
+      <CommonName>Hill Avenue</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Amersham on the Hill</LocalityQualifier>
+      <Location><Latitude>51.67180</Latitude><Longitude>-0.60050</Longitude></Location>
+    </AnnotatedStopPointRef>
+    <AnnotatedStopPointRef>
+      <StopPointRef>0400AMSHM003</StopPointRef>
+      <CommonName>Amersham Broadway</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Amersham on the Hill</LocalityQualifier>
+      <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
+    </AnnotatedStopPointRef>
+    <AnnotatedStopPointRef>
+      <StopPointRef>0400AMSHM004</StopPointRef>
+      <CommonName>Old Amersham</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Old Amersham</LocalityQualifier>
+      <Location><Latitude>51.66720</Latitude><Longitude>-0.59380</Longitude></Location>
+    </AnnotatedStopPointRef>
+  </StopPoints>
+
+  <RouteSections>
+    <RouteSection id="RS1">
+      <RouteLink id="RL1">
+        <From><StopPointRef>0400AMSHM001</StopPointRef></From>
+        <To><StopPointRef>0400AMSHM002</StopPointRef></To>
+        <Distance>900</Distance>
+        <Track><Mapping>
+          <Location><Latitude>51.67421</Latitude><Longitude>-0.60759</Longitude></Location>
+          <Location><Latitude>51.67300</Latitude><Longitude>-0.60400</Longitude></Location>
+          <Location><Latitude>51.67180</Latitude><Longitude>-0.60050</Longitude></Location>
+        </Mapping></Track>
+      </RouteLink>
+      <RouteLink id="RL2">
+        <From><StopPointRef>0400AMSHM002</StopPointRef></From>
+        <To><StopPointRef>0400AMSHM003</StopPointRef></To>
+        <Distance>600</Distance>
+        <Track><Mapping>
+          <Location><Latitude>51.67180</Latitude><Longitude>-0.60050</Longitude></Location>
+          <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
+        </Mapping></Track>
+      </RouteLink>
+      <RouteLink id="RL3">
+        <From><StopPointRef>0400AMSHM003</StopPointRef></From>
+        <To><StopPointRef>0400AMSHM004</StopPointRef></To>
+        <Distance>700</Distance>
+        <Track><Mapping>
+          <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
+          <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
+          <Location><Latitude>51.66720</Latitude><Longitude>-0.59380</Longitude></Location>
+        </Mapping></Track>
+      </RouteLink>
+    </RouteSection>
+  </RouteSections>
+
+  <JourneyPatternSections>
+    <JourneyPatternSection id="JPS1">
+      <JourneyPatternTimingLink id="JPTL1">
+        <From SequenceNumber="1">
+          <Activity>pickUp</Activity>
+          <StopPointRef>0400AMSHM001</StopPointRef>
+          <TimingStatus>PTP</TimingStatus>
+        </From>
+        <To SequenceNumber="2">
+          <StopPointRef>0400AMSHM002</StopPointRef>
+          <TimingStatus>OTH</TimingStatus>
+        </To>
+        <RouteLinkRef>RL1</RouteLinkRef>
+        <RunTime>PT4M</RunTime>
+      </JourneyPatternTimingLink>
+      <JourneyPatternTimingLink id="JPTL2">
+        <From SequenceNumber="2">
+          <StopPointRef>0400AMSHM002</StopPointRef>
+          <TimingStatus>OTH</TimingStatus>
+        </From>
+        <To SequenceNumber="3">
+          <StopPointRef>0400AMSHM003</StopPointRef>
+          <TimingStatus>PTP</TimingStatus>
+        </To>
+        <RouteLinkRef>RL2</RouteLinkRef>
+        <RunTime>PT3M</RunTime>
+      </JourneyPatternTimingLink>
+      <JourneyPatternTimingLink id="JPTL3">
+        <From SequenceNumber="3">
+          <StopPointRef>0400AMSHM003</StopPointRef>
+          <TimingStatus>PTP</TimingStatus>
+        </From>
+        <To SequenceNumber="4">
+          <Activity>setDown</Activity>
+          <StopPointRef>0400AMSHM004</StopPointRef>
+          <TimingStatus>PTP</TimingStatus>
+        </To>
+        <RouteLinkRef>RL3</RouteLinkRef>
+        <RunTime>PT5M</RunTime>
+      </JourneyPatternTimingLink>
+    </JourneyPatternSection>
+  </JourneyPatternSections>
+
+  <Operators>
+    <Operator id="OP1">
+      <NationalOperatorCode>CHIL</NationalOperatorCode>
+      <OperatorCode>CHIL</OperatorCode>
+      <OperatorShortName>Example Buses</OperatorShortName>
+      <OperatorNameOnLicence>Example Buses Limited</OperatorNameOnLicence>
+      <TradingName>Example Buses</TradingName>
+    </Operator>
+  </Operators>
+
+  <Services>
+    <Service>
+      <ServiceCode>PB0000815:1</ServiceCode>
+      <Lines>
+        <Line id="L1">
+          <LineName>8</LineName>
+          <OutboundDescription><Description>Amersham Station to Old Amersham</Description></OutboundDescription>
+        </Line>
+        <Line id="L2">
+          <LineName>8A</LineName>
+          <OutboundDescription><Description>Amersham Station to Old Amersham, via Hill Avenue</Description></OutboundDescription>
+        </Line>
+      </Lines>
+      <OperatingPeriod>
+        <StartDate>2026-01-05</StartDate>
+        <EndDate>2026-12-31</EndDate>
+      </OperatingPeriod>
+      <RegisteredOperatorRef>OP1</RegisteredOperatorRef>
+      <Mode>bus</Mode>
+      <Description>Amersham Station to Old Amersham</Description>
+      <StandardService>
+        <Origin>Amersham Station</Origin>
+        <Destination>Old Amersham</Destination>
+        <JourneyPattern id="JP1">
+          <DestinationDisplay>Old Amersham</DestinationDisplay>
+          <Direction>outbound</Direction>
+          <JourneyPatternSectionRefs>JPS1</JourneyPatternSectionRefs>
+        </JourneyPattern>
+      </StandardService>
+      <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek>
+            <Monday/><Tuesday/><Wednesday/><Thursday/><Friday/>
+          </DaysOfWeek>
+        </RegularDayType>
+        <BankHolidayOperation>
+          <DaysOfNonOperation>
+            <ChristmasDay/>
+            <BoxingDay/>
+          </DaysOfNonOperation>
+        </BankHolidayOperation>
+      </OperatingProfile>
+    </Service>
+  </Services>
+
+  <VehicleJourneys>
+    <VehicleJourney>
+      <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek>
+            <Monday/><Tuesday/><Wednesday/><Thursday/><Friday/>
+          </DaysOfWeek>
+        </RegularDayType>
+        <SpecialDaysOperation>
+          <DaysOfNonOperation>
+            <DateRange><StartDate>2026-08-24</StartDate><EndDate>2026-08-24</EndDate></DateRange>
+          </DaysOfNonOperation>
+        </SpecialDaysOperation>
+      </OperatingProfile>
+      <VehicleJourneyCode>VJ1</VehicleJourneyCode>
+      <ServiceRef>PB0000815:1</ServiceRef>
+      <LineRef>L1</LineRef>
+      <JourneyPatternRef>JP1</JourneyPatternRef>
+      <DepartureTime>07:30:00</DepartureTime>
+      <Operational><Block><BlockNumber>BLK1</BlockNumber></Block></Operational>
+    </VehicleJourney>
+    <VehicleJourney>
+      <VehicleJourneyCode>VJ2</VehicleJourneyCode>
+      <ServiceRef>PB0000815:1</ServiceRef>
+      <LineRef>L1</LineRef>
+      <JourneyPatternRef>JP1</JourneyPatternRef>
+      <DepartureTime>08:30:00</DepartureTime>
+      <VehicleJourneyTimingLink>
+        <JourneyPatternTimingLinkRef>JPTL1</JourneyPatternTimingLinkRef>
+        <RunTime>PT7M</RunTime>
+      </VehicleJourneyTimingLink>
+    </VehicleJourney>
+    <VehicleJourney>
+      <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek><Saturday/></DaysOfWeek>
+        </RegularDayType>
+        <SpecialDaysOperation>
+          <DaysOfOperation>
+            <DateRange><StartDate>2026-08-31</StartDate><EndDate>2026-08-31</EndDate></DateRange>
+          </DaysOfOperation>
+        </SpecialDaysOperation>
+      </OperatingProfile>
+      <VehicleJourneyCode>VJ3</VehicleJourneyCode>
+      <ServiceRef>PB0000815:1</ServiceRef>
+      <LineRef>L2</LineRef>
+      <JourneyPatternRef>JP1</JourneyPatternRef>
+      <DepartureTime>09:30:00</DepartureTime>
+    </VehicleJourney>
+  </VehicleJourneys>
+</TransXChange>

@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@gb-transit/gtfs": "workspace:^",
-    "csv-parse": "^7.0.2"
+    "@gb-transit/naptan": "workspace:^"
   },
   "devDependencies": {
     "typescript": "7.0.2"

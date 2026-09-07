@@ -32,7 +32,7 @@ const lister = (key: string, filename = "areas.txt"): Extension<null> => ({
     }));
 
     return {
-      files: [extensionFile(filename, rows, row => [row.area_id])],
+      files: [extensionFile(filename, ["area_id", "area_name"], rows, row => [row.area_id])],
       report: {extension: key, written: rows.length, dropped: 0}
     };
   }

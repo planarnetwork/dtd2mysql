@@ -1,0 +1,2 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,route_color,route_url,route_desc
+RB1,BUS,17,,3,,,,

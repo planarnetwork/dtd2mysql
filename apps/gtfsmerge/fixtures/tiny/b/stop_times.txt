@@ -1,0 +1,5 @@
+trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,timepoint
+TB1,09:00:00,09:01:00,9100BUSSTOP,1,,0,0,,1
+TB1,09:10:00,09:11:00,910GALPHA,2,,0,0,,1
+TB2,08:00:00,08:01:00,9100BUSSTOP,1,,0,0,,1
+TB2,08:10:00,08:11:00,910GALPHA,2,,0,0,,1

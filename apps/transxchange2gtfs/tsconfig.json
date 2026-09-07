@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../libs/gtfs-schema"
+    },
+    {
+      "path": "../../libs/gtfs"
+    },
+    {
+      "path": "../../libs/naptan"
+    },
+    {
+      "path": "../../libs/txc-source"
+    },
+    {
+      "path": "../../libs/gtfs-output"
+    }
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.spec.mts"
+  ]
+}

@@ -1,9 +1,8 @@
 import {describe, it, expect} from "vitest";
-import {Writable} from "stream";
 import {BuildFeed} from "./BuildFeed";
 import {BuildContext, parseRange} from "./BuildContext";
 import {Enricher} from "../enrich/Enricher";
-import {GTFSOutput} from "./GTFSOutput";
+import {Columns, FeedRow, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {Association, AssociationType, DateIndicator} from "../model/Association";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
@@ -15,18 +14,33 @@ import {TimetableSource} from "../source/TimetableSource";
 
 /**
  * Collects what the build writes, per file, instead of putting it on disk.
+ *
+ * Rows are kept whole rather than projected through the declared columns: these
+ * tests assert on what the build produced, and which columns reach the file is
+ * the writer's business. The columns are still checked at the call site, by the
+ * type.
  */
 class MemoryOutput implements GTFSOutput {
 
   public readonly files: {[filename: string]: any[]} = {};
+  public readonly columns: {[filename: string]: readonly string[]} = {};
 
-  public open(filename: string): Writable {
-    const rows = this.files[filename.replace(/^.*\//, "")] = [] as any[];
+  public open<R extends FeedRow>(filename: string, columns: Columns<R>): RowWriter<R> {
+    const name = filename.replace(/^.*\//, "");
+    const rows = this.files[name] = [] as any[];
 
-    return new Writable({objectMode: true, write(row, _encoding, done) {
-      rows.push(row);
-      done();
-    }});
+    this.columns[name] = columns;
+
+    return {
+      write(row: R): boolean {
+        rows.push(row);
+
+        return true;
+      },
+      drain: async () => {},
+      end() {},
+      finished: async () => {}
+    };
   }
 
   public write(filename: string, contents: string): void {
