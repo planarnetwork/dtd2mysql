@@ -7,14 +7,6 @@
   "include": [
     "src"
   ],
-  "references": [
-    {
-      "path": "../gtfs"
-    },
-    {
-      "path": "../naptan"
-    }
-  ],
   "exclude": [
     "**/*.spec.ts"
   ]

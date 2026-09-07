@@ -10,6 +10,9 @@
   "references": [
     {
       "path": "../gtfs-schema"
+    },
+    {
+      "path": "../naptan"
     }
   ],
   "exclude": [

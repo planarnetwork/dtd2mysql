@@ -32,6 +32,9 @@
       "path": "./libs/gtfs-read"
     },
     {
+      "path": "./libs/naptan"
+    },
+    {
       "path": "./libs/txc-source"
     },
     {

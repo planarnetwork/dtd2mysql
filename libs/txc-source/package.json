@@ -31,9 +31,9 @@
   },
   "dependencies": {
     "@gb-transit/gtfs-schema": "workspace:^",
+    "@gb-transit/naptan": "workspace:^",
     "@js-joda/core": "^6.0.1",
     "adm-zip": "0.6.0",
-    "csv-parse": "^7.0.2",
     "date-holidays": "^3.27.0",
     "xml2js": "^0.6.2"
   },

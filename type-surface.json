@@ -21,6 +21,7 @@
     "NAPTAN",
     "NaptanEnricher",
     "NaptanStop",
+    "isRailStop",
     "naptanFromApi",
     "parseNaptan",
     "stationName"
@@ -365,6 +366,12 @@
     "minDate",
     "parseDuration",
     "toYYYYMMDD"
+  ],
+  "naptan": [
+    "NAPTAN_CSV_URL",
+    "NaptanRow",
+    "naptanCsv",
+    "parseNaptanRows"
   ],
   "txc-source": [
     "ATCOCode",

@@ -1,12 +1,12 @@
 {
-  "name": "@gb-transit/enrich-naptan",
-  "version": "1.0.1",
-  "description": "Station coordinates and names from NaPTAN",
+  "name": "@gb-transit/naptan",
+  "version": "1.0.0",
+  "description": "Download, cache and read the NaPTAN national stop dataset",
   "license": "GPL-3.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
-    "directory": "libs/enrich-naptan"
+    "directory": "libs/naptan"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,11 +23,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=26"
   },
   "dependencies": {
-    "@gb-transit/gtfs": "workspace:^",
-    "@gb-transit/naptan": "workspace:^"
+    "csv-parse": "^7.0.2"
   },
   "devDependencies": {
     "typescript": "7.0.2"

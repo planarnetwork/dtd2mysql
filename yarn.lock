@@ -458,7 +458,7 @@ __metadata:
   resolution: "@gb-transit/enrich-naptan@workspace:libs/enrich-naptan"
   dependencies:
     "@gb-transit/gtfs": "workspace:^"
-    csv-parse: "npm:^7.0.2"
+    "@gb-transit/naptan": "workspace:^"
     typescript: "npm:7.0.2"
   languageName: unknown
   linkType: soft
@@ -537,16 +537,25 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/naptan@workspace:^, @gb-transit/naptan@workspace:libs/naptan":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/naptan@workspace:libs/naptan"
+  dependencies:
+    csv-parse: "npm:^7.0.2"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/txc-source@workspace:^, @gb-transit/txc-source@workspace:libs/txc-source":
   version: 0.0.0-use.local
   resolution: "@gb-transit/txc-source@workspace:libs/txc-source"
   dependencies:
     "@gb-transit/gtfs-schema": "workspace:^"
+    "@gb-transit/naptan": "workspace:^"
     "@js-joda/core": "npm:^6.0.1"
     "@types/adm-zip": "npm:0.5.8"
     "@types/xml2js": "npm:^0.4.14"
     adm-zip: "npm:0.6.0"
-    csv-parse: "npm:^7.0.2"
     date-holidays: "npm:^3.27.0"
     typescript: "npm:7.0.2"
     xml2js: "npm:^0.6.2"
