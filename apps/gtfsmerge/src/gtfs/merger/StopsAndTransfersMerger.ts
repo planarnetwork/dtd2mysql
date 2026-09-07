@@ -123,7 +123,10 @@ export class StopsAndTransfersMerger {
       const exists = existingTransfers[stop.stop_id]?.[stopId];
       const reverseExists = existingTransfers[stopId]?.[stop.stop_id];
 
-      if (!exists || !reverseExists) {
+      // Both, not either. addTransfers writes the pair, so generating when only
+      // one direction is missing writes a second copy of the one that is not -
+      // and transfers.txt is the file the merge does not deduplicate.
+      if (!exists && !reverseExists) {
         const distance = this.ruler.distance(coords, this.stopLocations[stopId]);
 
         if (distance < this.transferDistance) {

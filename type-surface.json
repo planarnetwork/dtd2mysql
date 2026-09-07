@@ -290,7 +290,9 @@
     "CSVRowWriter",
     "FileOutput",
     "OutputGTFSZipCommand",
+    "deliverFeed",
     "field",
+    "workingDirectory",
     "writeZip"
   ],
   "gtfs-read": [

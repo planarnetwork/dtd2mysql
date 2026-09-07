@@ -102,4 +102,18 @@ describe("field", () => {
     expect(field("no quoting needed")).to.equal("no quoting needed");
   });
 
+  // Neither of these occurs in any feed this repository builds, so the goldens
+  // say nothing about them. csv-write-stream tested the same /[,\r\n"]/ and
+  // string-concatenated everything else, and this is where that is written down
+  // rather than assumed.
+  it("quotes a value containing a bare carriage return", () => {
+    expect(field("two\rparts")).to.equal("\"two\rparts\"");
+  });
+
+  it("stringifies a value that is not a primitive, as the writer it replaced did", () => {
+    expect(field({})).to.equal("[object Object]");
+    expect(field([1, 2])).to.equal("\"1,2\"");
+    expect(field(true)).to.equal("true");
+  });
+
 });

@@ -99,7 +99,7 @@ export class FeedIndex {
   }
 
   public calendarDate(row: CalendarDateRow): void {
-    if (!this.filterBefore || row.date >= this.filterBefore) {
+    if (this.filterBefore === undefined || row.date >= this.filterBefore) {
       const id = String(row.service_id);
 
       (this.result.calendarDates[id] ||= []).push(row);

@@ -1,5 +1,5 @@
 import {FeedRow, RowWriter} from "@gb-transit/gtfs-schema";
-import {FileOutput, writeZip} from "@gb-transit/gtfs-output";
+import {FileOutput, deliverFeed} from "@gb-transit/gtfs-output";
 import {FileStream, RowStream} from "@gb-transit/txc-source";
 import * as fs from "fs";
 import * as path from "node:path";
@@ -48,19 +48,7 @@ export class Converter {
     await Promise.all(written);
     await target.end();
 
-    if (output.endsWith(".zip")) {
-      await writeZip(this.directory, output);
-      fs.rmSync(this.directory, {recursive: true, force: true});
-    }
-    else {
-      // A directory of files, which is what the end to end tests want and what
-      // anything piping this into another tool wants.
-      fs.rmSync(output, {recursive: true, force: true});
-      fs.renameSync(this.directory, output);
-    }
-
-    console.log("Complete.");
-    console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
+    await deliverFeed(this.directory, output);
   }
 
 }

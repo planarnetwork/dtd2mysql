@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import {writeZip} from "@gb-transit/gtfs-output";
+import {deliverFeed} from "@gb-transit/gtfs-output";
 import {readMergeInput} from "./FeedIndex";
 import {GTFSOutputFactory} from "./GTFSOutputFactory";
 
@@ -36,15 +36,6 @@ export class MergeCommand {
 
     console.log("Writing " + outputFile);
 
-    if (outputFile.endsWith(".zip")) {
-      await writeZip(this.directory, outputFile);
-      fs.rmSync(this.directory, {recursive: true, force: true});
-    }
-    else {
-      // A directory of files, which is what the end to end tests and anything
-      // piping this into another tool want.
-      fs.rmSync(outputFile, {recursive: true, force: true});
-      fs.renameSync(this.directory, outputFile);
-    }
+    await deliverFeed(this.directory, outputFile);
   }
 }

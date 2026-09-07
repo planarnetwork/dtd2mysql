@@ -42,6 +42,15 @@ comma but did not escape a quote inside it, and wrote `undefined` for a missing
 value. The shared writer doubles an embedded quote, quotes on a newline too, and
 writes an absent value as empty.
 
+**A transfer the feed already declared is no longer duplicated.** Where an input
+declared `A → B` but not `B → A`, the walk transfer generator wrote the pair
+anyway, producing a second `A → B` with a different `min_transfer_time` — and
+`transfers.txt` is the one file the merge does not deduplicate, so it reached the
+output. The condition was `!exists || !reverseExists`; it is `&&`, because the
+generator writes both directions. Inherited rather than introduced, but it sits
+between the two distance bugs above and leaving it unmentioned would read as
+examined and accepted.
+
 **A file with no rows now has a header.** It used to be a zero-byte file.
 
 **`--no-date-filter` keeps the calendars instead of dropping all of them.** The

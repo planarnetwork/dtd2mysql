@@ -21,6 +21,13 @@ async function main(argv: string[]): Promise<void> {
     skipStops: argv.includes("--skip-stops"),
     tmp: option(argv, "tmp")
   });
+
+  // Said here rather than in the conversion: convert() is a library function,
+  // and a caller embedding it does not want our progress on their stdout.
+  console.log("Complete.");
+  console.log(
+    `Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`
+  );
 }
 
 /**

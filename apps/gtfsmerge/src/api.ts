@@ -1,5 +1,4 @@
-import * as os from "node:os";
-import * as path from "node:path";
+import {workingDirectory} from "@gb-transit/gtfs-output";
 import {Container, DEFAULT_LATITUDE} from "./Container";
 import {toGTFSDate} from "./gtfs/calendar/gtfsDateUtils";
 
@@ -18,7 +17,10 @@ export interface MergeOptions {
   readonly removeRouteTypes?: readonly string[];
   /** The latitude the distance approximation is calibrated at. */
   readonly rulerLatitude?: number;
-  /** Where the files are assembled before being zipped. */
+  /**
+   * Where the files are assembled before being put at `output`. Defaults to a
+   * sibling of the output, so moving them into place cannot cross a filesystem.
+   */
   readonly tmp?: string;
 }
 
@@ -37,7 +39,7 @@ export async function merge(options: MergeOptions): Promise<void> {
     filterDatesBefore,
     removeRouteTypes = [],
     rulerLatitude = DEFAULT_LATITUDE,
-    tmp = fsTemp()
+    tmp = workingDirectory(output)
   } = options;
 
   if (inputs.length === 0) {
@@ -50,7 +52,3 @@ export async function merge(options: MergeOptions): Promise<void> {
 }
 
 export {toGTFSDate};
-
-function fsTemp(): string {
-  return path.join(os.tmpdir(), `gtfsmerge_${process.pid}`);
-}

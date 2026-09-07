@@ -47,7 +47,6 @@
     "cheap-ruler": "3.0.2"
   },
   "devDependencies": {
-    "@gb-transit/gtfs-read": "workspace:^",
     "fflate": "^0.8.3",
     "typescript": "7.0.2"
   }

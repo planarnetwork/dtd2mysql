@@ -3,6 +3,7 @@ import {parseString} from "xml2js";
 import * as fs from "fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import {workingDirectory} from "@gb-transit/gtfs-output";
 import {naptanFile} from "@gb-transit/naptan";
 import {
   AgencyStream, BankHolidays, CalendarDatesStream, CalendarStream, FileStream, NaPTANIndex,
@@ -33,7 +34,10 @@ export interface ConverterOptions {
    * test that depends on the DfT being up is not a test.
    */
   readonly naptanFile?: string;
-  /** Where the files are assembled before being zipped. */
+  /**
+   * Where the files are assembled before being put at `output`. Defaults to a
+   * sibling of the output, so moving them into place cannot cross a filesystem.
+   */
   readonly tmp?: string;
 }
 

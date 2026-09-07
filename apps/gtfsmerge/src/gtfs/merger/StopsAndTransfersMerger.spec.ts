@@ -42,6 +42,25 @@ describe("StopsAndTransfersMerger", () => {
     );
   });
 
+  it("does not duplicate a direction the feed already declared", async () => {
+    const {transfers, merger: m} = merger();
+    // The feed says a -> b but not b -> a. Generating the pair here would write
+    // a second a -> b, and transfers.txt is not deduplicated on the way out.
+    const declared: TransferRow = {
+      from_stop_id: "a", to_stop_id: "b", transfer_type: TransferType.MinTime,
+      min_transfer_time: 120
+    };
+
+    await m.write(
+      [stop("a", 54.0, -1.0), stop("b", 54.0, -1.005)], [declared], {}, {a: true, b: true}, {}
+    );
+
+    const ab = transfers.rows.filter(t => t.from_stop_id === "a" && t.to_stop_id === "b");
+
+    expect(ab.length).to.equal(1);
+    expect(ab[0].min_transfer_time).to.equal(120);
+  });
+
   it("generates no walk transfer between two distant stops", async () => {
     const {transfers, merger: m} = merger();
 

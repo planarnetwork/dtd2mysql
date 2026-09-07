@@ -32,9 +32,12 @@ trip ids become optional; `RouteType` gains `Air`.
 
 **`@gb-transit/gtfs` and `@gb-transit/gtfs-output`** — `GTFSOutput.open` takes
 the columns and returns a `RowWriter<R>` rather than a `Writable`, and
-`extensionFile` takes columns. `csv-write-stream` is replaced by `CSVRowWriter`,
-which reproduces its escaping exactly but writes the header when the file is
-opened, so a file with no rows is an empty table rather than an empty file.
+`extensionFile` takes columns. `csv-write-stream` is replaced by `CSVRowWriter`, which
+writes the header when the file is opened - so a file with no rows is an empty
+table rather than an empty file. Its escaping is a transcription of
+csv-write-stream's rule rather than a differential result: the committed goldens
+are unchanged, and the cases they do not reach are written down in
+`CSVRowWriter.spec.ts`.
 `writeZip` is exported so all three tools share one deterministic archiver.
 
 **`@gb-transit/gtfs-read`** is new: a feed read back as the rows it was written

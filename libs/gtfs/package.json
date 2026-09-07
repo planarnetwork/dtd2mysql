@@ -26,6 +26,9 @@
     "build": "tsc -b",
     "test": "vitest run"
   },
+  "engines": {
+    "node": ">=26"
+  },
   "dependencies": {
     "@gb-transit/gtfs-schema": "workspace:^",
     "memoized-class-decorator": "1.6.1",

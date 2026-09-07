@@ -19,6 +19,12 @@ export class FileStream extends Transform {
 
   private drained: (() => void) | undefined;
 
+  /**
+   * Entries that could not be read. Counted rather than only logged, so a run
+   * that quietly skipped half its input can say so.
+   */
+  public failures = 0;
+
   constructor() {
     super({objectMode: true});
   }
@@ -61,6 +67,14 @@ export class FileStream extends Transform {
     callback();
   }
 
+  /**
+   * Every entry, and a bad one does not take the others with it.
+   *
+   * A dataset is hundreds of documents from hundreds of registrations, and one
+   * of them being corrupt is not a reason to convert none of the rest. This is
+   * deliberate rather than incidental - see fa74ff8, "ignore errors in
+   * individual files" - so the error is reported and the loop carries on.
+   */
   private async readZip(zip: AdmZip): Promise<void> {
     for (const entry of zip.getEntries()) {
       const name = entry.entryName.toLowerCase();
@@ -69,16 +83,22 @@ export class FileStream extends Transform {
         continue;
       }
 
-      if (name.endsWith(".xml")) {
-        console.log("Processing " + entry.entryName);
-        await this.pushDocument(entry.getData().toString("utf8"));
+      try {
+        if (name.endsWith(".xml")) {
+          console.log("Processing " + entry.entryName);
+          await this.pushDocument(entry.getData().toString("utf8"));
+        }
+        else if (name.endsWith(".zip")) {
+          console.log("Processing " + entry.entryName);
+          await this.readZip(new AdmZip(entry.getData()));
+        }
+        else {
+          console.log("Skipping " + entry.entryName);
+        }
       }
-      else if (name.endsWith(".zip")) {
-        console.log("Processing " + entry.entryName);
-        await this.readZip(new AdmZip(entry.getData()));
-      }
-      else {
-        console.log("Skipping " + entry.entryName);
+      catch (err) {
+        this.failures++;
+        console.error(`Skipping ${entry.entryName}: ${err instanceof Error ? err.message : err}`);
       }
     }
   }
