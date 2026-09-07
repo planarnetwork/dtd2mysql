@@ -1,3 +1,6 @@
+import {MODES, NO_EXCLUSIONS, ServiceExclusions} from "../transform/ExcludeServices";
+import {RouteType} from "@gb-transit/gtfs-schema";
+
 /**
  * A build, described in a file rather than in a command line.
  *
@@ -27,6 +30,11 @@ export interface BuildConfig {
    * BuildContext.
    */
   readonly duplicateOvernightAssociations: boolean;
+  /**
+   * The services to leave out of the feed. Nothing unless the config says so -
+   * see ExcludeServices.
+   */
+  readonly exclude: ServiceExclusions;
   readonly licence: Licence;
   readonly enrichers: readonly EnricherConfig[];
   readonly extensions: readonly ExtensionConfig[];
@@ -70,8 +78,10 @@ export interface ExtensionConfig {
 const LICENCES: Licence[] = ["permissive", "full"];
 const TOP_LEVEL = [
   "source", "out", "today", "range", "links", "removePassingPoints",
-  "duplicateOvernightAssociations", "licence", "enrichers", "extensions"
+  "duplicateOvernightAssociations", "exclude", "licence", "enrichers", "extensions"
 ];
+const EXCLUDE = ["modes", "operators", "replacementBuses"];
+const ATOC_CODE = /^[A-Z]{2}$/;
 
 /**
  * Check a parsed config and say precisely what is wrong with it.
@@ -122,6 +132,7 @@ export function parseConfig(
     duplicateOvernightAssociations: boolean(
       config.duplicateOvernightAssociations, false, "duplicateOvernightAssociations"
     ),
+    exclude: exclusions(config.exclude),
     licence: licence as Licence,
     enrichers: enrichers(config.enrichers, known),
     extensions: extensions(config.extensions, knownExtensions)
@@ -164,6 +175,65 @@ function extensions(raw: unknown, known: readonly string[]): ExtensionConfig[] {
       options: settings.options === undefined ? {} : object(settings.options, `${key}.options`)
     };
   });
+}
+
+/**
+ * What the build should leave out. Three lists, all optional:
+ * `exclude: {modes: [metro]}` is a whole rule.
+ */
+function exclusions(raw: unknown): ServiceExclusions {
+  if (raw === undefined || raw === null) {
+    return NO_EXCLUSIONS;
+  }
+
+  const configured = object(raw, "exclude");
+
+  for (const key of Object.keys(configured)) {
+    if (!EXCLUDE.includes(key)) {
+      throw new Error(`exclude.${key} is not something to exclude. Expected one of: ${EXCLUDE.join(", ")}.`);
+    }
+  }
+
+  return {
+    modes: configured.modes === undefined ? [] : list(configured.modes, "exclude.modes").map(mode),
+    operators: configured.operators === undefined
+      ? []
+      : list(configured.operators, "exclude.operators").map(o => operator(o, "exclude.operators")),
+    replacementBuses: configured.replacementBuses === undefined
+      ? []
+      : list(configured.replacementBuses, "exclude.replacementBuses")
+        .map(o => operator(o, "exclude.replacementBuses"))
+  };
+}
+
+/**
+ * A mode by the name a config writes it under. `modes: [underground]` fails
+ * here rather than becoming a rule that silently excludes nothing.
+ */
+function mode(name: string): RouteType {
+  const found = MODES.get(name.trim().toLowerCase());
+
+  if (found === undefined) {
+    throw new Error(
+      `${name} is not a mode. Expected one of: ${[...MODES.keys()].join(", ")}.`
+    );
+  }
+
+  return found;
+}
+
+/**
+ * An ATOC code, checked for shape and not against data/agency.ts: a code
+ * appearing in the CIF without this build knowing it can still be excluded.
+ */
+function operator(code: string, what: string): string {
+  const upper = code.trim().toUpperCase();
+
+  if (!ATOC_CODE.test(upper)) {
+    throw new Error(`${what} takes two-letter ATOC codes. Got ${JSON.stringify(code)}.`);
+  }
+
+  return upper;
 }
 
 function check(key: string, known: readonly string[]): string {

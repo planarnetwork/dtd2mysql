@@ -11,6 +11,7 @@ import {Schedule} from "../model/Schedule";
 import {FixedLink, PickupDropOffType, RouteType, Stop, StopTime, Transfer} from "@gb-transit/gtfs-schema";
 import {STP} from "../model/OverlayRecord";
 import {interchange} from "../transform/MergeTransfers";
+import {NO_EXCLUSIONS} from "../transform/ExcludeServices";
 import {TimetableSource} from "../source/TimetableSource";
 
 /**
@@ -156,7 +157,8 @@ const context: BuildContext = {
   range: parseRange("3 MONTH"),
   links: true,
   removePassingPoints: true,
-  duplicateOvernightAssociations: false
+  duplicateOvernightAssociations: false,
+  exclude: NO_EXCLUSIONS
 };
 
 async function build(source: TimetableSource, enrichers: Enricher[] = []): Promise<MemoryOutput> {

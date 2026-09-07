@@ -22,9 +22,11 @@ with the coverage window, what the current feed was built from, and a page for e
 |---|---|
 | [`gtfs.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip) | where a service calls |
 | [`gtfs-passing-points.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-passing-points.zip) | and where it runs through without stopping |
+| [`gtfs-national-rail-only.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-national-rail-only.zip) | without the services National Rail does not run — the tube, the Metro, the ferries, the buses and TfL's replacement buses |
 
-Both are rebuilt every night by [`feed.yml`](.github/workflows/feed.yml) from the configuration in
-[`gtfs.config.yaml`](gtfs.config.yaml), validated against a
+All three are rebuilt every night by [`feed.yml`](.github/workflows/feed.yml) from the configuration
+in [`gtfs.config.yaml`](gtfs.config.yaml) and
+[`gtfs.national-rail-only.config.yaml`](gtfs.national-rail-only.config.yaml), validated against a
 [pinned baseline](.github/validator-baseline.json), and attached to a dated release. A build that
 fails validation is not published.
 

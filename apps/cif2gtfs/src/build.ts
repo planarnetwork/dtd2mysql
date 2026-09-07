@@ -4,7 +4,7 @@ import * as path from "node:path";
 import {NAPTAN, NaptanEnricher, naptanFromApi} from "@gb-transit/enrich-naptan";
 import {STATION_GROUPS, StationGroupsExtension, groupsFromFeed} from "@gb-transit/extend-station-groups";
 import {parse} from "yaml";
-import {BuildConfig, BuildContext, Enricher, EnricherConfig, Extension, parseConfig} from "@gb-transit/gtfs";
+import {BuildConfig, BuildContext, Enricher, EnricherConfig, Extension, NO_EXCLUSIONS, parseConfig} from "@gb-transit/gtfs";
 import {BuildFeed, buildContext, dateRange, option, options, stationCoordinates} from "@gb-transit/gtfs";
 import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
@@ -33,7 +33,7 @@ export async function build(argv: string[]): Promise<void> {
     throw new Error(`No timetable feed found in ${given.join(", ")}. Expected files named RJTTFxxx.ZIP or RJTTCxxx.ZIP.`);
   }
 
-  const context = buildContext(
+  const environment = buildContext(
     argv,
     // The config's today and range reach buildContext the same way the
     // environment does, so there is one place that decides precedence.
@@ -51,6 +51,10 @@ export async function build(argv: string[]): Promise<void> {
         ?? (config?.duplicateOvernightAssociations ? "1" : undefined)
     }
   );
+
+  // Added here rather than passed through the environment above, which carries
+  // single values a flag could also have said.
+  const context: BuildContext = {...environment, exclude: config?.exclude ?? NO_EXCLUSIONS};
 
   console.log(`Reading ${sources.join(", ")}`);
 

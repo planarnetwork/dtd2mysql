@@ -271,10 +271,14 @@ over. `gtfs-national-rail-only.zip` leaves them out:
   own answer to its own timetable failing, and nothing else publishes them;
 - everything run by `ES`, `LT`, `TW` or `ZZ` — Eurostar, London Underground, the Tyne & Wear Metro
   and services with no operator — whatever mode it runs as. That is what takes out a London
-  Underground replacement bus, which is a replacement bus but TfL's to describe.
+  Underground replacement bus, which is a replacement bus but TfL's to describe;
+- the replacement buses of `LO` and `XR`. The Overground and the Elizabeth line are National Rail
+  and their trains are here, but their replacement buses are run by TfL, the way the Underground's
+  are.
 
 Where those services matter, their own operators describe them better: TfL gives the NaPTAN stop a
-replacement bus calls at and the letter route code it runs under, neither of which the CIF has.
+replacement bus calls at and the letter route code it runs under — `R` for the Willesden to
+Stratford service — neither of which the CIF has a field for.
 
 Everything else is identical to `gtfs.zip`. A station left with no calls is still published — a
 tube-only station is still somewhere a ticket can be bought to — but its boarding points are not,

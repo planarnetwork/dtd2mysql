@@ -378,3 +378,85 @@ describe("a build that asks for overnight associations to be duplicated", () => 
   });
 
 });
+
+/**
+ * The services National Rail does not hold authority over, left out - #176.
+ */
+async function buildWith(exclude: string[]): Promise<Record<string, string[]>> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "excluded"));
+  const config = path.join(dir, "gtfs.config.yaml");
+  const out = path.join(dir, "feed");
+
+  fs.writeFileSync(config, [
+    `source: ${JSON.stringify(path.join(fixtures, "RJTTF001.ZIP"))}`,
+    `out: ${JSON.stringify(out)}`,
+    `today: ${TODAY}`,
+    "exclude:",
+    ...exclude
+  ].join("\n"));
+
+  await build(["node", "cif2gtfs", "build", "--config", config]);
+
+  // Only the leading columns are read, which are the ids - a quoted headsign
+  // later in the row cannot make splitting on commas wrong.
+  const read = (file: string) => fs.readFileSync(path.join(out, file), "utf8")
+    .trimEnd().split("\n").slice(1).map(line => line.split(","));
+
+  return {
+    routes: read("routes.txt").map(([id]) => id),
+    tripRoutes: read("trips.txt").map(([route]) => route),
+    trips: read("trips.txt").map(([, , trip]) => trip),
+    calledBy: read("stop_times.txt").map(([trip]) => trip)
+  };
+}
+
+describe("a build that leaves out the services National Rail does not run", () => {
+
+  let feed: Record<string, string[]>;
+
+  beforeAll(async () => {
+    feed = await buildWith([
+      "  modes: [metro, bus, ship]",
+      "  operators: [ES, LT, TW, ZZ]"
+    ]);
+  }, 60_000);
+
+  it("drops the metro, bus and ship services", () => {
+    // MET and GRN are the tube and the Metro, QC and QR the ferries, EM_BUS and
+    // QR_BUS the scheduled buses.
+    expect(feed.routes).to.not.include.members(["MET", "GRN", "QC", "QR", "QR_BUS", "EM_BUS"]);
+  });
+
+  it("keeps the replacement buses, which are National Rail's own", () => {
+    expect(feed.routes).to.include("AW_RRB");
+  });
+
+  it("keeps the trains, Heathrow Express and the Overground among them", () => {
+    expect(feed.routes).to.include.members(["CS", "EM", "GW", "HX", "WIN"]);
+  });
+
+  it("leaves no trip on a route it dropped", () => {
+    const routes = new Set(feed.routes);
+
+    expect(feed.tripRoutes.filter(route => !routes.has(route))).to.deep.equal([]);
+  });
+
+  it("leaves no stop time on a trip it dropped", () => {
+    const trips = new Set(feed.trips);
+
+    expect([...new Set(feed.calledBy)].filter(trip => !trips.has(trip))).to.deep.equal([]);
+  });
+
+});
+
+describe("a build that leaves out one operator's replacement buses", () => {
+
+  it("drops that operator's buses and nothing else", async () => {
+    const feed = await buildWith(["  replacementBuses: [AW]"]);
+    const everything = fs.readFileSync(path.join(golden, "routes.txt"), "utf8")
+      .trimEnd().split("\n").slice(1).map(line => line.split(",")[0]);
+
+    expect(feed.routes).to.deep.equal(everything.filter(route => route !== "AW_RRB"));
+  }, 60_000);
+
+});

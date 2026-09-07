@@ -6,6 +6,7 @@ import {Association} from "../model/Association";
 import {applyOverlays} from "../transform/ApplyOverlays";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/ApplyAssociations";
+import {excludeServices} from "../transform/ExcludeServices";
 import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {FileSchema, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
@@ -334,7 +335,12 @@ export class BuildFeed {
 
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults, duplicateOvernightAssociations: boolean): LinkedSchedules {
     const processedAssociations: AssociationIndex = applyOverlays(associations);
-    const processedSchedules: ScheduleIndex = applyOverlays(scheduleResults.schedules);
+    // After the overlays, so a train replaced on some days by a service the
+    // rules drop does not come back on those days. Before the associations,
+    // which skip a coupling whose schedules are not there.
+    const processedSchedules: ScheduleIndex = excludeServices(
+      applyOverlays(scheduleResults.schedules), this.context.exclude
+    );
     const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator, duplicateOvernightAssociations);
     const mergedSchedules = mergeSchedules(associated.schedules);
     const links = resolveLinks(associated.links, mergedSchedules);

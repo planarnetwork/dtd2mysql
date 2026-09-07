@@ -26,9 +26,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Two builds and two validator runs, the second over a feed a third larger
-    # than the first.
-    timeout-minutes: 90
+    # Three builds and three validator runs, one of them over a feed a third
+    # larger than the first.
+    timeout-minutes: 120
     # The secrets are named for the feed, the variables for the protocol it
     # arrives over: dtd2mysql reads SFTP_*, so the names cannot be made to
     # match on either side and the mapping belongs here.
@@ -114,13 +114,27 @@ jobs:
           yarn tsx apps/cif2gtfs/src/index.ts build --config gtfs.config.yaml \
             --out feed-passing-points --remove-passing-points=false | tee build-passing-points.log
 
+      # The same timetable without the services National Rail does not hold
+      # authority over - the tube, the Metro, the ferries, the buses and the
+      # replacement buses TfL runs. A feed combined with other sources has
+      # better answers for those elsewhere, and a feed read on its own wants
+      # them, so both are published.
+      #
+      # A second config rather than a flag: what a published feed contains
+      # should arrive as a diff somebody approved.
+      - name: Build the National Rail only feed
+        run: |
+          mkdir -p feed-national-rail-only
+          yarn tsx apps/cif2gtfs/src/index.ts build --config gtfs.national-rail-only.config.yaml \
+            --out feed-national-rail-only | tee build-national-rail-only.log
+
       # A published feed that fails referential integrity must never reach a
       # release, so the validator runs before anything is attached. What counts
       # as a failure is a baseline file: an unlisted error, or more of a listed
       # one than it accepts. One baseline each, because accepting what the
       # passing points introduce for the feed that does not have them would not
-      # be a gate. Either failing stops the release: a half-published pair is
-      # worse than a late one.
+      # be a gate. Any of them failing stops the release: a half-published set
+      # is worse than a late one.
       - name: Validate
         run: |
           curl -sSfL -o gtfs-validator.jar \
@@ -135,6 +149,12 @@ jobs:
             report-passing-points/report.json \
             .github/validator-baseline-passing-points.json \
             feed-passing-points/validation.json
+
+          java -jar gtfs-validator.jar -i feed-national-rail-only -o report-national-rail-only -svu
+          node scripts/check-validation.mjs \
+            report-national-rail-only/report.json \
+            .github/validator-baseline-national-rail-only.json \
+            feed-national-rail-only/validation.json
 
       # A feed that suddenly has a fifth fewer trips than yesterday is a feed
       # with something wrong in it, and it is cheaper to stop than to withdraw.
@@ -156,6 +176,11 @@ jobs:
 
           echo "trips=$trips" >> "$GITHUB_OUTPUT"
           echo "This build: $trips trips"
+
+          # Not compared against the others: this feed is meant to have fewer.
+          national_rail_only=$(( $(wc -l < feed-national-rail-only/trips.txt) - 1 ))
+          echo "national_rail_only_trips=$national_rail_only" >> "$GITHUB_OUTPUT"
+          echo "National Rail only: $national_rail_only trips"
 
           previous=$(gh release list --limit 20 --json tagName \
             --jq '[.[] | select(.tagName | startswith("feed-"))][0].tagName' || true)
@@ -201,8 +226,10 @@ jobs:
               built: new Date().toISOString(),
               commit: '${{ github.sha }}',
               trips: ${{ steps.compare.outputs.trips }},
+              trips_national_rail_only: ${{ steps.compare.outputs.national_rail_only_trips }},
               stop_times: rows('feed/stop_times.txt'),
               stop_times_with_passing_points: rows('feed-passing-points/stop_times.txt'),
+              stop_times_national_rail_only: rows('feed-national-rail-only/stop_times.txt'),
               feed_version: feed.feed_version,
               feed_start_date: feed.feed_start_date,
               feed_end_date: feed.feed_end_date,
@@ -218,10 +245,13 @@ jobs:
           cd feed && zip -q -r ../gtfs.zip . -x validation.json feed-meta.json enrichment-report.json provenance.json && cd ..
           cd feed-passing-points && zip -q -r ../gtfs-passing-points.zip . \
             -x validation.json feed-meta.json enrichment-report.json provenance.json && cd ..
-          # A release asset is named by its basename, so the second feed's
-          # report cannot go up as validation.json alongside the first's.
+          cd feed-national-rail-only && zip -q -r ../gtfs-national-rail-only.zip . \
+            -x validation.json feed-meta.json enrichment-report.json provenance.json && cd ..
+          # A release asset is named by its basename, so the other feeds'
+          # reports cannot go up as validation.json alongside the first's.
           cp feed-passing-points/validation.json validation-passing-points.json
-          ls -la gtfs.zip gtfs-passing-points.zip
+          cp feed-national-rail-only/validation.json validation-national-rail-only.json
+          ls -la gtfs.zip gtfs-passing-points.zip gtfs-national-rail-only.zip
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -230,11 +260,13 @@ jobs:
           path: |
             gtfs.zip
             gtfs-passing-points.zip
+            gtfs-national-rail-only.zip
             feed/validation.json
             feed/feed-meta.json
             feed/enrichment-report.json
             feed/provenance.json
             feed-passing-points/validation.json
+            feed-national-rail-only/validation.json
           retention-days: 14
 
       # The tag is the date, so the release list reads as a history of feeds and
@@ -255,17 +287,22 @@ jobs:
                 '| Source | ' + m.feed_version + ' |',
                 '| Built from | ' + m.commit.slice(0, 7) + ' |',
                 '',
-                'Two feeds, same trips.',
+                'Three feeds. The first two hold the same trips.',
                 '',
                 '- \`gtfs.zip\` - where a service calls. ' +
                   m.stop_times.toLocaleString() + ' stop times.',
                 '- \`gtfs-passing-points.zip\` - and where it runs through without stopping, ' +
                   'as calls with \`pickup_type\` and \`drop_off_type\` 1. ' +
-                  m.stop_times_with_passing_points.toLocaleString() + ' stop times.'
+                  m.stop_times_with_passing_points.toLocaleString() + ' stop times.',
+                '- \`gtfs-national-rail-only.zip\` - the first feed without the services National ' +
+                  'Rail does not hold authority over: the tube, the Metro, the ferries, the ' +
+                  'buses and the replacement buses TfL runs. ' +
+                  m.trips_national_rail_only.toLocaleString() + ' trips.'
               ].join('\n')
             ")" \
-            gtfs.zip gtfs-passing-points.zip \
+            gtfs.zip gtfs-passing-points.zip gtfs-national-rail-only.zip \
             feed/validation.json validation-passing-points.json \
+            validation-national-rail-only.json \
             feed/feed-meta.json feed/enrichment-report.json \
             $([ -f feed/provenance.json ] && echo feed/provenance.json)
         env:

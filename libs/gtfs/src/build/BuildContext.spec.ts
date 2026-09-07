@@ -1,6 +1,7 @@
 import {describe, it, expect} from "vitest";
 import {Temporal} from "temporal-polyfill";
 import {buildContext, dateRange, option, parseRange} from "./BuildContext";
+import {NO_EXCLUSIONS} from "../transform/ExcludeServices";
 
 describe("parseRange", () => {
 
@@ -98,7 +99,8 @@ describe("dateRange", () => {
       range: parseRange("3 MONTH"),
       links: false,
       removePassingPoints: true,
-      duplicateOvernightAssociations: false
+      duplicateOvernightAssociations: false,
+      exclude: NO_EXCLUSIONS
     });
 
     expect(range.from.toString()).to.equal("2025-09-02");
@@ -112,7 +114,8 @@ describe("dateRange", () => {
       range: parseRange("1 MONTH"),
       links: false,
       removePassingPoints: true,
-      duplicateOvernightAssociations: false
+      duplicateOvernightAssociations: false,
+      exclude: NO_EXCLUSIONS
     });
 
     expect(range.to.toString()).to.equal("2025-09-30");

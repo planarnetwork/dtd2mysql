@@ -12,6 +12,11 @@ entry here does not excuse a golden feed moving, and an entry there does not exc
 
 ## The type surface
 
+**Leaving the non-National Rail services out (#176).** `@gb-transit/gtfs` gains `excludeServices`,
+`ServiceExclusions`, `NO_EXCLUSIONS` and `MODES` — the transform that drops the metro, bus and ship
+services a config asks it to, the rules it reads, and the mode names those rules are written in.
+Nothing is removed: `BuildContext` and `BuildConfig` gain a field, which is not a surface change.
+
 **Absorbing gtfsmerge and transxchange2gtfs.** `@gb-transit/gtfs-schema` gains `Columns`,
 `FileSchema`, `fileSchema`, `GTFS_COLUMNS`, `GTFSFileName`, `GTFSColumn`, `RowWriter`, and
 `Shape`/`ShapeID`/`ShapeRow`; `GTFSOutput` moves into it from `@gb-transit/gtfs`, which re-exports
@@ -29,3 +34,15 @@ published — and its surface moves into `@gb-transit/gtfs-loader` as `readFeed`
 `FEED_FILES`, `READ_COLUMNS`, `feedFileOf`, `toRow`, `RawFeed` and `RawOptions`, reached through
 `loadGTFS(source, {raw: true})`. Nothing else moved: the reader is the same code under a different
 name, and `loadGTFS`'s own surface is unchanged.
+
+## The validator baselines
+
+**A baseline for the National Rail only feed (#176).**
+[`.github/validator-baseline-national-rail-only.json`](.github) is new, for the third feed the
+nightly publishes. Seeded from `validator-baseline.json`, which is the ceiling this feed cannot
+exceed: it is the standard feed with services taken out, so nothing it accepts is new. Either may
+turn out to be zero here — `QBN`/`QBS` are Blackpool bus-tram stops and the services reaching them
+may be among the excluded — and `check-validation.mjs` reports a count under the baseline rather
+than failing on it, which is the moment to tighten this file. A baseline of its own rather than a
+shared one, for the reason the passing points feed has its own: a shared baseline accepts in one
+feed what only happens in another, which is not a gate.
