@@ -101,11 +101,20 @@ if (import.meta.filename === process.argv[1]) {
     process.exit(0);
   }
 
+  // Fail loudly rather than open. The shell this replaced put `|| true` on the
+  // diff, so on a shallow checkout - where there is no merge base to diff
+  // against - it produced nothing and read as "no baseline changed". A guard
+  // that cannot run has to say so.
   try {
-    execFileSync("git", ["fetch", "-q", "--depth=1", "origin", base], {stdio: "ignore"});
+    execFileSync("git", ["merge-base", base, "HEAD"], {stdio: "ignore"});
   }
   catch {
-    // Already have it, or cannot reach the remote. The diff below says which.
+    console.error(
+      `No merge base between ${base} and HEAD.\n` +
+      "The checkout is too shallow to tell what this branch changed. " +
+      "Give actions/checkout `fetch-depth: 0`."
+    );
+    process.exit(1);
   }
 
   process.exit(report(changedFiles(base, BASELINES), changedFiles(base, [EXPLANATIONS])));
