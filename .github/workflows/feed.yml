@@ -27,8 +27,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     # Three builds and three validator runs, one of them over a feed a third
-    # larger than the first.
-    timeout-minutes: 120
+    # larger than the first. Scaled with the third rather than absorbed: two
+    # units had 45 minutes each and three have the same.
+    timeout-minutes: 135
     # The secrets are named for the feed, the variables for the protocol it
     # arrives over: dtd2mysql reads SFTP_*, so the names cannot be made to
     # match on either side and the mapping belongs here.
@@ -177,10 +178,18 @@ jobs:
           echo "trips=$trips" >> "$GITHUB_OUTPUT"
           echo "This build: $trips trips"
 
-          # Not compared against the others: this feed is meant to have fewer.
+          # Meant to have fewer, so it is not held to the same count - but it has
+          # to have fewer. A rename, a parse regression or a changed ATOC code
+          # would make the exclusions a no-op, and a third zip identical to the
+          # first would otherwise pass every gate here.
           national_rail_only=$(( $(wc -l < feed-national-rail-only/trips.txt) - 1 ))
           echo "national_rail_only_trips=$national_rail_only" >> "$GITHUB_OUTPUT"
           echo "National Rail only: $national_rail_only trips"
+
+          if [ "$national_rail_only" -ge "$trips" ]; then
+            echo "The National Rail only feed excluded nothing, so the exclusions are not working."
+            exit 1
+          fi
 
           previous=$(gh release list --limit 20 --json tagName \
             --jq '[.[] | select(.tagName | startswith("feed-"))][0].tagName' || true)
@@ -200,6 +209,25 @@ jobs:
             console.log('Swing: ' + swing.toFixed(1) + '%');
             if (swing > 5) {
               console.error('More than 5% different from the last release. Releasing this needs a human.');
+              process.exit(1);
+            }
+          "
+
+          # The same check on the third feed, which catches the opposite failure
+          # to the one above: a rule that suddenly matches far more than it did
+          # yesterday. Skipped against a release published before the field
+          # existed, which carries no count to compare with.
+          node -e "
+            const previous = require('./previous.json').trips_national_rail_only;
+            const now = $national_rail_only;
+            if (previous === undefined) {
+              console.log('The last release predates the National Rail only feed.');
+              process.exit(0);
+            }
+            const swing = Math.abs(now - previous) / previous * 100;
+            console.log('National Rail only: ' + previous + ' -> ' + now + ', swing ' + swing.toFixed(1) + '%');
+            if (swing > 5) {
+              console.error('The National Rail only feed moved more than 5%. Releasing this needs a human.');
               process.exit(1);
             }
           "
@@ -290,14 +318,17 @@ jobs:
                 'Three feeds. The first two hold the same trips.',
                 '',
                 '- \`gtfs.zip\` - where a service calls. ' +
+                  m.trips.toLocaleString() + ' trips, ' +
                   m.stop_times.toLocaleString() + ' stop times.',
                 '- \`gtfs-passing-points.zip\` - and where it runs through without stopping, ' +
                   'as calls with \`pickup_type\` and \`drop_off_type\` 1. ' +
+                  m.trips.toLocaleString() + ' trips, ' +
                   m.stop_times_with_passing_points.toLocaleString() + ' stop times.',
                 '- \`gtfs-national-rail-only.zip\` - the first feed without the services National ' +
                   'Rail does not hold authority over: the tube, the Metro, the ferries, the ' +
                   'buses and the replacement buses TfL runs. ' +
-                  m.trips_national_rail_only.toLocaleString() + ' trips.'
+                  m.trips_national_rail_only.toLocaleString() + ' trips, ' +
+                  m.stop_times_national_rail_only.toLocaleString() + ' stop times.'
               ].join('\n')
             ")" \
             gtfs.zip gtfs-passing-points.zip gtfs-national-rail-only.zip \

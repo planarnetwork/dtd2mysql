@@ -29,10 +29,11 @@ otherwise, so a build that says nothing about this produces the feed it always d
 Config only. Everything else a build decides is a single value that a flag or an environment
 variable could also say; these are three lists of codes.
 
-`@gb-transit/gtfs` gains `excludeServices`, `ServiceExclusions`, `NO_EXCLUSIONS` and `MODES`. The
-schedules are dropped after the overlays are applied, so a train replaced on some days by a service
-the rules exclude does not come back on those days, and before the associations, which leaves no
-coupling naming a trip the feed does not publish.
+`@gb-transit/gtfs` gains `excludeServices`, `ServiceExclusions`, `NO_EXCLUSIONS` and `MODES`, and
+`BuildContext` an optional `exclude`. The schedules are dropped after the overlays are applied, so a
+train replaced on some days by a service the rules exclude does not come back on those days, and
+before the associations, so a portion is not cut into coupled and uncoupled days for a base that is
+then excluded.
 
 The nightly publishes a third feed, `gtfs-national-rail-only.zip`, built from
 `gtfs.national-rail-only.config.yaml` with all three rules on. `gtfs.zip` and

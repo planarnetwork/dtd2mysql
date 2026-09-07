@@ -50,10 +50,10 @@ A config file looks like this. Only source is required:
   links: false
   removePassingPoints: true  # false keeps the locations a service passes through
   duplicateOvernightAssociations: false   # true publishes an overnight portion twice
-  exclude:                   # nothing, unless it says otherwise. There is no
-    modes: [metro, bus, ship]   # flag for these: they are lists, not switches
-    operators: [ES, LT, TW, ZZ] # every service of these operators
-    replacementBuses: [LO, XR]  # only their replacement buses; the trains stay
+  exclude:                     # config only - these are lists, not switches
+    modes: [metro, bus, ship]  # replacement buses are their own mode and stay
+    operators: [ES, LT, TW, ZZ]     # every service these operators run
+    replacementBuses: [LO, XR]      # only their buses; their trains stay
   enrichers:
     NAPTAN:                  # on, with its own defaults
     KNOWLEDGEBASE:

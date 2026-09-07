@@ -206,7 +206,7 @@ describe("parseConfig, reading what to exclude", () => {
 
   it("refuses a mode it cannot read, rather than excluding nothing quietly", () => {
     expect(() => parseConfig({...minimal, exclude: {modes: ["underground"]}}))
-      .to.throw(/underground is not a mode. Expected one of: metro, subway, rail/);
+      .to.throw(/exclude.modes does not take "underground". Expected one of: metro, subway, rail/);
   });
 
   it("keeps the two operator lists apart", () => {

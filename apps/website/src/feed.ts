@@ -127,7 +127,7 @@ export const FEEDS: Feed[] = [
     file: "gtfs-national-rail-only.zip",
     tag: "National Rail only",
     summary: "The standard feed without the services National Rail does not hold authority over — " +
-      "no tube, no Metro, no ferries, no buses that are not rail replacements.",
+      "no tube, no Metro, no ferries, no scheduled buses, and no replacement buses TfL runs.",
     points: [
       "For a feed merged with other sources",
       "Where those sources describe the metro better",

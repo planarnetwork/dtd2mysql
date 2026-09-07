@@ -6,7 +6,7 @@ import {Association} from "../model/Association";
 import {applyOverlays} from "../transform/ApplyOverlays";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/ApplyAssociations";
-import {excludeServices} from "../transform/ExcludeServices";
+import {excludeServices, NO_EXCLUSIONS} from "../transform/ExcludeServices";
 import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {FileSchema, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
@@ -336,10 +336,12 @@ export class BuildFeed {
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults, duplicateOvernightAssociations: boolean): LinkedSchedules {
     const processedAssociations: AssociationIndex = applyOverlays(associations);
     // After the overlays, so a train replaced on some days by a service the
-    // rules drop does not come back on those days. Before the associations,
-    // which skip a coupling whose schedules are not there.
+    // rules drop does not come back on those days. Before the associations, so
+    // a portion is not cut into coupled and uncoupled days for a base that is
+    // then excluded - the coupling itself is safe either way, because
+    // linkedTrips drops a link to a trip that is not published.
     const processedSchedules: ScheduleIndex = excludeServices(
-      applyOverlays(scheduleResults.schedules), this.context.exclude
+      applyOverlays(scheduleResults.schedules), this.context.exclude ?? NO_EXCLUSIONS
     );
     const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator, duplicateOvernightAssociations);
     const mergedSchedules = mergeSchedules(associated.schedules);

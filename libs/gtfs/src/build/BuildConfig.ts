@@ -195,7 +195,9 @@ function exclusions(raw: unknown): ServiceExclusions {
   }
 
   return {
-    modes: configured.modes === undefined ? [] : list(configured.modes, "exclude.modes").map(mode),
+    modes: configured.modes === undefined
+      ? []
+      : list(configured.modes, "exclude.modes").map(m => mode(m, "exclude.modes")),
     operators: configured.operators === undefined
       ? []
       : list(configured.operators, "exclude.operators").map(o => operator(o, "exclude.operators")),
@@ -210,12 +212,12 @@ function exclusions(raw: unknown): ServiceExclusions {
  * A mode by the name a config writes it under. `modes: [underground]` fails
  * here rather than becoming a rule that silently excludes nothing.
  */
-function mode(name: string): RouteType {
+function mode(name: string, what: string): RouteType {
   const found = MODES.get(name.trim().toLowerCase());
 
   if (found === undefined) {
     throw new Error(
-      `${name} is not a mode. Expected one of: ${[...MODES.keys()].join(", ")}.`
+      `${what} does not take ${JSON.stringify(name)}. Expected one of: ${[...MODES.keys()].join(", ")}.`
     );
   }
 

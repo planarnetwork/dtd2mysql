@@ -13,6 +13,13 @@ export interface ServiceExclusions {
   /**
    * Modes to leave out whoever runs them. A replacement bus is a mode of its
    * own, so `Bus` leaves the replacements alone.
+   *
+   * The mode is not intrinsic: it is the CIF train category read through the
+   * eight-entry table in ScheduleBuilder, and a category outside it is taken
+   * for rail. The table does cover every non-rail category the format has - SS
+   * is the only ship, OL the only metro, BR and BS the only buses - so nothing
+   * escapes by falling through, but a mode added there has to be added here to
+   * be excludable.
    */
   readonly modes: readonly RouteType[];
   /**
@@ -60,15 +67,26 @@ export function excludeServices(schedules: ScheduleIndex, rules: ServiceExclusio
   const operators = new Set(rules.operators);
   const replacementBuses = new Set(rules.replacementBuses);
 
-  // Every rule that catches it, not the first: the rules overlap - a tube train
-  // is both `mode metro` and `operator LT` - and a rule reported as catching
-  // nothing because another got there first would be a false alarm.
-  const excluded = (schedule: Schedule) => [
-    operators.has(schedule.operator) ? `operator ${schedule.operator}` : undefined,
-    modes.has(schedule.mode) ? `mode ${modeName(schedule.mode)}` : undefined,
-    schedule.mode === RouteType.ReplacementBus && replacementBuses.has(schedule.operator)
-      ? `replacement buses of ${schedule.operator}`
-      : undefined
+  const byOperator = (schedule: Schedule) => operators.has(schedule.operator);
+  const byMode = (schedule: Schedule) => modes.has(schedule.mode);
+  const byReplacementBus = (schedule: Schedule) =>
+    schedule.mode === RouteType.ReplacementBus && replacementBuses.has(schedule.operator);
+
+  const excluded = (schedule: Schedule) =>
+    byOperator(schedule) || byMode(schedule) || byReplacementBus(schedule);
+
+  /**
+   * Every rule that catches it, not the first: the rules overlap - a tube train
+   * is both `mode metro` and `operator LT` - and a rule reported as catching
+   * nothing because another got there first would be a false alarm.
+   *
+   * Only asked of a schedule already known to be excluded, so the common answer
+   * - kept, no rules, no list - costs nothing.
+   */
+  const why = (schedule: Schedule) => [
+    byOperator(schedule) ? `operator ${schedule.operator}` : undefined,
+    byMode(schedule) ? `mode ${modeName(schedule.mode)}` : undefined,
+    byReplacementBus(schedule) ? `replacement buses of ${schedule.operator}` : undefined
   ].filter(rule => rule !== undefined);
 
   const kept: ScheduleIndex = {};
@@ -77,13 +95,11 @@ export function excludeServices(schedules: ScheduleIndex, rules: ServiceExclusio
 
   for (const [tuid, records] of Object.entries(schedules)) {
     const survivors = records.filter(schedule => {
-      const matched = excluded(schedule);
-
-      if (matched.length === 0) {
+      if (!excluded(schedule)) {
         return true;
       }
 
-      for (const rule of matched) {
+      for (const rule of why(schedule)) {
         dropped.set(rule, (dropped.get(rule) ?? 0) + 1);
       }
 
@@ -125,13 +141,19 @@ function report(rules: ServiceExclusions, dropped: Map<string, number>, total: n
   }
 }
 
-/** Every rule as the report names it, so one that caught nothing can be found. */
+/**
+ * Every rule as the report names it, so one that caught nothing can be found.
+ *
+ * Deduplicated, because `operators: [LT, LT]` is a config somebody can write
+ * and "Nothing matched operator LT, operator LT" is not a message anybody
+ * should have to read. `metro` and `subway` name the same mode too.
+ */
 function every(rules: ServiceExclusions): string[] {
-  return [
+  return [...new Set([
     ...rules.operators.map(operator => `operator ${operator}`),
     ...rules.modes.map(mode => `mode ${modeName(mode)}`),
     ...rules.replacementBuses.map(operator => `replacement buses of ${operator}`)
-  ];
+  ])];
 }
 
 function nothingToDo(rules: ServiceExclusions): boolean {

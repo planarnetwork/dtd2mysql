@@ -50,9 +50,13 @@ export interface BuildContext {
   /**
    * The services to leave out - see ExcludeServices. The one setting a config
    * file alone carries: everything else here is a single value a flag could
-   * also say, and these are three lists of codes. Nothing by default.
+   * also say, and these are three lists of codes.
+   *
+   * Optional because a caller constructs this interface rather than receiving
+   * one, so a required field would not compile against code written before it
+   * existed. Absent means the same as empty: exclude nothing.
    */
-  readonly exclude: ServiceExclusions;
+  readonly exclude?: ServiceExclusions;
 }
 
 /**

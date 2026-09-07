@@ -15,7 +15,13 @@ entry here does not excuse a golden feed moving, and an entry there does not exc
 **Leaving the non-National Rail services out (#176).** `@gb-transit/gtfs` gains `excludeServices`,
 `ServiceExclusions`, `NO_EXCLUSIONS` and `MODES` — the transform that drops the metro, bus and ship
 services a config asks it to, the rules it reads, and the mode names those rules are written in.
-Nothing is removed: `BuildContext` and `BuildConfig` gain a field, which is not a surface change.
+Nothing is removed.
+
+`BuildContext` and `BuildConfig` also gain an `exclude` field, which this snapshot does not record:
+it pins the names a library exports and not their shapes. `BuildContext.exclude` is optional for
+that reason — a caller constructs one to reach `BuildFeed` or `dateRange`, so a required field would
+stop existing code compiling and the snapshot would not have said so. `BuildConfig.exclude` is
+required, because `parseConfig` returns that type rather than taking it.
 
 **Absorbing gtfsmerge and transxchange2gtfs.** `@gb-transit/gtfs-schema` gains `Columns`,
 `FileSchema`, `fileSchema`, `GTFS_COLUMNS`, `GTFSFileName`, `GTFSColumn`, `RowWriter`, and
@@ -38,7 +44,8 @@ name, and `loadGTFS`'s own surface is unchanged.
 ## The validator baselines
 
 **A baseline for the National Rail only feed (#176).**
-[`.github/validator-baseline-national-rail-only.json`](.github) is new, for the third feed the
+[`.github/validator-baseline-national-rail-only.json`](.github/validator-baseline-national-rail-only.json)
+is new, for the third feed the
 nightly publishes. Seeded from `validator-baseline.json`, which is the ceiling this feed cannot
 exceed: it is the standard feed with services taken out, so nothing it accepts is new. Either may
 turn out to be zero here — `QBN`/`QBS` are Blackpool bus-tram stops and the services reaching them
