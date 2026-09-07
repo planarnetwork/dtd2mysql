@@ -37,8 +37,50 @@ const unlisted = [...counted].filter(([code]) => !baseline.hasOwnProperty(code))
 const grown = [...counted].filter(([code, count]) => baseline[code] && count > baseline[code].max);
 const shrunk = Object.entries(baseline).filter(([code, {max}]) => (counted.get(code) ?? 0) < max);
 
+const shown = 20;
+
+const describe = sample => Object.entries(sample)
+  .filter(([, value]) => value !== null && value !== undefined)
+  .map(([field, value]) => `${field}=${value}`)
+  .join(" ");
+
+const schedules = samples => {
+  const counts = new Map();
+
+  for (const {tripId} of samples) {
+    const schedule = tripId.split("_")[0];
+    counts.set(schedule, (counts.get(schedule) ?? 0) + 1);
+  }
+
+  return [...counts]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([schedule, count]) => count > 1 ? `${schedule} (${count})` : schedule);
+};
+
+const detail = code => {
+  const {sampleNotices: samples, totalNotices: total} = errors.find(error => error.code === code);
+
+  if (samples.length > 0 && samples.every(sample => sample.tripId)) {
+    const named = schedules(samples);
+    console.log(`  ${named.length} schedule(s): ${named.join(", ")}`);
+  }
+
+  for (const sample of samples.slice(0, shown)) {
+    console.log(`  ${describe(sample)}`);
+  }
+
+  if (total > shown) {
+    console.log(`  ...and ${total - shown} more`);
+  }
+
+  if (total > samples.length) {
+    console.log(`  (the report holds ${samples.length} of the ${total})`);
+  }
+};
+
 for (const [code, count] of counted) {
   console.log(`${code} ${count}${baseline[code] ? ` (baseline ${baseline[code].max})` : ""}`);
+  detail(code);
 }
 
 for (const [code, count] of unlisted) {
