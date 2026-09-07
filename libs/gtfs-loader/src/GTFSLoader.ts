@@ -103,7 +103,15 @@ export async function loadGTFSFromUrl(url: string | URL, options: FetchOptions =
 
 export interface FetchOptions extends LoadOptions {
   signal?: AbortSignal;
-  headers?: HeadersInit;
+  /**
+   * Whatever fetch takes here, said in terms of fetch rather than as HeadersInit.
+   *
+   * HeadersInit is declared by the dom library and not by node's types, so naming it would have
+   * made this package - and every package typechecked beside it - ask for dom to describe one
+   * field. RequestInit comes from whichever of the two the consumer has, and resolves to the same
+   * thing in both.
+   */
+  headers?: RequestInit["headers"];
   /** The fetch to use, for an environment that does not have one or for a test that fakes it */
   fetch?: typeof fetch;
 }
