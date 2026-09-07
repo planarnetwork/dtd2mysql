@@ -1,16 +1,25 @@
-import {promisify} from "util";
+import {promisify} from "node:util";
 import {parseString} from "xml2js";
-import * as fs from "fs";
+import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {workingDirectory} from "@gb-transit/gtfs-output";
 import {naptanFile} from "@gb-transit/naptan";
-import {
-  AgencyStream, BankHolidays, CalendarDatesStream, CalendarStream, FileStream, NaPTANIndex,
-  ParseXML, RoutesStream, ShapesStream, StopLocationIndex, StopTimesStream, StopsStream,
-  TransXChangeJourneyStream, TransXChangeStream, TransfersStream, TripsStream, XMLStream,
-  getBankHolidays, naptanIndexesFrom
-} from "@gb-transit/txc-source";
+import {FileStream} from "./xml/FileStream";
+import {ParseXML, XMLStream} from "./xml/XMLStream";
+import {TransXChangeStream} from "./transxchange/TransXChangeStream";
+import {BankHolidays, TransXChangeJourneyStream} from "./transxchange/TransXChangeJourneyStream";
+import {getBankHolidays} from "./reference/BankHolidays";
+import {NaPTANIndex, StopLocationIndex, naptanIndexesFrom} from "./reference/NaPTAN";
+import {AgencyStream} from "./gtfs/AgencyStream";
+import {CalendarDatesStream} from "./gtfs/CalendarDatesStream";
+import {CalendarStream} from "./gtfs/CalendarStream";
+import {RoutesStream} from "./gtfs/RoutesStream";
+import {ShapesStream} from "./gtfs/ShapesStream";
+import {StopTimesStream} from "./gtfs/StopTimesStream";
+import {StopsStream} from "./gtfs/StopsStream";
+import {TransfersStream} from "./gtfs/TransfersStream";
+import {TripsStream} from "./gtfs/TripsStream";
 import {Converter} from "./converter/Converter";
 
 /**

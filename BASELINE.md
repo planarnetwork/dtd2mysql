@@ -19,6 +19,11 @@ it. `@gb-transit/gtfs-output` gains `CSVRowWriter`, `field`, `writeZip`, `delive
 `workingDirectory`. Three packages are new: `@gb-transit/naptan`, `@gb-transit/txc-source` and
 `@gb-transit/gtfs-read`.
 
+**Keeping the TransXChange parsing in its app.** `@gb-transit/txc-source` is removed — it was never
+published — and its source moves into `apps/transxchange2gtfs`. It had one consumer, its own app,
+where `libs/dtd-source` has three; the symmetry with that package was the whole argument for it and
+the symmetry does not hold.
+
 **Folding the row reader into the loader.** `@gb-transit/gtfs-read` is removed — it was never
 published — and its surface moves into `@gb-transit/gtfs-loader` as `readFeed`, `readFeedRows`,
 `FEED_FILES`, `READ_COLUMNS`, `feedFileOf`, `toRow`, `RawFeed` and `RawOptions`, reached through

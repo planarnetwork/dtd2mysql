@@ -4,7 +4,6 @@
 "@gb-transit/gtfs": major
 "@gb-transit/gtfs-output": major
 "@gb-transit/naptan": minor
-"@gb-transit/txc-source": minor
 "@gb-transit/enrich-naptan": minor
 "cif2gtfs": major
 "dtd2mysql": major
@@ -46,8 +45,7 @@ rewrites a feed rather than plans over one. Built from the parts `loadGTFS`
 already used.
 **`@gb-transit/naptan`** is new: the NaPTAN download, cache and CSV read, with
 no other dependency, so a bus converter does not inherit a rail transit model to
-get them. **`@gb-transit/txc-source`** is new: the TransXChange parsing, the bus
-counterpart to `@gb-transit/dtd-source`.
+get them.
 
 **`cif2gtfs` and `dtd2mysql`** — the SPI change, and `cif2gtfs`'s `main` points
 at `dist/api.js` so requiring the package no longer runs a build.
