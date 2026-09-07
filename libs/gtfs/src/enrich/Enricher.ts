@@ -1,4 +1,4 @@
-import {AttributionRole} from "../entity/Attribution";
+import {AttributionRole} from "@gb-transit/gtfs-schema";
 import {MutableFeed} from "./MutableFeed";
 
 /**

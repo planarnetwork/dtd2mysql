@@ -66,11 +66,13 @@ README describing what it is for and how to use it.
 
 | Package | Published as | What it is |
 |---|---|---|
+| [`libs/gtfs-schema`](libs/gtfs-schema/README.md) | `@gb-transit/gtfs-schema` | The shape of a GTFS feed: one type per file, and the scalars they are written in |
 | [`libs/feed-parser`](libs/feed-parser/README.md) | `@gb-transit/feed-parser` | Declarative fixed-width and CSV record parsing |
 | [`libs/dtd-schema`](libs/dtd-schema/README.md) | `@gb-transit/dtd-schema` | Record layouts for the fares, timetable, routeing guide and NFM64 feeds |
 | [`libs/dtd-source`](libs/dtd-source/README.md) | `@gb-transit/dtd-source` | SFTP download, feed sequencing, and a timetable source that reads the files directly |
 | [`libs/gtfs`](libs/gtfs/README.md) | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | [`libs/gtfs-output`](libs/gtfs-output/README.md) | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
+| [`libs/gtfs-loader`](libs/gtfs-loader/README.md) | `@gb-transit/gtfs-loader` | The reader: a GTFS zip, stream or response into a timetable |
 | [`libs/enrich-naptan`](libs/enrich-naptan/README.md) | `@gb-transit/enrich-naptan` | Station coordinates and names from NaPTAN |
 | [`libs/extend-station-groups`](libs/extend-station-groups/README.md) | `@gb-transit/extend-station-groups` | Group stations as GTFS Fares v2 areas |
 
@@ -81,6 +83,13 @@ are the two implementations, and they are the worked examples.
 
 `dtd2mysql` depends on the libraries the way any other consumer would, so a GTFS build reading from
 something other than this tool's MySQL schema needs `@gb-transit/gtfs` rather than the CLI.
+
+`gtfs-schema` and `gtfs-loader` are the two exceptions to how everything else here is built: they
+publish ESM as well as CommonJS, their imports carry explicit `.js` extensions, and they ask for
+node 22 rather than 26. That is because `gtfs-loader` reads a feed in a browser — it is the only
+package here with a consumer that is not node — and `gtfs-schema` is what it shares a vocabulary
+with. Neither may reach anything typed against `Temporal`, which is why the loader imports
+`@gb-transit/gtfs-schema/scalars` rather than the package itself.
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the workspaces resolve
 to that output, so `yarn build` has to happen before anything runs; `tsc -b` walks the project

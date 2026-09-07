@@ -13,6 +13,31 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## The type surface gains gtfs-schema and gtfs-loader
+
+Two added keys in `type-surface.json`, and **the `gtfs` key is byte identical**. That was the point
+of the change and it is the thing to check in the diff: `@gb-transit/gtfs` moved its entity types,
+row types, enums, `TUID`/`RSID` and the `Duration` and `PlainDate` modules into
+`@gb-transit/gtfs-schema` and re-exports every one of them under the same name, so no consumer of
+that package sees anything move. If the `gtfs` key ever changes in a diff like this one, the
+re-export is not faithful and something has been dropped.
+
+`gtfs-schema` publishes 49 names. All but one were already exported from `@gb-transit/gtfs`; the
+exception is `PickupDropOffType`, which `libs/gtfs` was deep importing from `entity/StopTime` and
+exporting from nowhere. It is part of the schema, so the schema publishes it. `@gb-transit/gtfs`
+still does not, which is why its surface is unmoved.
+
+`gtfs-loader` publishes 53 names, the GTFS reader brought over from raptor. Eight of them collide
+with `@gb-transit/gtfs` — `Stop`, `StopTime`, `Trip`, `Transfer`, `Calendar`, `TripLink`, `StopID`,
+`FeedInfo` — deliberately: one set is the rows a GB rail feed is written as, the other is what any
+feed is read into. They are not to be merged. The surface is wider than raptor's own public API
+because raptor's planner reaches into `src/gtfs` directly, and every one of those names has to
+survive the move for raptor to be able to consume the package.
+
+No golden changed. The mini feed is unmoved; it is now also read back by
+`libs/gtfs-loader/src/GoldenFeed.spec.ts`, which loads it through the reader and asserts the
+`transfer_type: 4` rows cif2gtfs writes are the couplings the reader joins.
+
 ## The passing points feed accepts 25 backwards times, not 24
 
 **The nightly has failed every night since #152 landed.**

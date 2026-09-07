@@ -192,7 +192,7 @@ jobs:
       - name: Install the packaged tarballs and run the CLI
         run: |
           mkdir -p "$RUNNER_TEMP/tarballs"
-          for pkg in feed-parser dtd-schema dtd-source gtfs gtfs-output; do
+          for pkg in gtfs-schema feed-parser dtd-schema dtd-source gtfs gtfs-output; do
             yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
           done
           yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
@@ -203,6 +203,7 @@ jobs:
             "private": true,
             "version": "1.0.0",
             "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
               "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
               "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
               "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
@@ -232,6 +233,7 @@ jobs:
             "private": true,
             "version": "1.0.0",
             "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
               "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
               "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
               "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
@@ -261,6 +263,60 @@ jobs:
           diff -r ./feed "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/golden"
           # a stack trace here means the entry point lost its error handling
           ! grep -q "at Object.<anonymous>" run.txt
+      # gtfs-loader is a library rather than a CLI, and it is the only package
+      # that publishes both CommonJS and ESM. Nothing else exercises that: the
+      # tests run against source, and both formats come out of the same source,
+      # so a broken exports map, a missing dist/esm/package.json marker or an
+      # ESM specifier that node cannot resolve is invisible until somebody
+      # installs it. Its own directory, as above, so it resolves nothing the
+      # other two installs left lying around.
+      - name: The packaged loader can be required and imported
+        run: |
+          yarn workspace @gb-transit/gtfs-loader pack --out "$RUNNER_TEMP/tarballs/gtfs-loader.tgz"
+          mkdir -p "$RUNNER_TEMP/install-loader" && cd "$RUNNER_TEMP/install-loader"
+          cat > package.json <<EOF
+          {
+            "name": "gtfs-loader-pack-smoke-test",
+            "private": true,
+            "version": "1.0.0",
+            "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz"
+            }
+          }
+          EOF
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/gtfs-loader.tgz"
+          # the browser is why the package is dual built, so nothing of the feed
+          # build's node-only dependencies may have followed it in
+          [ ! -d node_modules/proj4 ] || { echo "proj4 reached the loader"; exit 1; }
+          [ ! -d node_modules/memoized-class-decorator ] || { echo "the memoisation decorator reached the loader"; exit 1; }
+          node -e '
+            const m = require("@gb-transit/gtfs-loader");
+            for (const name of ["loadGTFS", "normalise", "isCall", "coupledTripIds", "readZip", "CSVParser"]) {
+              if (typeof m[name] !== "function") { throw new Error(name + " is missing from the CommonJS build"); }
+            }
+          '
+          node --input-type=module -e '
+            import {loadGTFS, normalise, isCall, coupledTripIds, readZip, CSVParser} from "@gb-transit/gtfs-loader";
+            for (const f of [loadGTFS, normalise, isCall, coupledTripIds, readZip, CSVParser]) {
+              if (typeof f !== "function") { throw new Error("a name is missing from the ESM build"); }
+            }
+          '
+      # And that it reads a real feed once installed, not just that it loads.
+      # The golden is the only feed this repository commits, and it carries the
+      # transfer_type 4 rows cif2gtfs writes, so this is where the two halves of
+      # the round trip meet as published packages.
+      - name: The packaged loader reads the golden feed
+        run: |
+          cd "$RUNNER_TEMP/install-loader"
+          (cd "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/golden" && zip -qr "$RUNNER_TEMP/install-loader/mini.zip" .)
+          node --input-type=module -e '
+            import {loadGTFS, normalise} from "@gb-transit/gtfs-loader";
+            import * as fs from "node:fs";
+            const feed = await loadGTFS(fs.createReadStream("mini.zip"));
+            console.log(`trips ${feed.trips.length} stops ${Object.keys(feed.stops).length} links ${feed.links.length}`);
+            if (feed.trips.length === 0 || feed.links.length === 0) { throw new Error("the golden feed read as empty"); }
+            normalise(feed);
+          '
       # --help barely touches the package. Running a real command with no
       # database loads the container, resolves every schema module and exercises
       # the error path - which is what catches a files or main mistake, or a

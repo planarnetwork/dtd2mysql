@@ -8,13 +8,9 @@ import {ScheduleResults} from "./ScheduleBuilder";
 import {Association, AssociationType, DateIndicator} from "../model/Association";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {Schedule} from "../model/Schedule";
-import {RouteType} from "../entity/Route";
+import {FixedLink, PickupDropOffType, RouteType, Stop, StopTime, Transfer} from "@gb-transit/gtfs-schema";
 import {STP} from "../model/OverlayRecord";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
-import {Stop} from "../entity/Stop";
-import {Transfer} from "../entity/Transfer";
 import {interchange} from "../transform/MergeTransfers";
-import {FixedLink} from "../entity/FixedLink";
 import {TimetableSource} from "../source/TimetableSource";
 
 /**

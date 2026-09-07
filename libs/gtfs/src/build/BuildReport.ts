@@ -1,4 +1,4 @@
-import {AttributionRow} from "../entity/Attribution";
+import {AttributionRow} from "@gb-transit/gtfs-schema";
 import {EnrichmentReport} from "../enrich/Enricher";
 import {ExtensionReport} from "../extend/Extension";
 

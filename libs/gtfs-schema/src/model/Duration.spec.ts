@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {formatDuration, parseDuration, SECONDS_IN_DAY} from "../model/Duration";
+import {formatDuration, parseDuration, SECONDS_IN_DAY} from "./Duration.js";
 
 describe("Duration", () => {
 

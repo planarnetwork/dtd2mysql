@@ -1,4 +1,4 @@
-import {RSID, TUID} from "../model/OverlayRecord";
+import {RSID, TUID} from "../model/Identifiers.js";
 
 export interface Trip {
   route_id: string;

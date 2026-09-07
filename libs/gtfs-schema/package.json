@@ -1,0 +1,54 @@
+{
+  "name": "@gb-transit/gtfs-schema",
+  "version": "1.0.0",
+  "description": "The shape of a GTFS feed - one type per file, and the scalars they are written in",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "libs/gtfs-schema"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./scalars": {
+      "import": {
+        "types": "./dist/esm/scalars.d.ts",
+        "default": "./dist/esm/scalars.js"
+      },
+      "require": {
+        "types": "./dist/scalars.d.ts",
+        "default": "./dist/scalars.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b && tsc -b tsconfig.esm.json && node ../../scripts/dual-package-markers.mjs",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

@@ -1,3 +1,4 @@
+import {TUID} from "@gb-transit/gtfs-schema";
 import {ScheduleCalendar} from "./ScheduleCalendar";
 
 export interface OverlayRecord {
@@ -8,10 +9,6 @@ export interface OverlayRecord {
 
   clone(calendar: ScheduleCalendar, scheduleId: number): OverlayRecord;
 }
-
-
-export type TUID = string;
-export type RSID = string;
 
 export enum STP {
   Permanent = "P",

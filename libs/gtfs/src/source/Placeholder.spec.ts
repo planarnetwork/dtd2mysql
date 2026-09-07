@@ -1,6 +1,6 @@
 import {describe, it, expect} from "vitest";
 import {isPlaceholder, withoutPlaceholders} from "./Placeholder";
-import {Stop} from "../entity/Stop";
+import {Stop} from "@gb-transit/gtfs-schema";
 
 const stop = (crs: string, tiploc: string, name: string, lat: number | null, lon: number | null) => ({
   stop_id: `910G${tiploc}`,

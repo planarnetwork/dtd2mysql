@@ -1,5 +1,5 @@
 import proj4 from "proj4";
-import {Stop} from "../entity/Stop";
+import {Stop} from "@gb-transit/gtfs-schema";
 import {StationCoordinates} from "./TimetableSource";
 import {inBounds} from "./Bounds";
 import {NOWHERE} from "./Located";

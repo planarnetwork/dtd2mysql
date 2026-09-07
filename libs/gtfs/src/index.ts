@@ -1,29 +1,34 @@
-// GTFS entities - the shape of each output file
-export type {Agency, AgencyID, AgencyRow} from "./entity/Agency";
-export type {Area, AreaID, AreaRow, StopArea, StopAreaRow} from "./entity/Area";
-export type {AttributionRole, AttributionRow} from "./entity/Attribution";
-export type {Calendar, CalendarRow} from "./entity/Calendar";
-export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate";
-export type {FixedLink, FixedLinkRow} from "./entity/FixedLink";
-export {RouteType} from "./entity/Route";
-export type {Route, RouteID, RouteRow} from "./entity/Route";
-export type {Stop, StopRow, CRS, TIPLOC} from "./entity/Stop";
-export type {StopTime, StopTimeRow, Platform} from "./entity/StopTime";
-export {TransferType} from "./entity/Transfer";
-export type {Transfer, TransferRow, StopID} from "./entity/Transfer";
-export type {Trip, TripRow} from "./entity/Trip";
-export type {FeedInfo, FeedInfoRow} from "./entity/FeedInfo";
-export type {FeedRow} from "./entity/FeedRow";
+// GTFS entities - the shape of each output file - and the scalars they are
+// written in. They live in @gb-transit/gtfs-schema, which depends on nothing, so
+// that a consumer wanting only the vocabulary does not also get proj4 and the
+// Temporal-typed schedule model. Re-exported here so this package's surface is
+// what it always was.
+export type {Agency, AgencyID, AgencyRow} from "@gb-transit/gtfs-schema";
+export type {Area, AreaID, AreaRow, StopArea, StopAreaRow} from "@gb-transit/gtfs-schema";
+export type {AttributionRole, AttributionRow} from "@gb-transit/gtfs-schema";
+export type {Calendar, CalendarRow} from "@gb-transit/gtfs-schema";
+export type {CalendarDate, CalendarDateRow} from "@gb-transit/gtfs-schema";
+export type {FixedLink, FixedLinkRow} from "@gb-transit/gtfs-schema";
+export {RouteType} from "@gb-transit/gtfs-schema";
+export type {Route, RouteID, RouteRow} from "@gb-transit/gtfs-schema";
+export type {Stop, StopRow, CRS, TIPLOC} from "@gb-transit/gtfs-schema";
+export type {StopTime, StopTimeRow, Platform} from "@gb-transit/gtfs-schema";
+export {TransferType} from "@gb-transit/gtfs-schema";
+export type {Transfer, TransferRow, StopID} from "@gb-transit/gtfs-schema";
+export type {Trip, TripRow} from "@gb-transit/gtfs-schema";
+export type {FeedInfo, FeedInfoRow} from "@gb-transit/gtfs-schema";
+export type {FeedRow} from "@gb-transit/gtfs-schema";
 
 // The transit model - pure domain objects with no IO
 export {Association, AssociationType, DateIndicator} from "./model/Association";
 export type {AssociationApplication, AssociationLink} from "./model/Association";
-export {SECONDS_IN_DAY, formatDuration, parseDuration} from "./model/Duration";
-export type {Duration} from "./model/Duration";
+export {SECONDS_IN_DAY, formatDuration, parseDuration} from "@gb-transit/gtfs-schema";
+export type {Duration} from "@gb-transit/gtfs-schema";
 export {STP} from "./model/OverlayRecord";
-export type {IdGenerator, OverlayRecord, RSID, TUID} from "./model/OverlayRecord";
-export {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./model/PlainDate";
-export type {DayOfWeek} from "./model/PlainDate";
+export type {IdGenerator, OverlayRecord} from "./model/OverlayRecord";
+export type {RSID, TUID} from "@gb-transit/gtfs-schema";
+export {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "@gb-transit/gtfs-schema";
+export type {DayOfWeek} from "@gb-transit/gtfs-schema";
 export {Schedule, tripId} from "./model/Schedule";
 export {NO_DAYS, OverlapType, ScheduleCalendar} from "./model/ScheduleCalendar";
 export type {BankHoliday, Days, ExcludeDays} from "./model/ScheduleCalendar";

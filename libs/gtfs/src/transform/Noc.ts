@@ -1,5 +1,4 @@
-import {Agency, AgencyID, AgencyRow} from "../entity/Agency";
-import {Route, RouteRow} from "../entity/Route";
+import {Agency, AgencyID, AgencyRow, Route, RouteRow} from "@gb-transit/gtfs-schema";
 
 /**
  * A rail operator, as the National Operator Catalogue names one.

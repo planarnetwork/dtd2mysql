@@ -1,8 +1,8 @@
 
 import {Schedule} from "./Schedule";
 import {ScheduleCalendar} from "./ScheduleCalendar";
-import {CRS} from "../entity/Stop";
-import {IdGenerator, OverlayRecord, STP, TUID} from "./OverlayRecord";
+import {CRS, TUID} from "@gb-transit/gtfs-schema";
+import {IdGenerator, OverlayRecord, STP} from "./OverlayRecord";
 import {isLateNight} from "../transform/ShiftLateNightServices";
 
 export class Association implements OverlayRecord {

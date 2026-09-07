@@ -1,6 +1,4 @@
-import {CRS} from "../entity/Stop";
-import {Duration} from "../model/Duration";
-import {FixedLink} from "../entity/FixedLink";
+import {CRS, Duration, FixedLink} from "@gb-transit/gtfs-schema";
 
 /**
  * A fixed link as the feed describes it: one direction, with the dates optional.

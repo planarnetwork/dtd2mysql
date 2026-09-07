@@ -1,4 +1,4 @@
-import {CRS, Stop, StopRow} from "../entity/Stop";
+import {CRS, Stop, StopRow} from "@gb-transit/gtfs-schema";
 
 /**
  * Somewhere to put a stop the feed uses but cannot locate.

@@ -1,9 +1,7 @@
 import {Association} from "../model/Association";
-import {CRS, Stop} from "../entity/Stop";
-import {FixedLink} from "../entity/FixedLink";
-import {RSID, STP, TUID} from "../model/OverlayRecord";
+import {CRS, FixedLink, RSID, Stop, TUID, Transfer} from "@gb-transit/gtfs-schema";
+import {STP} from "../model/OverlayRecord";
 import {ScheduleResults} from "../build/ScheduleBuilder";
-import {Transfer} from "../entity/Transfer";
 
 /**
  * Where the timetable comes from. The build depends on this and nothing else, so

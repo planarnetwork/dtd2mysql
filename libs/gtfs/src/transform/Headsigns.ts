@@ -2,8 +2,7 @@
 import {Schedule} from "../model/Schedule";
 import {AssociationType} from "../model/Association";
 import {TripLink} from "./LinkedTrips";
-import {CRS} from "../entity/Stop";
-import {StopTime} from "../entity/StopTime";
+import {CRS, StopTime} from "@gb-transit/gtfs-schema";
 
 /**
  * Name every destination a train is still carrying, at the stops before it divides.

@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "../model/PlainDate";
+import {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./PlainDate.js";
 
 const date = (value: string) => Temporal.PlainDate.from(value);
 

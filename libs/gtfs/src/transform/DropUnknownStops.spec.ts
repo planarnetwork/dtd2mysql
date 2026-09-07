@@ -1,9 +1,8 @@
 import {describe, it, expect} from "vitest";
 import {dropUnknownStops} from "./DropUnknownStops";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
+import {PickupDropOffType, RouteType, StopTime} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
-import {RouteType} from "../entity/Route";
 import {STP} from "../model/OverlayRecord";
 
 const call = (crs: string, sequence: number): StopTime => ({

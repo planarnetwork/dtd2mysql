@@ -1,6 +1,6 @@
 
-import {Duration} from "../model/Duration";
-import {CRS} from "./Stop";
+import {Duration} from "../model/Duration.js";
+import {CRS} from "./Stop.js";
 
 /**
  * Custom format for links.txt

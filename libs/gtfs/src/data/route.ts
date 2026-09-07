@@ -1,5 +1,4 @@
-import {AgencyID} from "../entity/Agency";
-import {CRS} from "../entity/Stop";
+import {AgencyID, CRS} from "@gb-transit/gtfs-schema";
 
 /**
  * How a route is presented: the brand a passenger sees on a departure board,

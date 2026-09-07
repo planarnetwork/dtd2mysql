@@ -1,10 +1,8 @@
 import {describe, it, expect} from "vitest";
 import {Days, NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {STP} from "../model/OverlayRecord";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
-import {CRS, TIPLOC} from "../entity/Stop";
+import {CRS, PickupDropOffType, RouteType, StopTime, TIPLOC} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";
-import {RouteType} from "../entity/Route";
 import {AssociationLink, AssociationType} from "../model/Association";
 import {linkedTrips, resolveLinks} from "./LinkedTrips";
 

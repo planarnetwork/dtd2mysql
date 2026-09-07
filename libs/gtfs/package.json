@@ -27,6 +27,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@gb-transit/gtfs-schema": "workspace:^",
     "memoized-class-decorator": "1.6.1",
     "proj4": "2.20.9"
   },

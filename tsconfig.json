@@ -4,7 +4,15 @@
     "composite": false,
     "declaration": false,
     "declarationMap": false,
-    "noEmit": true
+    "noEmit": true,
+    // This is the one config the spec files are checked by, and it checks every package at once, so
+    // it has to be the union of what they need. libs/gtfs-loader runs in a browser and its
+    // FetchOptions names HeadersInit, which node's types do not declare; nothing else in the
+    // repository asks for anything dom has.
+    "lib": [
+      "esnext",
+      "dom"
+    ]
   },
   "include": [
     "apps/*/src",

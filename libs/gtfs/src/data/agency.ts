@@ -1,5 +1,5 @@
 
-import {Agency, AgencyID} from "../entity/Agency";
+import {Agency, AgencyID} from "@gb-transit/gtfs-schema";
 
 export const agencies: Agency[] = [
 { agency_id: "AW", agency_name: "Transport for Wales",        agency_url: "https://tfw.wales/",                      agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0333 321 1202",  agency_fare_url: null },

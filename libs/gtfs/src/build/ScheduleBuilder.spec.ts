@@ -2,7 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {EventEmitter} from "events";
 import {ScheduleBuilder} from "../build/ScheduleBuilder";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
-import {PickupDropOffType} from "../entity/StopTime";
+import {PickupDropOffType} from "@gb-transit/gtfs-schema";
 
 /**
  * The schedules query returns a stream of rows, so feed the builder an emitter that behaves

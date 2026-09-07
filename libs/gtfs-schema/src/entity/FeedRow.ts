@@ -1,15 +1,15 @@
-import {AgencyRow} from "./Agency";
-import {AreaRow, StopAreaRow} from "./Area";
-import {AttributionRow} from "./Attribution";
-import {CalendarRow} from "./Calendar";
-import {CalendarDateRow} from "./CalendarDate";
-import {FeedInfoRow} from "./FeedInfo";
-import {FixedLinkRow} from "./FixedLink";
-import {RouteRow} from "./Route";
-import {StopRow} from "./Stop";
-import {StopTimeRow} from "./StopTime";
-import {TransferRow} from "./Transfer";
-import {TripRow} from "./Trip";
+import {AgencyRow} from "./Agency.js";
+import {AreaRow, StopAreaRow} from "./Area.js";
+import {AttributionRow} from "./Attribution.js";
+import {CalendarRow} from "./Calendar.js";
+import {CalendarDateRow} from "./CalendarDate.js";
+import {FeedInfoRow} from "./FeedInfo.js";
+import {FixedLinkRow} from "./FixedLink.js";
+import {RouteRow} from "./Route.js";
+import {StopRow} from "./Stop.js";
+import {StopTimeRow} from "./StopTime.js";
+import {TransferRow} from "./Transfer.js";
+import {TripRow} from "./Trip.js";
 
 /**
  * A row of a file this build writes, which is the list of files it writes.

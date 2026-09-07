@@ -1,5 +1,4 @@
-import {CRS, Stop, StopID, TIPLOC} from "../entity/Stop";
-import {Platform, StopTime, StopTimeRow} from "../entity/StopTime";
+import {CRS, Platform, Stop, StopID, StopTime, StopTimeRow, TIPLOC} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";
 import {stopPointId} from "./Atco";
 

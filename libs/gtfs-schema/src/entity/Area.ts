@@ -1,4 +1,4 @@
-import {StopID} from "./Stop";
+import {StopID} from "./Stop.js";
 
 /**
  * A flat, named set of stops - GTFS Fares v2.

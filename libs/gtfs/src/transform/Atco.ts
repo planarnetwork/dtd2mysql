@@ -1,5 +1,4 @@
-import {Platform} from "../entity/StopTime";
-import {StopID, TIPLOC} from "../entity/Stop";
+import {Platform, StopID, TIPLOC} from "@gb-transit/gtfs-schema";
 
 /**
  * A station, as a NaPTAN stop area: `910G` and the TIPLOC of the station itself.

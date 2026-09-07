@@ -3,7 +3,7 @@ import {MutableFeed} from "./MutableFeed";
 import {enrich, order, provenanceFile} from "./Enrich";
 import {Enricher, EnrichmentReport} from "./Enricher";
 import {Provenance} from "./Provenance";
-import {Stop} from "../entity/Stop";
+import {Stop} from "@gb-transit/gtfs-schema";
 
 const stop = (crs: string, name = crs): Stop => ({
   stop_id: `910G${crs}`, crs, tiploc: crs, stop_name: name, stop_desc: "", stop_lat: 51, stop_lon: -1,

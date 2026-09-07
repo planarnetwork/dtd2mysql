@@ -3,8 +3,7 @@ import {MutableFeed} from "../enrich/MutableFeed";
 import {checkKeys, extend} from "./Extend";
 import {Extension, ExtensionOutput, extensionFile} from "./Extension";
 import {FeedView} from "./FeedView";
-import {AreaRow} from "../entity/Area";
-import {Stop} from "../entity/Stop";
+import {AreaRow, Stop} from "@gb-transit/gtfs-schema";
 
 const stop = (crs: string, name = crs): Stop => ({
   stop_id: `910G${crs}`, crs, tiploc: crs, stop_name: name, stop_desc: "", stop_lat: 51, stop_lon: -1,

@@ -8,7 +8,7 @@
     "libs/*"
   ],
   "scripts": {
-    "build": "tsc -b tsconfig.build.json",
+    "build": "tsc -b tsconfig.build.json && node scripts/dual-package-markers.mjs",
     "test": "yarn build && vitest run",
     "watch-test": "vitest",
     "start": "yarn workspace dtd2mysql run start",
