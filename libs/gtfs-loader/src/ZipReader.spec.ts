@@ -55,8 +55,8 @@ describe("readZip", () => {
   it("reads the text of each entry", async () => {
     const files = await readAll(zip({ "a.txt": "one", "b.txt": "two" }));
 
-    expect("one").toBe(files["a.txt"]);
-    expect("two").toBe(files["b.txt"]);
+    expect(files["a.txt"]).to.equal("one");
+    expect(files["b.txt"]).to.equal("two");
   });
 
   it("offers the entries in the order the zip stores them", async () => {
@@ -68,7 +68,7 @@ describe("readZip", () => {
       return () => undefined;
     });
 
-    expect(["a.txt", "b.txt", "c.txt"]).toEqual(names);
+    expect(names).to.deep.equal(["a.txt", "b.txt", "c.txt"]);
   });
 
   it("never reads an entry that was declined", async () => {
@@ -82,7 +82,7 @@ describe("readZip", () => {
       return text => { read.push(text); };
     });
 
-    expect(["yes"]).toEqual(read);
+    expect(read).to.deep.equal(["yes"]);
   });
 
   it("tells the sink when an entry has finished", async () => {
@@ -90,7 +90,7 @@ describe("readZip", () => {
 
     await readZip(whole(zip({ "a.txt": "one" })), () => (_text, final) => { finals.push(final); });
 
-    expect(true).toBe(finals[finals.length - 1]);
+    expect(finals[finals.length - 1]).to.equal(true);
   });
 
   it("declares the uncompressed size of an entry before reading it", async () => {
@@ -103,7 +103,7 @@ describe("readZip", () => {
       return () => undefined;
     });
 
-    expect(1000).toBe(entries[0].originalSize);
+    expect(entries[0].originalSize).to.equal(1000);
   });
 
   /**
@@ -114,7 +114,7 @@ describe("readZip", () => {
     const files = { "a.txt": "one", "b.txt": "two", "c.txt": "three" };
     const bytes = zip(files);
 
-    expect(await readAll(bytes, whole)).toEqual(await readAll(bytes, byByte));
+    expect(await readAll(bytes, whole)).to.deep.equal(await readAll(bytes, byByte));
   });
 
   it("holds over a multi byte character split across two chunks", async () => {
@@ -122,13 +122,13 @@ describe("readZip", () => {
     const text = "é€😀".repeat(20000);
     const files = await readAll(zip({ "a.txt": text }), byByte);
 
-    expect(text).toBe(files["a.txt"]);
+    expect(text).to.equal(files["a.txt"]);
   });
 
   it("does not leak decoder state from one entry into the next", async () => {
     const files = await readAll(zip({ "a.txt": "é".repeat(5000), "b.txt": "plain" }), byByte);
 
-    expect("plain").toBe(files["b.txt"]);
+    expect(files["b.txt"]).to.equal("plain");
   });
 
   it("reports how much of the zip has been read", async () => {
@@ -137,7 +137,7 @@ describe("readZip", () => {
 
     await readZip(byByte(bytes), () => () => undefined, { onBytes: read => reported.push(read) });
 
-    expect(bytes.length).toBe(reported[reported.length - 1]);
+    expect(bytes.length).to.equal(reported[reported.length - 1]);
   });
 
   it("reports how much of an entry has been decompressed", async () => {
@@ -148,7 +148,7 @@ describe("readZip", () => {
       onEntryBytes: (_entry, read) => { last = read; }
     });
 
-    expect(50000).toBe(last);
+    expect(last).to.equal(50000);
   });
 
   it("rejects rather than returning half a file when the zip is truncated", async () => {
@@ -172,7 +172,7 @@ describe("readZip", () => {
     const bytes = zip({ "a.txt": "one" });
     const files = await readAll(bytes.subarray(0, centralDirectoryAt(bytes)));
 
-    expect("one").toBe(files["a.txt"]);
+    expect(files["a.txt"]).to.equal("one");
   });
 
   it("rejects when the sink throws", async () => {

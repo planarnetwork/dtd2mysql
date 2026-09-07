@@ -35,18 +35,18 @@ describe("loadGTFS", () => {
   it("loads a feed from bytes", async () => {
     const feed = await loadGTFS(feedZip());
 
-    expect(1).toBe(feed.trips.length);
-    expect("t1").toBe(feed.trips[0].tripId);
-    expect(2).toBe(feed.trips[0].stopTimes.length);
-    expect(2).toBe(Object.keys(feed.stops).length);
-    expect(300).toBe(feed.interchange.A);
-    expect(20250101).toBe(feed.feedInfo?.startDate);
+    expect(feed.trips.length).to.equal(1);
+    expect(feed.trips[0].tripId).to.equal("t1");
+    expect(feed.trips[0].stopTimes.length).to.equal(2);
+    expect(Object.keys(feed.stops).length).to.equal(2);
+    expect(feed.interchange.A).to.equal(300);
+    expect(feed.feedInfo?.startDate).to.equal(20250101);
   });
 
   it("loads a feed from a Blob", async () => {
     const feed = await loadGTFS(new Blob([feedZip()]));
 
-    expect(1).toBe(feed.trips.length);
+    expect(feed.trips.length).to.equal(1);
   });
 
   it("loads a feed that nests its files in a directory", async () => {
@@ -56,14 +56,14 @@ describe("loadGTFS", () => {
       nested[`gtfs/${name}`] = text;
     }
 
-    expect(1).toBe((await loadGTFS(feedZip(nested))).trips.length);
+    expect((await loadGTFS(feedZip(nested))).trips.length).to.equal(1);
   });
 
   it("gives the trip a working calendar", async () => {
     const feed = await loadGTFS(feedZip());
 
-    expect(true).toBe(feed.trips[0].service.runsOn(20250601, 1));
-    expect(false).toBe(feed.trips[0].service.runsOn(20240601, 1));
+    expect(feed.trips[0].service.runsOn(20250601, 1)).to.equal(true);
+    expect(feed.trips[0].service.runsOn(20240601, 1)).to.equal(false);
   });
 
   it("reads a coupling as a link and leaves the interchange times alone", async () => {
@@ -76,9 +76,9 @@ describe("loadGTFS", () => {
         + "B,B,t1,t2,4,\n"
     }));
 
-    expect([{ fromTripId: "t1", toTripId: "t2", fromStop: "B", toStop: "B" }]).toEqual(feed.links);
-    expect(300).toBe(feed.interchange.A);
-    expect(undefined).toBe(feed.interchange.B);
+    expect(feed.links).to.deep.equal([{ fromTripId: "t1", toTripId: "t2", fromStop: "B", toStop: "B" }]);
+    expect(feed.interchange.A).to.equal(300);
+    expect(feed.interchange.B).to.equal(undefined);
   });
 
   it("ignores transfers that are forbidden or need re-boarding", async () => {
@@ -88,9 +88,9 @@ describe("loadGTFS", () => {
         "from_stop_id,to_stop_id,transfer_type,min_transfer_time\nA,A,3,\nA,B,3,600\nB,B,5,\n"
     }));
 
-    expect(0).toBe(feed.links.length);
-    expect(0).toBe(Object.keys(feed.interchange).length);
-    expect(0).toBe(Object.keys(feed.transfers).length);
+    expect(feed.links.length).to.equal(0);
+    expect(Object.keys(feed.interchange).length).to.equal(0);
+    expect(Object.keys(feed.transfers).length).to.equal(0);
   });
 
   it("reports progress and finishes with the building phase", async () => {
@@ -98,9 +98,9 @@ describe("loadGTFS", () => {
 
     await loadGTFS(feedZip(), { onProgress: p => reports.push({ ...p }), progressInterval: 0 });
 
-    expect(true).toBe(reports.length > 0);
-    expect("building").toBe(reports[reports.length - 1].phase);
-    expect(true).toBe(reports[reports.length - 1].rows > 0);
+    expect(reports.length > 0).to.equal(true);
+    expect(reports[reports.length - 1].phase).to.equal("building");
+    expect(reports[reports.length - 1].rows > 0).to.equal(true);
   });
 
   it("knows the size of the zip when the source knows it", async () => {
@@ -109,7 +109,7 @@ describe("loadGTFS", () => {
 
     await loadGTFS(zip, { onProgress: p => reports.push({ ...p }), progressInterval: 0 });
 
-    expect(zip.length).toBe(reports[reports.length - 1].bytesTotal);
+    expect(zip.length).to.equal(reports[reports.length - 1].bytesTotal);
   });
 
   /**
@@ -129,7 +129,7 @@ describe("loadGTFS", () => {
 
   it("does not report progress when nobody asked for it", async () => {
     // no assertion beyond it not throwing: the row counter is skipped entirely in this case
-    expect(1).toBe((await loadGTFS(feedZip(), {})).trips.length);
+    expect((await loadGTFS(feedZip(), {})).trips.length).to.equal(1);
   });
 
   it("reports the file it is reading and how big it is", async () => {
@@ -139,8 +139,8 @@ describe("loadGTFS", () => {
 
     const stopTimes = reports.find(r => r.entry === "stop_times.txt");
 
-    expect(true).toBe(stopTimes !== undefined);
-    expect(FEED["stop_times.txt"].length).toBe(stopTimes?.entryBytesTotal);
+    expect(stopTimes !== undefined).to.equal(true);
+    expect(FEED["stop_times.txt"].length).to.equal(stopTimes?.entryBytesTotal);
   });
 
   /**
@@ -153,9 +153,9 @@ describe("loadGTFS", () => {
     // an interval nothing can beat, so only the first report and the last one get through
     await loadGTFS(feedZip(), { onProgress: p => reports.push({ ...p }), progressInterval: 60000 });
 
-    expect(2).toBe(reports.length);
-    expect("reading").toBe(reports[0].phase);
-    expect("building").toBe(reports[1].phase);
+    expect(reports.length).to.equal(2);
+    expect(reports[0].phase).to.equal("reading");
+    expect(reports[1].phase).to.equal("building");
   });
 
 });
@@ -167,7 +167,7 @@ describe("loadGTFSFromUrl", () => {
       fetch: async () => new Response(feedZip())
     });
 
-    expect(1).toBe(feed.trips.length);
+    expect(feed.trips.length).to.equal(1);
   });
 
   it("passes the headers and signal on to the fetch", async () => {
@@ -178,7 +178,7 @@ describe("loadGTFSFromUrl", () => {
       fetch: async (_url, init) => { seen = init; return new Response(feedZip()); }
     });
 
-    expect("secret").toBe((seen?.headers as Record<string, string>)["x-api-key"]);
+    expect((seen?.headers as Record<string, string>)["x-api-key"]).to.equal("secret");
   });
 
   it("reports the status when the server refuses", async () => {
@@ -210,8 +210,8 @@ describe("loadGTFSFromUrl", () => {
       expect.unreachable();
     }
     catch (e) {
-      expect(cause).toBe((e as GTFSFetchError).cause);
-      expect("https://example.com/gtfs.zip").toBe((e as GTFSFetchError).url);
+      expect(cause).to.equal((e as GTFSFetchError).cause);
+      expect((e as GTFSFetchError).url).to.equal("https://example.com/gtfs.zip");
     }
   });
 
@@ -240,7 +240,7 @@ describe("loadGTFSFromUrl", () => {
       fetch: async () => new Response(feedZip())
     });
 
-    expect(1).toBe(feed.trips.length);
+    expect(feed.trips.length).to.equal(1);
   });
 
 });

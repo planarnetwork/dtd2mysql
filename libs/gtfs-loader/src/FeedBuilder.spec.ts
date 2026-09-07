@@ -13,10 +13,10 @@ describe("FeedBuilder", () => {
 
     const [trip] = builder.build().trips;
 
-    expect(2).toBe(trip.stopTimes.length);
-    expect("A").toBe(trip.stopTimes[0].stop);
-    expect("B").toBe(trip.stopTimes[1].stop);
-    expect(36000).toBe(trip.stopTimes[0].arrivalTime);
+    expect(trip.stopTimes.length).to.equal(2);
+    expect(trip.stopTimes[0].stop).to.equal("A");
+    expect(trip.stopTimes[1].stop).to.equal("B");
+    expect(trip.stopTimes[0].arrivalTime).to.equal(36000);
   });
 
   it("gives a trip with no stop times an empty list", () => {
@@ -24,7 +24,7 @@ describe("FeedBuilder", () => {
 
     builder.add("trip", { trip_id: "t1", service_id: "s1" });
 
-    expect(0).toBe(builder.build().trips[0].stopTimes.length);
+    expect(builder.build().trips[0].stopTimes.length).to.equal(0);
   });
 
   it("takes the stop times of a trip that appears before its stop times", () => {
@@ -33,7 +33,7 @@ describe("FeedBuilder", () => {
     builder.add("stop_time", { trip_id: "t1", stop_id: "A", arrival_time: "10:00:00", departure_time: "10:00:00" });
     builder.add("trip", { trip_id: "t1", service_id: "s1" });
 
-    expect(1).toBe(builder.build().trips[0].stopTimes.length);
+    expect(builder.build().trips[0].stopTimes.length).to.equal(1);
   });
 
   /**
@@ -48,8 +48,8 @@ describe("FeedBuilder", () => {
 
     const [stopTime] = builder.build().trips[0].stopTimes;
 
-    expect(true).toBe(stopTime.pickUp);
-    expect(true).toBe(stopTime.dropOff);
+    expect(stopTime.pickUp).to.equal(true);
+    expect(stopTime.dropOff).to.equal(true);
   });
 
   it("obeys an explicit pick up or set down code", () => {
@@ -63,8 +63,8 @@ describe("FeedBuilder", () => {
 
     const [stopTime] = builder.build().trips[0].stopTimes;
 
-    expect(false).toBe(stopTime.pickUp);
-    expect(true).toBe(stopTime.dropOff);
+    expect(stopTime.pickUp).to.equal(false);
+    expect(stopTime.dropOff).to.equal(true);
   });
 
   it("records a footpath from a stop to itself as interchange time", () => {
@@ -74,8 +74,8 @@ describe("FeedBuilder", () => {
 
     const feed = builder.build();
 
-    expect(300).toBe(feed.interchange.A);
-    expect(undefined).toBe(feed.transfers.A);
+    expect(feed.interchange.A).to.equal(300);
+    expect(feed.transfers.A).to.equal(undefined);
   });
 
   it("records a footpath between two stops as a transfer", () => {
@@ -85,9 +85,9 @@ describe("FeedBuilder", () => {
 
     const feed = builder.build();
 
-    expect(1).toBe(feed.transfers.A.length);
-    expect("B").toBe(feed.transfers.A[0].destination);
-    expect(undefined).toBe(feed.interchange.A);
+    expect(feed.transfers.A.length).to.equal(1);
+    expect(feed.transfers.A[0].destination).to.equal("B");
+    expect(feed.interchange.A).to.equal(undefined);
   });
 
   it("gives a transfer with no window one that is always open", () => {
@@ -97,8 +97,8 @@ describe("FeedBuilder", () => {
 
     const [transfer] = builder.build().transfers.A;
 
-    expect(0).toBe(transfer.startTime);
-    expect(Number.MAX_SAFE_INTEGER).toBe(transfer.endTime);
+    expect(transfer.startTime).to.equal(0);
+    expect(Number.MAX_SAFE_INTEGER).to.equal(transfer.endTime);
   });
 
   it("keeps the window of a transfer that has one", () => {
@@ -111,8 +111,8 @@ describe("FeedBuilder", () => {
 
     const [transfer] = builder.build().transfers.A;
 
-    expect(21600).toBe(transfer.startTime);
-    expect(79200).toBe(transfer.endTime);
+    expect(transfer.startTime).to.equal(21600);
+    expect(transfer.endTime).to.equal(79200);
   });
 
   it("maps the days of a calendar onto the days of the week", () => {
@@ -127,9 +127,9 @@ describe("FeedBuilder", () => {
 
     const { service } = builder.build().trips[0];
 
-    expect(true).toBe(service.runsOn(20250105, 0)); // a Sunday
-    expect(true).toBe(service.runsOn(20250106, 1)); // a Monday
-    expect(false).toBe(service.runsOn(20250107, 2)); // a Tuesday
+    expect(service.runsOn(20250105, 0)).to.equal(true); // a Sunday
+    expect(service.runsOn(20250106, 1)).to.equal(true); // a Monday
+    expect(service.runsOn(20250107, 2)).to.equal(false); // a Tuesday
   });
 
   it("applies the exceptions in calendar_dates.txt", () => {
@@ -146,9 +146,9 @@ describe("FeedBuilder", () => {
 
     const { service } = builder.build().trips[0];
 
-    expect(false).toBe(service.runsOn(20250106, 1)); // excluded
-    expect(true).toBe(service.runsOn(20250107, 2)); // ordinary
-    expect(true).toBe(service.runsOn(20260106, 1)); // included, though outside the window
+    expect(service.runsOn(20250106, 1)).to.equal(false); // excluded
+    expect(service.runsOn(20250107, 2)).to.equal(true); // ordinary
+    expect(service.runsOn(20260106, 1)).to.equal(true); // included, though outside the window
   });
 
   it("reads the period the feed covers", () => {
@@ -158,9 +158,9 @@ describe("FeedBuilder", () => {
 
     const { feedInfo } = builder.build();
 
-    expect(20250901).toBe(feedInfo?.startDate);
-    expect(20251101).toBe(feedInfo?.endDate);
-    expect("7").toBe(feedInfo?.version);
+    expect(feedInfo?.startDate).to.equal(20250901);
+    expect(feedInfo?.endDate).to.equal(20251101);
+    expect(feedInfo?.version).to.equal("7");
   });
 
   it("reads a stop", () => {
@@ -173,11 +173,11 @@ describe("FeedBuilder", () => {
 
     const stop = builder.build().stops["9100NRCH"];
 
-    expect("NRW").toBe(stop.code);
-    expect("Norwich").toBe(stop.name);
-    expect(52.627).toBe(stop.latitude);
-    expect(1).toBe(stop.locationType);
-    expect("4").toBe(stop.platformCode);
+    expect(stop.code).to.equal("NRW");
+    expect(stop.name).to.equal("Norwich");
+    expect(stop.latitude).to.equal(52.627);
+    expect(stop.locationType).to.equal(1);
+    expect(stop.platformCode).to.equal("4");
   });
 
   it("defaults the location type of a stop that does not give one", () => {
@@ -185,7 +185,7 @@ describe("FeedBuilder", () => {
 
     builder.add("stop", { stop_id: "A", stop_lat: "1", stop_lon: "2" });
 
-    expect(0).toBe(builder.build().stops.A.locationType);
+    expect(builder.build().stops.A.locationType).to.equal(0);
   });
 
   /**
@@ -201,8 +201,8 @@ describe("FeedBuilder", () => {
 
     const { stations } = normalise(builder.build());
 
-    expect("A").toBe(stations.get("A"));
-    expect("B").toBe(stations.get("B"));
+    expect(stations.get("A")).to.equal("A");
+    expect(stations.get("B")).to.equal("B");
   });
 
 });

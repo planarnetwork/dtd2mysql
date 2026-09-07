@@ -36,142 +36,142 @@ describe("CSVParser", () => {
   it("reads rows keyed by the header", () => {
     const rows = parse("a,b\n1,2\n3,4\n", ["a", "b"]);
 
-    expect(2).toBe(rows.length);
-    expect("1").toBe(rows[0].a);
-    expect("2").toBe(rows[0].b);
-    expect("3").toBe(rows[1].a);
-    expect("4").toBe(rows[1].b);
+    expect(rows.length).to.equal(2);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].b).to.equal("2");
+    expect(rows[1].a).to.equal("3");
+    expect(rows[1].b).to.equal("4");
   });
 
   it("only takes the columns it was asked for", () => {
     const rows = parse("a,b,c\n1,2,3\n", ["b"]);
 
-    expect(1).toBe(rows.length);
-    expect("2").toBe(rows[0].b);
-    expect(false).toBe(Object.hasOwn(rows[0], "a"));
-    expect(false).toBe(Object.hasOwn(rows[0], "c"));
+    expect(rows.length).to.equal(1);
+    expect(rows[0].b).to.equal("2");
+    expect(Object.hasOwn(rows[0], "a")).to.equal(false);
+    expect(Object.hasOwn(rows[0], "c")).to.equal(false);
   });
 
   it("leaves a column the file does not have undefined", () => {
     const rows = parse("a\n1\n", ["a", "missing"]);
 
-    expect(undefined).toBe(rows[0].missing);
+    expect(rows[0].missing).to.equal(undefined);
   });
 
   it("reports an empty field as undefined rather than an empty string", () => {
     const rows = parse("a,b,c\n1,,3\n", ["a", "b", "c"]);
 
-    expect(undefined).toBe(rows[0].b);
-    expect("1").toBe(rows[0].a);
-    expect("3").toBe(rows[0].c);
+    expect(rows[0].b).to.equal(undefined);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].c).to.equal("3");
   });
 
   it("leaves the columns a short row does not reach undefined", () => {
     const rows = parse("a,b,c\n1,2\n", ["a", "b", "c"]);
 
-    expect("1").toBe(rows[0].a);
-    expect("2").toBe(rows[0].b);
-    expect(undefined).toBe(rows[0].c);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].b).to.equal("2");
+    expect(rows[0].c).to.equal(undefined);
   });
 
   it("does not carry a value over from the previous row", () => {
     const rows = parse("a,b\n1,2\n3\n", ["a", "b"]);
 
-    expect("2").toBe(rows[0].b);
-    expect(undefined).toBe(rows[1].b);
+    expect(rows[0].b).to.equal("2");
+    expect(rows[1].b).to.equal(undefined);
   });
 
   it("drops the extra fields of a row longer than the header", () => {
     const rows = parse("a,b\n1,2,3,4\n", ["a", "b"]);
 
-    expect(1).toBe(rows.length);
-    expect("1").toBe(rows[0].a);
-    expect("2").toBe(rows[0].b);
+    expect(rows.length).to.equal(1);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].b).to.equal("2");
   });
 
   it("reads a trailing empty field", () => {
     const rows = parse("a,b\n1,\n", ["a", "b"]);
 
-    expect("1").toBe(rows[0].a);
-    expect(undefined).toBe(rows[0].b);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].b).to.equal(undefined);
   });
 
   it("reads a final row the file did not terminate", () => {
     const rows = parse("a,b\n1,2", ["a", "b"]);
 
-    expect(1).toBe(rows.length);
-    expect("2").toBe(rows[0].b);
+    expect(rows.length).to.equal(1);
+    expect(rows[0].b).to.equal("2");
   });
 
   it("does not report a row for the newline at the end of the file", () => {
-    expect(1).toBe(parse("a\n1\n", ["a"]).length);
+    expect(parse("a\n1\n", ["a"]).length).to.equal(1);
   });
 
   it("skips blank lines", () => {
     const rows = parse("a\n1\n\n2\n", ["a"]);
 
-    expect(2).toBe(rows.length);
-    expect("1").toBe(rows[0].a);
-    expect("2").toBe(rows[1].a);
+    expect(rows.length).to.equal(2);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[1].a).to.equal("2");
   });
 
   it("handles CRLF line endings", () => {
     const rows = parse("a,b\r\n1,2\r\n", ["a", "b"]);
 
-    expect("1").toBe(rows[0].a);
-    expect("2").toBe(rows[0].b);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].b).to.equal("2");
   });
 
   it("rejects bare carriage return line endings rather than misreading them", () => {
-    expect(() => parse("a,b\r1,2\r", ["a", "b"])).toThrow(/carriage return/);
+    expect(() => parse("a,b\r1,2\r", ["a", "b"])).to.throw(/carriage return/);
   });
 
   it("strips a byte order mark from the first column name", () => {
     const rows = parse("﻿a,b\n1,2\n", ["a", "b"]);
 
-    expect("1").toBe(rows[0].a);
+    expect(rows[0].a).to.equal("1");
   });
 
   it("reads a quoted field containing a comma", () => {
     const rows = parse("a,b\n\"one,two\",3\n", ["a", "b"]);
 
-    expect("one,two").toBe(rows[0].a);
-    expect("3").toBe(rows[0].b);
+    expect(rows[0].a).to.equal("one,two");
+    expect(rows[0].b).to.equal("3");
   });
 
   it("reads a doubled quote inside a quoted field as one quote", () => {
     const rows = parse("a,b\n\"say \"\"hi\"\"\",3\n", ["a", "b"]);
 
-    expect("say \"hi\"").toBe(rows[0].a);
-    expect("3").toBe(rows[0].b);
+    expect(rows[0].a).to.equal("say \"hi\"");
+    expect(rows[0].b).to.equal("3");
   });
 
   it("reads a quoted field containing a newline", () => {
     const rows = parse("a,b\n\"one\ntwo\",3\n", ["a", "b"]);
 
-    expect(1).toBe(rows.length);
-    expect("one\ntwo").toBe(rows[0].a);
-    expect("3").toBe(rows[0].b);
+    expect(rows.length).to.equal(1);
+    expect(rows[0].a).to.equal("one\ntwo");
+    expect(rows[0].b).to.equal("3");
   });
 
   it("reads a quoted field in the last column", () => {
     const rows = parse("a,b\n1,\"two,three\"\n", ["a", "b"]);
 
-    expect("1").toBe(rows[0].a);
-    expect("two,three").toBe(rows[0].b);
+    expect(rows[0].a).to.equal("1");
+    expect(rows[0].b).to.equal("two,three");
   });
 
   it("reads a quoted empty field as undefined", () => {
     const rows = parse("a,b\n\"\",2\n", ["a", "b"]);
 
-    expect(undefined).toBe(rows[0].a);
-    expect("2").toBe(rows[0].b);
+    expect(rows[0].a).to.equal(undefined);
+    expect(rows[0].b).to.equal("2");
   });
 
   it("reads a quoted header column name", () => {
     const rows = parse("\"a\",b\n1,2\n", ["a", "b"]);
 
-    expect("1").toBe(rows[0].a);
+    expect(rows[0].a).to.equal("1");
   });
 
   it("reuses the row object between rows", () => {
@@ -180,8 +180,8 @@ describe("CSVParser", () => {
 
     parser.write("a\n1\n2\n");
 
-    expect(2).toBe(seen.length);
-    expect(true).toBe(seen[0] === seen[1]);
+    expect(seen.length).to.equal(2);
+    expect(seen[0] === seen[1]).to.equal(true);
   });
 
   /**
@@ -200,7 +200,7 @@ describe("CSVParser", () => {
     ];
 
     for (const document of documents) {
-      expect(parse(document, ["a", "b", "c"])).toEqual(parseByCharacter(document, ["a", "b", "c"]));
+      expect(parse(document, ["a", "b", "c"])).to.deep.equal(parseByCharacter(document, ["a", "b", "c"]));
     }
   });
 

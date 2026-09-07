@@ -39,7 +39,7 @@ const at = (t: Trip) => t.stopTimes.map(s => `${s.stop}@${s.arrivalTime}/${s.dep
 describe("linkTrips", () => {
 
   it("returns nothing when the feed has no links", () => {
-    expect(linkTrips([trip("a", everyDay, st("A", null, 100))], [], station)).toEqual([]);
+    expect(linkTrips([trip("a", everyDay, st("A", null, 100))], [], station)).to.deep.equal([]);
   });
 
   it("joins a portion onto the trip it continues as", () => {
@@ -48,8 +48,8 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([portion, base], [link("p", "b", "B", "B")], station);
 
-    expect(linked.tripId).toBe("p_b");
-    expect(at(linked)).toEqual(["A@100/100", "B@200/300", "C@400/400"]);
+    expect(linked.tripId).to.equal("p_b");
+    expect(at(linked)).to.deep.equal(["A@100/100", "B@200/300", "C@400/400"]);
   });
 
   it("splits a portion off part way along the trip it continues", () => {
@@ -58,7 +58,7 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([base, portion], [link("b", "p", "B", "B")], station);
 
-    expect(at(linked)).toEqual(["A@100/100", "B@200/300", "D@500/500"]);
+    expect(at(linked)).to.deep.equal(["A@100/100", "B@200/300", "D@500/500"]);
   });
 
   it("leaves both trips as they are", () => {
@@ -67,8 +67,8 @@ describe("linkTrips", () => {
 
     linkTrips([base, portion], [link("b", "p", "B", "B")], station);
 
-    expect(at(base)).toEqual(["A@100/100", "B@200/250", "C@400/400"]);
-    expect(at(portion)).toEqual(["B@260/300", "D@500/500"]);
+    expect(at(base)).to.deep.equal(["A@100/100", "B@200/250", "C@400/400"]);
+    expect(at(portion)).to.deep.equal(["B@260/300", "D@500/500"]);
   });
 
   it("takes set down from the arriving trip and pick up from the departing one", () => {
@@ -77,8 +77,8 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([portion, base], [link("p", "b", "B", "B")], station);
 
-    expect(linked.stopTimes[1].dropOff).toBe(true);
-    expect(linked.stopTimes[1].pickUp).toBe(true);
+    expect(linked.stopTimes[1].dropOff).to.equal(true);
+    expect(linked.stopTimes[1].pickUp).to.equal(true);
   });
 
   it("matches the coupling on the station rather than the platform", () => {
@@ -87,7 +87,7 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([portion, base], [link("p", "b", "B1", "B2")], station);
 
-    expect(at(linked)).toEqual(["A@100/100", "B1@200/300", "C@400/400"]);
+    expect(at(linked)).to.deep.equal(["A@100/100", "B1@200/300", "C@400/400"]);
   });
 
   it("couples end to end when the link names no stop", () => {
@@ -96,7 +96,7 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([portion, base], [link("p", "b")], station);
 
-    expect(at(linked)).toEqual(["A@100/100", "B@200/300", "C@400/400"]);
+    expect(at(linked)).to.deep.equal(["A@100/100", "B@200/300", "C@400/400"]);
   });
 
   it("adds a day to a portion that leaves after midnight", () => {
@@ -105,7 +105,7 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([base, portion], [link("b", "p", "B", "B")], station);
 
-    expect(at(linked)).toEqual(["A@75600/75600", "B@100800/102480", "C@113400/113400"]);
+    expect(at(linked)).to.deep.equal(["A@75600/75600", "B@100800/102480", "C@113400/113400"]);
   });
 
   it("runs on the arriving trip's day when the portion leaves after midnight", () => {
@@ -114,8 +114,8 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([base, portion], [link("b", "p", "B", "B")], station);
 
-    expect(linked.service.runsOn(MONDAY, 1)).toBe(true);
-    expect(linked.service.runsOn(TUESDAY, 2)).toBe(false);
+    expect(linked.service.runsOn(MONDAY, 1)).to.equal(true);
+    expect(linked.service.runsOn(TUESDAY, 2)).to.equal(false);
   });
 
   it("runs only on the days both trips do", () => {
@@ -124,8 +124,8 @@ describe("linkTrips", () => {
 
     const [linked] = linkTrips([portion, base], [link("p", "b", "B", "B")], station);
 
-    expect(linked.service.runsOn(MONDAY, 1)).toBe(true);
-    expect(linked.service.runsOn(TUESDAY, 2)).toBe(false);
+    expect(linked.service.runsOn(MONDAY, 1)).to.equal(true);
+    expect(linked.service.runsOn(TUESDAY, 2)).to.equal(false);
   });
 
   it("makes a trip for each portion of a train that splits more than once", () => {
@@ -139,7 +139,7 @@ describe("linkTrips", () => {
       station
     );
 
-    expect(linked.map(at)).toEqual([
+    expect(linked.map(at)).to.deep.equal([
       ["A@100/100", "B@200/300", "D@500/500"],
       ["A@100/100", "B@200/320", "E@600/600"]
     ]);
@@ -148,21 +148,21 @@ describe("linkTrips", () => {
   it("ignores a link naming a trip the feed does not have", () => {
     const portion = trip("p", everyDay, st("A", null, 100), st("B", 200, 200));
 
-    expect(linkTrips([portion], [link("p", "missing", "B", "B")], station)).toEqual([]);
+    expect(linkTrips([portion], [link("p", "missing", "B", "B")], station)).to.deep.equal([]);
   });
 
   it("ignores a link naming a stop neither trip calls at", () => {
     const portion = trip("p", everyDay, st("A", null, 100), st("B", 200, 200));
     const base = trip("b", everyDay, st("B", 250, 300), st("C", 400, null));
 
-    expect(linkTrips([portion, base], [link("p", "b", "Z", "Z")], station)).toEqual([]);
+    expect(linkTrips([portion, base], [link("p", "b", "Z", "Z")], station)).to.deep.equal([]);
   });
 
   it("ignores a coupling that a day's shift cannot put in order", () => {
     const base = trip("b", everyDay, st("A", null, 3600), st("B", 108000, 108000));
     const portion = trip("p", everyDay, st("B", 7200, 7200), st("C", 20000, null));
 
-    expect(linkTrips([base, portion], [link("b", "p", "B", "B")], station)).toEqual([]);
+    expect(linkTrips([base, portion], [link("b", "p", "B", "B")], station)).to.deep.equal([]);
   });
 
 });

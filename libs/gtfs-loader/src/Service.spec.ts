@@ -21,7 +21,7 @@ describe("Service", () => {
 
     const result = service.runsOn(20180930, 1);
 
-    expect(result).toBe(false);
+    expect(result).to.equal(false);
   });
 
   it("checks the end date", () => {
@@ -34,7 +34,7 @@ describe("Service", () => {
 
     const result = service.runsOn(20181016, 1);
 
-    expect(result).toBe(false);
+    expect(result).to.equal(false);
   });
 
   it("checks dates within range", () => {
@@ -47,7 +47,7 @@ describe("Service", () => {
 
     const result = service.runsOn(20181010, 1);
 
-    expect(result).toBe(true);
+    expect(result).to.equal(true);
   });
 
   it("checks the day of the week", () => {
@@ -60,7 +60,7 @@ describe("Service", () => {
     );
     const result = service.runsOn(20181016, 1);
 
-    expect(result).toBe(false);
+    expect(result).to.equal(false);
   });
 
   it("checks include days", () => {
@@ -73,7 +73,7 @@ describe("Service", () => {
 
     const result = service.runsOn(20181022, 1);
 
-    expect(result).toBe(true);
+    expect(result).to.equal(true);
   });
 
   it("checks exclude days", () => {
@@ -86,7 +86,7 @@ describe("Service", () => {
 
     const result = service.runsOn(20181022, 1);
 
-    expect(result).toBe(false);
+    expect(result).to.equal(false);
   });
 
 });
@@ -96,22 +96,22 @@ describe("Service.dayEarlier", () => {
   it("moves the days of the week back one", () => {
     const service = new Service(20180101, 20181231, onlyOn(2), {}).dayEarlier();
 
-    expect(service.runsOn(MONDAY, 1)).toBe(true);
-    expect(service.runsOn(TUESDAY, 2)).toBe(false);
+    expect(service.runsOn(MONDAY, 1)).to.equal(true);
+    expect(service.runsOn(TUESDAY, 2)).to.equal(false);
   });
 
   it("moves the date range back one", () => {
     const service = new Service(20180102, 20180102, allDays, {}).dayEarlier();
 
-    expect(service.runsOn(MONDAY, 1)).toBe(true);
-    expect(service.runsOn(TUESDAY, 2)).toBe(false);
+    expect(service.runsOn(MONDAY, 1)).to.equal(true);
+    expect(service.runsOn(TUESDAY, 2)).to.equal(false);
   });
 
   it("moves exception dates back one", () => {
     const service = new Service(20180101, 20181231, onlyOn(2), { 20180109: false }).dayEarlier();
 
-    expect(service.runsOn(MONDAY, 1)).toBe(true);
-    expect(service.runsOn(20180108, 1)).toBe(false);
+    expect(service.runsOn(MONDAY, 1)).to.equal(true);
+    expect(service.runsOn(20180108, 1)).to.equal(false);
   });
 
 });
@@ -124,8 +124,8 @@ describe("LinkedService", () => {
       new Service(20180101, 20180101, allDays, {})
     );
 
-    expect(service.runsOn(MONDAY, 1)).toBe(true);
-    expect(service.runsOn(TUESDAY, 2)).toBe(false);
+    expect(service.runsOn(MONDAY, 1)).to.equal(true);
+    expect(service.runsOn(TUESDAY, 2)).to.equal(false);
   });
 
 });
