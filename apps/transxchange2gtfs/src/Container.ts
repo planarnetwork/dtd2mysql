@@ -3,12 +3,12 @@ import {parseString} from "xml2js";
 import * as fs from "fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {naptanCsv} from "@gb-transit/naptan";
+import {naptanFile} from "@gb-transit/naptan";
 import {
   AgencyStream, BankHolidays, CalendarDatesStream, CalendarStream, FileStream, NaPTANIndex,
   ParseXML, RoutesStream, ShapesStream, StopLocationIndex, StopTimesStream, StopsStream,
   TransXChangeJourneyStream, TransXChangeStream, TransfersStream, TripsStream, XMLStream,
-  getBankHolidays, naptanIndexes
+  getBankHolidays, naptanIndexesFrom
 } from "@gb-transit/txc-source";
 import {Converter} from "./converter/Converter";
 
@@ -20,7 +20,11 @@ const CACHE = path.join(os.tmpdir(), "gb-transit-naptan");
 export interface ConverterOptions {
   /** Re-download NaPTAN even if a cached copy is current. */
   readonly refreshStops?: boolean;
-  /** Build no stops.txt or transfers.txt, and download nothing. */
+  /**
+   * Use no NaPTAN data, and download nothing. stops.txt and transfers.txt are
+   * still written from what the documents themselves say, which for a feed
+   * using AnnotatedStopPointRef is a name and no coordinate.
+   */
   readonly skipStops?: boolean;
   /**
    * Read NaPTAN from this file instead of downloading it.
@@ -72,10 +76,10 @@ export class Container {
     }
 
     if (options.naptanFile !== undefined) {
-      return naptanIndexes(fs.readFileSync(options.naptanFile, "utf8"));
+      return naptanIndexesFrom(options.naptanFile);
     }
 
-    return naptanIndexes(await naptanCsv(CACHE, options.refreshStops ? 0 : 30)());
+    return naptanIndexesFrom(await naptanFile(CACHE, options.refreshStops ? 0 : 30)());
   }
 
   public getParseXML(): ParseXML {

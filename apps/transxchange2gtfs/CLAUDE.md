@@ -62,5 +62,11 @@ manual list to extend.
   anything in the journey, calendar or time logic, read the golden diff rather than trusting the
   unit tests. `UPDATE_GOLDEN=1 yarn vitest run` regenerates it; every movement gets an entry in
   `fixtures/BASELINE.md`.
-- Zips are read with `adm-zip`, which reads the whole archive into memory. A BODS bundle is a zip of
-  zips of XML; the documents are handed on one at a time, so what this costs is the archive itself.
+- Zips are read with `adm-zip`. It does not retain decompressed entries, but `FileStream` must hand
+  the documents on **one at a time** — a dataset is hundreds of documents of tens of megabytes each,
+  and pushing them all in lets the stream buffer the lot.
+- NaPTAN is read with `eachNaptanRow`, which streams. Parsing the national CSV whole to take nine of
+  its forty columns costs about 600MB more.
+- V8 will happily grow to 2GB converting a large dataset with an unconstrained heap. It does not
+  need it: the same conversion runs in under 900MB, and about twice as fast, under
+  `--max-old-space-size=512`. Peak RSS is a bad way to judge this.

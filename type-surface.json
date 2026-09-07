@@ -370,7 +370,9 @@
   "naptan": [
     "NAPTAN_CSV_URL",
     "NaptanRow",
+    "eachNaptanRow",
     "naptanCsv",
+    "naptanFile",
     "parseNaptanRows"
   ],
   "txc-source": [
@@ -414,6 +416,7 @@
     "getBankHolidays",
     "getBankHolidaysForRange",
     "naptanIndexes",
+    "naptanIndexesFrom",
     "shapeIdOf"
   ]
 }

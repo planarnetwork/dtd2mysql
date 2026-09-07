@@ -7,6 +7,6 @@
 // RLY records reduced to a coordinate per TIPLOC, a TransXChange conversion wants
 // every stop it references - and that belongs with the consumer.
 
-export {naptanCsv, NAPTAN_CSV_URL} from "./NaptanCsv";
-export {parseNaptanRows} from "./NaptanRow";
+export {naptanCsv, naptanFile, NAPTAN_CSV_URL} from "./NaptanCsv";
+export {eachNaptanRow, parseNaptanRows} from "./NaptanRow";
 export type {NaptanRow} from "./NaptanRow";

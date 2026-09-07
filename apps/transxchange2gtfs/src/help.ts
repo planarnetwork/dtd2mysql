@@ -13,7 +13,10 @@ Options:
   --naptan <file>    Read NaPTAN stop data from this CSV instead of downloading
                      it. The national file is around 100MB.
   --update-stops     Re-download NaPTAN even if the cached copy is current.
-  --skip-stops       Write no stops.txt or transfers.txt, and download nothing.
+  --skip-stops       Use no NaPTAN data and download nothing. stops.txt and
+                     transfers.txt are still written, from what the
+                     TransXChange documents say - which for a feed using
+                     AnnotatedStopPointRef is a name and no coordinate.
   --help             This.
 
 Environment:

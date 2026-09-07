@@ -40,5 +40,5 @@ export {TripsStream} from "./gtfs/TripsStream";
 
 // Reference data the conversion needs and TransXChange does not carry
 export {getBankHolidays, getBankHolidaysForRange} from "./reference/BankHolidays";
-export {naptanIndexes} from "./reference/NaPTAN";
+export {naptanIndexes, naptanIndexesFrom} from "./reference/NaPTAN";
 export type {ATCOCode, NaPTANIndex, NaptanStopPoint, StopLocationIndex} from "./reference/NaPTAN";

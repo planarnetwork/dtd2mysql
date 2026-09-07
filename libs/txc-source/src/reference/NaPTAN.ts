@@ -1,4 +1,4 @@
-import {parseNaptanRows} from "@gb-transit/naptan";
+import {NaptanRow, eachNaptanRow, parseNaptanRows} from "@gb-transit/naptan";
 
 /**
  * String e.g. 3890D102801
@@ -40,36 +40,58 @@ export type StopLocationIndex = Record<string, ATCOCode[]>;
 
 /**
  * Index a NaPTAN CSV by ATCO code and by locality.
+ *
+ * Prefer `naptanIndexesFrom`, which streams. This holds the whole CSV and every
+ * row of it at once, which for the national dataset is about 600MB more than
+ * reading it a row at a time.
  */
 export function naptanIndexes(csv: string): [NaPTANIndex, StopLocationIndex] {
-  const byCode: NaPTANIndex = {};
-  const byLocation: StopLocationIndex = {};
+  const indexes = emptyIndexes();
 
   for (const row of parseNaptanRows(csv)) {
-    const code = row.ATCOCode;
-
-    if (code === undefined || code === "") {
-      continue;
-    }
-
-    const stop: NaptanStopPoint = {
-      atcoCode: code,
-      naptanCode: row.NaptanCode ?? "",
-      name: row.CommonName ?? "",
-      street: row.Street ?? "",
-      indicator: row.Indicator ?? "",
-      locality: row.LocalityName ?? "",
-      parentLocality: row.ParentLocalityName ?? "",
-      longitude: row.Longitude ?? "",
-      latitude: row.Latitude ?? ""
-    };
-
-    byCode[code] = stop;
-
-    const location = stop.parentLocality || stop.locality;
-
-    (byLocation[location] ||= []).push(code);
+    add(indexes, row);
   }
 
-  return [byCode, byLocation];
+  return indexes;
+}
+
+/**
+ * Index a NaPTAN CSV by ATCO code and by locality, reading it as it arrives.
+ */
+export async function naptanIndexesFrom(file: string): Promise<[NaPTANIndex, StopLocationIndex]> {
+  const indexes = emptyIndexes();
+
+  await eachNaptanRow(file, row => add(indexes, row));
+
+  return indexes;
+}
+
+function emptyIndexes(): [NaPTANIndex, StopLocationIndex] {
+  return [{}, {}];
+}
+
+function add([byCode, byLocation]: [NaPTANIndex, StopLocationIndex], row: NaptanRow): void {
+  const code = row.ATCOCode;
+
+  if (code === undefined || code === "") {
+    return;
+  }
+
+  const stop: NaptanStopPoint = {
+    atcoCode: code,
+    naptanCode: row.NaptanCode ?? "",
+    name: row.CommonName ?? "",
+    street: row.Street ?? "",
+    indicator: row.Indicator ?? "",
+    locality: row.LocalityName ?? "",
+    parentLocality: row.ParentLocalityName ?? "",
+    longitude: row.Longitude ?? "",
+    latitude: row.Latitude ?? ""
+  };
+
+  byCode[code] = stop;
+
+  const location = stop.parentLocality || stop.locality;
+
+  (byLocation[location] ||= []).push(code);
 }

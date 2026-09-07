@@ -3,7 +3,8 @@ import {FileOutput, writeZip} from "@gb-transit/gtfs-output";
 import {FileStream, RowStream} from "@gb-transit/txc-source";
 import * as fs from "fs";
 import * as path from "node:path";
-import {Readable} from "stream";
+import {Writable} from "node:stream";
+import {finished} from "node:stream/promises";
 
 /**
  * Runs the pipeline and writes what comes out of it.
@@ -35,7 +36,7 @@ export class Converter {
         stream.file.columns
       );
 
-      return pump(stream, writer);
+      return finished(stream.pipe(sink(writer)));
     });
 
     for (const file of input) {
@@ -65,16 +66,26 @@ export class Converter {
 }
 
 /**
- * Feed a stream's rows into a writer, respecting backpressure.
+ * A writer as a stream, so the rows go through node's own pipe.
+ *
+ * This was `for await (const row of source)`, which reads one row per
+ * microtask - slower than the streams producing them, so a shapes file of a
+ * million points ends up buffered rather than written. A pipe applies the
+ * backpressure that stops that.
  */
-async function pump<R extends FeedRow>(source: Readable, writer: RowWriter<R>): Promise<void> {
-  for await (const row of source) {
-    if (!writer.write(row as R)) {
-      await writer.drain();
+function sink<R extends FeedRow>(writer: RowWriter<R>): Writable {
+  return new Writable({
+    objectMode: true,
+    write(row: R, _encoding, done) {
+      if (writer.write(row)) {
+        return done();
+      }
+
+      writer.drain().then(() => done(), done);
+    },
+    final(done) {
+      writer.end();
+      writer.finished().then(() => done(), done);
     }
-  }
-
-  writer.end();
-
-  return writer.finished();
+  });
 }

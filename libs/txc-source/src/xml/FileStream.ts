@@ -7,16 +7,32 @@ import {parse} from "node:path";
  * Reads a set of XML or zip files and emits the contents downstream.
  *
  * A BODS download is a zip of zips of XML, so a zip entry that is itself a zip is
- * opened in turn. adm-zip rather than yauzl, because it is the one zip library
- * the rest of this repository uses and it reads a nested archive from the buffer
- * it already has. It reads the whole archive into memory, where yauzl streamed
- * entry by entry - the documents are handed on one at a time either way, so what
- * this costs is the archive itself.
+ * opened in turn.
+ *
+ * **One document at a time.** A TransXChange document runs to tens of megabytes
+ * and a dataset holds hundreds of them, so pushing them all in and letting the
+ * stream buffer costs gigabytes: the whole dataset ends up in memory at once
+ * because the parser downstream is slower than the loop. Each push waits for the
+ * reader to take it, which is what keeps a national dataset inside a gigabyte.
  */
 export class FileStream extends Transform {
 
+  private drained: (() => void) | undefined;
+
   constructor() {
     super({objectMode: true});
+  }
+
+  /**
+   * Called when the reader wants more, which is what `pushDocument` waits for.
+   */
+  public _read(size: number): void {
+    super._read(size);
+
+    const resolve = this.drained;
+
+    this.drained = undefined;
+    resolve?.();
   }
 
   /**
@@ -25,22 +41,27 @@ export class FileStream extends Transform {
   public async _transform(file: string, encoding: string, callback: TransformCallback): Promise<void> {
     const extension = parse(file).ext.toLowerCase();
 
-    if (extension === ".xml") {
-      console.log("Processing " + file);
-      this.push(fs.readFileSync(file, "utf8"));
+    try {
+      if (extension === ".xml") {
+        console.log("Processing " + file);
+        await this.pushDocument(fs.readFileSync(file, "utf8"));
+      }
+      else if (extension === ".zip") {
+        console.log("Processing zip " + file);
+        await this.readZip(new AdmZip(file));
+      }
+      else {
+        throw new Error("Unknown file type: " + file);
+      }
     }
-    else if (extension === ".zip") {
-      console.log("Processing zip " + file);
-      this.readZip(new AdmZip(file));
-    }
-    else {
-      this.destroy(Error("Unknown file type: " + file));
+    catch (err) {
+      return callback(err instanceof Error ? err : new Error(String(err)));
     }
 
     callback();
   }
 
-  private readZip(zip: AdmZip): void {
+  private async readZip(zip: AdmZip): Promise<void> {
     for (const entry of zip.getEntries()) {
       const name = entry.entryName.toLowerCase();
 
@@ -50,15 +71,26 @@ export class FileStream extends Transform {
 
       if (name.endsWith(".xml")) {
         console.log("Processing " + entry.entryName);
-        this.push(entry.getData().toString("utf8"));
+        await this.pushDocument(entry.getData().toString("utf8"));
       }
       else if (name.endsWith(".zip")) {
         console.log("Processing " + entry.entryName);
-        this.readZip(new AdmZip(entry.getData()));
+        await this.readZip(new AdmZip(entry.getData()));
       }
       else {
         console.log("Skipping " + entry.entryName);
       }
+    }
+  }
+
+  /**
+   * Emit one document, waiting if the reader is not ready for it.
+   */
+  private async pushDocument(xml: string): Promise<void> {
+    if (!this.push(xml)) {
+      await new Promise<void>(resolve => {
+        this.drained = resolve;
+      });
     }
   }
 

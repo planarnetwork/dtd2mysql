@@ -17,6 +17,18 @@ export const NAPTAN_CSV_URL = "https://naptan.api.dft.gov.uk/v1/access-nodes?dat
  * NaPTAN changes slowly and a stale coordinate is better than no build.
  */
 export function naptanCsv(cacheDirectory: string, maxAgeDays = 30): () => Promise<string> {
+  const file = naptanFile(cacheDirectory, maxAgeDays);
+
+  return async () => fs.readFileSync(await file(), "utf8");
+}
+
+/**
+ * The path of the cached NaPTAN CSV, downloading it if there is no current copy.
+ *
+ * A path rather than the text, for a caller that would rather stream 100MB than
+ * hold it.
+ */
+export function naptanFile(cacheDirectory: string, maxAgeDays = 30): () => Promise<string> {
   return async () => {
     const file = path.join(cacheDirectory, "naptan.csv");
 
@@ -38,7 +50,7 @@ export function naptanCsv(cacheDirectory: string, maxAgeDays = 30): () => Promis
       fs.renameSync(partial, file);
     }
 
-    return fs.readFileSync(file, "utf8");
+    return file;
   };
 }
 
