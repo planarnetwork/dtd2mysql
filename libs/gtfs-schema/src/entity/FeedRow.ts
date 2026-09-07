@@ -6,6 +6,7 @@ import {CalendarDateRow} from "./CalendarDate.js";
 import {FeedInfoRow} from "./FeedInfo.js";
 import {FixedLinkRow} from "./FixedLink.js";
 import {RouteRow} from "./Route.js";
+import {ShapeRow} from "./Shape.js";
 import {StopRow} from "./Stop.js";
 import {StopTimeRow} from "./StopTime.js";
 import {TransferRow} from "./Transfer.js";
@@ -34,6 +35,7 @@ export type FeedRow =
   | FeedInfoRow
   | FixedLinkRow
   | RouteRow
+  | ShapeRow
   | StopRow
   | StopAreaRow
   | StopTimeRow

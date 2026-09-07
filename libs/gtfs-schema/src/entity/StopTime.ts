@@ -8,10 +8,13 @@ export interface StopTime {
   stop_id: CRS;
   stop_sequence: number;
   /**
-   * Overrides the trip headsign from this stop onwards, which a GB rail service
-   * never needs. Always null.
+   * Overrides the trip headsign from this stop onwards, for a service whose
+   * answer to "where does this train go" changes partway along - a portion
+   * that splits, or a bus that changes destination at a timing point.
+   *
+   * Null where the trip headsign holds for the whole journey.
    */
-  stop_headsign: null;
+  stop_headsign: string | null;
   pickup_type: PickupDropOffType;
   drop_off_type: PickupDropOffType;
   shape_dist_traveled: null;
@@ -47,10 +50,15 @@ export interface StopTimeRow {
   departure_time: string;
   stop_id: StopID;
   stop_sequence: number;
-  stop_headsign: null;
+  stop_headsign: string | null;
   pickup_type: PickupDropOffType;
   drop_off_type: PickupDropOffType;
-  shape_dist_traveled: null;
+  /**
+   * Distance along the trip's shape at this call. Null for a producer that
+   * writes no shapes.txt; text where the source's precision matters, as in
+   * Shape.
+   */
+  shape_dist_traveled: number | string | null;
   timepoint: 0 | 1;
 }
 

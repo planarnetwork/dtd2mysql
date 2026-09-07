@@ -154,12 +154,18 @@ function widen(transfer: Transfer, link: FixedLink): Transfer {
   return widened;
 }
 
-function min(a: string | null, b: string): string {
-  return a === null || b < a ? b : a;
+/**
+ * The earlier of the two, where the transfer may say nothing.
+ *
+ * Absent and null mean the same thing here - a transfer with no window - because
+ * the fields are optional for a producer that has no fixed links to describe.
+ */
+function min(a: string | null | undefined, b: string): string {
+  return a === null || a === undefined || b < a ? b : a;
 }
 
-function max(a: string | null, b: string): string {
-  return a === null || b > a ? b : a;
+function max(a: string | null | undefined, b: string): string {
+  return a === null || a === undefined || b > a ? b : a;
 }
 
 /**

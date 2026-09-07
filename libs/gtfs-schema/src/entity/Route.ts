@@ -22,6 +22,12 @@ export enum RouteType {
   Cable = 5,
   Gondola = 6,
   Funicular = 7,
+  /**
+   * Extended route types, from the hierarchy the spec points consumers at for
+   * finer detail than the seven basic modes. A TransXChange service may be
+   * registered as an air service.
+   */
+  Air = 1100,
   ReplacementBus = 714
 }
 

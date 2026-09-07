@@ -49,16 +49,30 @@ export type TIPLOC = string;
  */
 export interface StopRow {
   stop_id: StopID;
-  stop_code: CRS;
+  /**
+   * The code a rider would recognise: a CRS for a rail station, and whatever
+   * the source publishes for anything else.
+   */
+  stop_code: string | null;
   stop_name: string;
-  stop_desc: string;
-  zone_id: number;
-  stop_url: string;
-  location_type: 0 | 1;
+  stop_desc: string | null;
+  zone_id: number | string | null;
+  stop_url: string | null;
+  /**
+   * 0 a stop, 1 a station, 2 an entrance, 3 a generic node, 4 a boarding area.
+   * A rail feed writes only the first two; null where the source says nothing,
+   * which the spec reads as a stop.
+   */
+  location_type: 0 | 1 | 2 | 3 | 4 | null;
   parent_station: StopID | null;
   platform_code: string | null;
-  stop_timezone: string;
+  stop_timezone: string | null;
   wheelchair_boarding: 0 | 1 | 2;
-  stop_lon: number;
-  stop_lat: number;
+  /**
+   * Kept as text where the source gave text: a coordinate that arrived as
+   * `51.50740` re-serialises from a number as `51.5074`, dropping a digit of
+   * the precision the source published.
+   */
+  stop_lon: number | string;
+  stop_lat: number | string;
 }

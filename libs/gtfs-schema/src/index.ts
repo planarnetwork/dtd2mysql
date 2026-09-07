@@ -7,6 +7,7 @@ export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate.js";
 export type {FixedLink, FixedLinkRow} from "./entity/FixedLink.js";
 export {RouteType} from "./entity/Route.js";
 export type {Route, RouteID, RouteRow} from "./entity/Route.js";
+export type {Shape, ShapeID, ShapeRow} from "./entity/Shape.js";
 export type {Stop, StopRow, CRS, TIPLOC} from "./entity/Stop.js";
 export {PickupDropOffType} from "./entity/StopTime.js";
 export type {StopTime, StopTimeRow, Platform} from "./entity/StopTime.js";
@@ -15,6 +16,12 @@ export type {Transfer, TransferRow, StopID} from "./entity/Transfer.js";
 export type {Trip, TripRow} from "./entity/Trip.js";
 export type {FeedInfo, FeedInfoRow} from "./entity/FeedInfo.js";
 export type {FeedRow} from "./entity/FeedRow.js";
+
+// The files a feed is made of: which columns each may carry, and where a
+// producer puts the rows it writes
+export {fileSchema, GTFS_COLUMNS} from "./file/Columns.js";
+export type {Columns, FileSchema, GTFSColumn, GTFSFileName} from "./file/Columns.js";
+export type {GTFSOutput, RowWriter} from "./file/GTFSOutput.js";
 
 // The identifiers a CIF record carries onto the rows built from it
 export type {RSID, TUID} from "./model/Identifiers.js";

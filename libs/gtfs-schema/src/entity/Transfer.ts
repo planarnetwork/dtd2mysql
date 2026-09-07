@@ -7,8 +7,12 @@ import {Duration} from "../model/Duration.js";
 export interface Transfer {
   from_stop_id: StopID,
   to_stop_id: StopID,
-  from_trip_id: string | null,
-  to_trip_id: string | null,
+  /**
+   * The trips a transfer_type 4 couples. Optional: a producer with no coupled
+   * trips writes neither column.
+   */
+  from_trip_id?: string | null,
+  to_trip_id?: string | null,
   transfer_type: TransferType,
   min_transfer_time: Duration | null,
 
@@ -22,20 +26,22 @@ export interface Transfer {
    * The spec has nowhere else for them: a conditional transfer has no
    * documented pattern, unlike a platform. They are here or they are lost.
    *
-   * Null on a station interchange row, where there is no link to describe.
+   * Null on a station interchange row, where there is no link to describe, and
+   * absent entirely from a producer that has no fixed links to describe - a bus
+   * feed's transfers are four columns and these are not among them.
    */
-  mode: string | null,
-  start_time: string | null,
-  end_time: string | null,
-  start_date: string | null,
-  end_date: string | null,
-  monday: 0 | 1 | null,
-  tuesday: 0 | 1 | null,
-  wednesday: 0 | 1 | null,
-  thursday: 0 | 1 | null,
-  friday: 0 | 1 | null,
-  saturday: 0 | 1 | null,
-  sunday: 0 | 1 | null
+  mode?: string | null,
+  start_time?: string | null,
+  end_time?: string | null,
+  start_date?: string | null,
+  end_date?: string | null,
+  monday?: 0 | 1 | null,
+  tuesday?: 0 | 1 | null,
+  wednesday?: 0 | 1 | null,
+  thursday?: 0 | 1 | null,
+  friday?: 0 | 1 | null,
+  saturday?: 0 | 1 | null,
+  sunday?: 0 | 1 | null
 }
 
 /**

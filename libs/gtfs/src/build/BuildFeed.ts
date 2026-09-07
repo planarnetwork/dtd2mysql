@@ -8,8 +8,12 @@ import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/ApplyAssociations";
 import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
-import {GTFSOutput} from "./GTFSOutput";
+import {FileSchema, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
 import {CRS, FeedRow, FixedLink, Route, Stop, TIPLOC} from "@gb-transit/gtfs-schema";
+import {
+  AGENCY, ATTRIBUTIONS, CALENDAR, CALENDAR_DATES, FEED_INFO, LINKS, ROUTES, STOPS, STOP_TIMES,
+  TRANSFERS, TRIPS
+} from "./RailFeed";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {enrich, provenanceFile} from "../enrich/Enrich";
@@ -28,8 +32,6 @@ import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
 import * as fs from "fs";
 import {shiftLateNightServices} from "../transform/ShiftLateNightServices";
-import {finished} from "node:stream/promises";
-import {Writable} from "stream";
 
 type LinkedSchedules = {
   schedules: Schedule[],
@@ -84,11 +86,11 @@ export class BuildFeed {
     const fixedLinksQ = this.repository.getFixedLinks();
     const transfersQ = this.repository.getTransfers();
     const versionQ = this.repository.getFeedVersion();
-    const agencyP = this.copy(agencies.map(toAgencyRow), "agency.txt", a => [a.agency_id]);
+    const agencyP = this.copy(agencies.map(toAgencyRow), AGENCY, a => [a.agency_id]);
     const fixedLinksP = this.context.links
       ? this.copy(
         fixedLinksQ,
-        "links.txt",
+        LINKS,
         l => [l.from_stop_id, l.to_stop_id, l.mode, l.start_date, l.start_time]
       )
       : Promise.resolve();
@@ -143,7 +145,7 @@ export class BuildFeed {
       ? await extend(feed, this.extensions)
       : {files: [], reports: []};
     const extensionsP = extended.files.map(
-      file => this.copy([...file.rows], file.filename, file.key)
+      file => this.copy([...file.rows], {filename: file.filename, columns: file.columns}, file.key)
     );
 
     // Written whatever ran, because the timetable always needs crediting and
@@ -153,7 +155,7 @@ export class BuildFeed {
     const credits = createAttributions(this.attributions());
     const attributionsP = this.copy(
       credits,
-      "attributions.txt",
+      ATTRIBUTIONS,
       a => [a.organization_name, a.attribution_licence]
     );
 
@@ -167,7 +169,7 @@ export class BuildFeed {
       )
       : undefined;
 
-    const stopsP = this.copy(stops.map(toStopRow), "stops.txt", s => [s.stop_id]);
+    const stopsP = this.copy(stops.map(toStopRow), STOPS, s => [s.stop_id]);
     // The couplings are appended rather than merged in: the primary key includes the trip ids, so a
     // link at a station that already has an interchange row is a different row, not a duplicate.
     const transfersP = this.copy(
@@ -175,17 +177,17 @@ export class BuildFeed {
         ...mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
         ...linkedTrips(links, called, map(stations, stop => stop.tiploc))
       ],
-      "transfers.txt",
+      TRANSFERS,
       t => [t.from_stop_id, t.to_stop_id, t.from_trip_id, t.to_trip_id, t.transfer_type]
     );
 
     const [calendars, calendarDates, serviceIds] = createCalendar(called);
 
-    const calendarP = this.copy(calendars, "calendar.txt", c => [c.service_id]);
-    const calendarDatesP = this.copy(calendarDates, "calendar_dates.txt", d => [d.service_id, d.date]);
+    const calendarP = this.copy(calendars, CALENDAR, c => [c.service_id]);
+    const calendarDatesP = this.copy(calendarDates, CALENDAR_DATES, d => [d.service_id, d.date]);
     const feedInfoP = this.copy(
       [createFeedInfo(calendars, calendarDates, range, await versionQ)],
-      "feed_info.txt",
+      FEED_INFO,
       f => [f.feed_publisher_name]
     );
     const tripsP = this.copyTrips(
@@ -235,7 +237,7 @@ export class BuildFeed {
    * trips.txt, stop_times.txt and routes.txt are written as they are built, so
    * they do not go through copy(). This is where they meet the same constraint.
    */
-  private write<T extends FeedRow>(output: Writable, row: T): void {
+  private write<T extends FeedRow>(output: RowWriter<T>, row: T): void {
     output.write(row);
   }
 
@@ -252,14 +254,14 @@ export class BuildFeed {
    */
   private async copy<T extends FeedRow>(
     results: T[] | Promise<T[]>,
-    filename: string,
+    file: FileSchema<T>,
     key: (row: T) => Value[]
   ): Promise<void> {
     const rows = await results;
-    const output = this.output.open(`${this.baseDir}/${filename}`);
+    const output = this.output.open(`${this.baseDir}/${file.filename}`, file.columns);
     const keyed = rows.map(row => ({row, key: key(row), whole: ""}));
 
-    console.log("Writing " + filename);
+    console.log("Writing " + file.filename);
     keyed.sort(byKeyThenWholeRow);
 
     for (const {row} of keyed) {
@@ -268,7 +270,7 @@ export class BuildFeed {
 
     output.end();
 
-    return finished(output);
+    return output.finished();
   }
 
   /**
@@ -282,9 +284,9 @@ export class BuildFeed {
     onward: ReadonlyMap<string, string>
   ): Promise<any> {
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
-    const trips = this.output.open(`${this.baseDir}/trips.txt`);
-    const stopTimes = this.output.open(`${this.baseDir}/stop_times.txt`);
-    const routeFile = this.output.open(`${this.baseDir}/routes.txt`);
+    const trips = this.output.open(`${this.baseDir}/${TRIPS.filename}`, TRIPS.columns);
+    const stopTimes = this.output.open(`${this.baseDir}/${STOP_TIMES.filename}`, STOP_TIMES.columns);
+    const routeFile = this.output.open(`${this.baseDir}/${ROUTES.filename}`, ROUTES.columns);
 
     // Sorted by route ID, which a schedule works out for itself, so routes.txt
     // does not depend on the order the schedules arrived in.
@@ -324,9 +326,9 @@ export class BuildFeed {
     routeFile.end();
 
     return Promise.all([
-      finished(trips),
-      finished(stopTimes),
-      finished(routeFile),
+      trips.finished(),
+      stopTimes.finished(),
+      routeFile.finished(),
     ]);
   }
 

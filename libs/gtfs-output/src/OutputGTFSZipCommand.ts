@@ -1,8 +1,8 @@
-import AdmZip from "adm-zip";
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {BuildFeed} from "@gb-transit/gtfs";
 import * as fs from "fs";
+import {writeZip} from "./WriteZip";
 
 export class OutputGTFSZipCommand {
 
@@ -19,16 +19,8 @@ export class OutputGTFSZipCommand {
 
   /**
    * Write the feed to a temporary directory and zip it up.
-   *
-   * The zip is written in process and awaited, so this resolves when the file
-   * exists rather than when a timer is due to start writing it, and a failure
-   * fails the build instead of being thrown into an empty stack.
    */
   public async build(filename: string): Promise<void> {
-    if (fs.existsSync(filename)) {
-      fs.unlinkSync(filename);
-    }
-
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "gtfs"));
 
     try {
@@ -36,15 +28,7 @@ export class OutputGTFSZipCommand {
 
       console.log("Writing " + filename);
 
-      // Flat, and in a fixed order: a GTFS feed is a directory of files at the
-      // root of the archive, and the same feed should produce the same zip.
-      const zip = new AdmZip();
-
-      for (const file of fs.readdirSync(directory).sort()) {
-        zip.addLocalFile(path.join(directory, file));
-      }
-
-      await zip.writeZipPromise(filename);
+      await writeZip(directory, filename);
     }
     finally {
       fs.rmSync(directory, {recursive: true, force: true});

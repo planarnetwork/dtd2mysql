@@ -111,8 +111,8 @@ export class StationGroupsExtension implements Extension<FaresGroups> {
 
     return {
       files: [
-        extensionFile("areas.txt", areas, row => [row.area_id]),
-        extensionFile("stop_areas.txt", stopAreas, row => [row.area_id, row.stop_id])
+        extensionFile<AreaRow>("areas.txt", ["area_id", "area_name"], areas, row => [row.area_id]),
+        extensionFile<StopAreaRow>("stop_areas.txt", ["area_id", "stop_id"], stopAreas, row => [row.area_id, row.stop_id])
       ],
       report: {
         extension: this.key,
