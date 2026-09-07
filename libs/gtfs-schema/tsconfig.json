@@ -9,10 +9,5 @@
   ],
   "exclude": [
     "**/*.spec.ts"
-  ],
-  "references": [
-    {
-      "path": "../gtfs-schema"
-    }
   ]
 }

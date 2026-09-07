@@ -1,5 +1,5 @@
 import {Schedule} from "../model/Schedule";
-import {CRS} from "../entity/Stop";
+import {CRS} from "@gb-transit/gtfs-schema";
 
 /**
  * Remove calls at stops the feed does not publish.

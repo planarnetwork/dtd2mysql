@@ -1,5 +1,5 @@
 
-import {AgencyID} from "./Agency";
+import {AgencyID} from "./Agency.js";
 
 export interface Route {
   route_id: RouteID;

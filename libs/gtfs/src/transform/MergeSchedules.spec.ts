@@ -1,12 +1,10 @@
 import {describe, it, expect} from 'vitest';
-import {STP, TUID} from "../model/OverlayRecord";
+import {STP} from "../model/OverlayRecord";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyOverlays} from "../transform/ApplyOverlays";
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
+import {AgencyID, PickupDropOffType, RouteType, StopTime, TUID} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";
-import {RouteType} from "../entity/Route";
-import {AgencyID} from "../entity/Agency";
 
 describe("MergeSchedules", () => {
 

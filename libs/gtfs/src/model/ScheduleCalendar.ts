@@ -1,8 +1,6 @@
 
 import memoize from "memoized-class-decorator";
-import {Calendar} from "../entity/Calendar";
-import {CalendarDate} from "../entity/CalendarDate";
-import {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./PlainDate";
+import {Calendar, CalendarDate, compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "@gb-transit/gtfs-schema";
 
 export class ScheduleCalendar {
   constructor(

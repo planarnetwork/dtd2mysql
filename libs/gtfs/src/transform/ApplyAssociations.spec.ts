@@ -1,8 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
-import {STP, TUID} from "../model/OverlayRecord";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
-import {CRS} from "../entity/Stop";
+import {STP} from "../model/OverlayRecord";
+import {CRS, PickupDropOffType, StopTime, TUID} from "@gb-transit/gtfs-schema";
 import {Association, AssociationType, DateIndicator} from "../model/Association";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/ApplyAssociations";
 import {applyOverlays} from "../transform/ApplyOverlays";

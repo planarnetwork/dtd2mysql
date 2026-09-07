@@ -2,6 +2,12 @@
   "files": [],
   "references": [
     {
+      "path": "./libs/gtfs-schema"
+    },
+    {
+      "path": "./libs/gtfs-schema/tsconfig.esm.json"
+    },
+    {
       "path": "./libs/feed-parser"
     },
     {

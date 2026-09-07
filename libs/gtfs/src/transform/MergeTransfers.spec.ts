@@ -1,7 +1,6 @@
 import {describe, it, expect} from "vitest";
 import {interchange, mergeTransfers} from "./MergeTransfers";
-import {FixedLink} from "../entity/FixedLink";
-import {CRS, StopID} from "../entity/Stop";
+import {CRS, FixedLink, StopID} from "@gb-transit/gtfs-schema";
 
 const link = (from: string, to: string, overrides: Partial<FixedLink> = {}): FixedLink => ({
   from_stop_id: from, to_stop_id: to, mode: "WALK", duration: 600,

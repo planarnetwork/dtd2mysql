@@ -1,4 +1,4 @@
-import {Stop} from "../entity/Stop";
+import {Stop} from "@gb-transit/gtfs-schema";
 
 /**
  * `CH ORIGIN`, `XC DESTINATION` and the rest: one pair per operator, in the MSN

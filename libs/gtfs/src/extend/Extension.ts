@@ -1,4 +1,4 @@
-import {FeedRow} from "../entity/FeedRow";
+import {FeedRow} from "@gb-transit/gtfs-schema";
 import {Attribution} from "../enrich/Enricher";
 import {FeedView} from "./FeedView";
 

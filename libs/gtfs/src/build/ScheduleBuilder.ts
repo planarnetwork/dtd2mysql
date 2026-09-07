@@ -1,9 +1,8 @@
 import {IdGenerator, STP} from "../model/OverlayRecord";
 import {Schedule, tripId} from "../model/Schedule";
-import {RouteType} from "../entity/Route";
+import {PickupDropOffType, RouteType, StopTime} from "@gb-transit/gtfs-schema";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
 
 const pickupActivities = ["T ", "TB", "U "];
 const dropOffActivities = ["T ", "TF", "D "];

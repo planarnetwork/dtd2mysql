@@ -1,5 +1,5 @@
 
-import {CRS, StopID, TIPLOC} from "./Stop";
+import {CRS, StopID, TIPLOC} from "./Stop.js";
 
 export interface StopTime {
   trip_id: string;

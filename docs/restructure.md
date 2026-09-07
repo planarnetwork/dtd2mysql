@@ -131,11 +131,13 @@ moving anything, but is not built in this pass.
 ### Dependency graph
 
 ```
+libs/gtfs-schema        →  (none)
 libs/feed-parser        →  (none)
 libs/dtd-schema         →  feed-parser
 libs/dtd-source         →  feed-parser, dtd-schema, gtfs
-libs/gtfs               →  (none)
+libs/gtfs               →  gtfs-schema
 libs/gtfs-output        →  gtfs
+libs/gtfs-loader        →  gtfs-schema
 libs/enrich-*           →  gtfs
 
 apps/dtd2mysql          →  feed-parser, dtd-schema, dtd-source, gtfs, gtfs-output

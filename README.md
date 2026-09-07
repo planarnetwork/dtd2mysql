@@ -66,6 +66,7 @@ README describing what it is for and how to use it.
 
 | Package | Published as | What it is |
 |---|---|---|
+| [`libs/gtfs-schema`](libs/gtfs-schema/README.md) | `@gb-transit/gtfs-schema` | The shape of a GTFS feed: one type per file, and the scalars they are written in |
 | [`libs/feed-parser`](libs/feed-parser/README.md) | `@gb-transit/feed-parser` | Declarative fixed-width and CSV record parsing |
 | [`libs/dtd-schema`](libs/dtd-schema/README.md) | `@gb-transit/dtd-schema` | Record layouts for the fares, timetable, routeing guide and NFM64 feeds |
 | [`libs/dtd-source`](libs/dtd-source/README.md) | `@gb-transit/dtd-source` | SFTP download, feed sequencing, and a timetable source that reads the files directly |

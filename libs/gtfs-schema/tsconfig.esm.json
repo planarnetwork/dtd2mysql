@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // nodenext takes the module format from the package's "type" field, which is
+    // per package rather than per tsconfig, so it cannot be told to emit ESM
+    // from a package whose CommonJS build is the default. esnext modules pair
+    // only with bundler resolution. This is the same shape raptor's dual build
+    // uses, and it means the compiler checks nothing about how node resolves the
+    // ESM output - the packed-tarball smoke test in CI is what covers that.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "dist/esm",
+    "tsBuildInfoFile": "tsconfig.esm.tsbuildinfo"
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}

@@ -1,4 +1,4 @@
-import {Duration} from "../model/Duration";
+import {Duration} from "../model/Duration.js";
 
 /**
  * A transfer may be interchange at a particular station (where the fromStopId and toStopId are the same), a fixed

@@ -1,6 +1,4 @@
-import {CRS, Stop, StopID} from "../entity/Stop";
-import {Trip} from "../entity/Trip";
-import {Route} from "../entity/Route";
+import {CRS, Route, Stop, StopID, Trip} from "@gb-transit/gtfs-schema";
 import {Enricher} from "./Enricher";
 import {Provenance} from "./Provenance";
 import {FeedView} from "../extend/FeedView";

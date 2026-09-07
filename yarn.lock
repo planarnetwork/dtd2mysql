@@ -497,10 +497,19 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/gtfs-schema@workspace:^, @gb-transit/gtfs-schema@workspace:libs/gtfs-schema":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/gtfs-schema@workspace:libs/gtfs-schema"
+  dependencies:
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/gtfs@workspace:^, @gb-transit/gtfs@workspace:libs/gtfs":
   version: 0.0.0-use.local
   resolution: "@gb-transit/gtfs@workspace:libs/gtfs"
   dependencies:
+    "@gb-transit/gtfs-schema": "workspace:^"
     memoized-class-decorator: "npm:1.6.1"
     proj4: "npm:2.20.9"
     typescript: "npm:7.0.2"

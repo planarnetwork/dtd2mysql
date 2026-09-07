@@ -1,11 +1,6 @@
-import {StopTime} from "../entity/StopTime";
+import {AgencyID, CRS, RSID, Route, RouteType, StopTime, TUID, Trip, toYYYYMMDD} from "@gb-transit/gtfs-schema";
 import {ScheduleCalendar} from "./ScheduleCalendar";
-import {Trip} from "../entity/Trip";
-import {Route, RouteType} from "../entity/Route";
-import {AgencyID} from "../entity/Agency";
-import {CRS} from "../entity/Stop";
-import {OverlayRecord, RSID, STP, TUID} from "./OverlayRecord";
-import {toYYYYMMDD} from "./PlainDate";
+import {OverlayRecord, STP} from "./OverlayRecord";
 import {agencyIndex} from "../data/agency";
 import {accessibleTextColor, LineRule, lineRulesByOperator, routeBranding} from "../data/route";
 

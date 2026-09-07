@@ -9,9 +9,7 @@ import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/A
 import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {GTFSOutput} from "./GTFSOutput";
-import {Route} from "../entity/Route";
-import {FeedRow} from "../entity/FeedRow";
-import {CRS, Stop, TIPLOC} from "../entity/Stop";
+import {CRS, FeedRow, FixedLink, Route, Stop, TIPLOC} from "@gb-transit/gtfs-schema";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
 import {enrich, provenanceFile} from "../enrich/Enrich";
@@ -28,7 +26,6 @@ import {combinedHeadsigns, onwardHeadsigns} from "../transform/Headsigns";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
-import {FixedLink} from "../entity/FixedLink";
 import * as fs from "fs";
 import {shiftLateNightServices} from "../transform/ShiftLateNightServices";
 import {finished} from "node:stream/promises";

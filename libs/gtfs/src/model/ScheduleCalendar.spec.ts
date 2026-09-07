@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {Days, ExcludeDays, OverlapType, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ALL_DAYS} from "../transform/MergeSchedules.spec";
-import {dayOfWeek, toYYYYMMDD} from "./PlainDate";
+import {dayOfWeek, toYYYYMMDD} from "@gb-transit/gtfs-schema";
 
 describe("ScheduleCalendar", () => {
 

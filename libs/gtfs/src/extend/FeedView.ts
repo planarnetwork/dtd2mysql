@@ -1,4 +1,4 @@
-import {CRS, Stop, StopID} from "../entity/Stop";
+import {CRS, Stop, StopID} from "@gb-transit/gtfs-schema";
 
 /**
  * The built feed, to read.

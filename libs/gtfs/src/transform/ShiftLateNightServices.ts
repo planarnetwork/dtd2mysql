@@ -1,7 +1,6 @@
 import {Schedule} from "../model/Schedule";
 import {STP} from "../model/OverlayRecord";
-import {AgencyID} from "../entity/Agency";
-import {dayOfWeek} from "../model/PlainDate";
+import {AgencyID, dayOfWeek} from "@gb-transit/gtfs-schema";
 
 /**
  * Loop through every schedule and replace any early morning services with a copy on the previous day.

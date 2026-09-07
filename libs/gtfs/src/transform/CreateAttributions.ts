@@ -1,5 +1,5 @@
 import {Attribution} from "../enrich/Enricher";
-import {AttributionRow} from "../entity/Attribution";
+import {AttributionRow} from "@gb-transit/gtfs-schema";
 
 /**
  * The timetable itself, which no enricher declares because it is not one.

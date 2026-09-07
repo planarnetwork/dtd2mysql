@@ -1,8 +1,7 @@
 
 import {Schedule} from "../model/Schedule";
 import {AssociationLink, AssociationType} from "../model/Association";
-import {Transfer, TransferType} from "../entity/Transfer";
-import {CRS, TIPLOC} from "../entity/Stop";
+import {CRS, TIPLOC, Transfer, TransferType} from "@gb-transit/gtfs-schema";
 import {stopId} from "./Platforms";
 
 /**

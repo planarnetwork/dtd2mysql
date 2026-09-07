@@ -192,7 +192,7 @@ jobs:
       - name: Install the packaged tarballs and run the CLI
         run: |
           mkdir -p "$RUNNER_TEMP/tarballs"
-          for pkg in feed-parser dtd-schema dtd-source gtfs gtfs-output; do
+          for pkg in gtfs-schema feed-parser dtd-schema dtd-source gtfs gtfs-output; do
             yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
           done
           yarn workspace dtd2mysql pack --out "$RUNNER_TEMP/tarballs/dtd2mysql.tgz"
@@ -203,6 +203,7 @@ jobs:
             "private": true,
             "version": "1.0.0",
             "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
               "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
               "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
               "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
@@ -232,6 +233,7 @@ jobs:
             "private": true,
             "version": "1.0.0",
             "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
               "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
               "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
               "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",

@@ -1,7 +1,6 @@
 import {describe, it, expect} from "vitest";
 import {stopId, withStopPoints} from "./Platforms";
-import {Stop} from "../entity/Stop";
-import {PickupDropOffType, StopTime} from "../entity/StopTime";
+import {PickupDropOffType, Stop, StopTime} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";
 
 const stop = (crs: string, tiploc: string): Stop => ({

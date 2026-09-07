@@ -1,6 +1,4 @@
-import {Transfer, TransferType} from "../entity/Transfer";
-import {FixedLink} from "../entity/FixedLink";
-import {CRS, StopID} from "../entity/Stop";
+import {CRS, FixedLink, StopID, Transfer, TransferType} from "@gb-transit/gtfs-schema";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 

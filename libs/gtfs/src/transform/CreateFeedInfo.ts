@@ -1,8 +1,5 @@
-import {FeedInfo} from "../entity/FeedInfo";
-import {Calendar} from "../entity/Calendar";
-import {CalendarDate} from "../entity/CalendarDate";
+import {Calendar, CalendarDate, FeedInfo, toYYYYMMDD} from "@gb-transit/gtfs-schema";
 import {DateRange} from "../build/BuildContext";
-import {toYYYYMMDD} from "../model/PlainDate";
 
 const PUBLISHER = "Planar Network";
 const PUBLISHER_URL = "https://github.com/planarnetwork/dtd2mysql";

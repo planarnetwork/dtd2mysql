@@ -1,7 +1,6 @@
 import {describe, it, expect} from "vitest";
 import {createFeedInfo} from "./CreateFeedInfo";
-import {Calendar} from "../entity/Calendar";
-import {CalendarDate} from "../entity/CalendarDate";
+import {Calendar, CalendarDate} from "@gb-transit/gtfs-schema";
 import {DateRange} from "../build/BuildContext";
 
 const range: DateRange = {
