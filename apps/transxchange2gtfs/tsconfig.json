@@ -1,21 +1,25 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "module": "commonjs",
-    "target": "es2022",
-    "sourceMap": false,
-    "experimentalDecorators": true,
-    "strict": true,
-    "declaration": true,
-    "skipLibCheck": true,
-    "types": ["vitest/globals"],
-    "lib": [
-      "es2022"
-    ]
+    "rootDir": "src",
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../libs/gtfs-schema"
+    },
+    {
+      "path": "../../libs/txc-source"
+    },
+    {
+      "path": "../../libs/gtfs-output"
+    }
+  ],
   "exclude": [
-    "node_modules",
-    "dist/"
+    "**/*.spec.ts",
+    "**/*.spec.mts"
   ]
 }

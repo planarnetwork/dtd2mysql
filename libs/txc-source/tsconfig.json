@@ -9,17 +9,10 @@
   ],
   "references": [
     {
-      "path": "../../libs/gtfs-schema"
-    },
-    {
-      "path": "../../libs/gtfs-read"
-    },
-    {
-      "path": "../../libs/gtfs-output"
+      "path": "../gtfs-schema"
     }
   ],
   "exclude": [
-    "**/*.spec.ts",
-    "**/*.spec.mts"
+    "**/*.spec.ts"
   ]
 }

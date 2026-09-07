@@ -1,68 +1,52 @@
 {
   "name": "transxchange2gtfs",
   "version": "1.12.0",
-  "description": "Converts transxchange data to GTFS",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "transxchange2gtfs": "bin/transxchange2gtfs.sh"
+  "description": "Convert TransXChange data to GTFS",
+  "main": "./dist/api.js",
+  "types": "./dist/api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    }
   },
   "files": [
     "dist",
-    "bin",
-    "README.md",
-    "logo.png"
+    "bin"
   ],
+  "bin": "bin/transxchange2gtfs.sh",
   "scripts": {
-    "start": "tsx src/cli.ts",
-    "prepublishOnly": "rm -rf dist && tsc -p ./ --outDir dist/ && cp -r ./resource ./dist/",
-    "test": "vitest run",
-    "lint": "biome check src test",
-    "lint:fix": "biome check --write src test",
-    "coverage": "vitest run --coverage"
+    "build": "tsc -b",
+    "start": "yarn build && tsx ./src/index.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/planarnetwork/transxchange2gtfs.git"
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "apps/transxchange2gtfs"
   },
   "keywords": [
-    "transxchange",
+    "gb",
+    "bus",
     "gtfs",
-    "transit",
-    "data"
+    "timetable",
+    "transxchange",
+    "naptan"
   ],
-  "author": "Linus Norton <linusnorton@gmail.com>",
+  "author": "Linus Norton",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/planarnetwork/transxchange2gtfs/issues"
+    "url": "https://github.com/planarnetwork/dtd2mysql/issues"
   },
-  "homepage": "https://github.com/planarnetwork/transxchange2gtfs#readme",
+  "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
   "engines": {
-    "node": ">=20"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.12",
-    "@types/autobind-decorator": "^2.1.0",
-    "@types/follow-redirects": "^1.14.4",
-    "@types/node": "^22",
-    "@types/xml2js": "^0.4.14",
-    "@types/yauzl": "^2.10.3",
-    "@types/yazl": "^3.3.1",
-    "@vitest/coverage-v8": "^4.1.5",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.0",
-    "vitest": "^4.1.5"
+    "node": ">=26"
   },
   "dependencies": {
-    "@js-joda/core": "^6.0.1",
-    "autobind-decorator": "^2.4.0",
-    "csv-parse": "^6.2.1",
-    "csv-stringify": "^6.7.0",
-    "date-holidays": "^3.27.0",
-    "follow-redirects": "^1.16.0",
-    "rimraf": "^6.1.3",
-    "xml2js": "^0.6.2",
-    "yauzl": "^3.3.0",
-    "yazl": "^3.3.1"
+    "@gb-transit/gtfs-output": "workspace:^",
+    "@gb-transit/gtfs-schema": "workspace:^",
+    "@gb-transit/txc-source": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
   }
 }

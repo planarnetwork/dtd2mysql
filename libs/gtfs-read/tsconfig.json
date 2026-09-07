@@ -9,13 +9,10 @@
   ],
   "references": [
     {
-      "path": "../../libs/gtfs-schema"
+      "path": "../gtfs-schema"
     },
     {
-      "path": "../../libs/gtfs-read"
-    },
-    {
-      "path": "../../libs/gtfs-output"
+      "path": "../gtfs-loader"
     }
   ],
   "exclude": [
