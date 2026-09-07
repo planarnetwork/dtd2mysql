@@ -1,12 +1,13 @@
 # dtd2gtfs
 
-Build a GTFS feed from the British rail DTD timetable feed. No database, one command.
+Build a GTFS feed from the CIF timetable in the British rail DTD feed. No database, one command.
 
 ```
+npm install -g dtd2gtfs
 dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
-Not published yet. From a clone:
+Or from a clone:
 
 ```
 yarn workspace dtd2gtfs run start build --source RJTTF918.ZIP --out gtfs.zip

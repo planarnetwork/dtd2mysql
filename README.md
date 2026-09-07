@@ -38,11 +38,11 @@ dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip gtfs.zip
 ```
 
-`dtd2gtfs` builds the same feed — byte for byte — straight from the feed files with no database. It
-is not published yet, so run it from a clone:
+`dtd2gtfs` builds the same feed — byte for byte — straight from the feed files with no database:
 
 ```
-yarn workspace dtd2gtfs run start build --source RJTTF918.ZIP --out gtfs.zip
+npm install -g dtd2gtfs
+dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
 Full command line documentation is in each app's README:
@@ -59,7 +59,7 @@ README describing what it is for and how to use it.
 | Package | Published as | What it is |
 |---|---|---|
 | [`apps/dtd2mysql`](apps/dtd2mysql/README.md) | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
-| [`apps/dtd2gtfs`](apps/dtd2gtfs/README.md) | — | Build a GTFS feed straight from the feed files, no database |
+| [`apps/dtd2gtfs`](apps/dtd2gtfs/README.md) | `dtd2gtfs` | Build a GTFS feed straight from the feed files, no database |
 | [`apps/website`](apps/website/README.md) | — | The download page and the guide, deployed to GitHub Pages |
 
 ### Libraries

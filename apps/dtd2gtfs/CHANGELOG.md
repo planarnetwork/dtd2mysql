@@ -1,5 +1,19 @@
 # dtd2gtfs
 
+## 1.0.0
+
+### Major Changes
+
+- First published release. `npm install -g dtd2gtfs`.
+
+  The package was private while there was no published feed to point people at. There is one now, so
+  it goes to npm alongside the `@gb-transit` libraries it was held back with. No behaviour changes:
+  the CLI, its flags and the feed it produces are what 0.1.0 built, and the mini fixture's golden is
+  untouched.
+
+  It now declares `main`, `types` and a `files` list of `dist` and `bin`, so the tarball is the built
+  output rather than the working directory.
+
 ## 0.1.0
 
 ### Minor Changes

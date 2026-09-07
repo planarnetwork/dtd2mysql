@@ -1357,13 +1357,20 @@ so F1's sharding helps both equally. Only the finished Schedules are kept - each
 rows become a Schedule as soon as its stops end and are then dropped, because holding 2.9 million of
 them as well roughly doubles it.
 
-**C3 · `apps/dtd2gtfs`** *(depends C2, A7)* — **done, not published**
+**C3 · `apps/dtd2gtfs`** *(depends C2, A7)* — **done, published at 1.0.0**
 `dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
 the tree.
 
-It is private for now, along with the libraries: `dtd2mysql` is the only thing on npm. Publishing it
-is a decision to take once there is a nightly feed to point people at (E2 and E4), not a side effect
-of the code existing.
+It was private until the condition this ticket set was met - a nightly feed to point people at, from
+E2 and E4 - and it now is, so it publishes alongside the libraries it was held back with. 1.0.0
+rather than a continuation of the private 0.1.0: nothing was ever installed at 0.x, so there is no
+range to keep faith with, and the CLI is the interface the version describes.
+
+It packs `dist` and `bin` only. Without a `files` list the tarball carries `src` and the 304 KB
+`fixtures` directory, which is what the packaging job in `ci.yml` now catches: it installs the
+tarball into a clean directory, builds the mini fixture with it and diffs the result against the
+committed golden, so the packaged CLI has to produce this commit's feed rather than merely produce
+one.
 
 `--source` takes a zip or a directory and repeats, `--out` writes a zip or a directory depending on
 the extension, and `--today` and `--range` come from T1's build context.

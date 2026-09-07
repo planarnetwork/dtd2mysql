@@ -215,6 +215,52 @@ jobs:
           ./node_modules/.bin/dtd2mysql --help | tee help.txt
           grep -q "Usage: dtd2mysql" help.txt
           grep -q -- "--gtfs-zip" help.txt
+      # dtd2gtfs is published too, so the same mistake would ship the same way.
+      # It gets its own install directory: the two CLIs share every @gb-transit
+      # dependency, and resolving one from the other's tree would pass whatever
+      # this one's tarball left out.
+      - name: Install the packaged dtd2gtfs and run the CLI
+        run: |
+          for pkg in enrich-naptan extend-station-groups; do
+            yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
+          done
+          yarn workspace dtd2gtfs pack --out "$RUNNER_TEMP/tarballs/dtd2gtfs.tgz"
+          mkdir -p "$RUNNER_TEMP/install-gtfs" && cd "$RUNNER_TEMP/install-gtfs"
+          cat > package.json <<EOF
+          {
+            "name": "dtd2gtfs-pack-smoke-test",
+            "private": true,
+            "version": "1.0.0",
+            "overrides": {
+              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
+              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
+              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
+              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
+              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz",
+              "@gb-transit/enrich-naptan": "file:$RUNNER_TEMP/tarballs/enrich-naptan.tgz",
+              "@gb-transit/extend-station-groups": "file:$RUNNER_TEMP/tarballs/extend-station-groups.tgz"
+            }
+          }
+          EOF
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/dtd2gtfs.tgz"
+          ./node_modules/.bin/dtd2gtfs --help | tee help.txt
+          grep -q "dtd2gtfs" help.txt
+      # As above: --help barely touches the package. Building the mini fixture
+      # from the tarball resolves every @gb-transit dependency and runs the whole
+      # build, which is what catches a files or main mistake that --help sails
+      # past. It is diffed against the same golden the unit tests use, so the
+      # packaged CLI has to produce the feed this commit produces rather than
+      # merely produce one.
+      - name: The packaged dtd2gtfs builds the golden feed
+        run: |
+          cd "$RUNNER_TEMP/install-gtfs"
+          ./node_modules/.bin/dtd2gtfs build \
+            --source "$GITHUB_WORKSPACE/apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP" \
+            --out ./feed --today 2026-08-10 > run.txt 2>&1
+          cat run.txt
+          diff -r ./feed "$GITHUB_WORKSPACE/apps/dtd2gtfs/fixtures/mini/golden"
+          # a stack trace here means the entry point lost its error handling
+          ! grep -q "at Object.<anonymous>" run.txt
       # --help barely touches the package. Running a real command with no
       # database loads the container, resolves every schema module and exercises
       # the error path - which is what catches a files or main mistake, or a
