@@ -1,10 +1,13 @@
 ![npm](https://img.shields.io/npm/v/dtd2mysql.svg?style=flat-square) ![npm](https://img.shields.io/npm/dw/dtd2mysql.svg?style=flat-square)
 
-# GB rail DTD tooling
+# GB transit tooling
 
-Tools for the DTD feeds the Rail Delivery Group publishes — the CIF timetable, the fares feed and
-the routeing guide. They do two things: import the feeds into a MySQL database, and turn the CIF
-timetable into GTFS.
+Tools for:
+
+ - DTD feeds download and storage (CIF timetable, the fares feed and the routeing guide) 
+ - GTFS loading, merging and output
+ - CIF to GTFS conversion
+ - TransXchange to GTFS conversion
 
 The repository also builds and publishes that GTFS feed nightly.
 
@@ -113,18 +116,6 @@ Libraries never depend on an app. Each package builds to its own `dist/` and the
 to that output, so `yarn build` has to happen before anything runs; `tsc -b` walks the project
 references and makes it incremental.
 
-## Also in here
-
-| | |
-|---|---|
-| [`data/README.md`](data/README.md) | The reference feeds, how they are fetched and fingerprinted, and which baseline came from which feed |
-| [`docs/restructure.md`](docs/restructure.md) | Where this is going and why it is shaped like this |
-| [`docs/station-names.md`](docs/station-names.md) | Where NaPTAN and the override table disagree about a station's name |
-| [`docs/coordinate-review.md`](docs/coordinate-review.md) | Stations whose two coordinate sources differ by more than 100 m |
-| [`apps/*/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why each tool's committed output last changed, entry by entry |
-| [`BASELINE.md`](BASELINE.md) | The same for the baselines that belong to no one package: the type surface, the release baselines |
-| [`tests/README.md`](tests/README.md) | The end to end tests: the three tools run in sequence, and the validator over what they build |
-| [`scripts/`](scripts) | What CI runs and how a release is made, as scripts rather than as shell in a workflow |
 
 ## Contributing
 
