@@ -33,9 +33,28 @@ jobs:
             'apps/*/fixtures/*/golden/**' 'type-surface.json' '.github/validator-baseline*.json' || true)
           [ -n "$changed" ] || exit 0
           echo "Baselines changed:"; echo "$changed"
-          if ! git diff --name-only "$base"...HEAD -- 'apps/*/fixtures/BASELINE.md' | grep -q .; then
+          explained=$(git diff --name-only "$base"...HEAD -- 'apps/*/fixtures/BASELINE.md' || true)
+          status=0
+          # Each app answers for its own golden. Accepting an entry in any
+          # BASELINE.md would let a note about the bus feed excuse a change to
+          # the rail one.
+          for file in $changed; do
+            case "$file" in
+              apps/*/fixtures/*/golden/*)
+                app="${file%%/fixtures/*}"
+                echo "$explained" | grep -q "^$app/fixtures/BASELINE.md$" && continue
+                echo "$file changed with no entry in $app/fixtures/BASELINE.md."
+                status=1
+                ;;
+              *)
+                echo "$explained" | grep -q . && continue
+                echo "$file changed with no entry in any apps/*/fixtures/BASELINE.md."
+                status=1
+                ;;
+            esac
+          done
+          if [ "$status" -ne 0 ]; then
             echo
-            echo "A baseline changed with no entry in apps/cif2gtfs/fixtures/BASELINE.md."
             echo "Say which ticket moved it and what the diff shows."
             exit 1
           fi
@@ -73,6 +92,8 @@ jobs:
       # whose include matches the file.
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
       - run: yarn tsx apps/cif2gtfs/src/index.ts --help
+      - run: yarn tsx apps/transxchange2gtfs/src/index.ts --help
+      - run: yarn tsx apps/gtfsmerge/src/index.ts --help
 
   # Nothing above unit tests could run without a database, so every claim about
   # the importer has been checked by hand. This is where that stops.
@@ -133,9 +154,9 @@ jobs:
           GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/twice"
           diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/twice"
 
-  # The mini fixture is built and held to the MobilityData validator. Separate
-  # from unit because it needs a JVM and a 40 MB jar, and because a validator
-  # release adding a notice should not read as the tests breaking.
+  # Every feed this repository builds is held to the MobilityData validator.
+  # Separate from unit because it needs a JVM and a 40 MB jar, and because a
+  # validator release adding a notice should not read as the tests breaking.
   validate:
     runs-on: ubuntu-latest
     env:
@@ -167,7 +188,11 @@ jobs:
             "https://github.com/MobilityData/gtfs-validator/releases/download/v$VALIDATOR_VERSION/gtfs-validator-$VALIDATOR_VERSION-cli.jar"
       - run: yarn install --immutable
       - run: yarn build
-      - run: node apps/cif2gtfs/dist/validate.mjs gtfs-validator.jar
+      # All three feeds: the rail one, the bus one, and the merge of them. The
+      # merged feed is the one worth having here - the merge renumbers every
+      # service, route and trip id across two feeds, and a dangling reference
+      # from that is what a hand-written fixture cannot produce.
+      - run: node apps/feed-e2e/dist/validate.mjs gtfs-validator.jar
 
   package:
     runs-on: ubuntu-latest
@@ -262,6 +287,81 @@ jobs:
           cat run.txt
           diff -r ./feed "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/golden"
           # a stack trace here means the entry point lost its error handling
+          ! grep -q "at Object.<anonymous>" run.txt
+      # The two tools absorbed from their own repositories publish too, and
+      # each gets its own install directory for the same reason cif2gtfs does.
+      # Building their fixtures from the tarball is what catches a files or
+      # main mistake that --help sails past.
+      - name: The packaged transxchange2gtfs builds its golden feed
+        run: |
+          for pkg in naptan txc-source; do
+            yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
+          done
+          yarn workspace transxchange2gtfs pack --out "$RUNNER_TEMP/tarballs/transxchange2gtfs.tgz"
+          mkdir -p "$RUNNER_TEMP/install-txc" && cd "$RUNNER_TEMP/install-txc"
+          cat > package.json <<EOF
+          {
+            "name": "transxchange2gtfs-pack-smoke-test",
+            "private": true,
+            "version": "1.0.0",
+            "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
+              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
+              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
+              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
+              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
+              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz",
+              "@gb-transit/naptan": "file:$RUNNER_TEMP/tarballs/naptan.tgz",
+              "@gb-transit/txc-source": "file:$RUNNER_TEMP/tarballs/txc-source.tgz"
+            }
+          }
+          EOF
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/transxchange2gtfs.tgz"
+          ./node_modules/.bin/transxchange2gtfs --help | tee help.txt
+          grep -q "transxchange2gtfs" help.txt
+          # --naptan, so the packaged CLI is not held up by a 100MB download
+          ./node_modules/.bin/transxchange2gtfs \
+            --naptan "$GITHUB_WORKSPACE/apps/transxchange2gtfs/fixtures/mini/naptan.csv" \
+            "$GITHUB_WORKSPACE/apps/transxchange2gtfs/fixtures/mini/mini.xml" \
+            ./feed > run.txt 2>&1
+          cat run.txt
+          diff -r ./feed "$GITHUB_WORKSPACE/apps/transxchange2gtfs/fixtures/mini/golden"
+          ! grep -q "at Object.<anonymous>" run.txt
+      - name: The packaged gtfsmerge merges its golden feed
+        run: |
+          yarn workspace "@gb-transit/gtfs-read" pack --out "$RUNNER_TEMP/tarballs/gtfs-read.tgz"
+          yarn workspace "@gb-transit/gtfs-loader" pack --out "$RUNNER_TEMP/tarballs/gtfs-loader.tgz"
+          yarn workspace gtfsmerge pack --out "$RUNNER_TEMP/tarballs/gtfsmerge.tgz"
+          mkdir -p "$RUNNER_TEMP/install-merge" && cd "$RUNNER_TEMP/install-merge"
+          cat > package.json <<EOF
+          {
+            "name": "gtfsmerge-pack-smoke-test",
+            "private": true,
+            "version": "1.0.0",
+            "overrides": {
+              "@gb-transit/gtfs-schema": "file:$RUNNER_TEMP/tarballs/gtfs-schema.tgz",
+              "@gb-transit/feed-parser": "file:$RUNNER_TEMP/tarballs/feed-parser.tgz",
+              "@gb-transit/dtd-schema": "file:$RUNNER_TEMP/tarballs/dtd-schema.tgz",
+              "@gb-transit/dtd-source": "file:$RUNNER_TEMP/tarballs/dtd-source.tgz",
+              "@gb-transit/gtfs": "file:$RUNNER_TEMP/tarballs/gtfs.tgz",
+              "@gb-transit/gtfs-output": "file:$RUNNER_TEMP/tarballs/gtfs-output.tgz",
+              "@gb-transit/gtfs-loader": "file:$RUNNER_TEMP/tarballs/gtfs-loader.tgz",
+              "@gb-transit/gtfs-read": "file:$RUNNER_TEMP/tarballs/gtfs-read.tgz"
+            }
+          }
+          EOF
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/gtfsmerge.tgz"
+          ./node_modules/.bin/gtfsmerge --help | tee help.txt
+          grep -q "gtfsmerge" help.txt
+          # The tiny fixtures are directories; zip them as the CLI reads zips.
+          tiny="$GITHUB_WORKSPACE/apps/gtfsmerge/fixtures/tiny"
+          (cd "$tiny/a" && zip -q -j "$RUNNER_TEMP/a.zip" *.txt)
+          (cd "$tiny/b" && zip -q -j "$RUNNER_TEMP/b.zip" *.txt)
+          # Pinned, so the golden does not rot as the fixture's dates pass.
+          ./node_modules/.bin/gtfsmerge --date-filter 20260601 \
+            "$RUNNER_TEMP/a.zip" "$RUNNER_TEMP/b.zip" ./feed > run.txt 2>&1
+          cat run.txt
+          diff -r ./feed "$tiny/golden"
           ! grep -q "at Object.<anonymous>" run.txt
       # gtfs-loader is a library rather than a CLI, and it is the only package
       # that publishes both CommonJS and ESM. Nothing else exercises that: the

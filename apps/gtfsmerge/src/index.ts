@@ -21,7 +21,9 @@ async function main(argv: string[]): Promise<void> {
     transferDistance: argv.includes("--no-extra-transfers")
       ? 0
       : Number(option(argv, "transfer-distance") ?? 1.6),
-    filterDatesBefore: argv.includes("--no-date-filter") ? undefined : toGTFSDate(new Date()),
+    filterDatesBefore: argv.includes("--no-date-filter")
+      ? undefined
+      : option(argv, "date-filter") ?? toGTFSDate(new Date()),
     removeRouteTypes: (option(argv, "remove-route-types") ?? "").split(",").filter(t => t !== ""),
     rulerLatitude: option(argv, "ruler-latitude") === undefined
       ? undefined
@@ -35,7 +37,8 @@ async function main(argv: string[]): Promise<void> {
  */
 function positionalArgs(argv: string[]): string[] {
   const takesValue = new Set([
-    "--stop-prefix", "--transfer-distance", "--remove-route-types", "--ruler-latitude", "--tmp"
+    "--stop-prefix", "--transfer-distance", "--remove-route-types", "--ruler-latitude", "--tmp",
+    "--date-filter"
   ]);
   const found: string[] = [];
 

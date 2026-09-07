@@ -17,6 +17,9 @@ Options:
   --no-extra-transfers        Generate no walk transfers at all.
   --no-date-filter            Keep services that have already finished. By
                               default anything ending before today is dropped.
+  --date-filter <YYYYMMDD>    Drop anything that finished before this date
+                              rather than before today. For a reproducible
+                              merge, which is what the tests want.
   --remove-route-types <list> Comma separated GTFS route types to drop, e.g. 3,4.
   --ruler-latitude <degrees>  The latitude the distance approximation is
                               calibrated at. Default 54, the middle of GB.

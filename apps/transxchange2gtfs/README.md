@@ -21,7 +21,8 @@ There are other [similar projects](https://github.com/search?q=transxchange+gtfs
 
 ## Installation
 
-Please note that zip/unzip and [node 14.x](https://nodejs.org) or above are required. As zip/unzip are required this program will not currently run on Windows.
+Requires [node 26](https://nodejs.org) or above. No `zip` or `unzip` binary is needed — archives
+are read and written in process, so this runs on Windows.
 
 transxchange2gtfs is a CLI tool that can be installed via NPM:
 
@@ -64,20 +65,32 @@ It's possible to set the default agency URL, language and timezone:
 AGENCY_URL=http://agency.com AGENCY_TIMEZONE=Europe/London AGENCY_LANG=en transxchange2gtfs transxchange.zip gtfs-output.zip
 ```
 
-On first run transxchange2gtfs will download the latest Stop data from NaPTAN. If you would like to force a refresh of the data add `--update-stops`. Alternatively you can skip downloading the stop data by adding `--skip-stops`.
+On first run transxchange2gtfs downloads the latest stop data from NaPTAN and caches it. Add
+`--update-stops` to force a refresh, or `--skip-stops` to download nothing and write no `stops.txt`
+or `transfers.txt`.
 
 ```
-transxchange2gtfs --update-stops  transxchange.zip gtfs-output.zip
+transxchange2gtfs --update-stops transxchange.zip gtfs-output.zip
 ```
 
-## Requirements
+The national dataset is around 100MB. `--naptan` reads it from a file you already have instead,
+which is also how the tests run offline:
 
-Node.js version >= 12 is required.
+```
+transxchange2gtfs --naptan Stops.csv transxchange.zip gtfs-output.zip
+```
+
+The output may be a directory rather than a `.zip`, which is what you want if the next thing to
+touch it is [`gtfsmerge`](../gtfsmerge) or another tool.
+
+`transxchange2gtfs --help` lists everything.
 
 ## Notes
 
 - All stop times are left in the original timezones (assumed to be local time).
 - It is assumed that any stops in different TransXChange documents with the same ATCO are the same stop.
+- There is no `feed_info.txt`: TransXChange carries no publisher, version or feed date range to build one from.
+- Stops are named by their ATCO code, which is what lets the output merge with a GB rail feed from [`cif2gtfs`](../cif2gtfs) without reconciling anything.
 - Stop data is derived from [NaPTAN](http://naptan.app.dft.gov.uk/datarequest/help).
 - TransXChange is a [bizarre and over-engineered standard](http://naptan.dft.gov.uk/transxchange/training/EBSR/EBSR%20Training%20Toolkit%20v1.0/3%20Resources/Guides/TransXChange%20Schema%20Guide-2.1-v-44.pdf), there are probably edge cases that have not been covered.
 - A MySQL for the GTFS files is provided in the resource folder, along with an import script.  

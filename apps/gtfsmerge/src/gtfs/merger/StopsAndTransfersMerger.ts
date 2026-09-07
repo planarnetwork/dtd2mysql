@@ -84,6 +84,17 @@ export class StopsAndTransfersMerger {
   ): Promise<void> {
     for (const stop of stops) {
       if (usedStops[stop.stop_id]) {
+        // Every published stop is one something calls at, and a call may not be
+        // at a station. The merge drops the child stops and moves their calls
+        // onto the parent, so a parent that arrived as location_type 1 with
+        // platforms beneath it leaves here as an ordinary stop with none - which
+        // is what the merged feed actually contains. Left alone the validator
+        // rejects it three ways over: location_with_unexpected_stop_time,
+        // transfer_with_invalid_stop_location_type and
+        // transfer_with_invalid_trip_and_stop.
+        stop.location_type = 0;
+        stop.parent_station = null;
+
         await push(this.stops, stop);
 
         const lat = Number(stop.stop_lat);

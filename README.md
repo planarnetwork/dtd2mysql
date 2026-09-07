@@ -45,9 +45,25 @@ npm install -g cif2gtfs
 cif2gtfs build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
+Two more tools build and combine feeds beyond the railway:
+
+```
+npm install -g transxchange2gtfs gtfsmerge
+transxchange2gtfs bus-timetables.zip bus.zip
+gtfsmerge gtfs.zip bus.zip gb.zip
+```
+
+`transxchange2gtfs` converts TransXChange, the format GB bus and coach timetables are published in,
+and `gtfsmerge` merges feeds into one. They compose with the rail feed because all three identify a
+stop by its ATCO code, so a merged feed knows that the bus stop outside a station is outside that
+station — no `--stop-prefix`, no reconciliation.
+[`apps/feed-e2e`](apps/feed-e2e) is the test that keeps that true.
+
 Full command line documentation is in each app's README:
 **[`apps/dtd2mysql`](apps/dtd2mysql/README.md)** for the importer,
-**[`apps/cif2gtfs`](apps/cif2gtfs/README.md)** for the one-shot build.
+**[`apps/cif2gtfs`](apps/cif2gtfs/README.md)** for the one-shot build,
+**[`apps/transxchange2gtfs`](apps/transxchange2gtfs/README.md)** for the bus conversion,
+**[`apps/gtfsmerge`](apps/gtfsmerge/README.md)** for the merge.
 
 ## Packages
 
@@ -60,7 +76,10 @@ README describing what it is for and how to use it.
 |---|---|---|
 | [`apps/dtd2mysql`](apps/dtd2mysql/README.md) | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
 | [`apps/cif2gtfs`](apps/cif2gtfs/README.md) | `cif2gtfs` | Build a GTFS feed straight from the feed files, no database |
+| [`apps/transxchange2gtfs`](apps/transxchange2gtfs/README.md) | `transxchange2gtfs` | Convert TransXChange bus and coach timetables to GTFS |
+| [`apps/gtfsmerge`](apps/gtfsmerge/README.md) | `gtfsmerge` | Merge GTFS feeds into one |
 | [`apps/website`](apps/website/README.md) | — | The download page and the guide, deployed to GitHub Pages |
+| [`apps/feed-e2e`](apps/feed-e2e) | — | Runs all three producers in sequence and validates what they build |
 
 ### Libraries
 
@@ -73,6 +92,9 @@ README describing what it is for and how to use it.
 | [`libs/gtfs`](libs/gtfs/README.md) | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | [`libs/gtfs-output`](libs/gtfs-output/README.md) | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
 | [`libs/gtfs-loader`](libs/gtfs-loader/README.md) | `@gb-transit/gtfs-loader` | The reader: a GTFS zip, stream or response into a timetable |
+| [`libs/gtfs-read`](libs/gtfs-read/README.md) | `@gb-transit/gtfs-read` | A feed read back as the rows it was written as, every file and column |
+| [`libs/txc-source`](libs/txc-source/README.md) | `@gb-transit/txc-source` | TransXChange parsing, and the streams that turn it into GTFS rows |
+| [`libs/naptan`](libs/naptan/README.md) | `@gb-transit/naptan` | Download, cache and read the NaPTAN national stop dataset |
 | [`libs/enrich-naptan`](libs/enrich-naptan/README.md) | `@gb-transit/enrich-naptan` | Station coordinates and names from NaPTAN |
 | [`libs/extend-station-groups`](libs/extend-station-groups/README.md) | `@gb-transit/extend-station-groups` | Group stations as GTFS Fares v2 areas |
 
@@ -103,7 +125,7 @@ references and makes it incremental.
 | [`docs/restructure.md`](docs/restructure.md) | Where this is going and why it is shaped like this |
 | [`docs/station-names.md`](docs/station-names.md) | Where NaPTAN and the override table disagree about a station's name |
 | [`docs/coordinate-review.md`](docs/coordinate-review.md) | Stations whose two coordinate sources differ by more than 100 m |
-| [`apps/cif2gtfs/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why the committed output last changed, entry by entry |
+| [`apps/*/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why each tool's committed output last changed, entry by entry |
 
 ## Contributing
 

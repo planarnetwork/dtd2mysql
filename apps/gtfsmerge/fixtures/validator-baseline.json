@@ -1,0 +1,38 @@
+{
+  "_": [
+    "Notice types the merged rail-and-bus feed is allowed to raise. No ERROR may",
+    "appear here - an error fails the build whatever this file says. Each entry",
+    "needs a reason, and an entry that stops occurring has to be removed.",
+    "",
+    "This is the baseline worth watching. The merge renumbers every service,",
+    "route and trip id across two feeds, and a dangling reference from that is",
+    "exactly what a hand-written fixture cannot produce and a validator can see.",
+    "It has already earned its place: it caught the merged feed calling at",
+    "location_type=1 stations, which the merge produced by moving every call from",
+    "a platform onto the station above it."
+  ],
+  "reasons": {
+    "big_gap_in_service": "inherited from the rail feed, which is a slice of a refresh and so has sparse services",
+    "missing_bike_allowance": "inherited: bikes_allowed is 0, meaning no information, in both inputs",
+    "missing_recommended_file": "feed_info.txt. Neither input has one the merge could carry, and a merged feed has no single publisher to name",
+    "mixed_case_recommended_field": "inherited from the rail feed, whose MSN station names are upper case",
+    "same_name_and_description_for_route": "inherited from the bus feed",
+    "service_extends_far_in_the_future": "inherited: a calendar running to 2099 in the DTD source",
+    "transfer_distance_above_2_km": "inherited: the rail feed's fixed links really are that long",
+    "transfer_distance_too_large": "same",
+    "transfer_with_suspicious_mid_trip_in_seat": "inherited: a DTD join or split anchors a coupling part way along a trip on purpose",
+    "unexpected_enum_value": "route_type 714, rail replacement bus, from the extended route types the validator does not know"
+  },
+  "accepted": [
+    "big_gap_in_service",
+    "missing_bike_allowance",
+    "missing_recommended_file",
+    "mixed_case_recommended_field",
+    "same_name_and_description_for_route",
+    "service_extends_far_in_the_future",
+    "transfer_distance_above_2_km",
+    "transfer_distance_too_large",
+    "transfer_with_suspicious_mid_trip_in_seat",
+    "unexpected_enum_value"
+  ]
+}
