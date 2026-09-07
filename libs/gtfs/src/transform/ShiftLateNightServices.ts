@@ -59,8 +59,12 @@ const WINDRUSH = "WIN";
  * publish an hour before it happens.
  *
  * The CIF does not say which pass a schedule means, so it is taken from the shape London Overground
- * publishes the Windrush night service in: STP schedules dated to that Sunday alone. The 9Z
+ * publishes the Windrush night service in: new schedules dated to that Sunday alone. The 9Z
  * signalling IDs #165 names would say it directly, but the headcode does not reach `Schedule`.
+ *
+ * New rather than any short term plan record, because an overlay dated to that Sunday is how the
+ * BST departure already in the timetable gets retimed by a minute or two. That train is the first
+ * pass and still moves back a day.
  *
  * The dates are the record's own, not the days it is left running - `applyOverlays` excludes days
  * without moving the range, so a wide record can be narrowed onto that Sunday without being dated
@@ -69,7 +73,7 @@ const WINDRUSH = "WIN";
 function runsInTheRepeatedHour(schedule: Schedule): boolean {
   return schedule.stopTimes.length > 0
     && schedule.operator === LONDON_OVERGROUND
-    && schedule.stp !== STP.Permanent
+    && schedule.stp === STP.New
     && departureHour(schedule) === 1
     && schedule.calendar.runsFrom.equals(schedule.calendar.runsTo)
     && isLastSundayOfOctober(schedule.calendar.runsFrom)

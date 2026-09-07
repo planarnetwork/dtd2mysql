@@ -106,6 +106,16 @@ describe("ShiftLateNightServices", () => {
       expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
     });
 
+    /** An overlay on that Sunday retimes the BST departure, so it is still the first pass. */
+    it("shifts an overlay dated to the change day", () => {
+      const [shifted] = shiftLateNightServices([
+        overground(1, "2026-10-25", "2026-10-25", "01:05", STP.Overlay)
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261024")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
     it("shifts a schedule that runs on the change day and on other days too", () => {
       const [shifted] = shiftLateNightServices([
         overground(1, "2026-10-18", "2026-10-25", "01:05")
