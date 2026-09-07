@@ -1,0 +1,7 @@
+trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,timepoint
+TA1,10:00:00,10:01:00,9100ALPHA1,1,,0,0,,1
+TA1,10:20:00,10:21:00,910GBETA,2,,0,0,,1
+TA2,11:00:00,11:01:00,9100ALPHA1,1,,0,0,,1
+TA2,11:20:00,11:21:00,910GBETA,2,,0,0,,1
+TA3,12:00:00,12:01:00,9100ALPHA1,1,,0,0,,1
+TA3,12:20:00,12:21:00,910GBETA,2,,0,0,,1

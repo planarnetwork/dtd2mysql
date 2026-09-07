@@ -1,62 +1,89 @@
-import { Stop, StopID, Transfer } from "../GTFS";
-import { Writable } from "stream";
-import { CheapRuler } from "cheap-ruler";
-import { UsedStops } from "./StopTimesMerger";
+import {RowWriter, StopID, StopRow, TransferRow, TransferType} from "@gb-transit/gtfs-schema";
+import CheapRuler from "cheap-ruler";
+import {UsedStops} from "./StopTimesMerger";
+import {TripIDMap} from "./TripsMerger";
+import {close, push} from "./Push";
 
 export class StopsAndTransfersMerger {
-  private readonly stopLocations = {};
+
+  private readonly stopLocations: Record<StopID, [number, number]> = {};
 
   constructor(
-    private readonly stops: Writable,
-    private readonly transfers: Writable,
+    private readonly stops: RowWriter<StopRow>,
+    private readonly transfers: RowWriter<TransferRow>,
     private readonly ruler: CheapRuler,
     private readonly transferDistance: number
   ) {}
 
   /**
-   * Write the transfers and return an index of all transfers, then write the stops
-   * adding any missing transfers to stops that are within walking distance of each other
+   * Write the transfers, then the stops that were called at, adding a transfer
+   * between any two stops close enough to walk between.
    */
   public async write(
-    stops: Stop[],
-    transfers: Transfer[],
+    stops: StopRow[],
+    transfers: TransferRow[],
     parentStops: ParentStops,
-    usedStops: UsedStops
+    usedStops: UsedStops,
+    tripIdMap: TripIDMap
   ): Promise<void> {
-
-    const existingTransfers = await this.writeTransfers(transfers, parentStops);
+    const existingTransfers = await this.writeTransfers(transfers, parentStops, tripIdMap);
 
     return this.writeStops(stops, existingTransfers, usedStops);
   }
 
-  private async writeTransfers(transfers: Transfer[], parentStops: ParentStops): Promise<ExistingTransfers> {
-    const existingTransfers = {};
+  private async writeTransfers(
+    transfers: TransferRow[],
+    parentStops: ParentStops,
+    tripIdMap: TripIDMap
+  ): Promise<ExistingTransfers> {
+    const existingTransfers: ExistingTransfers = {};
 
     for (const transfer of transfers) {
       transfer.from_stop_id = parentStops[transfer.from_stop_id] || transfer.from_stop_id;
       transfer.to_stop_id = parentStops[transfer.to_stop_id] || transfer.to_stop_id;
 
-      await this.push(this.transfers, transfer);
+      // A transfer_type 4 names the two trips it couples, and the trips have
+      // just been re-indexed. Left alone it would point at trip ids from the
+      // input feed, which is a dangling reference in the merged one.
+      if (transfer.from_trip_id !== undefined && transfer.from_trip_id !== null) {
+        const from = tripIdMap[transfer.from_trip_id];
+        const to = transfer.to_trip_id ? tripIdMap[transfer.to_trip_id] : undefined;
 
-      existingTransfers[transfer.from_stop_id] = existingTransfers[transfer.from_stop_id] || {};
-      existingTransfers[transfer.from_stop_id][transfer.to_stop_id] = true;
+        // Either trip having been dropped takes the coupling with it.
+        if (from === undefined || to === undefined) {
+          continue;
+        }
+
+        transfer.from_trip_id = from;
+        transfer.to_trip_id = to;
+      }
+
+      await push(this.transfers, transfer);
+
+      (existingTransfers[transfer.from_stop_id] ||= {})[transfer.to_stop_id] = true;
     }
 
     return existingTransfers;
   }
 
   private async writeStops(
-    stops: Stop[],
+    stops: StopRow[],
     existingTransfers: ExistingTransfers,
     usedStops: UsedStops
   ): Promise<void> {
-
     for (const stop of stops) {
       if (usedStops[stop.stop_id]) {
-        await this.push(this.stops, stop);
+        await push(this.stops, stop);
 
-        if (this.transferDistance && !this.stopLocations[stop.stop_id] && stop.stop_lon !== 0 && stop.stop_lat !== 0) {
-          await this.addNearbyStops(stop, existingTransfers);
+        const lat = Number(stop.stop_lat);
+        const lon = Number(stop.stop_lon);
+
+        if (this.transferDistance && !this.stopLocations[stop.stop_id] && lon !== 0 && lat !== 0) {
+          // [longitude, latitude], which is the order cheap-ruler takes and the
+          // order GeoJSON puts them in. This used to pass [lat, lon], so every
+          // generated distance was wrong by a factor of 1/cos(latitude) on one
+          // axis - 557m for a gap of 328m at 54N.
+          await this.addNearbyStops(stop, [lon, lat], existingTransfers);
         }
       }
     }
@@ -65,15 +92,17 @@ export class StopsAndTransfersMerger {
   /**
    * Search any stops we've seen to see if we can walk there
    */
-  private async addNearbyStops(stop: Stop, existingTransfers: ExistingTransfers): Promise<void> {
-    const aCoords = [stop.stop_lat, stop.stop_lon] as [number, number];
-
+  private async addNearbyStops(
+    stop: StopRow,
+    coords: [number, number],
+    existingTransfers: ExistingTransfers
+  ): Promise<void> {
     for (const stopId in this.stopLocations) {
-      const exists = existingTransfers[stop.stop_id] && existingTransfers[stop.stop_id][stopId];
-      const reverseExists = existingTransfers[stopId] && existingTransfers[stopId][stop.stop_id];
+      const exists = existingTransfers[stop.stop_id]?.[stopId];
+      const reverseExists = existingTransfers[stopId]?.[stop.stop_id];
 
       if (!exists || !reverseExists) {
-        const distance = this.ruler.distance(aCoords, this.stopLocations[stopId]);
+        const distance = this.ruler.distance(coords, this.stopLocations[stopId]);
 
         if (distance < this.transferDistance) {
           await this.addTransfers(stop.stop_id, stopId, distance);
@@ -81,37 +110,27 @@ export class StopsAndTransfersMerger {
       }
     }
 
-    this.stopLocations[stop.stop_id] = aCoords;
+    this.stopLocations[stop.stop_id] = coords;
   }
 
-  private addTransfers(stopA: StopID, stopB: StopID, distance: number): Promise<void[]> {
-    const duration = Math.max(60, Math.round(distance * 1000));
-    const transfer = { from_stop_id: stopA, to_stop_id: stopB, transfer_type: 2, min_transfer_time: duration };
-    const reverse = { from_stop_id: stopB, to_stop_id: stopA, transfer_type: 2, min_transfer_time: duration };
+  private addTransfers(stopA: StopID, stopB: StopID, distance: number): Promise<unknown> {
+    const min_transfer_time = Math.max(60, Math.round(distance * 1000));
+    const type = TransferType.MinTime;
 
     return Promise.all([
-      this.push(this.transfers, transfer),
-      this.push(this.transfers, reverse),
+      push(this.transfers, {
+        from_stop_id: stopA, to_stop_id: stopB, transfer_type: type, min_transfer_time
+      }),
+      push(this.transfers, {
+        from_stop_id: stopB, to_stop_id: stopA, transfer_type: type, min_transfer_time
+      })
     ]);
   }
 
-  private push(stream: Writable, data: any): Promise<void> | void {
-    const writable = stream.write(data);
-
-    if (!writable) {
-      return new Promise(resolve => stream.once("drain", resolve));
-    }
+  public async end(): Promise<void> {
+    await Promise.all([close(this.stops), close(this.transfers)]);
   }
 
-  /**
-   * Flush all the data to the output stream
-   */
-  public async end(): Promise<void[]> {
-    return Promise.all([
-      new Promise(resolve => this.stops.end(resolve)),
-      new Promise(resolve => this.transfers.end(resolve))
-    ]);
-  }
 }
 
 type ExistingTransfers = Record<StopID, Record<StopID, true>>;

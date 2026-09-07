@@ -1,54 +1,52 @@
-
-import { RouteID, Trip } from "../GTFS";
-import { ServiceIDMap } from "./CalendarMerger";
-import { Writable } from "stream";
-import { Sequence } from "../../sequence/Sequence";
+import {RouteID, RowWriter, TripRow} from "@gb-transit/gtfs-schema";
+import {ServiceIDMap} from "./CalendarMerger";
+import {Sequence} from "../../sequence/Sequence";
+import {close, push} from "./Push";
 
 export class TripsMerger {
 
   constructor(
-    private readonly trips: Writable,
+    private readonly trips: RowWriter<TripRow>,
     private readonly sequence: Sequence
   ) {}
 
+  /**
+   * Output and re-index the trips whose service and route survived, and return a
+   * map of old trip ID to new trip ID.
+   *
+   * A trip whose calendar was filtered out, or whose route type was removed, is
+   * dropped here - which is what makes its stop times droppable further on.
+   */
   public async write(
-    trips: Trip[],
+    trips: TripRow[],
     serviceIdMap: ServiceIDMap,
     routeIdMap: Record<RouteID, RouteID>
   ): Promise<TripIDMap> {
-
-    const tripIdMap = {};
+    const tripIdMap: TripIDMap = {};
 
     for (const trip of trips) {
-      if (serviceIdMap[trip.service_id] && routeIdMap[trip.route_id]) {
-        tripIdMap[trip.trip_id] = this.sequence.next();
+      const service = serviceIdMap[String(trip.service_id)];
+      const route = routeIdMap[trip.route_id];
 
-        trip.trip_id = tripIdMap[trip.trip_id];
-        trip.service_id = serviceIdMap[trip.service_id];
-        trip.route_id = routeIdMap[trip.route_id];
+      if (service !== undefined && route !== undefined) {
+        const tripId = String(this.sequence.next());
 
-        await this.push(trip);
+        tripIdMap[trip.trip_id] = tripId;
+        trip.trip_id = tripId;
+        trip.service_id = service;
+        trip.route_id = route;
+
+        await push(this.trips, trip);
       }
     }
 
     return tripIdMap;
   }
 
-  private push(data: Trip): Promise<void> | void {
-    const writable = this.trips.write(data);
-
-    if (!writable) {
-      return new Promise(resolve => this.trips.once("drain", () => resolve()));
-    }
-  }
-
-  /**
-   * Flush all the data to the output stream
-   */
-  public async end(): Promise<void[]> {
-    return new Promise(resolve => this.trips.end(resolve));
+  public end(): Promise<void> {
+    return close(this.trips);
   }
 
 }
 
-export type TripIDMap = Record<string, number>;
+export type TripIDMap = Record<string, string>;

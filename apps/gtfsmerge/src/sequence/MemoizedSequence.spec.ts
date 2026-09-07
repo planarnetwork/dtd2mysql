@@ -1,4 +1,4 @@
-import * as chai from "chai";
+import {describe, it, expect} from "vitest";
 import { MemoizedSequence } from "./MemoizedSequence";
 
 describe("MemoizedSequence", () => {
@@ -8,7 +8,7 @@ describe("MemoizedSequence", () => {
     const hash1 = sequence.get("a");
     const hash2 = sequence.get("b");
 
-    chai.expect(hash1).to.not.equal(hash2);
+    expect(hash1).to.not.equal(hash2);
   });
 
   it("returns the same ID for the same hash", () => {
@@ -16,7 +16,7 @@ describe("MemoizedSequence", () => {
     const hash1 = sequence.get("a");
     const hash2 = sequence.get("a");
 
-    chai.expect(hash1).to.equal(hash2);
+    expect(hash1).to.equal(hash2);
   });
 
   it("lets you peek at the hashes", () => {
@@ -26,8 +26,8 @@ describe("MemoizedSequence", () => {
     const seenA = sequence.haveSeen("a");
     const seenB = sequence.haveSeen("b");
 
-    chai.expect(seenA).to.equal(true);
-    chai.expect(seenB).to.equal(false);
+    expect(seenA).to.equal(true);
+    expect(seenB).to.equal(false);
   });
 
 });

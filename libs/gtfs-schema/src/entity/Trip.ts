@@ -2,7 +2,12 @@ import {RSID, TUID} from "../model/Identifiers.js";
 
 export interface Trip {
   route_id: string;
-  service_id: number;
+  /**
+   * The service this trip runs to. A number in a feed this repository builds,
+   * because createCalendar numbers them; whatever the producer used in a feed
+   * read back from a file.
+   */
+  service_id: string | number;
   trip_id: string;
   trip_headsign: TUID;
   trip_short_name: RSID;

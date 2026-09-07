@@ -1,37 +1,24 @@
-
-import { Writable } from "stream";
+import {AgencyRow, RowWriter} from "@gb-transit/gtfs-schema";
+import {close, push} from "./Push";
 
 /**
- * Pass the data through to the output stream
+ * Pass the rows through to the output, which is all agency.txt needs: the file
+ * is deduplicated by the writer's key, and nothing about an agency is re-indexed.
  */
 export class GenericMerger {
 
   constructor(
-    private readonly stream: Writable
+    private readonly writer: RowWriter<AgencyRow>
   ) {}
 
-  /**
-   * Write all the given entries to the output stream
-   */
-  public async write(items: any[]): Promise<void> {
+  public async write(items: AgencyRow[]): Promise<void> {
     for (const item of items) {
-      await this.push(item);
+      await push(this.writer, item);
     }
   }
 
-  private push(data: any): Promise<void> | void {
-    const writable = this.stream.write(data);
-
-    if (!writable) {
-      return new Promise(resolve => this.stream.once("drain", () => resolve()));
-    }
-  }
-
-  /**
-   * Flush all the data to the output stream
-   */
   public end(): Promise<void> {
-    return new Promise(resolve => this.stream.end(resolve));
+    return close(this.writer);
   }
 
 }

@@ -1,0 +1,4 @@
+stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,platform_code,stop_timezone,wheelchair_boarding
+910GALPHA,ALP,Alpha,,54.00000,-1.00000,,,1,,,,0
+910GBETA,BET,"The ""Bull"" Inn",,54.00000,-1.00500,,,1,,,,0
+9100BUSSTOP,BUS,Bus Station,,54.00000,-1.00306,,,0,,,,0

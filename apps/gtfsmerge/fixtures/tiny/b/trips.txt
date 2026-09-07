@@ -1,0 +1,3 @@
+route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,wheelchair_accessible,bikes_allowed
+RB1,SB1,TB1,Town Centre,,0,0,0
+RB1,SB2,TB2,Town Centre,,0,0,0

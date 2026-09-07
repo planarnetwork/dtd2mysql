@@ -1,157 +1,72 @@
+import {FileOutput} from "@gb-transit/gtfs-output";
 import * as fs from "fs";
-import { sync as rimraf } from "rimraf";
-import { GTFSOutput } from "./GTFSOutput";
-import { CalendarMerger } from "./merger/CalendarMerger";
-import { MemoizedSequence } from "../sequence/MemoizedSequence";
-import { StopsAndTransfersMerger } from "./merger/StopsAndTransfersMerger";
-import { StopTimesMerger } from "./merger/StopTimesMerger";
-import { TripsMerger } from "./merger/TripsMerger";
-import { GenericMerger } from "./merger/GenericMerger";
-import { CalendarFactory } from "./calendar/CalendarFactory";
-import { CSVStream } from "../csv/CSVStream";
-import { Sequence } from "../sequence/Sequence";
-import { CheapRuler } from "cheap-ruler";
-import { RouteMerger, RouteTypeIndex } from "./merger/RouteMerger";
+import * as path from "node:path";
+import {GTFSOutput} from "./GTFSOutput";
+import {DedupingWriter} from "./DedupingWriter";
+import {AGENCY, CALENDAR, CALENDAR_DATES, ROUTES, STOPS, STOP_TIMES, TRANSFERS, TRIPS} from "./MergeFeed";
+import {CalendarMerger} from "./merger/CalendarMerger";
+import {MemoizedSequence} from "../sequence/MemoizedSequence";
+import {StopsAndTransfersMerger} from "./merger/StopsAndTransfersMerger";
+import {StopTimesMerger} from "./merger/StopTimesMerger";
+import {TripsMerger} from "./merger/TripsMerger";
+import {GenericMerger} from "./merger/GenericMerger";
+import {CalendarFactory} from "./calendar/CalendarFactory";
+import {Sequence} from "../sequence/Sequence";
+import CheapRuler from "cheap-ruler";
+import {RouteMerger, RouteTypeIndex} from "./merger/RouteMerger";
 
 export class GTFSOutputFactory {
 
   constructor(
     private readonly calendarFactory: CalendarFactory,
-    private readonly tempFolder: string,
+    private readonly directory: string,
     private readonly ruler: CheapRuler,
     private readonly transferDistance: number,
     private readonly removeRouteTypes: RouteTypeIndex
   ) {}
 
+  /**
+   * Open a file per output, in the columns this tool writes.
+   *
+   * Which columns each file has used to live in this method as an array of
+   * strings beside each stream. It is now declared in MergeFeed.ts against the
+   * row type, so a column that is not a field of the row it is written from does
+   * not compile.
+   */
   public create(): GTFSOutput {
-    if (fs.existsSync(this.tempFolder)) {
-      rimraf(this.tempFolder);
-    }
+    fs.rmSync(this.directory, {recursive: true, force: true});
+    fs.mkdirSync(this.directory, {recursive: true});
 
-    fs.mkdirSync(this.tempFolder);
+    const output = new FileOutput();
+    const at = (file: string) => path.join(this.directory, file);
 
-    const calendarStream = new CSVStream(
-      [
-        "service_id",
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-        "start_date",
-        "end_date"
-      ],
-      "service_id"
+    // Deduplicated because two feeds describe the same station, agency or
+    // service in their own terms and the merged feed wants one row for it.
+    const calendar = new DedupingWriter(
+      output.open(at(CALENDAR.filename), CALENDAR.columns), row => String(row.service_id)
     );
-    calendarStream.pipe(fs.createWriteStream(this.tempFolder + "calendar.txt"));
-
-    const calendarDatesStream = new CSVStream(
-      [
-        "service_id",
-        "date",
-        "exception_type"
-      ]
+    const routes = new DedupingWriter(
+      output.open(at(ROUTES.filename), ROUTES.columns), row => String(row.route_id)
     );
-    calendarDatesStream.pipe(fs.createWriteStream(this.tempFolder + "calendar_dates.txt"));
-
-    const tripsStream = new CSVStream(
-      [
-        "route_id",
-        "service_id",
-        "trip_id",
-        "trip_headsign",
-        "trip_short_name",
-        "direction_id",
-        "wheelchair_accessible",
-        "bikes_allowed"
-      ]
+    const agency = new DedupingWriter(
+      output.open(at(AGENCY.filename), AGENCY.columns), row => String(row.agency_id)
     );
-    tripsStream.pipe(fs.createWriteStream(this.tempFolder + "trips.txt"));
-
-    const stopTimesStream = new CSVStream(
-      [
-        "trip_id",
-        "arrival_time",
-        "departure_time",
-        "stop_id",
-        "stop_sequence",
-        "stop_headsign",
-        "pickup_type",
-        "drop_off_type",
-        "shape_dist_traveled",
-        "timepoint"
-      ]
+    const stops = new DedupingWriter(
+      output.open(at(STOPS.filename), STOPS.columns), row => row.stop_id
     );
-    stopTimesStream.pipe(fs.createWriteStream(this.tempFolder + "stop_times.txt"));
 
-    const routesStream = new CSVStream(
-      [
-        "route_id",
-        "agency_id",
-        "route_short_name",
-        "route_long_name",
-        "route_type",
-        "route_text_color",
-        "route_color",
-        "route_url",
-        "route_desc"
-      ],
-      "route_id"
-    );
-    routesStream.pipe(fs.createWriteStream(this.tempFolder + "routes.txt"));
-
-    const agencyStream = new CSVStream(
-      [
-        "agency_id",
-        "agency_name",
-        "agency_url",
-        "agency_timezone",
-        "agency_lang",
-        "agency_phone",
-        "agency_fare_url"
-      ],
-      "agency_id"
-    );
-    agencyStream.pipe(fs.createWriteStream(this.tempFolder + "agency.txt"));
-
-    const stopsStream = new CSVStream(
-      [
-        "stop_id",
-        "stop_code",
-        "stop_name",
-        "stop_desc",
-        "stop_lat",
-        "stop_lon",
-        "zone_id",
-        "stop_url",
-        "location_type",
-        "parent_station",
-        "stop_timezone",
-        "wheelchair_boarding"
-      ],
-      "stop_id"
-    );
-    stopsStream.pipe(fs.createWriteStream(this.tempFolder + "stops.txt"));
-
-    const transfersStream = new CSVStream(
-      [
-        "from_stop_id",
-        "to_stop_id",
-        "transfer_type",
-        "min_transfer_time"
-      ]
-    );
-    transfersStream.pipe(fs.createWriteStream(this.tempFolder + "transfers.txt"));
+    const calendarDates = output.open(at(CALENDAR_DATES.filename), CALENDAR_DATES.columns);
+    const trips = output.open(at(TRIPS.filename), TRIPS.columns);
+    const stopTimes = output.open(at(STOP_TIMES.filename), STOP_TIMES.columns);
+    const transfers = output.open(at(TRANSFERS.filename), TRANSFERS.columns);
 
     return new GTFSOutput(
-      new CalendarMerger(calendarStream, calendarDatesStream, this.calendarFactory, new MemoizedSequence()),
-      new StopsAndTransfersMerger(stopsStream, transfersStream, this.ruler, this.transferDistance),
-      new StopTimesMerger(stopTimesStream),
-      new TripsMerger(tripsStream, new Sequence()),
-      new GenericMerger(agencyStream),
-      new RouteMerger(routesStream, new Sequence(), this.removeRouteTypes)
+      new CalendarMerger(calendar, calendarDates, this.calendarFactory, new MemoizedSequence()),
+      new StopsAndTransfersMerger(stops, transfers, this.ruler, this.transferDistance),
+      new StopTimesMerger(stopTimes),
+      new TripsMerger(trips, new Sequence()),
+      new GenericMerger(agency),
+      new RouteMerger(routes, new Sequence(), this.removeRouteTypes)
     );
   }
 }

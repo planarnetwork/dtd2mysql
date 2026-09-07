@@ -40,12 +40,15 @@
     "node": ">=26"
   },
   "dependencies": {
+    "@gb-transit/gtfs": "workspace:^",
     "@gb-transit/gtfs-output": "workspace:^",
     "@gb-transit/gtfs-read": "workspace:^",
     "@gb-transit/gtfs-schema": "workspace:^",
     "cheap-ruler": "3.0.2"
   },
   "devDependencies": {
+    "@gb-transit/gtfs-read": "workspace:^",
+    "fflate": "^0.8.3",
     "typescript": "7.0.2"
   }
 }

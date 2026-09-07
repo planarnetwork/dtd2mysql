@@ -1,4 +1,4 @@
-import { Calendar, CalendarDate } from "../GTFS";
+import {CalendarDateRow as CalendarDate, CalendarRow as Calendar} from "@gb-transit/gtfs-schema";
 import { toGTFSDate, getDateFromGTFSString } from "./gtfsDateUtils";
 
 /**
@@ -80,7 +80,7 @@ export class CalendarFactory {
       index[calendarDate.date] = calendarDate;
 
       return index;
-    }, {});
+    }, {} as Record<string, CalendarDate>);
   }
 
   private createCalendar(

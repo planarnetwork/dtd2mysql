@@ -1,4 +1,4 @@
-import * as chai from "chai";
+import {describe, it, expect} from "vitest";
 import { toGTFSDate, getDateFromGTFSString } from "./gtfsDateUtils";
 
 describe("toGTFSDate", () => {
@@ -6,7 +6,7 @@ describe("toGTFSDate", () => {
     const date = new Date("2019-06-04T00:00:00");
     const result = toGTFSDate(date);
 
-    chai.expect(result).to.equal("20190604");
+    expect(result).to.equal("20190604");
   });
 });
 
@@ -14,7 +14,7 @@ describe("getDateFromGTFSString", () => {
   it("returns a JS Date from GTFS string", () => {
     const result = getDateFromGTFSString("20190604");
     const dateDiff = result.getTime() - new Date(2019, 5, 4, 0, 0, 0).getTime();
-    chai.expect(dateDiff).to.equal(0);
+    expect(dateDiff).to.equal(0);
   });
 });
 
@@ -23,7 +23,7 @@ describe("GTFS date roundtrip", () => {
     function validateGtfsDateRoundtrip(gtfsDate: string) {
       const date = getDateFromGTFSString(gtfsDate);
       const result = toGTFSDate(date);
-      chai.expect(result).to.equal(gtfsDate);
+      expect(result).to.equal(gtfsDate);
     }
 
     validateGtfsDateRoundtrip("20190601");

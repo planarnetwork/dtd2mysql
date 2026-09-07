@@ -3,7 +3,7 @@
  * Generates a sequence number for each unique hash
  */
 export class MemoizedSequence {
-  private cache = {};
+  private cache: Record<string, number> = {};
   private current = 1;
 
   /**

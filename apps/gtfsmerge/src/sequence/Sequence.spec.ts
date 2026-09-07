@@ -1,4 +1,4 @@
-import * as chai from "chai";
+import {describe, it, expect} from "vitest";
 import { Sequence } from "./Sequence";
 
 describe("Sequence", () => {
@@ -8,8 +8,8 @@ describe("Sequence", () => {
     const id1 = sequence.next();
     const id2 = sequence.next();
 
-    chai.expect(id1).to.equal(1);
-    chai.expect(id2).to.equal(2);
+    expect(id1).to.equal(1);
+    expect(id2).to.equal(2);
   });
 
   it("starts from a given number", () => {
@@ -17,8 +17,8 @@ describe("Sequence", () => {
     const id1 = sequence.next();
     const id2 = sequence.next();
 
-    chai.expect(id1).to.equal(100);
-    chai.expect(id2).to.equal(101);
+    expect(id1).to.equal(100);
+    expect(id2).to.equal(101);
   });
 
 });

@@ -1,4 +1,4 @@
-import * as chai from "chai";
+import {describe, it, expect} from "vitest";
 import {CalendarFactory} from "./CalendarFactory";
 
 describe("CalendarFactory", () => {
@@ -13,8 +13,8 @@ describe("CalendarFactory", () => {
 
     const [calendar] = factory.create("1", dates);
 
-    chai.expect(calendar.start_date).to.deep.equal("20190515");
-    chai.expect(calendar.end_date).to.deep.equal("20190615");
+    expect(calendar.start_date).to.deep.equal("20190515");
+    expect(calendar.end_date).to.deep.equal("20190615");
   });
 
   it("does not enable days where the service is not running", () => {
@@ -29,13 +29,13 @@ describe("CalendarFactory", () => {
 
     const [calendar] = factory.create("1", dates);
 
-    chai.expect(calendar.monday).to.deep.equal(0);
-    chai.expect(calendar.tuesday).to.deep.equal(0);
-    chai.expect(calendar.wednesday).to.deep.equal(1);
-    chai.expect(calendar.thursday).to.deep.equal(0);
-    chai.expect(calendar.friday).to.deep.equal(0);
-    chai.expect(calendar.saturday).to.deep.equal(0);
-    chai.expect(calendar.sunday).to.deep.equal(0);
+    expect(calendar.monday).to.deep.equal(0);
+    expect(calendar.tuesday).to.deep.equal(0);
+    expect(calendar.wednesday).to.deep.equal(1);
+    expect(calendar.thursday).to.deep.equal(0);
+    expect(calendar.friday).to.deep.equal(0);
+    expect(calendar.saturday).to.deep.equal(0);
+    expect(calendar.sunday).to.deep.equal(0);
   });
 
   it("adds exception days", () => {
@@ -50,9 +50,9 @@ describe("CalendarFactory", () => {
 
     const [calendar, calendarDates] = factory.create("1", dates);
 
-    chai.expect(calendarDates[0].date).to.deep.equal("20190520");
-    chai.expect(calendarDates[1].date).to.deep.equal("20190612");
-    chai.expect(calendarDates[2].date).to.deep.equal("20190615");
+    expect(calendarDates[0].date).to.deep.equal("20190520");
+    expect(calendarDates[1].date).to.deep.equal("20190612");
+    expect(calendarDates[2].date).to.deep.equal("20190615");
   });
 
 });

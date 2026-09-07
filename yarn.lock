@@ -1728,10 +1728,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "gtfsmerge@workspace:apps/gtfsmerge"
   dependencies:
+    "@gb-transit/gtfs": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
     "@gb-transit/gtfs-read": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
     cheap-ruler: "npm:3.0.2"
+    fflate: "npm:^0.8.3"
     typescript: "npm:7.0.2"
   bin:
     gtfsmerge: bin/gtfsmerge.sh

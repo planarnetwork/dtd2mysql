@@ -1,29 +1,37 @@
-import { CalendarFactory } from "../calendar/CalendarFactory";
-import { Calendar, CalendarDate, ServiceID } from "../GTFS";
-import { MemoizedSequence } from "../../sequence/MemoizedSequence";
-import { Writable } from "stream";
+import {CalendarDateRow, CalendarRow, RowWriter} from "@gb-transit/gtfs-schema";
+import {CalendarFactory} from "../calendar/CalendarFactory";
+import {MemoizedSequence} from "../../sequence/MemoizedSequence";
+import {close, push} from "./Push";
 
 export class CalendarMerger {
 
   constructor(
-    private readonly calendar: Writable,
-    private readonly calendarDates: Writable,
+    private readonly calendar: RowWriter<CalendarRow>,
+    private readonly calendarDates: RowWriter<CalendarDateRow>,
     private readonly calendarFactory: CalendarFactory,
     private readonly serviceIdSequence: MemoizedSequence
   ) {}
 
-  public async write(calendars: Calendar[], dateIndex: Record<ServiceID, CalendarDate[]>): Promise<ServiceIDMap> {
-    const serviceIdMap = {};
+  /**
+   * Write the calendars, collapsing any that say the same thing onto one service
+   * id, and return a map of old service id to new.
+   */
+  public async write(
+    calendars: CalendarRow[],
+    dateIndex: Record<string, CalendarDateRow[]>
+  ): Promise<ServiceIDMap> {
+    const serviceIdMap: ServiceIDMap = {};
 
     for (const calendar of calendars) {
-      const calendarDates = dateIndex[calendar.service_id] || [];
+      const calendarDates = dateIndex[String(calendar.service_id)] || [];
 
       await this.writeCalendar(calendar, calendarDates, serviceIdMap);
     }
 
-    // check for any calendar dates that have no calendar entry
+    // A service described only by its exception dates has no calendar row to
+    // collapse, so one is synthesised to cover them.
     for (const serviceId of Object.keys(dateIndex)) {
-      if (!serviceIdMap[serviceId]) {
+      if (serviceIdMap[serviceId] === undefined) {
         const [calendar, calendarDates] = this.calendarFactory.create(serviceId, dateIndex[serviceId]);
 
         await this.writeCalendar(calendar, calendarDates, serviceIdMap);
@@ -33,50 +41,44 @@ export class CalendarMerger {
     return serviceIdMap;
   }
 
-  private async writeCalendar(calendar: Calendar, calendarDates: CalendarDate[], serviceIdMap: {}): Promise<void> {
+  private async writeCalendar(
+    calendar: CalendarRow,
+    calendarDates: CalendarDateRow[],
+    serviceIdMap: ServiceIDMap
+  ): Promise<void> {
     const hash = this.getCalendarHash(calendar, calendarDates);
     const alreadySeenCalendar = this.serviceIdSequence.haveSeen(hash);
     const newServiceId = this.serviceIdSequence.get(hash);
 
-    serviceIdMap[calendar.service_id] = newServiceId;
+    serviceIdMap[String(calendar.service_id)] = newServiceId;
 
     if (!alreadySeenCalendar) {
       calendar.service_id = newServiceId;
-      await this.push(this.calendar, calendar);
+      await push(this.calendar, calendar);
 
       for (const calendarDay of calendarDates) {
         calendarDay.service_id = newServiceId;
-        await this.push(this.calendarDates, calendarDay);
+        await push(this.calendarDates, calendarDay);
       }
     }
   }
 
-  private getCalendarHash(calendar: Calendar, calendarDates: CalendarDate[]): string {
-    const { service_id, ...rest } = calendar;
+  /**
+   * Two services that run on the same days between the same dates, with the same
+   * exceptions, are the same service however the feeds numbered them.
+   */
+  private getCalendarHash(calendar: CalendarRow, calendarDates: CalendarDateRow[]): string {
+    const {service_id, ...rest} = calendar;
     const days = calendarDates.map(d => d.date + "_" + d.exception_type).join(":");
-    const fields = Object.values({ days, ...rest });
+    const fields = Object.values({days, ...rest});
 
     return fields.join();
   }
 
-  private push(stream: Writable, data: any): Promise<void> | void {
-    const writable = stream.write(data);
-
-    if (!writable) {
-      return new Promise(resolve => stream.once("drain", () => resolve()));
-    }
-  }
-
-  /**
-   * Flush all the data to the output stream
-   */
-  public async end(): Promise<void[]> {
-    return Promise.all([
-      new Promise(resolve => this.calendar.end(resolve)),
-      new Promise(resolve => this.calendarDates.end(resolve))
-    ]);
+  public async end(): Promise<void> {
+    await Promise.all([close(this.calendar), close(this.calendarDates)]);
   }
 
 }
 
-export type ServiceIDMap = Record<number, number>;
+export type ServiceIDMap = Record<string, number>;
