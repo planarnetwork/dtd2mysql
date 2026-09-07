@@ -85,7 +85,7 @@ and record types a consumer does not care about are skipped.
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is `libs/feed-parser`
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is `libs/feed-parser`
 in that repository.
 
 ## License

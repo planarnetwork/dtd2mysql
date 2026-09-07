@@ -21,14 +21,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/planarnetwork/dtd2mysql.git"
+    "url": "git+https://github.com/planarnetwork/gb-transit.git"
   },
   "author": "Linus Norton",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/planarnetwork/dtd2mysql/issues"
+    "url": "https://github.com/planarnetwork/gb-transit/issues"
   },
-  "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
+  "homepage": "https://github.com/planarnetwork/gb-transit#readme",
   "engines": {
     "node": ">=22"
   },

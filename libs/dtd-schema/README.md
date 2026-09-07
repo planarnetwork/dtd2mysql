@@ -61,7 +61,7 @@ silently drops stations rather than failing.
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is `libs/dtd-schema`
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is `libs/dtd-schema`
 in that repository.
 
 ## License

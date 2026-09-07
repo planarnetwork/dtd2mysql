@@ -44,7 +44,7 @@ under the Rail Settlement Plan licence, which is not share-alike.
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is
 `libs/extend-station-groups` in that repository.
 
 ## License

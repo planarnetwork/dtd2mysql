@@ -109,7 +109,7 @@ Building three months of the whole GB network takes around 45 seconds and 5 GB o
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is
 `apps/cif2gtfs` in that repository.
 
 ## License

@@ -111,7 +111,7 @@ rather than a refusal. Platforms sharing their station's code are fine — they 
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is `libs/gtfs-loader` in
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is `libs/gtfs-loader` in
 that repository.
 
 ## License

@@ -5,7 +5,7 @@
   "license": "GPL-3.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "url": "git+https://github.com/planarnetwork/gb-transit.git",
     "directory": "libs/dtd-schema"
   },
   "main": "./dist/index.js",

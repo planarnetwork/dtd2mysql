@@ -20,8 +20,8 @@ with the coverage window, what the current feed was built from, and a page for e
 
 | | |
 |---|---|
-| [`gtfs.zip`](https://github.com/planarnetwork/dtd2mysql/releases/latest/download/gtfs.zip) | where a service calls |
-| [`gtfs-passing-points.zip`](https://github.com/planarnetwork/dtd2mysql/releases/latest/download/gtfs-passing-points.zip) | and where it runs through without stopping |
+| [`gtfs.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip) | where a service calls |
+| [`gtfs-passing-points.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-passing-points.zip) | and where it runs through without stopping |
 
 Both are rebuilt every night by [`feed.yml`](.github/workflows/feed.yml) from the configuration in
 [`gtfs.config.yaml`](gtfs.config.yaml), validated against a

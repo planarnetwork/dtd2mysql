@@ -110,7 +110,7 @@ built-in global on the versions that have one - Node 26 and later.
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is `libs/gtfs` in that
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is `libs/gtfs` in that
 repository.
 
 ## License

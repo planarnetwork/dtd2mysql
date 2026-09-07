@@ -51,7 +51,7 @@ rows, such as the provenance record an enriched build publishes.
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is `libs/gtfs-output`
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This is `libs/gtfs-output`
 in that repository.
 
 ## License

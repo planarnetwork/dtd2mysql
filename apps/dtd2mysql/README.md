@@ -150,7 +150,7 @@ This will cause any data after that point to be either incomplete or incorrect, 
 ## Contributing
 
 Issues, pull requests and the source live at
-[planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This package is
+[planarnetwork/gb-transit](https://github.com/planarnetwork/gb-transit). This package is
 `apps/dtd2mysql` in that repository; see its README for how the workspaces fit together.
 
 ## License
