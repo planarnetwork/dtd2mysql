@@ -16,7 +16,9 @@
   },
   "include": [
     "apps/*/src",
+    "apps/*/test",
     "libs/*/src",
+    "libs/*/test",
     "tests/src",
     "*.mts"
   ]

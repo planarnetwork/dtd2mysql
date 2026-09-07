@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { strToU8, zipSync } from "fflate";
-import { loadGTFS } from "./GTFSLoader.js";
-import { normalise } from "./Normalise.js";
+import { loadGTFS } from "../src/GTFSLoader.js";
+import { normalise } from "../src/Normalise.js";
 
 /**
  * The loader read over a feed this repository actually writes.

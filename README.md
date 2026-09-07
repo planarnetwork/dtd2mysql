@@ -150,7 +150,14 @@ Anything that should reach a user needs a changeset: run `yarn changeset`, pick 
 commit the file it writes. A pull request with no changeset publishes nothing, which is the right
 answer for documentation and CI changes.
 
-Please write contributions in TypeScript and, if possible, add a test.
+Please write contributions in TypeScript and, if possible, add a test. There are three places one
+can go, and which it is says what kind of test it is:
+
+| | |
+|---|---|
+| `<package>/src/Foo.spec.ts` | A unit test of `Foo.ts`, beside it. Named for the file it covers. |
+| `<package>/test/*.spec.ts` | End to end for one package — a golden feed, a public surface. Named for what it checks rather than for a file, and out of `src/` because it is not published. |
+| [`tests/`](tests/README.md) | End to end across packages. The three producers run in sequence, and the validator over what they build. |
 
 ## License
 

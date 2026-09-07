@@ -4,7 +4,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
 import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
-import {build} from "./build.js";
+import {build} from "../src/build.js";
 
 /**
  * The whole build, end to end, over a feed small enough to read.

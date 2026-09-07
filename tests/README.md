@@ -1,10 +1,16 @@
 # End to end tests
 
-Everything else in this repository is tested where it lives: each package has its specs beside its
-sources, and each producer has a golden feed it is held to. These are the tests that cannot live in
-any one package, because they are about what happens when the packages meet.
+These are the tests that cannot live in any one package, because they are about what happens when
+the packages meet. A spec goes in one of three places, and which it is says what kind of test it is:
 
-Not published, and it has no source of its own beyond a stub — the three files here are all specs.
+| | |
+|---|---|
+| `<package>/src/Foo.spec.ts` | A unit test of `Foo.ts`, beside it |
+| `<package>/test/*.spec.ts` | End to end for one package — `libs/gtfs-loader/test/GoldenFeed.spec.ts` reads a real feed, `apps/cif2gtfs/test/build.spec.mts` builds one |
+| `tests/` | End to end across packages — here |
+
+Not published, and it has no source of its own beyond a stub — everything here is a spec or the
+script CI runs.
 
 ## `Chain.spec.mts`
 
@@ -32,12 +38,19 @@ fixtures pass a date filter.
 
 ## `RoundTrip.spec.mts`
 
-Reads the bus and merged goldens back and writes them out again, byte for byte.
-(`@gb-transit/gtfs-read` does the same for the rail one, against its own golden.)
+Reads every golden this repository commits back — rail, bus and the merge of them — and writes each
+out again, byte for byte.
 
 This is the property that justifies one shared schema for reading and writing: whatever the writer
 writes, the reader reads, and writing it again produces the same file. A column the reader dropped,
 or a value it coerced into something that serialises differently, fails here.
+
+## `PublicSurface.spec.mts`
+
+Scrapes the exported names out of every `libs/*/dist/index.d.ts` and diffs them against
+[`type-surface.json`](../type-surface.json), so a rename that would break a consumer is a decision
+rather than a surprise. It reads every library, so it spans them all; regenerate with
+`UPDATE_SURFACE=1 yarn vitest run`.
 
 ## `validate.mts`
 

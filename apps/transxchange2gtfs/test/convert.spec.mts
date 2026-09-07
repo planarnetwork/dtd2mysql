@@ -5,7 +5,7 @@ import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
 import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
 import {RouteType, TransferType} from "@gb-transit/gtfs-schema";
-import {convert} from "./api.js";
+import {convert} from "../src/api.js";
 
 /**
  * The whole conversion, end to end, over a feed small enough to read.

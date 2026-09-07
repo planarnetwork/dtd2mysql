@@ -5,7 +5,7 @@ import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
 import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
 import {TransferType} from "@gb-transit/gtfs-schema";
-import {merge} from "./api.js";
+import {merge} from "../src/api.js";
 
 /**
  * The merge, end to end, over two feeds small enough to read.

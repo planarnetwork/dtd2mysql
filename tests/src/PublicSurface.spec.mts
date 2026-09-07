@@ -13,7 +13,7 @@ import * as path from "node:path";
  * So a removed or renamed export is a decision, recorded here, rather than a
  * side effect of tidying an import.
  */
-const libs = path.join(__dirname, "..", "..");
+const libs = path.join(import.meta.dirname, "..", "..", "libs");
 // Not inside libs/: the root vitest config globs libs/* as projects, and a JSON
 // file there stops the runner before any test loads.
 const snapshotFile = path.join(libs, "..", "type-surface.json");
