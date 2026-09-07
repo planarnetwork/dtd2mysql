@@ -1,5 +1,5 @@
 import {FeedRow, FileSchema} from "@gb-transit/gtfs-schema";
-import {Transform, TransformCallback} from "stream";
+import {Transform, TransformCallback} from "node:stream";
 
 /**
  * Turns TransXChange objects into the rows of one GTFS file.

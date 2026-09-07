@@ -32,9 +32,6 @@
       "path": "./libs/naptan"
     },
     {
-      "path": "./libs/txc-source"
-    },
-    {
       "path": "./libs/enrich-naptan"
     },
     {

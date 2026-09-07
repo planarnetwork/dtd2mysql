@@ -549,22 +549,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@gb-transit/txc-source@workspace:^, @gb-transit/txc-source@workspace:libs/txc-source":
-  version: 0.0.0-use.local
-  resolution: "@gb-transit/txc-source@workspace:libs/txc-source"
-  dependencies:
-    "@gb-transit/gtfs-schema": "workspace:^"
-    "@gb-transit/naptan": "workspace:^"
-    "@js-joda/core": "npm:^6.0.1"
-    "@types/adm-zip": "npm:0.5.8"
-    "@types/xml2js": "npm:^0.4.14"
-    adm-zip: "npm:0.6.0"
-    date-holidays: "npm:^3.27.0"
-    typescript: "npm:7.0.2"
-    xml2js: "npm:^0.6.2"
-  languageName: unknown
-  linkType: soft
-
 "@gb-transit/website@workspace:apps/website":
   version: 0.0.0-use.local
   resolution: "@gb-transit/website@workspace:apps/website"
@@ -2693,8 +2677,11 @@ __metadata:
     "@gb-transit/gtfs-output": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
     "@gb-transit/naptan": "workspace:^"
-    "@gb-transit/txc-source": "workspace:^"
+    "@js-joda/core": "npm:^6.0.1"
+    "@types/adm-zip": "npm:0.5.8"
     "@types/xml2js": "npm:^0.4.14"
+    adm-zip: "npm:0.6.0"
+    date-holidays: "npm:^3.27.0"
     fflate: "npm:^0.8.3"
     typescript: "npm:7.0.2"
     xml2js: "npm:^0.6.2"

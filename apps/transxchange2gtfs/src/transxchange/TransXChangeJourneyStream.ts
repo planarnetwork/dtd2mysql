@@ -12,7 +12,7 @@ import {
   TimingStatus,
   RouteLink
 } from "./TransXChange";
-import {Transform, TransformCallback} from "stream";
+import {Transform, TransformCallback} from "node:stream";
 import {LocalDate, LocalTime, Duration, DateTimeFormatter} from "@js-joda/core";
 import {ATCOCode} from "../reference/NaPTAN";
 

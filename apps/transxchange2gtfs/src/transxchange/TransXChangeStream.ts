@@ -20,7 +20,7 @@ import {
   TimingStatus,
   Location
 } from "./TransXChange";
-import {Transform, TransformCallback} from "stream";
+import {Transform, TransformCallback} from "node:stream";
 import {Duration, LocalDate, LocalTime} from "@js-joda/core";
 
 /**

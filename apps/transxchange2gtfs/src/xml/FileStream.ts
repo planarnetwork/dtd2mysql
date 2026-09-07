@@ -1,5 +1,5 @@
 import AdmZip from "adm-zip";
-import {Transform, TransformCallback} from "stream";
+import {Transform, TransformCallback} from "node:stream";
 import * as fs from "node:fs";
 import {parse} from "node:path";
 

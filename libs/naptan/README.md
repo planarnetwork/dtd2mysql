@@ -32,4 +32,5 @@ to slice out positions `[0,1,4,10,14,18,19,29,30]` and hope the DfT never reorde
 
 What each consumer does with a row differs enough that it belongs with the consumer:
 [`@gb-transit/enrich-naptan`](../enrich-naptan) reduces the rail records to a coordinate per TIPLOC,
-[`@gb-transit/txc-source`](../txc-source) indexes every stop a TransXChange document references.
+[`transxchange2gtfs`](../../apps/transxchange2gtfs) indexes every stop a TransXChange document
+references.
