@@ -1,0 +1,117 @@
+---
+import Base from "../../layouts/Base.astro";
+import Terminal from "../../components/Terminal.astro";
+import {TOOLS} from "../../tools.js";
+import {GITHUB, npm, source} from "../../site.js";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<Base
+  title="The tools"
+  description="Four command line tools for British transit data: cif2gtfs, dtd2mysql, transxchange2gtfs and gtfsmerge. Open source, published to npm."
+>
+  <div class="shell page-head">
+    <p class="crumb">Tools</p>
+    <h1>Four tools for GB transit data.</h1>
+    <p class="lede">
+      One repository, four things you can install. They read the formats the British transport
+      industry actually publishes and write the one everybody else consumes.
+    </p>
+  </div>
+
+  <section class="shell section--tight" style="padding-top: clamp(32px, 4vw, 44px);">
+    <div class="cards cards--four">
+      {TOOLS.map((tool, index) => (
+        <div class="card">
+          <div class="card__top">
+            <span class:list={["platform", index === 0 ? "platform--1" : "platform--2"]}>
+              {index + 1}
+            </span>
+            <span class="tag">{tool.tagline}</span>
+          </div>
+          <div>
+            <h3>{tool.name}</h3>
+            <p>{tool.summary}</p>
+          </div>
+          <div class="card__foot">
+            <a class:list={["btn", index === 0 ? "btn--signal" : "btn--ink"]}
+               href={`${base}/tools/${tool.name}/`} style="width: 100%;">
+              Read the docs &rarr;
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2">They are meant to be used together</h2>
+    <p style="margin: 14px 0 20px; font-size: 16.5px; color: var(--ink-body); max-width: 62ch;">
+      The rail feed and the bus feed both name a stop by its ATCO code, which is what lets them
+      merge with nothing to reconcile. Three commands is a GTFS feed for the whole of Great Britain,
+      rail and road.
+    </p>
+    <Terminal lines={[
+      "npm install -g cif2gtfs transxchange2gtfs gtfsmerge",
+      "cif2gtfs build --source RJTTFxxx.ZIP --out rail.zip",
+      "transxchange2gtfs bus-timetables.zip bus.zip",
+      "gtfsmerge rail.zip bus.zip gb.zip"
+    ]} />
+    <p style="margin: 18px 0 0; font-size: 15px; color: var(--ink-quiet); max-width: 70ch;">
+      That merged feed is the one the repository holds to the validator on every change, because the
+      merge renumbers every service, route and trip across two feeds and a dangling reference from
+      that is what a hand-written fixture cannot produce.
+    </p>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2 h2--sm">Requirements, and where they live</h2>
+    <dl class="rules">
+      {TOOLS.map(tool => (
+        <div>
+          <dt><a href={npm(tool.name)}><code>{tool.name}</code></a></dt>
+          <dd><a href={source(tool.workspace)}>{tool.workspace}</a></dd>
+        </div>
+      ))}
+    </dl>
+    <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      All four need Node.js 22 or later, are licensed GPL&nbsp;v3, and are developed in the one
+      repository: <a href={GITHUB}>planarnetwork/gb-transit</a>. Date handling uses{" "}
+      <code>Temporal</code> through a polyfill that hands over to the built-in global on the
+      versions that have one.
+    </p>
+  </section>
+
+  <section class="shell section section--last">
+    <div class="cards cards--wide" style="margin-top: 0;">
+      <div class="card card--go">
+        <div class="eyebrow eyebrow--go">
+          <span class="lamp" aria-hidden="true"></span>
+          You may not need any of them
+        </div>
+        <div>
+          <h3 class="card__title--display">The feed is already built</h3>
+          <p>
+            If what you want is the British rail timetable as GTFS, it is published every night and
+            you do not have to run anything.
+          </p>
+        </div>
+        <div class="card__foot">
+          <a class="btn btn--ink" href={`${base}/feeds/`}>The feeds &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Getting the data</div>
+        <div>
+          <h3 class="card__title--display">A DTD subscription</h3>
+          <p>
+            The timetable, fares and routeing guide feeds come from the Rail Delivery Group's SFTP
+            server, which needs a subscription from{" "}
+            <a href="https://raildata.org.uk/">Rail Data Marketplace</a>. NaPTAN and TransXChange
+            data are open and need no account.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

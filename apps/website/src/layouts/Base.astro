@@ -1,0 +1,47 @@
+---
+import {Font} from "astro:assets";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const {title, description} = Astro.props;
+
+// The title is the page's, then the site's. A tab strip full of "GB transit"
+// tells its reader nothing about which of them they left open.
+const full = title === "GB transit" ? title : `${title} — GB transit`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{full}</title>
+  <meta name="description" content={description}>
+  <link rel="canonical" href={canonical}>
+
+  <meta property="og:site_name" content="GB transit">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type" content="website">
+  <meta property="og:url" content={canonical}>
+  <meta name="twitter:card" content="summary">
+
+  <Font cssVariable="--font-display" preload />
+  <Font cssVariable="--font-body" preload />
+  <Font cssVariable="--font-mono" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <Header />
+  <main id="main">
+    <slot />
+  </main>
+  <Footer />
+</body>
+</html>

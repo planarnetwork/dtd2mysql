@@ -1,0 +1,894 @@
+/*
+ * The design system, as tokens.
+ *
+ * Warm paper, one signal red, and a departure board that is the only dark thing
+ * on the page. It is deliberately a single look rather than a light and a dark
+ * one: the palette is a station's - paper timetable, amber board, red signal -
+ * and inverting it produces neither.
+ */
+:root {
+  color-scheme: light;
+
+  --paper: oklch(0.975 0.009 90);
+  --paper-raised: oklch(0.995 0.005 90);
+  --paper-sunken: oklch(0.985 0.006 90);
+
+  --ink: oklch(0.28 0.03 250);
+  --ink-nav: oklch(0.35 0.03 250);
+  --ink-body: oklch(0.42 0.025 250);
+  --ink-quiet: oklch(0.5 0.02 250);
+  --ink-faint: oklch(0.62 0.02 250);
+
+  --rule: oklch(0.88 0.015 90);
+  --rule-cool: oklch(0.82 0.02 250);
+  --rule-faint: oklch(0.85 0.02 250);
+
+  --signal: oklch(0.5 0.15 25);
+  --signal-deep: oklch(0.42 0.15 25);
+  --signal-bright: oklch(0.55 0.15 25);
+
+  --board: oklch(0.26 0.03 250);
+  --amber: oklch(0.9 0.11 95);
+  --amber-dim: oklch(0.6 0.06 95);
+  --amber-label: oklch(0.72 0.05 90);
+  --on-dark: oklch(0.99 0.01 90);
+  --on-dark-muted: oklch(0.85 0.02 90);
+  --on-dark-faint: oklch(0.68 0.02 90);
+
+  --go: oklch(0.55 0.15 150);
+  --go-ink: oklch(0.45 0.12 150);
+  --go-ink-deep: oklch(0.38 0.04 160);
+  --go-paper: oklch(0.96 0.03 150);
+  --go-rule: oklch(0.85 0.05 150);
+  --sea: oklch(0.55 0.15 240);
+
+  --gutter: clamp(20px, 5vw, 64px);
+  --measure: 1180px;
+  --radius: 18px;
+  --pill: 999px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--signal);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover { color: var(--signal-deep); }
+
+/* The design carries no focus styling of its own, and a site navigable only by
+ * a mouse is not finished. This is the signal red the rest of the page uses. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+img { max-width: 100%; height: auto; }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
+
+/* Anchored headings land under the sticky masthead rather than behind it. */
+[id] { scroll-margin-top: 90px; }
+
+@keyframes gbt-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* A departure board refreshes. Barely - it is a page, not a toy. */
+@keyframes gbt-flip {
+  0%, 92% { opacity: 1; }
+  96% { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------- layout -- */
+
+/* Left aligned rather than centred: the masthead runs to the page gutter, so
+ * content that centred itself would start somewhere else on a wide screen. The
+ * max-width is here to stop a line getting too long, not to place the column. */
+.shell {
+  max-width: var(--measure);
+  padding-inline: var(--gutter);
+}
+
+.section { padding-top: clamp(48px, 7vw, 82px); }
+.section--tight { padding-top: clamp(40px, 6vw, 64px); }
+.section--last { padding-bottom: clamp(48px, 6vw, 72px); }
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  background: var(--ink);
+  color: var(--on-dark);
+  padding: 10px 16px;
+  border-radius: var(--pill);
+  z-index: 10;
+}
+
+.skip:focus { left: 12px; top: 12px; color: var(--on-dark); }
+
+/* ---------------------------------------------------------------- header -- */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px var(--gutter);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.roundel {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--signal);
+  display: grid;
+  place-items: center;
+  color: var(--on-dark);
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  flex: none;
+}
+
+.wordmark__name {
+  font-family: var(--font-mono), monospace;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  align-items: center;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.nav a {
+  color: var(--ink-nav);
+  text-decoration: none;
+}
+
+.nav a:hover, .nav a[aria-current="page"] { color: var(--signal); }
+
+/* The button in the masthead is a button first. `.nav a` above is more specific
+ * than `.btn--ink`, which left it dark on dark. */
+.nav a.btn--ink, .nav a.btn--ink:hover { color: var(--on-dark); }
+
+/* --------------------------------------------------------------- buttons -- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--pill);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+}
+
+.btn--lg { padding: 14px 24px; font-size: 16px; gap: 10px; }
+.btn--sm { padding: 9px 16px; font-size: 14px; }
+
+.btn--signal { background: var(--signal); color: var(--on-dark); }
+.btn--signal:hover { background: var(--signal-deep); color: var(--on-dark); }
+
+.btn--ink { background: var(--ink); color: var(--on-dark); }
+.btn--ink:hover { background: oklch(0.2 0.03 250); color: var(--on-dark); }
+
+.btn--ghost { border-color: var(--rule-cool); color: var(--ink); }
+.btn--ghost:hover { border-color: var(--signal); color: var(--signal); }
+
+.btn[aria-disabled="true"] {
+  border: 1px dashed var(--rule-faint);
+  color: var(--ink-faint);
+  background: none;
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ------------------------------------------------------------------ hero -- */
+
+.hero { padding: clamp(44px, 7vw, 88px) var(--gutter) 40px; }
+
+.hero h1 {
+  font-weight: 700;
+  font-size: clamp(38px, 6.4vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  margin: 22px 0 0;
+  max-width: 20ch;
+}
+
+.lede {
+  font-size: clamp(17px, 1.9vw, 21px);
+  max-width: 56ch;
+  margin: 20px 0 0;
+  color: var(--ink-body);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: var(--pill);
+  border: 1px solid var(--rule-cool);
+  color: var(--ink-quiet);
+}
+
+.pill--go {
+  color: var(--go-ink);
+  border-color: oklch(0.8 0.06 150);
+  background: var(--go-paper);
+}
+
+.lamp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--go);
+  display: block;
+  flex: none;
+}
+
+/* ------------------------------------------------------- departure board -- */
+
+.board {
+  background: var(--board);
+  border-radius: var(--radius);
+  padding: clamp(22px, 3vw, 34px);
+  display: grid;
+  gap: 22px clamp(24px, 4vw, 56px);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.board__label {
+  font-family: var(--font-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber-label);
+}
+
+.board__value {
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(20px, 2.4vw, 27px);
+  color: var(--amber);
+  margin-top: 8px;
+}
+
+.board__value--live { animation: gbt-flip 9s infinite; }
+.board__value .dim { color: var(--amber-dim); }
+
+.board__none {
+  font-family: var(--font-mono), monospace;
+  color: var(--amber-label);
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------- ticker -- */
+
+.ticker {
+  margin-top: 34px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: oklch(0.99 0.008 90);
+  overflow: hidden;
+  padding: 11px 0;
+}
+
+.ticker__rail {
+  display: flex;
+  width: max-content;
+  animation: gbt-ticker 46s linear infinite;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  color: var(--ink-quiet);
+  letter-spacing: 0.02em;
+}
+
+.ticker__run {
+  display: flex;
+  gap: 26px;
+  padding-right: 26px;
+}
+
+.ticker__run span[aria-hidden] { color: var(--signal-bright); }
+
+/* ----------------------------------------------------------------- cards -- */
+
+.heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.h2 {
+  font-weight: 700;
+  font-size: clamp(26px, 3.4vw, 40px);
+  margin: 0;
+}
+
+.h2--sm { font-size: clamp(22px, 2.6vw, 30px); }
+
+.heading-row p {
+  margin: 0;
+  font-size: 15.5px;
+  color: var(--ink-quiet);
+  max-width: 42ch;
+}
+
+.cards {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: 30px;
+}
+
+.cards--wide { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.cards--four { grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); }
+
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 1px 2px oklch(0.28 0.03 250 / 0.05);
+}
+
+.card--go {
+  background: var(--go-paper);
+  border-color: oklch(0.87 0.05 150);
+}
+
+.card--go p { color: var(--go-ink-deep); }
+
+/* Platform three before its build reaches master: a real platform with nothing
+ * announced on it yet, rather than a card claiming a download that would 404. */
+.card--waiting {
+  background: var(--paper-sunken);
+  border: 1px dashed var(--rule-cool);
+  box-shadow: none;
+}
+
+.card h3 {
+  font-family: var(--font-mono), monospace;
+  font-weight: 500;
+  font-size: 19px;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.card h3.card__title--display {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: 21px;
+  margin: 14px 0 8px;
+}
+
+.card p {
+  margin: 0;
+  font-size: 15.5px;
+  color: var(--ink-body);
+}
+
+.card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card__foot { margin-top: auto; }
+
+.platform {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  flex: none;
+}
+
+.platform--1 { background: var(--signal); color: var(--on-dark); }
+.platform--2 { background: var(--ink); color: var(--on-dark); }
+.platform--3 { border: 1px dashed oklch(0.78 0.02 250); color: var(--ink-faint); }
+
+.tag {
+  font-family: var(--font-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--pill);
+  color: var(--ink-nav);
+  background: oklch(0.955 0.008 250);
+  border: 1px solid oklch(0.88 0.015 250);
+}
+
+.tag--go {
+  color: var(--go-ink);
+  background: var(--go-paper);
+  border-color: var(--go-rule);
+}
+
+.tag--quiet {
+  color: var(--ink-faint);
+  background: none;
+  border: none;
+  padding: 4px 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.eyebrow--go { color: var(--go-ink); }
+
+.checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 14.5px;
+  color: oklch(0.45 0.02 250);
+}
+
+.checks li { display: flex; gap: 9px; }
+.checks li::before { content: "✓"; color: var(--go); }
+
+/* What a feed holds, when the release says. Mono, because these are figures to
+ * be compared between cards rather than read as prose. */
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  color: var(--ink-quiet);
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.figures div { display: flex; gap: 8px; }
+.figures dt { color: var(--ink-faint); }
+.figures dd { margin: 0; color: var(--ink-nav); }
+
+/* Platform three's blank board: the shape of an announcement, not yet made. */
+.blanks {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.blanks span {
+  height: 9px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(135deg,
+    oklch(0.94 0.008 250) 0 6px, var(--paper) 6px 12px);
+}
+
+.blanks span:first-child { height: 12px; }
+
+/* ---------------------------------------------------------------- stripe -- */
+
+.stripes {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 26px;
+}
+
+.stripe {
+  border-left: 3px solid var(--rule-cool);
+  padding: 4px 0 4px 18px;
+}
+
+.stripe h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0;
+  letter-spacing: normal;
+}
+
+.stripe p {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: oklch(0.45 0.025 250);
+}
+
+.stripe--signal { border-left-color: var(--signal); }
+.stripe--go { border-left-color: var(--go); }
+.stripe--sea { border-left-color: var(--sea); }
+.stripe--quiet { border-left-color: oklch(0.75 0.02 250); }
+
+/* -------------------------------------------------------------- terminal -- */
+
+.terminal, .prose pre.terminal {
+  background: var(--board);
+  border: none;
+  border-radius: 14px;
+  padding: 20px 22px;
+  font-family: var(--font-mono), monospace;
+  font-size: clamp(13px, 1.5vw, 15px);
+  color: var(--amber);
+  overflow-x: auto;
+  margin: 0;
+}
+
+.terminal code, .prose pre.terminal code {
+  font: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--amber);
+}
+.terminal .prompt { color: oklch(0.65 0.06 150); user-select: none; }
+.terminal .line + .line { margin-top: 6px; }
+.terminal .line { display: block; white-space: pre; }
+
+/* ------------------------------------------------------------ rule lists -- */
+
+.rules {
+  display: grid;
+  border-top: 1px solid var(--rule);
+  max-width: 760px;
+}
+
+.rules > * {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15.5px;
+}
+
+.rules dt, .rules .name { font-weight: 600; }
+.rules dd { margin: 0; }
+
+/* ---------------------------------------------------------------- footer -- */
+
+.footer {
+  background: var(--board);
+  color: var(--on-dark-muted);
+  padding: clamp(30px, 4vw, 44px) var(--gutter);
+  margin-top: clamp(48px, 7vw, 82px);
+}
+
+.footer__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 32px;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--measure);
+}
+
+.footer__mark {
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+}
+
+.footer a { color: var(--amber); }
+
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  font-size: 14px;
+}
+
+.footer nav a { color: var(--on-dark-muted); text-decoration: none; }
+.footer nav a:hover { color: var(--amber); }
+
+.footer__small {
+  font-size: 13px;
+  color: var(--on-dark-faint);
+  margin: 16px 0 0;
+  max-width: 70ch;
+}
+
+/* ------------------------------------------------------------ prose page -- */
+
+.docs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  padding-top: clamp(36px, 5vw, 56px);
+}
+
+@media (min-width: 62rem) {
+  .docs { grid-template-columns: minmax(0, 1fr) 15rem; }
+  .docs__aside { order: 2; }
+}
+
+.docs__aside { align-self: start; }
+
+@media (min-width: 62rem) {
+  .docs__aside { position: sticky; top: 88px; }
+}
+
+.toc {
+  border-left: 1px solid var(--rule);
+  padding-left: 18px;
+  font-size: 14px;
+}
+
+.toc summary {
+  font-family: var(--font-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.toc[open] summary { margin-bottom: 12px; }
+
+.toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* On a wide screen it is a sidebar, so it is always open and there is nothing
+ * to click. Where ::details-content is not supported it stays a disclosure,
+ * which is a smaller loss than hiding the contents on a phone. */
+@media (min-width: 62rem) {
+  .toc summary { cursor: default; list-style: none; margin-bottom: 12px; }
+  .toc summary::-webkit-details-marker { display: none; }
+  .toc::details-content { content-visibility: visible; block-size: auto; }
+}
+
+.toc a { color: var(--ink-nav); text-decoration: none; }
+.toc a:hover { color: var(--signal); text-decoration: underline; }
+
+.page-head {
+  padding-top: clamp(40px, 6vw, 64px);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: clamp(28px, 4vw, 40px);
+}
+
+.page-head h1 {
+  font-weight: 700;
+  font-size: clamp(32px, 4.6vw, 52px);
+  line-height: 1.05;
+  margin: 14px 0 0;
+  max-width: 22ch;
+}
+
+.crumb {
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.crumb a { color: var(--ink-faint); text-decoration: none; }
+.crumb a:hover { color: var(--signal); }
+
+.prose { max-width: 72ch; }
+
+.prose > :first-child { margin-top: 0; }
+
+.prose p, .prose ul, .prose ol { font-size: 16.5px; color: var(--ink-body); }
+
+.prose h2 {
+  font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 28px);
+  margin: 2.6em 0 0.6em;
+  padding-top: 0.9em;
+  border-top: 1px solid var(--rule);
+  color: var(--ink);
+}
+
+.prose h3 {
+  font-weight: 600;
+  font-size: 18px;
+  margin: 2em 0 0.5em;
+  color: var(--ink);
+  letter-spacing: normal;
+}
+
+.prose h4 {
+  font-family: var(--font-mono), monospace;
+  font-weight: 500;
+  font-size: 15px;
+  margin: 1.6em 0 0.4em;
+  letter-spacing: normal;
+}
+
+.prose strong { color: var(--ink); }
+
+.prose li { margin: 0.4em 0; }
+
+.prose .lede {
+  font-size: clamp(17px, 1.9vw, 20px);
+  color: var(--ink-body);
+  margin: 0 0 1.4em;
+  max-width: 60ch;
+}
+
+.prose code {
+  background: oklch(0.94 0.012 90);
+  border: 1px solid var(--rule);
+  padding: 0.08em 0.34em;
+  border-radius: 5px;
+  font-size: 0.88em;
+}
+
+.prose pre {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+.prose blockquote {
+  margin: 1.6em 0;
+  padding: 2px 0 2px 18px;
+  border-left: 3px solid var(--signal);
+  color: var(--ink-body);
+}
+
+.prose blockquote p { margin: 0.4em 0; }
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2.4em 0;
+}
+
+/* A table wider than the page scrolls inside its own box rather than taking the
+ * page with it. Applied by a rehype plugin, so the markdown stays markdown. */
+.table-scroll {
+  overflow-x: auto;
+  margin: 1.6em 0;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-raised);
+}
+
+.prose table {
+  border-collapse: collapse;
+  font-size: 14.5px;
+  width: 100%;
+  min-width: 30rem;
+}
+
+.prose th, .prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.prose thead th {
+  font-family: var(--font-mono), monospace;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--paper-sunken);
+}
+
+.prose tbody tr:last-child td { border-bottom: none; }
+
+/* The heading anchor, revealed on hover and always reachable by keyboard. */
+.prose .anchor::after { content: "#"; }
+
+.prose .anchor {
+  color: var(--rule-cool);
+  text-decoration: none;
+  margin-left: 0.4em;
+  opacity: 0;
+  font-weight: 400;
+}
+
+.prose h2:hover .anchor,
+.prose h3:hover .anchor,
+.prose .anchor:focus-visible { opacity: 1; }
+
+/* The block the guide renders its figures into, straight from the release. */
+.prose .feed-figures {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin: 1.6em 0;
+}

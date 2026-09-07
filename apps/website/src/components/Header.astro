@@ -1,0 +1,44 @@
+---
+import {GITHUB, RELEASE} from "../site.js";
+
+/**
+ * The masthead. `href` is written root relative and joined to the base path
+ * here, because the site is served from a project page and every absolute link
+ * on it has to carry `/gb-transit` - once, in one place, rather than in every
+ * page that links to another.
+ */
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const here = Astro.url.pathname;
+
+const links = [
+  {href: "/feeds/", label: "Feeds"},
+  {href: "/feeds/using-this-data/", label: "Using this data"},
+  {href: "/tools/", label: "Tools"}
+];
+
+/**
+ * The one link that says where you are.
+ *
+ * The longest match rather than every match: /feeds/using-this-data/ is under
+ * /feeds/, and marking both would tell a screen reader the page is two places
+ * at once.
+ */
+const active = links
+  .filter(link => here === `${base}${link.href}` || here.startsWith(`${base}${link.href}`))
+  .sort((a, b) => b.href.length - a.href.length)[0];
+---
+<header class="masthead">
+  <a class="wordmark" href={`${base}/`}>
+    <span class="roundel" aria-hidden="true">t</span>
+    <span class="wordmark__name">gb&#8209;transit</span>
+  </a>
+  <nav class="nav" aria-label="Main">
+    {links.map(link => (
+      <a href={`${base}${link.href}`} aria-current={link === active ? "page" : undefined}>
+        {link.label}
+      </a>
+    ))}
+    <a href={GITHUB}>Source</a>
+    <a class="btn btn--sm btn--ink" href={`${RELEASE}/gtfs.zip`}>Download gtfs.zip</a>
+  </nav>
+</header>

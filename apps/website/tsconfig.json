@@ -1,18 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
-  },
-  "include": [
-    "src"
-  ],
-  "references": [
-    {
-      "path": "../../libs/gtfs"
-    }
-  ],
-  "exclude": [
-    "**/*.spec.ts"
-  ]
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
 }

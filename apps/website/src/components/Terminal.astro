@@ -1,0 +1,11 @@
+---
+interface Props {
+  /** One shell line each, without the prompt. */
+  lines: string[];
+}
+
+const {lines} = Astro.props;
+---
+<pre class="terminal"><code>{lines.map(line => (
+  <span class="line"><span class="prompt">$ </span>{line}</span>
+))}</code></pre>

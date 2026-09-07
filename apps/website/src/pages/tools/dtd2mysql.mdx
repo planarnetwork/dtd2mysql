@@ -1,0 +1,155 @@
+---
+layout: ../../layouts/Doc.astro
+title: dtd2mysql
+description: Import the British rail fares, routeing guide and timetable feeds into a MySQL or MariaDB database, and convert the timetable to GTFS.
+section: Tools
+sectionHref: /tools/
+lede: Import the British rail fares, routeing guide and timetable feeds into a database — and convert the timetable to GTFS.
+---
+
+import Terminal from "../../components/Terminal.astro";
+import {npm, source} from "../../site.js";
+
+<Terminal lines={[
+  "npm install -g dtd2mysql",
+  "dtd2mysql --timetable /path/to/RJTTFxxx.ZIP"
+]} />
+
+The oldest tool here, and the only one that touches a database. It is what you want when the
+question involves fares or routeing, both of which are relational and neither of which GTFS can
+express. If all you want is the timetable as GTFS, <a href="../cif2gtfs/">`cif2gtfs`</a> does that
+with no database at all.
+
+Every command reads its database settings from the environment:
+
+```
+DATABASE_HOSTNAME=localhost DATABASE_USERNAME=root DATABASE_NAME=fares dtd2mysql --fares-clean
+```
+
+Only MySQL-compatible databases are supported. It could be extended to others; pull requests are
+welcome.
+
+## Timetables
+
+Import the timetable, creating the schema if necessary. This is destructive and removes any existing
+data:
+
+```
+dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
+```
+
+The timetable does not map to a relational database in a very logical fashion, so all `LO`, `LI` and
+`LT` records land in a single `stop_time` table.
+
+## Converting to GTFS
+
+```
+dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
+dtd2mysql --gtfs-zip filename-of-gtfs.zip
+```
+
+`--gtfs` writes the same feed as a directory of text files instead of a zip, which is easier to read
+and to diff:
+
+```
+dtd2mysql --gtfs /path/to/output/
+```
+
+How far ahead the feed reaches, and the date it is built for, come from `GTFS_RANGE` and
+`GTFS_TODAY`. Pinning `GTFS_TODAY` makes a build reproducible:
+
+```
+GTFS_TODAY=2026-08-10 GTFS_RANGE="6 MONTH" dtd2mysql --gtfs /path/to/output/
+```
+
+The locations a service runs through without stopping are dropped. To keep them, as calls with
+`pickup_type` and `drop_off_type` of `1` and the pass time as both the arrival and the departure:
+
+```
+dtd2mysql --gtfs /path/to/output/ --remove-passing-points=false
+```
+
+It is roughly a fifth more stop times, and `GTFS_REMOVE_PASSING_POINTS=0` says the same thing.
+
+A GTFS feed can also be loaded back in, which is how the fares and routeing data are joined to it:
+
+```
+dtd2mysql --gtfs-import /path/to/gtfs/
+```
+
+**Cutoff date.** Only schedule records that *start* up to three months into the future — measured
+from the date of import — are exported, for performance reasons. Data after that point is
+incomplete or incorrect, because override and cancellation records after it are ignored as well.
+
+## Fares
+
+```
+dtd2mysql --fares /path/to/RJFAFxxx.ZIP
+dtd2mysql --fares-clean
+```
+
+The import is destructive. `--fares-clean` removes expired data and invalid fares, corrects railcard
+passenger quantities and adds full date entries to restriction date records. It occasionally fails
+on a MySQL timeout depending on hardware; re-running it corrects the problem.
+
+## Routeing guide
+
+```
+dtd2mysql --routeing /path/to/RJRGxxxx.ZIP
+dtd2mysql --nfm64 /path/to/nfm64.zip
+```
+
+## Downloading from the DTD server
+
+The download commands take the latest full refresh from an SFTP server, by default the DTD one. They
+need a [Rail Data Marketplace](https://raildata.org.uk/) subscription and three environment
+variables:
+
+```
+SFTP_USERNAME=dtd_username
+SFTP_PASSWORD=dtd_password
+SFTP_HOSTNAME=dtd_hostname   # defaults to dtd.atocrsp.org
+```
+
+There is a command for each feed:
+
+```
+dtd2mysql --download-fares /path/
+dtd2mysql --download-timetable /path/
+dtd2mysql --download-routeing /path/
+dtd2mysql --download-nfm64 /path/
+```
+
+Or download and process in one command:
+
+```
+dtd2mysql --get-fares
+dtd2mysql --get-timetable
+dtd2mysql --get-routeing
+dtd2mysql --get-nfm64
+```
+
+## Notes
+
+**Null values.** Values marked as all asterisks, empty spaces, or — for dates — zeros, are set to
+null, to preserve the integrity of the column type. A route code is numerical although the feed
+often uses `*****` to mean any, so that value becomes null.
+
+**Keys.** Every record format has a composite key in the specification, but the fields in it are
+sometimes null, which modern MariaDB and MySQL no longer allow. An `id` field is added instead.
+
+**Missing data.** Journey segments, class legends, rounding rules, print formats and the fares feed
+metadata are not imported. They are either deprecated or irrelevant. Raise an issue if you want them
+added.
+
+## Requirements
+
+Node.js 22 or later, and a MySQL-compatible database. Date handling uses `Temporal`, through
+[`temporal-polyfill`](https://www.npmjs.com/package/temporal-polyfill), which hands over to the
+built-in global on the versions that have one — Node 26 and later.
+
+<p>
+  <a href={npm("dtd2mysql")}>dtd2mysql on npm</a> ·
+  <a href={source("apps/dtd2mysql")}>source</a> ·
+  GPL v3
+</p>

@@ -1,0 +1,99 @@
+---
+layout: ../../layouts/Doc.astro
+title: transxchange2gtfs
+description: Convert TransXChange, the format GB bus and coach timetables are published in, into a GTFS feed.
+section: Tools
+sectionHref: /tools/
+lede: Convert TransXChange — the format GB bus and coach timetables are published in — into a GTFS feed.
+---
+
+import Terminal from "../../components/Terminal.astro";
+import {npm, source} from "../../site.js";
+
+<Terminal lines={[
+  "npm install -g transxchange2gtfs",
+  "transxchange2gtfs bus-timetables.zip bus.zip"
+]} />
+
+Stops are named by their ATCO code, which is what lets the output merge with a GB rail feed from
+<a href="../cif2gtfs/">`cif2gtfs`</a> without reconciling anything.
+
+## Usage
+
+Every argument but the last is an input; the last is where the feed goes. Inputs may be XML files,
+zips, or globs of either, and nested zips are processed recursively:
+
+```
+transxchange2gtfs transxchange1.xml transxchange2.xml gtfs-output.zip
+transxchange2gtfs multiple-files.zip /path/*.zip single.xml gtfs-output.zip
+```
+
+The output may be a directory rather than a `.zip`, which is what you want if the next thing to
+touch it is <a href="../gtfsmerge/">`gtfsmerge`</a>.
+
+`transxchange2gtfs --help` lists everything.
+
+## Stop data
+
+On first run it downloads the latest stop data from NaPTAN and caches it. The national dataset is
+around 100 MB.
+
+```
+transxchange2gtfs --update-stops transxchange.zip gtfs-output.zip
+transxchange2gtfs --skip-stops transxchange.zip gtfs-output.zip
+transxchange2gtfs --naptan Stops.csv transxchange.zip gtfs-output.zip
+```
+
+`--update-stops` forces a refresh, `--skip-stops` downloads nothing and writes no `stops.txt` or
+`transfers.txt`, and `--naptan` reads a file you already have — which is also how the tests run
+offline.
+
+## Agency defaults
+
+TransXChange carries no publisher, so the agency URL, language and timezone are set from the
+environment:
+
+```
+AGENCY_URL=http://agency.com AGENCY_TIMEZONE=Europe/London AGENCY_LANG=en \
+  transxchange2gtfs transxchange.zip gtfs-output.zip
+```
+
+## What it does that others do not
+
+There are [other TransXChange converters](https://github.com/search?q=transxchange+gtfs), each with
+their own merits. This one:
+
+- writes smaller output, because identical calendars are reused;
+- handles bank holidays properly;
+- has NaPTAN stop names, longitude and latitude built in;
+- processes multiple files, including zips, including nested ones;
+- keeps memory low — most large files use under 1 GB, and the entire UK dataset needs 2 GB;
+- generates interchange times and transfers to nearby stops.
+
+## Notes
+
+- All stop times are left in their original timezones, assumed to be local time.
+- Stops in different documents with the same ATCO code are assumed to be the same stop.
+- There is no `feed_info.txt`: TransXChange carries no publisher, version or feed date range to
+  build one from.
+- Stop data is derived from [NaPTAN](https://naptan.dft.gov.uk).
+- TransXChange is a
+  [bizarre and over-engineered standard](http://naptan.dft.gov.uk/transxchange/index.htm), so there
+  are probably edge cases that have not been covered.
+
+On a large dataset you may hit a heap out of memory error. Raise the heap:
+
+```
+NODE_OPTIONS=--max-old-space-size=8192 transxchange2gtfs transxchange.zip gtfs-output.zip
+```
+
+## Requirements
+
+Node.js 22 or later. No `zip` or `unzip` binary is needed — archives are read and written in
+process, so this runs on Windows.
+
+<p>
+  <a href={npm("transxchange2gtfs")}>transxchange2gtfs on npm</a> ·
+  <a href={source("apps/transxchange2gtfs")}>source</a> ·
+  GPL v3
+</p>

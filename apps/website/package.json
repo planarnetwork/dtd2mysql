@@ -2,16 +2,17 @@
   "name": "@gb-transit/website",
   "version": "0.0.4",
   "private": true,
-  "description": "The download page for the GB rail GTFS feed",
+  "type": "module",
+  "description": "The website for the GB rail GTFS feeds and the tools that build them",
   "license": "GPL-3.0",
   "scripts": {
-    "build": "tsc -b && node dist/build.js"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
   },
   "dependencies": {
-    "@gb-transit/gtfs": "workspace:^",
-    "marked": "^18.0.11"
-  },
-  "devDependencies": {
-    "typescript": "7.0.2"
+    "@astrojs/markdown-satteri": "^0.4.0",
+    "@astrojs/mdx": "^8.0.0",
+    "astro": "^7.3.1"
   }
 }

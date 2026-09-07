@@ -1,0 +1,23 @@
+---
+import {board, latest} from "../feed.js";
+
+const feed = await latest();
+const cells = feed ? board(feed) : [];
+---
+<div class="board">
+  {cells.length === 0 && (
+    <p class="board__none">No feed has been published yet, so there are no figures to give.</p>
+  )}
+  {cells.map((cell, index) => (
+    <div>
+      <div class="board__label">{cell.label}</div>
+      <div class:list={["board__value", index === 0 && "board__value--live"]}>
+        {cell.value.includes(" → ")
+          ? <Fragment>
+              {cell.value.split(" → ")[0]}<span class="dim"> → </span>{cell.value.split(" → ")[1]}
+            </Fragment>
+          : cell.value}
+      </div>
+    </div>
+  ))}
+</div>

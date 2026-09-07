@@ -1,0 +1,40 @@
+---
+import {download, FEEDS, latest} from "../feed.js";
+
+/**
+ * The feeds, as a table, for the prose pages.
+ *
+ * The names are links only where the latest release actually carries the file.
+ * A guide that links a download that 404s is worse than one that says the feed
+ * is not published yet, and which of those is true is the release's to say.
+ */
+const meta = await latest();
+
+const held: Record<string, string> = {
+  "gtfs.zip": "where a service calls",
+  "gtfs-passing-points.zip": "where a service calls, and where it runs through without stopping",
+  "gtfs-national-rail-only.zip": "where a service calls, without the services National Rail does not run"
+};
+---
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>feed</th><th>what it holds</th></tr>
+    </thead>
+    <tbody>
+      {FEEDS.map(feed => (
+        <tr>
+          <td>
+            {feed.published(meta)
+              ? <a href={download(feed)}><code>{feed.file}</code></a>
+              : <code>{feed.file}</code>}
+          </td>
+          <td>
+            {held[feed.file]}
+            {!feed.published(meta) && <em> — not published yet</em>}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

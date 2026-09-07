@@ -1,0 +1,153 @@
+---
+import Base from "../../layouts/Base.astro";
+import DepartureBoard from "../../components/DepartureBoard.astro";
+import FeedCard from "../../components/FeedCard.astro";
+import Sources from "../../components/Sources.astro";
+import Terminal from "../../components/Terminal.astro";
+import {FEEDS, latest} from "../../feed.js";
+import {RELEASE, GITHUB, source} from "../../site.js";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const guide = `${base}/feeds/using-this-data/`;
+const meta = await latest();
+
+/**
+ * The JSON the release carries alongside the zips. They describe the feed rather
+ * than being part of it, so somebody unzipping a GTFS feed gets GTFS.
+ */
+const assets = [
+  ["validation.json", "the validator's report, including every accepted error"],
+  ["feed-meta.json", "what was built, from what, and when"],
+  ["enrichment-report.json", "what each external source matched and missed"],
+  ["provenance.json", "every field an external source wrote, and every write that lost"]
+];
+---
+<Base
+  title="The feeds"
+  description="Three GTFS feeds built nightly from the British rail timetable: the standard feed, the same trips with passing points, and National Rail services only."
+>
+  <div class="shell page-head">
+    <p class="crumb">Feeds</p>
+    <h1>Three feeds, one build.</h1>
+    <p class="lede">
+      They leave from the same station. Which one you want depends on whether you are moving
+      passengers, tracing trains, or merging the railway with everything else that moves.
+    </p>
+  </div>
+
+  <section class="shell section--tight" style="padding-top: clamp(32px, 4vw, 44px);">
+    <DepartureBoard />
+    <div class="cards">
+      {FEEDS.map(feed => <FeedCard feed={feed} />)}
+    </div>
+    <p style="margin: 22px 0 0; font-size: 15px; color: var(--ink-quiet); max-width: 70ch;">
+      Every link resolves to the most recent release, so it can be bookmarked or scripted against.
+      The first two hold the same trips and differ only in their stop times; the third holds fewer
+      trips than either.
+    </p>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2">How a feed gets published</h2>
+    <div class="stripes">
+      <div class="stripe stripe--signal">
+        <h3>1 · Download</h3>
+        <p>
+          The most recent full refresh of the DTD timetable and every incremental published since,
+          plus the fares refresh the station groups come from.
+        </p>
+      </div>
+      <div class="stripe stripe--signal">
+        <h3>2 · Build</h3>
+        <p>
+          Three builds from <a href={source("gtfs.config.yaml")}><code>gtfs.config.yaml</code></a>{" "}
+          and its National Rail only variant. Stations get their real coordinates and names from
+          NaPTAN.
+        </p>
+      </div>
+      <div class="stripe stripe--go">
+        <h3>3 · Validate</h3>
+        <p>
+          Each feed goes through the{" "}
+          <a href="https://github.com/MobilityData/gtfs-validator">MobilityData validator</a> against
+          a pinned baseline. Any of them failing stops the whole release.
+        </p>
+      </div>
+      <div class="stripe stripe--quiet">
+        <h3>4 · Compare, then release</h3>
+        <p>
+          A feed with more than a 5% swing in trips against yesterday needs a human. Otherwise all
+          three are attached to a dated release.
+        </p>
+      </div>
+    </div>
+    <p style="margin: 26px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      A build that fails is not published, so a missing night means the build was stopped rather
+      than that a degraded feed went out. Releases are pruned to the last thirty days plus the
+      earliest release of each month, so it stays possible to say what the feed looked like in April.
+    </p>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2 h2--sm">What else is on a release</h2>
+    <p style="margin: 14px 0 20px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      Four JSON files, as separate assets rather than inside the zips, because they describe the
+      feed rather than being part of it.
+    </p>
+    <dl class="rules">
+      {assets.map(([file, what]) => (
+        <div>
+          <dt><a href={`${RELEASE}/${file}`}><code>{file}</code></a></dt>
+          <dd style="color: var(--ink-body);">{what}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <section class="shell section">
+    <div class="cards cards--wide" style="margin-top: 0;">
+      <div class="card">
+        <div class="eyebrow">Before you write the importer</div>
+        <div>
+          <h3 class="card__title--display">The decisions the feed makes</h3>
+          <p>
+            No identifier in the feed is a three-letter station code. Times run past 24:00:00. A
+            train that divides carries a quoted <code>stop_headsign</code>. Five things break a
+            consumer written against the specification alone, and they are all on one page.
+          </p>
+        </div>
+        <div class="card__foot">
+          <a class="btn btn--signal" href={guide}>Using this data &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Rather build your own</div>
+        <div>
+          <h3 class="card__title--display">The same feed, byte for byte</h3>
+          <p>
+            <code>cif2gtfs</code> produces what is published here from the feed files, with no
+            database and no server. Pin <code>--today</code> and the same input always gives the
+            same bytes.
+          </p>
+        </div>
+        <div class="card__foot">
+          <Terminal lines={["cif2gtfs build --source RJTTFxxx.ZIP --out gtfs.zip"]} />
+          <p style="margin: 14px 0 0; font-size: 15px;">
+            <a href={`${base}/tools/cif2gtfs/`}>How it works &rarr;</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell section section--last">
+    <h2 class="h2 h2--sm" style="margin-bottom: 20px;">Sources and licences</h2>
+    <Sources />
+    <p style="margin: 18px 0 0; font-size: 14.5px; color: var(--ink-quiet); max-width: 70ch;">
+      Read from the build rather than written here.
+      {meta === undefined && "No feed has been published yet, so this is the timetable alone. "}
+      {" "}Attribution is a condition of the Open Government Licence, so this list is the build's to
+      state and not this page's. <a href={GITHUB}>Report anything it gets wrong.</a>
+    </p>
+  </section>
+</Base>

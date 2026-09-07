@@ -1,0 +1,50 @@
+---
+import {download, latest, type Feed} from "../feed.js";
+
+interface Props {
+  feed: Feed;
+}
+
+const {feed} = Astro.props;
+const meta = await latest();
+
+// The release decides. A feed the latest release does not carry gets the shape
+// of a card rather than a download button, because a button on an asset that is
+// not there is a 404 with a call to action on it.
+const published = feed.published(meta);
+const figures = feed.figures(meta);
+const style = feed.platform === 1 ? "btn--signal" : "btn--ink";
+---
+<div class:list={["card", !published && "card--waiting"]}>
+  <div class="card__top">
+    <span class:list={["platform", `platform--${published ? feed.platform : 3}`]}>
+      {feed.platform}
+    </span>
+    <span class:list={["tag", feed.platform === 1 && published && "tag--go", !published && "tag--quiet"]}>
+      {published ? feed.tag : "Coming soon"}
+    </span>
+  </div>
+
+  <div>
+    <h3>{feed.file.replace(/-/g, "‑")}</h3>
+    <p>{feed.summary}</p>
+  </div>
+
+  {published
+    ? <ul class="checks">{feed.points.map(point => <li>{point}</li>)}</ul>
+    : <div class="blanks" aria-hidden="true"><span></span><span></span><span></span></div>}
+
+  {figures.length > 0 && (
+    <dl class="figures">
+      {figures.map(figure => (
+        <div><dt>{figure.label}</dt><dd>{figure.value}</dd></div>
+      ))}
+    </dl>
+  )}
+
+  <div class="card__foot">
+    {published
+      ? <a class:list={["btn", style]} href={download(feed)} style="width: 100%;">Download &darr;</a>
+      : <span class="btn" aria-disabled="true" style="width: 100%;">Not published yet</span>}
+  </div>
+</div>

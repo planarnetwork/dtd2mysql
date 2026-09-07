@@ -1,0 +1,62 @@
+---
+import Base from "./Base.astro";
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description: string;
+    section?: string;
+    sectionHref?: string;
+    lede?: string;
+  };
+  headings?: Heading[];
+}
+
+const {frontmatter, headings = []} = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Only the top level. A contents list that reproduces the whole document is a
+// second copy of it rather than a way into it.
+const contents = headings.filter(heading => heading.depth === 2);
+---
+<Base title={frontmatter.title} description={frontmatter.description}>
+  <div class="shell page-head">
+    {frontmatter.section && (
+      <p class="crumb">
+        <a href={`${base}${frontmatter.sectionHref ?? "/"}`}>{frontmatter.section}</a>
+      </p>
+    )}
+    <h1>{frontmatter.title}</h1>
+    {frontmatter.lede && <p class="lede">{frontmatter.lede}</p>}
+  </div>
+
+  <div class="shell docs">
+    {contents.length > 1 && (
+      <nav class="docs__aside" aria-label="On this page">
+        {/*
+          A details rather than a list, because on a phone the contents sit
+          above the document and thirteen entries is a screenful before the
+          first word. Open on a wide screen, where it is a sidebar and folding
+          it away would be pointless.
+        */}
+        <details class="toc">
+          <summary>On this page</summary>
+          <ol>
+            {contents.map(heading => (
+              <li><a href={`#${heading.slug}`}>{heading.text}</a></li>
+            ))}
+          </ol>
+        </details>
+      </nav>
+    )}
+    <article class="prose">
+      <slot />
+    </article>
+  </div>
+</Base>
