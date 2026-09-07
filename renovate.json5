@@ -1,0 +1,51 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended"],
+  timezone: "Europe/London",
+
+  // Every update merges itself once the checks on .github/workflows/ci.yml are
+  // green. That is only a reasonable thing to say because of what those checks
+  // are: a real build, a type check of the specs the build excludes, the unit
+  // tests, the importer against a real MariaDB, all three feeds through the
+  // MobilityData validator, and every workspace packed and installed. A bump
+  // that breaks this repository has to get past all of it.
+  automerge: true,
+  // Use GitHub's own auto-merge rather than Renovate merging on its next run,
+  // so the gate is the branch protection on master and the merge happens the
+  // moment the last check reports.
+  platformAutomerge: true,
+
+  // Nothing that was published in the last three days is merged unattended. A
+  // compromised release is usually pulled within hours, and nothing here is
+  // urgent enough to be worth being the one who finds out. Security fixes opt
+  // out of this below.
+  minimumReleaseAge: "3 days",
+
+  // The transitive half of the tree never moves otherwise: a yarn.lock only
+  // updates when something asks it to, so an indirect dependency can sit on an
+  // old release for as long as its parent's range allows.
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: true,
+  },
+
+  // Dependabot's security updates are turned off for this repository, so these
+  // are the only PRs that come from an alert. They skip the release-age wait,
+  // because for a known vulnerability the risk runs the other way.
+  vulnerabilityAlerts: {
+    automerge: true,
+    minimumReleaseAge: null,
+    schedule: ["at any time"],
+  },
+
+  packageRules: [
+    // Yarn is pinned twice - `packageManager` in the root manifest and
+    // `yarnPath` in .yarnrc.yml - and Renovate only knows about the first.
+    // Moving one without the other makes yarn refuse to run, so the version is
+    // changed by hand with `yarn set version`.
+    {
+      matchDepTypes: ["packageManager"],
+      enabled: false,
+    },
+  ],
+}
