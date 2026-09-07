@@ -121,6 +121,7 @@ references and makes it incremental.
 | [`docs/station-names.md`](docs/station-names.md) | Where NaPTAN and the override table disagree about a station's name |
 | [`docs/coordinate-review.md`](docs/coordinate-review.md) | Stations whose two coordinate sources differ by more than 100 m |
 | [`apps/*/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why each tool's committed output last changed, entry by entry |
+| [`BASELINE.md`](BASELINE.md) | The same for the baselines that belong to no one package: the type surface, the release baselines |
 | [`tests/README.md`](tests/README.md) | The end to end tests: the three tools run in sequence, and the validator over what they build |
 | [`scripts/`](scripts) | What CI runs and how a release is made, as scripts rather than as shell in a workflow |
 
