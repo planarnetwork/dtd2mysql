@@ -46,11 +46,14 @@
     "@gb-transit/gtfs-output": "workspace:^",
     "@gb-transit/gtfs-schema": "workspace:^",
     "@gb-transit/naptan": "workspace:^",
-    "@gb-transit/txc-source": "workspace:^",
+    "@js-joda/core": "^6.0.1",
+    "adm-zip": "0.6.0",
+    "date-holidays": "^3.27.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@gb-transit/gtfs-loader": "workspace:^",
+    "@types/adm-zip": "0.5.8",
     "@types/xml2js": "^0.4.14",
     "fflate": "^0.8.3",
     "typescript": "7.0.2"

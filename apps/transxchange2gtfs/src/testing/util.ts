@@ -1,4 +1,4 @@
-import {Transform} from "stream";
+import {Transform} from "node:stream";
 
 /**
  * Collect everything a stream emits, then assert on it.

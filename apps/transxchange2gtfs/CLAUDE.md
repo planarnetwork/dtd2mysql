@@ -3,10 +3,13 @@
 Converts [TransXChange](http://naptan.dft.gov.uk/transxchange/index.htm) — UK bus and coach
 timetable XML — into a GTFS feed. Published to npm as `transxchange2gtfs`.
 
-The parsing lives in `libs/txc-source` (`@gb-transit/txc-source`), the bus counterpart to
-`libs/dtd-source`. What is left here is the composition root: `Container.ts` wires the pipeline,
-`Converter.ts` runs it and writes the output, `index.ts` is the CLI and `api.ts` is the function
-both it and the tests call.
+All of it lives here. `Container.ts` wires the pipeline, `Converter.ts` runs it and writes the
+output, `index.ts` is the CLI and `api.ts` is the function both it and the tests call; the parsing
+is in `transxchange/`, `xml/`, `reference/` and `gtfs/`.
+
+It was briefly a library, `@gb-transit/txc-source`, on the argument that it mirrored
+`libs/dtd-source`. It does not: `dtd-source` has three consumers and this had one, its own app. A
+package with a single consumer is a directory with extra steps.
 
 ## The pipeline
 
@@ -28,7 +31,7 @@ FileStream → XMLStream → TransXChangeStream → TransXChangeJourneyStream
 ```
 
 **The streams emit rows, not CSV.** Each extends `RowStream<T, R>` and declares the file it writes
-as a `FileSchema` in `libs/txc-source/src/gtfs/TxcFeed.ts`; `@gb-transit/gtfs-output` does the
+as a `FileSchema` in `src/gtfs/TxcFeed.ts`; `@gb-transit/gtfs-output` does the
 formatting. Before, each stream carried a `header` string and a `pushLine` whose argument order had
 to match it with nothing checking that it did, and `resource/schema.sql` said the same thing a third
 time and had already drifted. Adding a column now means adding it to the row type and to the
@@ -50,7 +53,7 @@ nothing.
 
 ## Bank holidays
 
-`libs/txc-source/src/reference/BankHolidays.ts` maps each TransXChange `Holiday` to a rule and
+`src/reference/BankHolidays.ts` maps each TransXChange `Holiday` to a rule and
 locale (GB-ENG / GB-SCT) via `date-holidays`, over a rolling window around the current year. No
 manual list to extend.
 

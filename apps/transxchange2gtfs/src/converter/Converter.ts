@@ -1,7 +1,8 @@
 import {FeedRow, RowWriter} from "@gb-transit/gtfs-schema";
 import {FileOutput, deliverFeed} from "@gb-transit/gtfs-output";
-import {FileStream, RowStream} from "@gb-transit/txc-source";
-import * as fs from "fs";
+import {FileStream} from "../xml/FileStream";
+import {RowStream} from "../gtfs/RowStream";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import {Writable} from "node:stream";
 import {finished} from "node:stream/promises";
