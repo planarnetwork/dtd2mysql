@@ -456,9 +456,35 @@ describe("Association", () => {
     expect(surviving[0].assocLocation).to.equal("HRH");
   });
 
+  /**
+   * The portion's record spans two Sundays and is shifted; the coupled days are the change day
+   * alone, which is not. Reading `assoc` leaves the base on the Saturday and the portion on the
+   * Sunday with no copy to close the day.
+   */
+  it("counts the day gap against the calendar the coupling leaves", () => {
+    const base = schedule(1, "A", "2026-10-25", "2026-10-25", STP.Permanent, SUNDAY, [
+      stop(1, "HHY", "01:00"),
+      stop(2, "NXG", "01:20"),
+    ], "LO");
+
+    const assoc = schedule(2, "B", "2026-10-18", "2026-10-25", STP.New, SUNDAY, [
+      stop(1, "NXG", "01:20"),
+      stop(2, "SYD", "01:30"),
+    ], "LO");
+
+    const result = association(base, assoc, AssociationType.Split, "NXG")
+      .apply(base, assoc, idGenerator(), true)!;
+
+    expect(result.asDated.calendar.runsFrom.equals("20261025")).to.be.true;
+    expect(result.duplicated).to.not.equal(null);
+    expect(result.duplicated!.calendar.runsFrom.equals("20261024")).to.be.true;
+    expect(result.duplicated!.stopTimes[0].departure_time).to.equal("25:20:30");
+  });
+
 });
 
 const ALL_DAYS: Days = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
+const SUNDAY: Days = { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
 const WEEKDAYS: Days = { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 0 };
 const DAY_AFTER_WEEKDAYS: Days = { 0: 0, 1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 };
 

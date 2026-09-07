@@ -3,6 +3,7 @@ import {STP} from "../model/OverlayRecord";
 import {schedule} from "./MergeSchedules.spec";
 import {stop} from "./ApplyAssociations.spec";
 import {shiftLateNightServices} from "./ShiftLateNightServices";
+import {applyOverlays} from "./ApplyOverlays";
 import {Days} from "../model/ScheduleCalendar";
 
 describe("ShiftLateNightServices", () => {
@@ -77,4 +78,121 @@ describe("ShiftLateNightServices", () => {
     expect(shifted.stopTimes[0].departure_time).to.equal("25:30:30");
   });
 
+  /** See `runsInTheRepeatedHour`. */
+  describe("on the day the clocks go back", () => {
+    const SUNDAY: Days = { 0: 1, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+
+    const overground = (id: number, from: string, to: string, time: string, stp = STP.New, days = SUNDAY) =>
+      schedule(id, "A", from, to, stp, days, [
+        stop(1, "HHY", time),
+        stop(2, "NXG", plusTenMinutes(time))
+      ], "LO");
+
+    it("leaves an Overground schedule dated to the change day alone", () => {
+      const [kept] = shiftLateNightServices([overground(1, "2026-10-25", "2026-10-25", "01:05")]);
+
+      expect(kept.calendar.runsFrom.equals("20261025")).to.be.true;
+      expect(kept.calendar.runsTo.equals("20261025")).to.be.true;
+      expect(kept.calendar.days[0]).to.equal(1);
+      expect(kept.stopTimes[0].departure_time).to.equal("01:05:30");
+    });
+
+    it("shifts the standard schedule that covers the first pass of the hour", () => {
+      const [shifted] = shiftLateNightServices([
+        overground(1, "2026-06-01", "2026-12-31", "01:05", STP.Permanent)
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20260531")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    /** An overlay on that Sunday retimes the BST departure, so it is still the first pass. */
+    it("shifts an overlay dated to the change day", () => {
+      const [shifted] = shiftLateNightServices([
+        overground(1, "2026-10-25", "2026-10-25", "01:05", STP.Overlay)
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261024")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    it("shifts a schedule that runs on the change day and on other days too", () => {
+      const [shifted] = shiftLateNightServices([
+        overground(1, "2026-10-18", "2026-10-25", "01:05")
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261017")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    it("shifts a schedule dated to a Sunday in October that is not the last one", () => {
+      const [shifted] = shiftLateNightServices([
+        overground(1, "2026-10-18", "2026-10-18", "01:05")
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261017")).to.be.true;
+    });
+
+    /** Narrowed onto the change day by an overlay, not dated to it by the operator. */
+    it("shifts a record the overlays have whittled down to the change day", () => {
+      const wide = overground(1, "2026-10-04", "2026-11-29", "01:05");
+      const index = applyOverlays([
+        wide,
+        overground(2, "2026-10-04", "2026-10-18", "01:05"),
+        overground(3, "2026-11-01", "2026-11-29", "01:05")
+      ]);
+
+      const narrowed = index["A"].find(s => s.id === 1)!;
+      const [shifted] = shiftLateNightServices([narrowed]);
+
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    /** No other Overground line runs through the change, so this is an ordinary late night train. */
+    it("shifts an Overground schedule on another line", () => {
+      const [shifted] = shiftLateNightServices([
+        schedule(1, "A", "2026-10-25", "2026-10-25", STP.New, SUNDAY, [
+          stop(1, "RMF", "01:05"),
+          stop(2, "UPM", "01:15")
+        ], "LO")
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261024")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    /** Only 01:00 to 01:59 repeats; midnight comes round once whatever the clocks do. */
+    it("shifts a schedule departing before the repeated hour", () => {
+      const [shifted] = shiftLateNightServices([overground(1, "2026-10-25", "2026-10-25", "00:45")]);
+
+      expect(shifted.calendar.runsFrom.equals("20261024")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("24:45:30");
+    });
+
+    it("shifts another operator's schedule dated to the change day", () => {
+      const [shifted] = shiftLateNightServices([
+        schedule(1, "A", "2026-10-25", "2026-10-25", STP.New, SUNDAY, [
+          stop(1, "VIC", "01:05"),
+          stop(2, "TBD", "01:15")
+        ])
+      ]);
+
+      expect(shifted.calendar.runsFrom.equals("20261024")).to.be.true;
+      expect(shifted.stopTimes[0].departure_time).to.equal("25:05:30");
+    });
+
+    /** 2027's change day is the 31st, where "after the 24th" and "no Sunday left" diverge. */
+    it("recognises a change day that falls on the last day of the month", () => {
+      const [kept] = shiftLateNightServices([overground(1, "2027-10-31", "2027-10-31", "01:05")]);
+
+      expect(kept.calendar.runsFrom.equals("20271031")).to.be.true;
+    });
+  });
+
 });
+
+function plusTenMinutes(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  return `${hours.toString().padStart(2, "0")}:${(minutes + 10).toString().padStart(2, "0")}`;
+}
