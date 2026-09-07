@@ -1,5 +1,13 @@
 # @gb-transit/dtd-source
 
+## 1.1.1
+
+### Patch Changes
+
+- Updated dependencies [610f8ef]
+- Updated dependencies [33612ec]
+  - @gb-transit/gtfs@3.0.0
+
 ## 1.1.0
 
 ### Minor Changes
