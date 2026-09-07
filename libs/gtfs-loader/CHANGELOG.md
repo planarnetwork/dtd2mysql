@@ -1,5 +1,76 @@
 # @gb-transit/gtfs-loader
 
+## 1.1.0
+
+### Minor Changes
+
+- 610f8ef: Absorb gtfsmerge and transxchange2gtfs, and give every producer one schema
+
+  The GTFS schema was written down four times across three repositories, in
+  three incompatible ways, and only one of them type checked. It is now written
+  once, in `@gb-transit/gtfs-schema`, and a producer declares which columns of
+  which file it writes.
+
+  **`@gb-transit/gtfs-schema`** — `GTFSOutput` moves here from `@gb-transit/gtfs`,
+  which re-exports it. New `Columns`, `FileSchema` and `fileSchema`, and a new
+  `Shape`/`ShapeRow`. `StopTime.stop_headsign` was typed `null` and is now
+  `string | null` — `Headsigns.ts` already put a string there through
+  `Object.assign`, so this is a correction. `Trip` gains optional `block_id` and
+  `shape_id` and its `service_id` accepts a string; `StopRow` loosens
+  `location_type`, `zone_id`, `stop_code`, `stop_desc` and `stop_url`, and its
+  coordinates accept text so a value that arrived as `51.50740` does not
+  re-serialise a digit short; `Transfer`'s twelve producer extensions and its two
+  trip ids become optional; `RouteType` gains `Air`.
+
+  **`@gb-transit/gtfs` and `@gb-transit/gtfs-output`** — `GTFSOutput.open` takes
+  the columns and returns a `RowWriter<R>` rather than a `Writable`, and
+  `extensionFile` takes columns. `csv-write-stream` is replaced by `CSVRowWriter`, which
+  writes the header when the file is opened - so a file with no rows is an empty
+  table rather than an empty file. Its escaping is a transcription of
+  csv-write-stream's rule rather than a differential result: the committed goldens
+  are unchanged, and the cases they do not reach are written down in
+  `CSVRowWriter.spec.ts`.
+  `writeZip` is exported so all three tools share one deterministic archiver.
+
+  **`@gb-transit/gtfs-loader`** gains `readFeed` and `readFeedRows`: the same feed
+  read as the rows it was written as, every file and every column, for a tool that
+  rewrites a feed rather than plans over one. Built from the parts `loadGTFS`
+  already used.
+  **`@gb-transit/naptan`** is new: the NaPTAN download, cache and CSV read, with
+  no other dependency, so a bus converter does not inherit a rail transit model to
+  get them.
+
+  **`cif2gtfs` and `dtd2mysql`** — the SPI change, and `cif2gtfs`'s `main` points
+  at `dist/api.js` so requiring the package no longer runs a build.
+
+  **`transxchange2gtfs`** — behaviour is the same except: a file with no rows now
+  has a header rather than being empty; a value containing a newline is quoted;
+  an absent value is empty rather than the text `undefined`; NaPTAN is read by
+  column name from the current DfT endpoint rather than by slicing the national
+  CSV at fixed positions, and `--naptan <file>` reads it from disk; the zip is
+  written in process, so `zip` is no longer required on PATH; and
+  `bin/transxchange2gtfs.sh` required a path the build never produced, so the
+  published CLI could not have run at all.
+
+  **`gtfsmerge`** — behaviour is the same except for five fixes, each written up
+  in `apps/gtfsmerge/fixtures/BASELINE.md`. Generated walk transfer distances were
+  wrong twice over: the ruler was calibrated at 46°N, central France, and the
+  coordinates were passed to it as `[latitude, longitude]` where it takes
+  `[longitude, latitude]` — together about 70% too long. `--no-date-filter`
+  dropped every calendar in every feed rather than keeping them. Transfers to a
+  stop nothing calls at were written, leaving dangling references. A call moved
+  from a platform onto its station left the station as `location_type` 1, which
+  GTFS forbids for a stop something calls at. `transfers.txt` now carries
+  `from_trip_id` and `to_trip_id` and renumbers them, so a coupling survives the
+  merge, and `stops.txt` carries `platform_code`. `--ruler-latitude` and
+  `--date-filter` are new, `zip` is no longer required on PATH, and `main` points
+  at `dist/api.js`.
+
+### Patch Changes
+
+- Updated dependencies [610f8ef]
+  - @gb-transit/gtfs-schema@2.0.0
+
 ## 1.0.0
 
 ### Major Changes
