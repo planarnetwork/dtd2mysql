@@ -49,7 +49,7 @@ test read `!filterBefore || end_date < filterBefore`, which is true whenever
 there is no filter — so running without a date filter dropped every calendar in
 every input, and the merged feed kept only the services `CalendarFactory` could
 synthesise out of orphan `calendar_dates` rows. Found by the end-to-end merge in
-`apps/feed-e2e`, which merges without a filter: 128 rail trips came out as 14.
+`tests`, which merges without a filter: 128 rail trips came out as 14.
 
 **A transfer to a stop nothing calls at is dropped.** Only the stops something
 calls at are published, so such a transfer was a reference to a row that is not

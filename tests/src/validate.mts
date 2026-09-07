@@ -25,9 +25,9 @@ import {merge} from "gtfsmerge";
  *   UPDATE_BASELINE=1 node dist/validate.js path/to/gtfs-validator.jar
  */
 const jar = process.argv[2];
-const railFixtures = path.join(import.meta.dirname, "..", "..", "cif2gtfs", "fixtures", "mini");
-const busFixtures = path.join(import.meta.dirname, "..", "..", "transxchange2gtfs", "fixtures", "mini");
-const mergeFixtures = path.join(import.meta.dirname, "..", "..", "gtfsmerge", "fixtures");
+const railFixtures = path.join(import.meta.dirname, "..", "..", "apps", "cif2gtfs", "fixtures", "mini");
+const busFixtures = path.join(import.meta.dirname, "..", "..", "apps", "transxchange2gtfs", "fixtures", "mini");
+const mergeFixtures = path.join(import.meta.dirname, "..", "..", "apps", "gtfsmerge", "fixtures");
 
 /**
  * The date the feeds are built for, and the date the validator judges them

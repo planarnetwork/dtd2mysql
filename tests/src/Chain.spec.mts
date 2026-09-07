@@ -29,8 +29,8 @@ import {merge} from "gtfsmerge";
  * choice and is in the rail feed - but only because a fixed link reaches it, not
  * because any train in the fixture calls there, so the merge drops it.
  */
-const rail = path.join(import.meta.dirname, "../../cif2gtfs/fixtures/mini");
-const bus = path.join(import.meta.dirname, "../../transxchange2gtfs/fixtures/mini");
+const rail = path.join(import.meta.dirname, "../../apps/cif2gtfs/fixtures/mini");
+const bus = path.join(import.meta.dirname, "../../apps/transxchange2gtfs/fixtures/mini");
 const TODAY = "2026-08-10";
 
 let work: string;

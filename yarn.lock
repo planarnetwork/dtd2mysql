@@ -453,6 +453,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/e2e@workspace:tests":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/e2e@workspace:tests"
+  dependencies:
+    "@gb-transit/gtfs-output": "workspace:^"
+    "@gb-transit/gtfs-read": "workspace:^"
+    "@gb-transit/gtfs-schema": "workspace:^"
+    cif2gtfs: "workspace:^"
+    fflate: "npm:^0.8.3"
+    gtfsmerge: "workspace:^"
+    transxchange2gtfs: "workspace:^"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/enrich-naptan@workspace:^, @gb-transit/enrich-naptan@workspace:libs/enrich-naptan":
   version: 0.0.0-use.local
   resolution: "@gb-transit/enrich-naptan@workspace:libs/enrich-naptan"
@@ -471,21 +486,6 @@ __metadata:
     "@gb-transit/dtd-source": "workspace:^"
     "@gb-transit/feed-parser": "workspace:^"
     "@gb-transit/gtfs": "workspace:^"
-    typescript: "npm:7.0.2"
-  languageName: unknown
-  linkType: soft
-
-"@gb-transit/feed-e2e@workspace:apps/feed-e2e":
-  version: 0.0.0-use.local
-  resolution: "@gb-transit/feed-e2e@workspace:apps/feed-e2e"
-  dependencies:
-    "@gb-transit/gtfs-output": "workspace:^"
-    "@gb-transit/gtfs-read": "workspace:^"
-    "@gb-transit/gtfs-schema": "workspace:^"
-    cif2gtfs: "workspace:^"
-    fflate: "npm:^0.8.3"
-    gtfsmerge: "workspace:^"
-    transxchange2gtfs: "workspace:^"
     typescript: "npm:7.0.2"
   languageName: unknown
   linkType: soft

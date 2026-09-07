@@ -39,4 +39,4 @@ as `51.5074` and re-serialise a digit short.
 
 An empty field is `undefined`, which is what [`@gb-transit/gtfs-output`](../gtfs-output) writes an
 absent value from. That pair is the round trip — reading a feed and writing it out again produces
-the same bytes — and `apps/feed-e2e` holds every feed this repository commits to it.
+the same bytes — and `tests` holds every feed this repository commits to it.

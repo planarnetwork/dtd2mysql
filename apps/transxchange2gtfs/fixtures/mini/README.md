@@ -5,7 +5,7 @@ Amersham, four stops, three vehicle journeys — and `golden/` is the feed it
 produces.
 
 It is set in Amersham because Amersham is a station the DTD mini fixture
-actually serves, so `apps/feed-e2e` can merge this feed with the rail one and
+actually serves, so the end to end tests can merge this feed with the rail one and
 find the walk transfer between the train and the bus outside. Bristol was the
 first choice; Temple Meads is in the rail feed, but only because a fixed link
 reaches it rather than because any train in that fixture calls there.

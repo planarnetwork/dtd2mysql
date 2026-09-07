@@ -17,6 +17,7 @@
   "include": [
     "apps/*/src",
     "libs/*/src",
+    "tests/src",
     "*.mts"
   ]
 }

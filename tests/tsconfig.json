@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist"
@@ -9,22 +9,22 @@
   ],
   "references": [
     {
-      "path": "../../libs/gtfs-schema"
+      "path": "../libs/gtfs-schema"
     },
     {
-      "path": "../../libs/gtfs-read"
+      "path": "../libs/gtfs-read"
     },
     {
-      "path": "../../libs/gtfs-output"
+      "path": "../libs/gtfs-output"
     },
     {
-      "path": "../cif2gtfs"
+      "path": "../apps/cif2gtfs"
     },
     {
-      "path": "../transxchange2gtfs"
+      "path": "../apps/transxchange2gtfs"
     },
     {
-      "path": "../gtfsmerge"
+      "path": "../apps/gtfsmerge"
     }
   ],
   "exclude": [

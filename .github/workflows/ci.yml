@@ -192,7 +192,7 @@ jobs:
       # merged feed is the one worth having here - the merge renumbers every
       # service, route and trip id across two feeds, and a dangling reference
       # from that is what a hand-written fixture cannot produce.
-      - run: node apps/feed-e2e/dist/validate.mjs gtfs-validator.jar
+      - run: node tests/dist/validate.mjs gtfs-validator.jar
 
   package:
     runs-on: ubuntu-latest

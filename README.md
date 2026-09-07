@@ -57,7 +57,7 @@ gtfsmerge gtfs.zip bus.zip gb.zip
 and `gtfsmerge` merges feeds into one. They compose with the rail feed because all three identify a
 stop by its ATCO code, so a merged feed knows that the bus stop outside a station is outside that
 station — no `--stop-prefix`, no reconciliation.
-[`apps/feed-e2e`](apps/feed-e2e) is the test that keeps that true.
+[`tests`](tests/README.md) is what keeps that true.
 
 Full command line documentation is in each app's README:
 **[`apps/dtd2mysql`](apps/dtd2mysql/README.md)** for the importer,
@@ -79,7 +79,6 @@ README describing what it is for and how to use it.
 | [`apps/transxchange2gtfs`](apps/transxchange2gtfs/README.md) | `transxchange2gtfs` | Convert TransXChange bus and coach timetables to GTFS |
 | [`apps/gtfsmerge`](apps/gtfsmerge/README.md) | `gtfsmerge` | Merge GTFS feeds into one |
 | [`apps/website`](apps/website/README.md) | — | The download page and the guide, deployed to GitHub Pages |
-| [`apps/feed-e2e`](apps/feed-e2e) | — | Runs all three producers in sequence and validates what they build |
 
 ### Libraries
 
@@ -126,6 +125,7 @@ references and makes it incremental.
 | [`docs/station-names.md`](docs/station-names.md) | Where NaPTAN and the override table disagree about a station's name |
 | [`docs/coordinate-review.md`](docs/coordinate-review.md) | Stations whose two coordinate sources differ by more than 100 m |
 | [`apps/*/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why each tool's committed output last changed, entry by entry |
+| [`tests/README.md`](tests/README.md) | The end to end tests: the three tools run in sequence, and the validator over what they build |
 
 ## Contributing
 

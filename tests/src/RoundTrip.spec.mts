@@ -17,8 +17,8 @@ import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
  * or a value it coerced into something that serialises differently, fails here.
  */
 const goldens = [
-  ["bus", path.join(import.meta.dirname, "../../transxchange2gtfs/fixtures/mini/golden")],
-  ["merged", path.join(import.meta.dirname, "../../gtfsmerge/fixtures/tiny/golden")]
+  ["bus", path.join(import.meta.dirname, "../../apps/transxchange2gtfs/fixtures/mini/golden")],
+  ["merged", path.join(import.meta.dirname, "../../apps/gtfsmerge/fixtures/tiny/golden")]
 ] as const;
 
 describe.each(goldens)("the %s golden", (_name, directory) => {
