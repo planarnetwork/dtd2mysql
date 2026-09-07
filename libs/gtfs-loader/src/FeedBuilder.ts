@@ -1,9 +1,14 @@
-import type { CalendarIndex, DateIndex, Interchange, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
+import type { CalendarIndex, DateIndex, DayOfWeek, Interchange, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
 import type { EntityType } from "./EntityType.js";
 import type { Row } from "./CSVParser.js";
 import type { FeedInfo, GTFSFeed } from "./GTFSLoader.js";
 import { TimeParser } from "./TimeParser.js";
 import { Service } from "./Service.js";
+
+/** Runs on no day of the week, for a service whose only dates are its exceptions */
+const NO_DAYS: Record<DayOfWeek, boolean> = {
+  0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false
+};
 
 /**
  * Assembles a feed from the rows of its files, whatever delivered them.
@@ -57,6 +62,14 @@ export class FeedBuilder {
       services[c.serviceId] = new Service(c.startDate, c.endDate, c.days, this.dates[c.serviceId] || {});
     }
 
+    // A feed may leave calendar.txt out altogether and say when everything runs in calendar_dates,
+    // which is both legal and common. Those services have no row to build from, so they are built
+    // from their dates: no days of the week, and a range nothing falls inside, which leaves the
+    // dates themselves as the only thing that can make runsOn true.
+    for (const serviceId of Object.keys(this.dates)) {
+      services[serviceId] ??= new Service(0, 0, NO_DAYS, this.dates[serviceId]);
+    }
+
     for (const t of this.trips) {
       t.stopTimes = this.stopTimes.get(t.tripId) || [];
       t.service = services[t.serviceId];
@@ -105,9 +118,13 @@ export class FeedBuilder {
       this.addLink(row);
     }
     else {
+      // min_transfer_time is optional for transfer types 0 and 1, where it means the change is
+      // possible with no minimum. Reading an absent one as NaN would put that NaN into a footpath's
+      // duration or a station's interchange time, and it would travel from there into every journey
+      // planned through the stop.
       this.footpath(
         row,
-        +(row.min_transfer_time as string),
+        row.min_transfer_time === undefined ? 0 : this.duration(row.min_transfer_time),
         row.start_time ? this.timeParser.getTime(row.start_time) : 0,
         row.end_time ? this.timeParser.getTime(row.end_time) : Number.MAX_SAFE_INTEGER
       );
@@ -129,6 +146,22 @@ export class FeedBuilder {
    * A footpath from a stop back to itself is not a walk between places, it is how long changing
    * vehicles there takes.
    */
+  /**
+   * A transfer's minimum time in seconds, refusing one that is not a number.
+   *
+   * The same call the times make: a feed that says something unreadable is told so, rather than
+   * carrying a NaN into journeys planned months later.
+   */
+  private duration(value: string): number {
+    const seconds = +value;
+
+    if (Number.isNaN(seconds)) {
+      throw new Error(`Unable to read the transfer time: ${value}`);
+    }
+
+    return seconds;
+  }
+
   private footpath(row: Row, duration: number, startTime: number, endTime: number): void {
     const origin = this.intern(row.from_stop_id as string);
     const destination = this.intern(row.to_stop_id as string);
@@ -216,12 +249,12 @@ export class FeedBuilder {
 
     this.stops[id] = {
       id,
-      code: row.stop_code as string,
-      name: row.stop_name as string,
-      description: row.stop_desc as string,
+      code: row.stop_code,
+      name: row.stop_name,
+      description: row.stop_desc,
       latitude: +(row.stop_lat as string),
       longitude: +(row.stop_lon as string),
-      timezone: row.zone_id as string,
+      timezone: row.stop_timezone,
       locationType: +(row.location_type ?? 0),
       parentStation: row.parent_station === undefined ? undefined : this.intern(row.parent_station),
       platformCode: row.platform_code

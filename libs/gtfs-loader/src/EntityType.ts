@@ -45,7 +45,7 @@ export const COLUMNS: Record<EntityType, readonly string[]> = {
   feed_info: ["feed_start_date", "feed_end_date", "feed_version"],
   stop: [
     "stop_id", "stop_code", "stop_name", "stop_desc", "stop_lat", "stop_lon",
-    "zone_id", "location_type", "parent_station", "platform_code"
+    "stop_timezone", "location_type", "parent_station", "platform_code"
   ]
 };
 

@@ -23,4 +23,6 @@ export type {RSID, TUID} from "./model/Identifiers.js";
 export {SECONDS_IN_DAY, formatDuration, parseDuration} from "./model/Duration.js";
 export type {Duration} from "./model/Duration.js";
 export {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./model/PlainDate.js";
-export type {DayOfWeek} from "./model/PlainDate.js";
+// From its own module rather than through PlainDate: the numbering is a plain union and does not
+// need the Temporal-typed declarations that turn a date into one.
+export type {DayOfWeek} from "./model/DayOfWeek.js";

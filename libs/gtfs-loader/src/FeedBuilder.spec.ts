@@ -90,6 +90,31 @@ describe("FeedBuilder", () => {
     expect(feed.interchange.A).to.equal(undefined);
   });
 
+  /**
+   * min_transfer_time is optional for transfer types 0 and 1, where it means the change is possible
+   * with no minimum. Read as a number without checking it would be NaN, and that NaN would go on
+   * into every journey planned through the stop.
+   */
+  it("treats a transfer with no minimum time as taking none", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("transfer", { from_stop_id: "A", to_stop_id: "A", transfer_type: "1" });
+    builder.add("transfer", { from_stop_id: "B", to_stop_id: "C", transfer_type: "0" });
+
+    const feed = builder.build();
+
+    expect(feed.interchange.A).to.equal(0);
+    expect(feed.transfers.B[0].duration).to.equal(0);
+  });
+
+  it("refuses a transfer time it cannot read", () => {
+    const builder = new FeedBuilder();
+
+    expect(() => builder.add("transfer", {
+      from_stop_id: "A", to_stop_id: "B", min_transfer_time: "soon"
+    })).to.throw(/transfer time/);
+  });
+
   it("gives a transfer with no window one that is always open", () => {
     const builder = new FeedBuilder();
 
@@ -151,6 +176,26 @@ describe("FeedBuilder", () => {
     expect(service.runsOn(20260106, 1)).to.equal(true); // included, though outside the window
   });
 
+  /**
+   * A feed may leave calendar.txt out and say when everything runs in calendar_dates alone. Such a
+   * service has no calendar row to build from, and used to end up with no calendar at all: the trip
+   * carried undefined where its type promised a Service, and the feed loaded without complaint only
+   * to fail much later inside runsOn.
+   */
+  it("builds a calendar for a service that only calendar_dates.txt mentions", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("calendar_date", { service_id: "s1", date: "20250106", exception_type: "1" });
+    builder.add("calendar_date", { service_id: "s1", date: "20250108", exception_type: "1" });
+    builder.add("trip", { trip_id: "t1", service_id: "s1" });
+
+    const { service } = builder.build().trips[0];
+
+    expect(service.runsOn(20250106, 1)).to.equal(true);
+    expect(service.runsOn(20250108, 3)).to.equal(true);
+    expect(service.runsOn(20250107, 2)).to.equal(false);
+  });
+
   it("reads the period the feed covers", () => {
     const builder = new FeedBuilder();
 
@@ -178,6 +223,20 @@ describe("FeedBuilder", () => {
     expect(stop.latitude).to.equal(52.627);
     expect(stop.locationType).to.equal(1);
     expect(stop.platformCode).to.equal("4");
+  });
+
+  /**
+   * The timezone is stop_timezone. This used to read zone_id, which is the fare zone, and so
+   * reported the timezone of a feed that gives one as undefined while the real value sat unread.
+   */
+  it("reads a stop's timezone, not its fare zone", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("stop", {
+      stop_id: "A", stop_lat: "1", stop_lon: "2", stop_timezone: "Europe/London", zone_id: "3"
+    });
+
+    expect(builder.build().stops.A.timezone).to.equal("Europe/London");
   });
 
   it("defaults the location type of a stop that does not give one", () => {

@@ -72,13 +72,21 @@ a browser as well as in node. Three things follow from that, all of them deliber
   precisely so that no declaration typed against `Temporal` is reachable from its public types.
 - **`sideEffects: false`**, so a bundler can drop the half it does not use.
 
-## Known limitations
+## Two feeds it will refuse
 
-A blank `arrival_time` or `departure_time` is valid GTFS for a stop the feed gives no time for.
+**A blank `arrival_time` or `departure_time`** is valid GTFS for a stop the feed gives no time for.
 This does not handle one: `FeedBuilder` reads every call's times unconditionally and `TimeParser`
 throws on a string it cannot parse, so a feed containing one fails to load. That is a change from
 throwing nothing and carrying `NaN` times through into planned journeys, which was worse, but it is
-not yet the right answer. The GB rail feed has no such rows.
+not yet the right answer — deciding what a missing time should mean is its own question. The GB
+rail feed has no such rows.
+
+**Two stations sharing a `stop_code`.** `normalise` throws. GTFS puts no uniqueness requirement on
+`stop_code`, so this is stricter than the specification, and it is deliberate: `stop_code` is the
+identifier journeys are planned between, so two stations sharing one would be planned as the same
+place. Falling back to `stop_id` would quietly merge two real stations, which is a wrong answer
+rather than a refusal. Platforms sharing their station's code are fine — they resolve to it through
+`parent_station` before the check.
 
 ## Contributing
 

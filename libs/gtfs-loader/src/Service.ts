@@ -19,7 +19,7 @@ export class Service implements ServiceCalendar {
     private readonly dates: DateIndex,
   ) {}
 
-  public runsOn(date: number, dow: DayOfWeek): boolean {
+  public runsOn(date: DateNumber, dow: DayOfWeek): boolean {
     return this.dates[date] || (
       !Object.hasOwn(this.dates, date) &&
       this.startDate <= date &&

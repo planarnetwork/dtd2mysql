@@ -106,16 +106,22 @@ export interface Calendar {
 export type CalendarIndex = Record<ServiceID, Calendar>;
 
 /**
- * GTFS stop
+ * GTFS stop.
+ *
+ * Only the id and the position are required of a feed, and an empty field is read as undefined
+ * rather than as the empty string - so everything a feed may leave out is typed as missing. Saying
+ * otherwise would promise a caller a name it can call .toUpperCase() on, which is a runtime error
+ * the compiler had told them could not happen.
  */
 export interface Stop {
   id: StopID,
-  code: string,
-  name: string,
-  description: string,
+  /** stop_code, which is what a feed identifying platforms calls the station they belong to */
+  code?: string,
+  name?: string,
+  description?: string,
   latitude: number,
   longitude: number,
-  timezone: string,
+  timezone?: string,
   locationType: number,
   parentStation?: StopID,
   platformCode?: string
