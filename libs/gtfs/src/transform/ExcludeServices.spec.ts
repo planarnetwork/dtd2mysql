@@ -1,4 +1,5 @@
 import {describe, it, expect, vi, afterEach} from "vitest";
+import {Temporal} from "temporal-polyfill";
 import {AgencyID, RouteType} from "@gb-transit/gtfs-schema";
 import {ScheduleCalendar} from "../model/ScheduleCalendar";
 import {Schedule} from "../model/Schedule";
