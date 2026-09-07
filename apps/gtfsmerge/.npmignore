@@ -1,0 +1,11 @@
+node_modules/
+npm-shrinkwrap.json
+.idea/
+npm-debug.log
+src/
+test/
+tsconfig.json
+.travis.yml
+*.zip
+resource/
+*.txt
