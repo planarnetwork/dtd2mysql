@@ -1,0 +1,29 @@
+---
+/**
+ * Stations the feed carries, running past. Two identical runs, because the
+ * animation translates the rail by half its width and the second run is what
+ * occupies the space the first one leaves.
+ *
+ * The whole thing is decorative: it is one list read twice, so it is hidden
+ * from assistive technology rather than read out twice.
+ */
+const STATIONS = [
+  "PADDINGTON", "CREWE", "INVERNESS", "CARDIFF CENTRAL", "YORK", "PENZANCE",
+  "LARGS", "NORWICH", "BRISTOL TEMPLE MEADS", "MALLAIG", "CLAPHAM JUNCTION",
+  "HOLYHEAD"
+];
+---
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__rail">
+    <div class="ticker__run">
+      {STATIONS.map(station => (
+        <Fragment><span>{station}</span><span aria-hidden="true">&bull;</span></Fragment>
+      ))}
+    </div>
+    <div class="ticker__run">
+      {STATIONS.map(station => (
+        <Fragment><span>{station}</span><span aria-hidden="true">&bull;</span></Fragment>
+      ))}
+    </div>
+  </div>
+</div>

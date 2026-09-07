@@ -50,9 +50,6 @@
       "path": "./apps/gtfsmerge"
     },
     {
-      "path": "./apps/website"
-    },
-    {
       "path": "./tests"
     }
   ]

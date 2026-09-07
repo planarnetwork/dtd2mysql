@@ -1,0 +1,19 @@
+---
+import {latest, sources} from "../feed.js";
+
+// From the build rather than from here. NaPTAN is Open Government Licence v3.0,
+// which makes acknowledgement a condition of use, so a hardcoded list that
+// forgets a source is the page failing at the one thing this section is for.
+//
+// The release is fetched once per build and every component that needs it asks
+// for it, rather than the pages threading it down to the components that do.
+const listed = sources(await latest());
+---
+<dl class="rules">
+  {listed.map(source => (
+    <div>
+      <dt>{source.organisation}</dt>
+      <dd>{source.url ? <a href={source.url}>{source.licence}</a> : source.licence}</dd>
+    </div>
+  ))}
+</dl>

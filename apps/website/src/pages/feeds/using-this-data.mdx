@@ -1,8 +1,16 @@
-# Using this data
+---
+layout: ../../layouts/Doc.astro
+title: Using this data
+description: The decisions the GB rail GTFS feeds make that a consumer cannot infer from the GTFS specification - identifiers, splits and joins, service days, and the columns they add.
+section: Feeds
+sectionHref: /feeds/
+lede: The decisions this feed makes, and the behaviour they produce. Not an introduction to GTFS.
+---
 
-<p class="lede">The decisions this feed makes, and the behaviour they produce. Not an introduction to GTFS.</p>
-
-<p><a href="./">Download the feed</a></p>
+import FeedTable from "../../components/FeedTable.astro";
+import FeedFigures from "../../components/FeedFigures.astro";
+import Sources from "../../components/Sources.astro";
+import {GITHUB} from "../../site.js";
 
 The feed is built from the CIF timetable the Rail Delivery Group publishes through its DTD portal.
 CIF describes the railway in terms GTFS has no field for, so the build has to decide how to express
@@ -10,27 +18,27 @@ them. This page lists those decisions and the behaviour they produce.
 
 ## What you get
 
-Two feeds, from the same build, holding the same trips:
+Three feeds, from the same build:
 
-| feed | what it holds |
-|---|---|
-| [`gtfs.zip`]({{download}}) | where a service calls |
-| [`gtfs-passing-points.zip`]({{downloadPassingPoints}}) | where a service calls, and where it runs through without stopping |
+<FeedTable />
 
 A journey planner wants the first. Anything tracing where a train actually goes — what uses which
-line, where a delay was picked up, why two services conflict — wants the second. See
-[the passing points feed](#the-passing-points-feed).
+line, where a delay was picked up, why two services conflict — wants the second, which holds the
+same trips. See [the passing points feed](#the-passing-points-feed).
 
-Both links resolve to the most recent release, so they can be bookmarked or scripted against.
+A feed being merged with the tube and bus timetables wants the third, which has fewer trips than the
+other two. See [the National Rail only feed](#the-national-rail-only-feed).
 
-<div class="feed">{{summary}}</div>
+Every link resolves to the most recent release, so they can be bookmarked or scripted against.
+
+<FeedFigures />
 
 The release carries four JSON files as separate assets rather than inside the zips, because they
 describe the feed rather than being part of it and somebody unzipping a GTFS feed should get GTFS:
 
 | asset | what it is |
 |---|---|
-| `validation.json` | the validator's report, including every accepted error |
+| `validation.json` | the validator's report, including every accepted error. One per feed, the others suffixed as their zip is |
 | `feed-meta.json` | what was built, from what, and when |
 | `enrichment-report.json` | what each external source matched and missed |
 | `provenance.json` | every field an external source wrote, and every write that lost |
@@ -254,6 +262,24 @@ the two do not agree. A small number of passes therefore read as later than the 
 Correcting it would mean inventing a time for one of the two, so the feed reports the source as it
 is. `validation.json` names every occurrence, with the trip it is on.
 
+## The National Rail only feed
+
+The CIF is the National Rail timetable and it carries services National Rail does not hold authority
+over. `gtfs-national-rail-only.zip` leaves them out:
+
+- everything with a mode of metro, bus or ship. Rail replacement buses stay: they are the railway's
+  own answer to its own timetable failing, and nothing else publishes them;
+- everything run by `ES`, `LT`, `TW` or `ZZ` — Eurostar, London Underground, the Tyne & Wear Metro
+  and services with no operator — whatever mode it runs as. That is what takes out a London
+  Underground replacement bus, which is a replacement bus but TfL's to describe.
+
+Where those services matter, their own operators describe them better: TfL gives the NaPTAN stop a
+replacement bus calls at and the letter route code it runs under, neither of which the CIF has.
+
+Everything else is identical to `gtfs.zip`. A station left with no calls is still published — a
+tube-only station is still somewhere a ticket can be bought to — but its boarding points are not,
+because those are built from the calls.
+
 ## transfers.txt
 
 Three kinds of row share the file, distinguishable by which columns are populated:
@@ -334,8 +360,8 @@ If the feed says something wrong about a train, it is either the source data, wh
 reporting as it stands, or one of the decisions on this page. Both are worth raising: the second is
 a bug, and the first is worth a record so that the next person does not investigate it again.
 
-<p><a href="https://github.com/planarnetwork/dtd2mysql/issues">Issues and source</a></p>
+<p><a href={`${GITHUB}/issues`}>Issues and source</a></p>
 
 ## Sources and licences
 
-<dl>{{sources}}</dl>
+<Sources />

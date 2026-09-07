@@ -1,0 +1,156 @@
+---
+import Base from "../layouts/Base.astro";
+import DepartureBoard from "../components/DepartureBoard.astro";
+import FeedCard from "../components/FeedCard.astro";
+import Sources from "../components/Sources.astro";
+import Terminal from "../components/Terminal.astro";
+import Ticker from "../components/Ticker.astro";
+import {FEEDS, latest} from "../feed.js";
+import {GITHUB, OWNER, RELEASE, REPO, source} from "../site.js";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const guide = `${base}/feeds/using-this-data/`;
+
+// Only to decide whether the page can promise a download at all. What each feed
+// says about itself is the card's business.
+const meta = await latest();
+---
+<Base
+  title="GB transit"
+  description="The British rail timetable as GTFS, rebuilt every night from the Rail Delivery Group's DTD feed, validated, and published as a plain zip."
+>
+  <section class="hero">
+    <div class="pill pill--go">
+      <span class="lamp" aria-hidden="true"></span>
+      Rebuilt every night
+    </div>
+    <h1>The British rail timetable, as GTFS.</h1>
+    <p class="lede">
+      Every passenger train, sleeper, replacement bus and timetabled ferry in Great Britain &mdash;
+      converted from the industry&rsquo;s DTD feed, validated, and published as a plain zip you can
+      bookmark or script against.
+    </p>
+    <div class="actions" style="margin-top: 30px;">
+      <a class="btn btn--lg btn--signal" href={`${RELEASE}/gtfs.zip`}>Download the latest feed &rarr;</a>
+      <a class="btn btn--lg btn--ghost" href="#feeds">Compare the feeds</a>
+    </div>
+  </section>
+
+  <div class="shell">
+    <DepartureBoard />
+  </div>
+
+  <Ticker />
+
+  <section id="feeds" class="shell section">
+    <div class="heading-row">
+      <h2 class="h2">Choose your platform</h2>
+      <p>
+        Same identifiers, different level of detail.{" "}
+        <a href={`${guide}#what-you-get`}>Which to take</a> depends on what you&rsquo;re building.
+      </p>
+    </div>
+
+    <div class="cards">
+      {FEEDS.map(feed => <FeedCard feed={feed} />)}
+    </div>
+
+    <p style="margin: 22px 0 0; font-size: 15px; color: var(--ink-quiet); max-width: 70ch;">
+      Every link resolves to the most recent build, so it can be bookmarked or scripted against and
+      will never need changing.
+      {!FEEDS.every(feed => feed.published(meta)) &&
+        " A feed that has not been published yet is shown without a download link rather than with one that would not work."}
+      {" "}<a href={`${base}/feeds/`}>All three feeds in detail &rarr;</a>
+    </p>
+  </section>
+
+  <section id="contents" class="shell section">
+    <h2 class="h2">What&rsquo;s inside</h2>
+    <div class="stripes">
+      <div class="stripe stripe--signal">
+        <h3>Passenger rail</h3>
+        <p>The full national timetable, including sleeper services.</p>
+      </div>
+      <div class="stripe stripe--go">
+        <h3>Replacement buses</h3>
+        <p>Rail replacement road services as the timetable carries them.</p>
+      </div>
+      <div class="stripe stripe--sea">
+        <h3>Ferries</h3>
+        <p>The shipping legs that appear in the rail timetable.</p>
+      </div>
+      <div class="stripe stripe--quiet">
+        <h3>One source</h3>
+        <p>Everything comes from the Rail Delivery Group&rsquo;s DTD feed.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell section--tight" style="padding-top: clamp(40px, 6vw, 64px);">
+    <div class="cards cards--wide" style="margin-top: 0;">
+      <div class="card card--go">
+        <div class="eyebrow eyebrow--go">
+          <span class="lamp" aria-hidden="true"></span>
+          Checked before release
+        </div>
+        <div>
+          <h3 class="card__title--display">No broken feed ever ships</h3>
+          <p>
+            Every build runs through the{" "}
+            <a href="https://github.com/MobilityData/gtfs-validator">MobilityData validator</a> first.
+            A build with a referential integrity error is never published &mdash; you get
+            yesterday&rsquo;s good feed instead of today&rsquo;s bad one.
+          </p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Read this first</div>
+        <div>
+          <h3 class="card__title--display">The decisions made for you</h3>
+          <p>
+            Identifiers, splits and joins, service days and the extra columns are all choices the
+            GTFS specification does not make. <a href={guide}>Using this data</a> states every one
+            of them.
+          </p>
+        </div>
+        <div class="card__foot">
+          <a href={guide} style="font-weight: 600; font-size: 15px;">Read the notes &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2">Or build it yourself</h2>
+    <p style="margin: 14px 0 20px; font-size: 16.5px; color: var(--ink-body); max-width: 60ch;">
+      The tool that produces this feed is open source, and it needs no database. Point it at a DTD
+      file and it writes the zip.
+    </p>
+    <Terminal lines={[
+      "npm install -g cif2gtfs",
+      "cif2gtfs build --source RJTTFxxx.ZIP --out gtfs.zip"
+    ]} />
+    <p style="margin: 18px 0 0; font-size: 15.5px;">
+      <a href={`${base}/tools/`}>Four tools</a>
+      <span style="color: var(--ink-quiet);">
+        &mdash; for the DTD feeds, the CIF timetable, TransXChange bus data and merging feeds
+        together.
+      </span>
+    </p>
+    <p style="margin: 8px 0 0; font-size: 15.5px;">
+      <a href={GITHUB}>{OWNER}/{REPO}</a>
+      <span style="color: var(--ink-quiet);">&mdash; issues and pull requests welcome.</span>
+    </p>
+  </section>
+
+  <section class="shell section section--last">
+    <h2 class="h2 h2--sm" style="margin-bottom: 20px;">Sources and licences</h2>
+    <Sources />
+    <p style="margin: 18px 0 0; font-size: 14.5px; color: var(--ink-quiet); max-width: 70ch;">
+      Read from the build rather than written here, so this cannot credit a source the feed was not
+      built from. The list the build produced is published alongside the feed as{" "}
+      <a href={`${RELEASE}/enrichment-report.json`}><code>enrichment-report.json</code></a>, and the
+      configuration it came from is <a href={source("gtfs.config.yaml")}><code>gtfs.config.yaml</code></a>.
+    </p>
+  </section>
+</Base>

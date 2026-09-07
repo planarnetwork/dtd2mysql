@@ -1,0 +1,35 @@
+---
+import {board, FEEDS, latest, number} from "../feed.js";
+
+/**
+ * What the published feed holds, for the prose pages.
+ *
+ * The guide states shapes rather than counts everywhere else, because a figure
+ * measured against a refresh from six months ago rots in silence and nothing
+ * here would catch it. These come from the release, so they cannot.
+ */
+const feed = await latest();
+
+const rows = feed === undefined ? [] : [
+  ...board(feed),
+  ...FEEDS.flatMap(each => each.figures(feed)
+    .filter(figure => figure.label === "Stop times")
+    .map(figure => ({label: `Stop times, ${each.file}`, value: figure.value})))
+];
+
+// Trips is already on the board for the two feeds that share it; the third
+// holds its own number and is worth stating next to them.
+const only = feed?.trips_national_rail_only;
+---
+{rows.length === 0
+  ? <p><em>No feed has been published yet, so there are no figures to give.</em></p>
+  : <div class="feed-figures">
+      <dl class="rules">
+        {rows.map(row => (
+          <div><dt>{row.label}</dt><dd>{row.value}</dd></div>
+        ))}
+        {only !== undefined && (
+          <div><dt>Trips, gtfs-national-rail-only.zip</dt><dd>{number(only)}</dd></div>
+        )}
+      </dl>
+    </div>}

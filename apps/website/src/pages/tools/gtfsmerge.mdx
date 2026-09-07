@@ -1,0 +1,95 @@
+---
+layout: ../../layouts/Doc.astro
+title: gtfsmerge
+description: Merge several GTFS feeds into one, re-indexing every identifier and generating transfers between stops close enough to walk between.
+section: Tools
+sectionHref: /tools/
+lede: Merge several GTFS feeds into one, re-indexing every identifier as it goes.
+---
+
+import Terminal from "../../components/Terminal.astro";
+import {npm, source} from "../../site.js";
+
+<Terminal lines={[
+  "npm install -g gtfsmerge",
+  "gtfsmerge input1.zip input2.zip output.zip"
+]} />
+
+Every argument but the last is a feed to merge; the last is where the merged feed goes, as a `.zip`
+or a directory.
+
+## What merging does
+
+- Transfers are created between stops close enough to walk between.
+- Duplicate stops, agencies and routes are assumed to be the same and written once.
+- Calendars, calendar dates, routes, trips and stop times are re-indexed.
+- Identical calendars are merged into a single entry.
+- Calendars and calendar dates in the past are removed, along with their trips.
+- A calendar date with no calendar has one synthesised for it.
+- Unused stops are removed, and a transfer to one goes with it.
+- A call at a platform becomes a call at the station above it.
+- A `transfer_type` 4 coupling is carried through, pointing at the renumbered trips.
+- Routes can be removed by type.
+
+Fares files are not processed. Raise an issue if you would like that.
+
+## Options
+
+The distance in kilometres within which transfers are generated for nearby stops:
+
+```
+gtfsmerge --transfer-distance 2 input1.zip input2.zip output.zip
+```
+
+Routes can be removed based on their type:
+
+```
+gtfsmerge --remove-route-types 0,1,4 input1.zip input2.zip output.zip
+```
+
+Anything that finished before today is dropped. `--no-date-filter` keeps it all; `--date-filter`
+pins the cutoff, which is what you want for a reproducible merge:
+
+```
+gtfsmerge --date-filter 20260601 input1.zip input2.zip output.zip
+```
+
+Generated transfer distances use a flat-earth approximation calibrated at one latitude, 54 by
+default, which is the middle of Great Britain. Elsewhere:
+
+```
+gtfsmerge --ruler-latitude 40 input1.zip input2.zip output.zip
+```
+
+`gtfsmerge --help` lists everything.
+
+## Stop identity
+
+Stops with the same id in different feeds are assumed to be the same stop, which is usually what you
+want: a GB rail feed from <a href="../cif2gtfs/">`cif2gtfs`</a> and a GB bus feed from
+<a href="../transxchange2gtfs/">`transxchange2gtfs`</a> both name a stop by its ATCO code, so they
+merge without any reconciliation.
+
+Where two feeds genuinely disagree, prefix one of them first:
+
+```
+gtfsmerge --stop-prefix input1_ input1.zip modified-input1.zip
+gtfsmerge modified-input1.zip input2.zip output.zip
+```
+
+## Memory
+
+A whole feed is held in memory while it is merged, so `bin/gtfsmerge.sh` runs node with
+`--max-old-space-size=8000`. `stop_times.txt` is the only file that has to be buffered, and only
+because the stop times cannot be renumbered until the trips have been — a two-pass read would
+remove the largest allocation in the tool.
+
+## Requirements
+
+Node.js 22 or later. No `zip` binary is needed — the archive is written in process.
+
+<p>
+  <a href={npm("gtfsmerge")}>gtfsmerge on npm</a> ·
+  <a href={source("apps/gtfsmerge")}>source</a> ·
+  GPL v3
+</p>

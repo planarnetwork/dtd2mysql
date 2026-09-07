@@ -1,0 +1,22 @@
+---
+import {GITHUB, ORG, OWNER, REPO} from "../site.js";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+<footer class="footer">
+  <div class="footer__row">
+    <div class="footer__mark">
+      gb&#8209;transit &mdash; a <a href={ORG}>Planar Network</a> project
+    </div>
+    <nav aria-label="Footer">
+      <a href={`${base}/feeds/`}>Feeds</a>
+      <a href={`${base}/feeds/using-this-data/`}>Using this data</a>
+      <a href={`${base}/tools/`}>Tools</a>
+      <a href={GITHUB}>{OWNER}/{REPO}</a>
+    </nav>
+  </div>
+  <div class="footer__small">
+    Mind the gap between the specification and reality. Timetable data is supplied under licence;
+    this site is not affiliated with any train operating company.
+  </div>
+</footer>

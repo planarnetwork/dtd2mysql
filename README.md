@@ -15,8 +15,8 @@ The repository also builds and publishes that GTFS feed nightly.
 
 If you want the data rather than the tools, you do not need to run anything:
 
-**[planarnetwork.github.io/dtd2mysql](https://planarnetwork.github.io/dtd2mysql)** — the download
-page, with the coverage window and what the current feed was built from.
+**[planarnetwork.github.io/gb-transit](https://planarnetwork.github.io/gb-transit/)** — the site,
+with the coverage window, what the current feed was built from, and a page for each tool.
 
 | | |
 |---|---|
@@ -30,8 +30,9 @@ fails validation is not published.
 
 The feed makes decisions a consumer cannot infer from the GTFS specification — identifiers, splits
 and joins, service days, the columns it adds.
-**[Using this data](https://planarnetwork.github.io/dtd2mysql/using-this-data.html)** states them.
-Its source is [`apps/website/content/using-this-data.md`](apps/website/content/using-this-data.md).
+**[Using this data](https://planarnetwork.github.io/gb-transit/feeds/using-this-data/)** states
+them. Its source is
+[`apps/website/src/pages/feeds/using-this-data.mdx`](apps/website/src/pages/feeds/using-this-data.mdx).
 
 ## The tools
 
