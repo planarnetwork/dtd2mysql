@@ -12,7 +12,7 @@
       "path": "../libs/gtfs-schema"
     },
     {
-      "path": "../libs/gtfs-read"
+      "path": "../libs/gtfs-loader"
     },
     {
       "path": "../libs/gtfs-output"

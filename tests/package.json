@@ -11,8 +11,8 @@
     "node": ">=26"
   },
   "devDependencies": {
+    "@gb-transit/gtfs-loader": "workspace:^",
     "@gb-transit/gtfs-output": "workspace:^",
-    "@gb-transit/gtfs-read": "workspace:^",
     "@gb-transit/gtfs-schema": "workspace:^",
     "cif2gtfs": "workspace:^",
     "fflate": "^0.8.3",

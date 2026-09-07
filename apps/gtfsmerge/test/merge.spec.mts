@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
-import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
+import {loadGTFS, FeedFileName} from "@gb-transit/gtfs-loader";
 import {TransferType} from "@gb-transit/gtfs-schema";
 import {merge} from "../src/api.js";
 
@@ -23,7 +23,7 @@ const golden = path.join(fixtures, "golden");
 const TODAY = "20260601";
 
 let built: string;
-let rows: Awaited<ReturnType<typeof readFeedRows>>;
+let rows: Awaited<ReturnType<typeof loadGTFS<FeedFileName>>>;
 
 const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
 
@@ -73,7 +73,7 @@ beforeAll(async () => {
     entries[file] = strToU8(fs.readFileSync(path.join(output, file), "utf8"));
   }
 
-  rows = await readFeedRows(zipSync(entries));
+  rows = await loadGTFS(zipSync(entries), {raw: true});
 }, 60_000);
 
 describe("the tiny fixtures", () => {

@@ -457,8 +457,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@gb-transit/e2e@workspace:tests"
   dependencies:
+    "@gb-transit/gtfs-loader": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
-    "@gb-transit/gtfs-read": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
     cif2gtfs: "workspace:^"
     fflate: "npm:^0.8.3"
@@ -517,18 +517,6 @@ __metadata:
     "@gb-transit/gtfs-schema": "workspace:^"
     "@types/adm-zip": "npm:0.5.8"
     adm-zip: "npm:0.6.0"
-    typescript: "npm:7.0.2"
-  languageName: unknown
-  linkType: soft
-
-"@gb-transit/gtfs-read@workspace:^, @gb-transit/gtfs-read@workspace:libs/gtfs-read":
-  version: 0.0.0-use.local
-  resolution: "@gb-transit/gtfs-read@workspace:libs/gtfs-read"
-  dependencies:
-    "@gb-transit/gtfs-loader": "workspace:^"
-    "@gb-transit/gtfs-output": "workspace:^"
-    "@gb-transit/gtfs-schema": "workspace:^"
-    fflate: "npm:^0.8.3"
     typescript: "npm:7.0.2"
   languageName: unknown
   linkType: soft
@@ -1280,8 +1268,8 @@ __metadata:
     "@gb-transit/enrich-naptan": "workspace:^"
     "@gb-transit/extend-station-groups": "workspace:^"
     "@gb-transit/gtfs": "workspace:^"
+    "@gb-transit/gtfs-loader": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
-    "@gb-transit/gtfs-read": "workspace:^"
     fflate: "npm:^0.8.3"
     typescript: "npm:7.0.2"
     yaml: "npm:^2.9.0"
@@ -1753,8 +1741,8 @@ __metadata:
   resolution: "gtfsmerge@workspace:apps/gtfsmerge"
   dependencies:
     "@gb-transit/gtfs": "workspace:^"
+    "@gb-transit/gtfs-loader": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
-    "@gb-transit/gtfs-read": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
     cheap-ruler: "npm:3.0.2"
     fflate: "npm:^0.8.3"
@@ -2701,8 +2689,8 @@ __metadata:
   resolution: "transxchange2gtfs@workspace:apps/transxchange2gtfs"
   dependencies:
     "@gb-transit/gtfs": "workspace:^"
+    "@gb-transit/gtfs-loader": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
-    "@gb-transit/gtfs-read": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
     "@gb-transit/naptan": "workspace:^"
     "@gb-transit/txc-source": "workspace:^"

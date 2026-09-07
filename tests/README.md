@@ -20,7 +20,7 @@ The three producers, in sequence, over the fixtures they each commit:
 cif2gtfs           the mini DTD timetable  ->  a rail feed
 transxchange2gtfs  the mini TransXChange   ->  a bus feed
 gtfsmerge          both of those           ->  one feed
-gtfs-read          the merged feed         ->  the assertions
+gtfs-loader        the merged feed         ->  the assertions
 ```
 
 The assertion it exists for is the last one: **a passenger can walk from the train at Amersham to

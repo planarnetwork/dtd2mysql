@@ -46,7 +46,7 @@
     "test": "vitest run"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=26"
   },
   "devDependencies": {
     "typescript": "7.0.2"

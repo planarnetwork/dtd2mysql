@@ -41,8 +41,8 @@
   },
   "dependencies": {
     "@gb-transit/gtfs": "workspace:^",
+    "@gb-transit/gtfs-loader": "workspace:^",
     "@gb-transit/gtfs-output": "workspace:^",
-    "@gb-transit/gtfs-read": "workspace:^",
     "@gb-transit/gtfs-schema": "workspace:^",
     "cheap-ruler": "3.0.2"
   },

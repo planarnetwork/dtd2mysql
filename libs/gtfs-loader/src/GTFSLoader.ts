@@ -5,6 +5,8 @@ import { FeedBuilder } from "./FeedBuilder.js";
 import { type LoadOptions, ProgressReporter } from "./Progress.js";
 import { type GTFSSource, sizeOf, toChunks } from "./Source.js";
 import { readZip } from "./ZipReader.js";
+import type { FeedFileName, FeedRowTypes } from "./FeedFile.js";
+import { readFeedRows } from "./ReadFeed.js";
 
 /**
  * Returns the contents of a GTFS zip.
@@ -16,7 +18,42 @@ import { readZip } from "./ZipReader.js";
  * Stops are returned as the feed gives them. Resolving them to the stations the algorithm plans
  * between is done when the timetable is created.
  */
-export async function loadGTFS(source: GTFSSource, options: LoadOptions = {}): Promise<GTFSFeed> {
+/**
+ * A feed as the rows it was written as, keyed by file.
+ */
+export type RawFeed<F extends FeedFileName = FeedFileName> = {[K in F]: FeedRowTypes[K][]};
+
+export interface RawOptions<F extends FeedFileName = FeedFileName> extends LoadOptions {
+  /**
+   * Give back the rows rather than a timetable: every column, values as the file
+   * held them, nothing interpreted.
+   *
+   * What a tool that rewrites a feed wants. The default reads a feed into what a
+   * journey planner plans over - times as seconds, calls indexed by stop, six of
+   * the ten columns of stop_times.txt - which is lossy on purpose and no use if
+   * you mean to write the feed back out.
+   */
+  raw: true;
+  /** Which files to read. Anything else is not decompressed. Defaults to all. */
+  files?: readonly F[];
+}
+
+export function loadGTFS(source: GTFSSource, options?: LoadOptions): Promise<GTFSFeed>;
+export function loadGTFS<F extends FeedFileName>(
+  source: GTFSSource,
+  options: RawOptions<F>
+): Promise<RawFeed<F>>;
+
+export function loadGTFS(
+  source: GTFSSource,
+  options: LoadOptions | RawOptions = {}
+): Promise<GTFSFeed | RawFeed> {
+  return "raw" in options && options.raw
+    ? readFeedRows(source, (options as RawOptions).files)
+    : loadTimetable(source, options);
+}
+
+async function loadTimetable(source: GTFSSource, options: LoadOptions = {}): Promise<GTFSFeed> {
   const builder = new FeedBuilder();
   const progress = new ProgressReporter(options, sizeOf(source));
   let found = 0;

@@ -2,7 +2,7 @@ import {
   AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, FixedLinkRow,
   GTFS_COLUMNS, RouteRow, ShapeRow, StopAreaRow, StopRow, StopTimeRow, TransferRow, TripRow
 } from "@gb-transit/gtfs-schema";
-import {Row} from "@gb-transit/gtfs-loader";
+import {Row} from "./CSVParser.js";
 
 /**
  * The files this reads, and the row each is read into.

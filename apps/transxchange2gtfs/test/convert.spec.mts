@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
-import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
+import {loadGTFS, FeedFileName} from "@gb-transit/gtfs-loader";
 import {RouteType, TransferType} from "@gb-transit/gtfs-schema";
 import {convert} from "../src/api.js";
 
@@ -26,7 +26,7 @@ const fixtures = path.join(import.meta.dirname, "..", "fixtures", "mini");
 const golden = path.join(fixtures, "golden");
 
 let built: string;
-let rows: Awaited<ReturnType<typeof readFeedRows>>;
+let rows: Awaited<ReturnType<typeof loadGTFS<FeedFileName>>>;
 
 const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
 
@@ -59,7 +59,7 @@ beforeAll(async () => {
     entries[file] = strToU8(fs.readFileSync(path.join(built, file), "utf8"));
   }
 
-  rows = await readFeedRows(zipSync(entries));
+  rows = await loadGTFS(zipSync(entries), {raw: true});
 }, 60_000);
 
 describe("the mini fixture", () => {

@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
-import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
+import {loadGTFS, FeedFileName} from "@gb-transit/gtfs-loader";
 import {RouteType, TransferType} from "@gb-transit/gtfs-schema";
 import {build as buildRail} from "cif2gtfs";
 import {convert as buildBus} from "transxchange2gtfs";
@@ -15,7 +15,7 @@ import {merge} from "gtfsmerge";
  *   cif2gtfs           the mini DTD timetable  ->  a rail feed
  *   transxchange2gtfs  the mini TransXChange   ->  a bus feed
  *   gtfsmerge          both of those           ->  one feed
- *   gtfs-read          the merged feed         ->  these assertions
+ *   gtfs-loader        the merged feed         ->  these assertions
  *
  * This is the only test that can exist here rather than in one of the three
  * projects, and it is the reason they are in one repository. Each of them has
@@ -35,7 +35,7 @@ const TODAY = "2026-08-10";
 
 let work: string;
 let merged: string;
-let rows: Awaited<ReturnType<typeof readFeedRows>>;
+let rows: Awaited<ReturnType<typeof loadGTFS<FeedFileName>>>;
 
 const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
 
@@ -94,7 +94,7 @@ beforeAll(async () => {
     entries[file] = strToU8(fs.readFileSync(path.join(merged, file), "utf8"));
   }
 
-  rows = await readFeedRows(zipSync(entries));
+  rows = await loadGTFS(zipSync(entries), {raw: true});
 }, 120_000);
 
 describe("a rail feed and a bus feed merged", () => {

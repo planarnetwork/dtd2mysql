@@ -4,7 +4,7 @@
 
 // The feed, and the two ways in
 export { GTFSFetchError, loadGTFS, loadGTFSFromUrl } from "./GTFSLoader.js";
-export type { FeedInfo, FetchOptions, GTFSFeed } from "./GTFSLoader.js";
+export type { FeedInfo, FetchOptions, GTFSFeed, RawFeed, RawOptions } from "./GTFSLoader.js";
 export { sizeOf, toChunks } from "./Source.js";
 export type { GTFSSource } from "./Source.js";
 export { ProgressReporter } from "./Progress.js";
@@ -28,7 +28,16 @@ export { coupledTripIds, linkTrips } from "./LinkedTrips.js";
 export { isCall, normalise } from "./Normalise.js";
 export type { TimetableInput } from "./Normalise.js";
 
-// The parts, for a caller that wants to read a feed some other way
+// The same feed as the rows it was written as - loadGTFS(source, {raw: true}).
+// readFeed is what that is built on, for a caller that wants the rows one at a
+// time rather than all of them: a national feed's stop_times.txt is three
+// million rows, and holding them to index them holds them twice.
+export { readFeed, readFeedRows } from "./ReadFeed.js";
+export type { FeedHandlers, ReadFeedOptions } from "./ReadFeed.js";
+export { FEED_FILES, READ_COLUMNS, feedFileOf, toRow } from "./FeedFile.js";
+export type { FeedFileName, FeedRowTypes } from "./FeedFile.js";
+
+// The parts both of those are built from
 export { CSVParser } from "./CSVParser.js";
 export type { Row } from "./CSVParser.js";
 export { COLUMNS, entityTypeOf } from "./EntityType.js";

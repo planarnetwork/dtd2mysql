@@ -2,7 +2,7 @@ import {
   AgencyRow, CalendarDateRow, CalendarRow, FixedLinkRow, RouteRow, StopID, StopRow, StopTimeRow,
   TransferRow, TransferType, TripRow
 } from "@gb-transit/gtfs-schema";
-import {readFeed} from "@gb-transit/gtfs-read";
+import {readFeed} from "@gb-transit/gtfs-loader";
 import * as fs from "fs";
 
 /**

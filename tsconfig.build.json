@@ -29,9 +29,6 @@
       "path": "./libs/gtfs-loader/tsconfig.esm.json"
     },
     {
-      "path": "./libs/gtfs-read"
-    },
-    {
       "path": "./libs/naptan"
     },
     {
