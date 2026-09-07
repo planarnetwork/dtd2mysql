@@ -1,4 +1,5 @@
 import {describe, it, expect} from "vitest";
+import {Temporal} from "temporal-polyfill";
 import {DatabaseConnection} from "../database/DatabaseConnection";
 import {MySqlTimetableSource} from "./MySqlTimetableSource";
 import {Pool} from "mysql2";

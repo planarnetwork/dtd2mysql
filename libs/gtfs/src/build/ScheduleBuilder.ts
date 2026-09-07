@@ -1,3 +1,4 @@
+import {Temporal} from "temporal-polyfill";
 import {IdGenerator, STP} from "../model/OverlayRecord";
 import {Schedule, tripId} from "../model/Schedule";
 import {PickupDropOffType, RouteType, StopTime} from "@gb-transit/gtfs-schema";

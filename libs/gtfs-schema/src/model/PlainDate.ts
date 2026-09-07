@@ -3,6 +3,8 @@
  * The Temporal.PlainDate operations this project needs that Temporal itself does not provide.
  */
 
+import { Temporal } from "temporal-polyfill";
+
 import type { DayOfWeek } from "./DayOfWeek.js";
 
 export type { DayOfWeek };

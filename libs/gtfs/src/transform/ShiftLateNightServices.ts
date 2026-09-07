@@ -1,3 +1,4 @@
+import type {Temporal} from "temporal-polyfill";
 import {Schedule} from "../model/Schedule";
 import {STP} from "../model/OverlayRecord";
 import {AgencyID, dayOfWeek} from "@gb-transit/gtfs-schema";

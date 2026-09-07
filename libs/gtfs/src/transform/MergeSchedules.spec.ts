@@ -1,4 +1,5 @@
 import {describe, it, expect} from 'vitest';
+import {Temporal} from 'temporal-polyfill';
 import {STP} from "../model/OverlayRecord";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyOverlays} from "../transform/ApplyOverlays";

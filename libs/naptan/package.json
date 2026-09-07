@@ -27,7 +27,7 @@
     "test": "vitest run"
   },
   "engines": {
-    "node": ">=26"
+    "node": ">=22"
   },
   "dependencies": {
     "csv-parse": "^7.0.2"

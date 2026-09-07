@@ -127,7 +127,10 @@ yarn install
 yarn test
 ```
 
-Node 26, as [`.nvmrc`](.nvmrc) pins it.
+Node 26 to develop on, as [`.nvmrc`](.nvmrc) pins it. What the packages themselves need is Node 22,
+which is what CI runs alongside 26: Temporal comes from
+[`temporal-polyfill`](https://www.npmjs.com/package/temporal-polyfill), which defers to the built-in
+global wherever there is one, so both the polyfilled and the native path are exercised.
 
 [`apps/cif2gtfs/fixtures/mini`](apps/cif2gtfs/fixtures/mini) holds a small slice of a real feed and
 the GTFS it produces, committed as text. The test suite builds it and diffs, so a change in the

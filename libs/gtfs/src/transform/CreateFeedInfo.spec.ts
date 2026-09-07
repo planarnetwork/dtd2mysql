@@ -1,4 +1,5 @@
 import {describe, it, expect} from "vitest";
+import {Temporal} from "temporal-polyfill";
 import {createFeedInfo} from "./CreateFeedInfo";
 import {Calendar, CalendarDate} from "@gb-transit/gtfs-schema";
 import {DateRange} from "../build/BuildContext";

@@ -21,7 +21,7 @@ There are other [similar projects](https://github.com/search?q=transxchange+gtfs
 
 ## Installation
 
-Requires [node 26](https://nodejs.org) or above. No `zip` or `unzip` binary is needed — archives
+Requires [node 22](https://nodejs.org) or above. No `zip` or `unzip` binary is needed — archives
 are read and written in process, so this runs on Windows.
 
 transxchange2gtfs is a CLI tool that can be installed via NPM:

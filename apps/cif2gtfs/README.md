@@ -15,8 +15,9 @@ yarn workspace cif2gtfs run start build --source RJTTF918.ZIP --out gtfs.zip
 
 ## Requirements
 
-Node.js 26 or later. Date handling uses the built-in `Temporal` API, which is only available as a
-global from Node 26 onwards.
+Node.js 22 or later. Date handling uses `Temporal`, through
+[`temporal-polyfill`](https://www.npmjs.com/package/temporal-polyfill), which hands over to the
+built-in global on the versions that have one - Node 26 and later.
 
 ## Usage
 

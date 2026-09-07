@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ['26']
+        # Both sides of the Temporal polyfill: 22 is the engine floor and has no
+        # Temporal of its own, so it runs the polyfill's implementation, while 26
+        # ships Temporal as a global and the polyfill defers to it. A date bug
+        # that only appears on one of them is otherwise invisible here.
+        version: ['22', '26']
       fail-fast: false
     steps:
       # Deep, because the baseline guard diffs against the branch point and a
