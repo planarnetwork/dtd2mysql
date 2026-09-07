@@ -11,11 +11,11 @@ import {schema} from "./schema";
  * column and reports nothing - which is what `stops.txt` did until the ATCO
  * codes landed and somebody looked.
  *
- * The golden feed belongs to dtd2gtfs, which is the only committed example of
+ * The golden feed belongs to cif2gtfs, which is the only committed example of
  * what this build produces. Reading it across the workspace is the point: the
  * two have to match.
  */
-const golden = path.join(__dirname, "..", "..", "..", "dtd2gtfs", "fixtures", "mini", "golden");
+const golden = path.join(__dirname, "..", "..", "..", "cif2gtfs", "fixtures", "mini", "golden");
 
 /**
  * The files LOAD DATA reads, and the columns each statement gives them. A

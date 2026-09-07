@@ -109,7 +109,7 @@ restructure has landed. See §2 and C4.
 apps/
   website/
   dtd2mysql/
-  dtd2gtfs/
+  cif2gtfs/
 libs/
   feed-parser/
   dtd-schema/
@@ -123,7 +123,7 @@ libs/
   enrich-darwin/
 ```
 
-Libs publish as `@gb-transit/*`. The two CLI apps publish bare: `dtd2mysql` and `dtd2gtfs`.
+Libs publish as `@gb-transit/*`. The two CLI apps publish bare: `dtd2mysql` and `cif2gtfs`.
 
 A second storage app (`dtd2postgres`, or any other backend) slots in beside `dtd2mysql` without
 moving anything, but is not built in this pass.
@@ -139,7 +139,7 @@ libs/gtfs-output        →  gtfs
 libs/enrich-*           →  gtfs
 
 apps/dtd2mysql          →  feed-parser, dtd-schema, dtd-source, gtfs, gtfs-output
-apps/dtd2gtfs           →  dtd-source, gtfs, gtfs-output, enrich-*
+apps/cif2gtfs           →  dtd-source, gtfs, gtfs-output, enrich-*
 apps/website            →  (none; consumes build artifacts)
 ```
 
@@ -178,7 +178,7 @@ dependencies.
 
 `libs/dtd-source` therefore depends on `gtfs`: it does download and zip handling **and** provides
 `CifFileSource`, a `TimetableSource` reading the feed files directly. That is what makes
-`dtd2gtfs` databaseless.
+`cif2gtfs` databaseless.
 
 ### The two SPIs
 
@@ -498,14 +498,14 @@ referenced MSN A-records **including the header line**, and matching ALF/FLF/ZTR
 
 The slicer itself is not in the repository. It needs a real refresh to cut from, which is not
 committed either, and it runs once per fixture rather than on every build. What is committed is its
-output and, in `apps/dtd2gtfs/fixtures/mini/README.md`, the seeds and the source feed it came from,
+output and, in `apps/cif2gtfs/fixtures/mini/README.md`, the seeds and the source feed it came from,
 so the same slice can be cut again.
 
 **T5 · Mini fixture, committed golden, PR job** *(depends T2, T3, T4)* — **done, partly**
 Fixture and golden text files committed; the build runs and diffs on every pull request.
 Every case in the Layer 2 list has a named test asserting the specific behaviour, not just the diff.
 
-`apps/dtd2gtfs/src/build.spec.ts` builds the fixture at a pinned `--today` and compares all nine
+`apps/cif2gtfs/src/build.spec.ts` builds the fixture at a pinned `--today` and compares all nine
 files against the committed golden, byte for byte - which T3 is what makes readable. It runs in the
 ordinary test job: the file source needs no database, so this is the first end-to-end coverage the
 build has had in CI at all. `UPDATE_GOLDEN=1 yarn vitest run` takes a change.
@@ -1262,7 +1262,7 @@ patch safe to merge, and should be built before it arrives.
 
 **A5 · Extract `@gb-transit/dtd-source`** *(depends A3)* — **done**
 SFTP client and download sequencing moved. **The last-processed cursor must no longer come from the
-`log` table** — `DownloadCommand.getLastProcessedFile()` queries MySQL, which `dtd2gtfs` will not
+`log` table** — `DownloadCommand.getLastProcessedFile()` queries MySQL, which `cif2gtfs` will not
 have. Introduce a `FeedCursor` interface with a `Storage`-backed implementation for the DB apps and
 a file or no-op implementation for one-shot.
 
@@ -1357,8 +1357,8 @@ so F1's sharding helps both equally. Only the finished Schedules are kept - each
 rows become a Schedule as soon as its stops end and are then dropped, because holding 2.9 million of
 them as well roughly doubles it.
 
-**C3 · `apps/dtd2gtfs`** *(depends C2, A7)* — **done, published at 1.0.0**
-`dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
+**C3 · `apps/cif2gtfs`** *(depends C2, A7)* — **done, published at 1.0.0**
+`cif2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"`. No database dependency in
 the tree.
 
 It was private until the condition this ticket set was met - a nightly feed to point people at, from
@@ -1451,7 +1451,7 @@ with one. `provenance.json` is written only when an enricher ran.
 
 **D2 · Build config format and CLI wiring** *(depends D1, C3)* — **done**
 `gtfs.config.yaml` selecting source, out, today, range, links, licence tier, enrichers and
-extensions. `dtd2gtfs build --config`. A flag given as well wins, so a config is a starting point
+extensions. `cif2gtfs build --config`. A flag given as well wins, so a config is a starting point
 rather than a commitment, and `today` and `range` reach `buildContext` the same way the environment
 does so precedence is decided in one place.
 
@@ -1473,7 +1473,7 @@ a list that turns away everything an enricher does is visible rather than a conf
 enabling a source and does nothing.
 
 Enrichers are sorted by key when parsed, so the same config produces the same build however it was
-typed. `yaml` is a real dependency of `apps/dtd2gtfs` now; the validator itself takes a parsed object
+typed. `yaml` is a real dependency of `apps/cif2gtfs` now; the validator itself takes a parsed object
 and has none, so it is testable without it.
 
 **D3 · `@gb-transit/enrich-naptan`** *(depends D1)* — **done**, coordinates only
@@ -1566,7 +1566,7 @@ of them.
 tension. NaPTAN writes over the file's values at priority 50 whenever it is configured, so a build
 that runs it already gets NaPTAN's answer for every field NaPTAN has - the coordinates today and the
 names on `options: {names: true}`. The file is what a build with **no enrichers** falls back to, and
-that is the library default: `dtd2gtfs` must produce a usable feed without a network fetch, so
+that is the library default: `cif2gtfs` must produce a usable feed without a network fetch, so
 deleting the fallback would make NaPTAN mandatory in practice.
 
 This also settles the reviews the ticket was waiting on. `docs/coordinate-review.md` lists 125

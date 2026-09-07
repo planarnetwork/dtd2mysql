@@ -35,7 +35,7 @@ const feed = fs.mkdtempSync(path.join(os.tmpdir(), "validate"));
 const out = fs.mkdtempSync(path.join(os.tmpdir(), "validate-report"));
 
 await build([
-  "node", "dtd2gtfs", "build",
+  "node", "cif2gtfs", "build",
   "--source", path.join(fixtures, "RJTTF001.ZIP"),
   "--out", feed,
   "--today", TODAY

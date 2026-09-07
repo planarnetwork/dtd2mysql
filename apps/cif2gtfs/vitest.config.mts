@@ -1,3 +1,3 @@
 import {project} from "../../vitest.shared.mjs";
 
-export default project("dtd2gtfs");
+export default project("cif2gtfs");

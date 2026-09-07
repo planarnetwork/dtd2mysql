@@ -7,7 +7,7 @@ The baselines capture *current* behaviour, defects included. That is the point: 
 normal path for a correctness fix, and the diff is the evidence the fix did what it claimed. The
 requirement is that it is deliberate and explained, not that it is rare.
 
-Add an entry to the top. `UPDATE_GOLDEN=1 yarn vitest run apps/dtd2gtfs` regenerates the mini
+Add an entry to the top. `UPDATE_GOLDEN=1 yarn vitest run apps/cif2gtfs` regenerates the mini
 golden; `UPDATE_SURFACE=1 yarn vitest run libs/gtfs` regenerates the type surface. **Read the diff
 before committing it** - that is the whole value of the file being text.
 

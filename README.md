@@ -38,16 +38,16 @@ dtd2mysql --timetable /path/to/RJTTFxxx.ZIP
 dtd2mysql --gtfs-zip gtfs.zip
 ```
 
-`dtd2gtfs` builds the same feed — byte for byte — straight from the feed files with no database:
+`cif2gtfs` builds the same feed — byte for byte — straight from the feed files with no database:
 
 ```
-npm install -g dtd2gtfs
-dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
+npm install -g cif2gtfs
+cif2gtfs build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
 Full command line documentation is in each app's README:
 **[`apps/dtd2mysql`](apps/dtd2mysql/README.md)** for the importer,
-**[`apps/dtd2gtfs`](apps/dtd2gtfs/README.md)** for the one-shot build.
+**[`apps/cif2gtfs`](apps/cif2gtfs/README.md)** for the one-shot build.
 
 ## Packages
 
@@ -59,7 +59,7 @@ README describing what it is for and how to use it.
 | Package | Published as | What it is |
 |---|---|---|
 | [`apps/dtd2mysql`](apps/dtd2mysql/README.md) | `dtd2mysql` | Import the feeds into MySQL, and export GTFS from it |
-| [`apps/dtd2gtfs`](apps/dtd2gtfs/README.md) | `dtd2gtfs` | Build a GTFS feed straight from the feed files, no database |
+| [`apps/cif2gtfs`](apps/cif2gtfs/README.md) | `cif2gtfs` | Build a GTFS feed straight from the feed files, no database |
 | [`apps/website`](apps/website/README.md) | — | The download page and the guide, deployed to GitHub Pages |
 
 ### Libraries
@@ -94,7 +94,7 @@ references and makes it incremental.
 | [`docs/restructure.md`](docs/restructure.md) | Where this is going and why it is shaped like this |
 | [`docs/station-names.md`](docs/station-names.md) | Where NaPTAN and the override table disagree about a station's name |
 | [`docs/coordinate-review.md`](docs/coordinate-review.md) | Stations whose two coordinate sources differ by more than 100 m |
-| [`apps/dtd2gtfs/fixtures/BASELINE.md`](apps/dtd2gtfs/fixtures/BASELINE.md) | Why the committed output last changed, entry by entry |
+| [`apps/cif2gtfs/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why the committed output last changed, entry by entry |
 
 ## Contributing
 
@@ -108,11 +108,11 @@ yarn test
 
 Node 26, as [`.nvmrc`](.nvmrc) pins it.
 
-[`apps/dtd2gtfs/fixtures/mini`](apps/dtd2gtfs/fixtures/mini) holds a small slice of a real feed and
+[`apps/cif2gtfs/fixtures/mini`](apps/cif2gtfs/fixtures/mini) holds a small slice of a real feed and
 the GTFS it produces, committed as text. The test suite builds it and diffs, so a change in the
 feed's behaviour shows up in review as a readable diff rather than as a hash that moved. To take a
 change, run `UPDATE_GOLDEN=1 yarn vitest run`, read the diff, and record why it moved in
-[`BASELINE.md`](apps/dtd2gtfs/fixtures/BASELINE.md) — CI requires an entry.
+[`BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) — CI requires an entry.
 
 Anything that should reach a user needs a changeset: run `yarn changeset`, pick the bump type, and
 commit the file it writes. A pull request with no changeset publishes nothing, which is the right

@@ -133,7 +133,7 @@ describe("groupsFromFeed", () => {
   // real feed is 46 MB and gitignored, which would leave this path covered by
   // nothing.
   const fixture = path.join(
-    __dirname, "..", "..", "..", "apps", "dtd2gtfs", "fixtures", "mini", "RJFAF001.ZIP"
+    __dirname, "..", "..", "..", "apps", "cif2gtfs", "fixtures", "mini", "RJFAF001.ZIP"
   );
 
   it("reads the groups out of a fares zip", async () => {

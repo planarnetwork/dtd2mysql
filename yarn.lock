@@ -1172,6 +1172,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cif2gtfs@workspace:apps/cif2gtfs":
+  version: 0.0.0-use.local
+  resolution: "cif2gtfs@workspace:apps/cif2gtfs"
+  dependencies:
+    "@gb-transit/dtd-source": "workspace:^"
+    "@gb-transit/enrich-naptan": "workspace:^"
+    "@gb-transit/extend-station-groups": "workspace:^"
+    "@gb-transit/gtfs": "workspace:^"
+    "@gb-transit/gtfs-output": "workspace:^"
+    typescript: "npm:7.0.2"
+    yaml: "npm:^2.9.0"
+  bin:
+    cif2gtfs: bin/cif2gtfs.sh
+  languageName: unknown
+  linkType: soft
+
 "convert-source-map@npm:^2.0.0":
   version: 2.0.0
   resolution: "convert-source-map@npm:2.0.0"
@@ -1257,22 +1273,6 @@ __metadata:
   checksum: 10c0/dcac00920a4d503e38bb64001acb19df4efc14536ada475725e12f52c16777afdee4db827f55f13a908ee7efc0cb282e2e3dbaeeb98c0993dd93d1802d3bf00c
   languageName: node
   linkType: hard
-
-"dtd2gtfs@workspace:apps/dtd2gtfs":
-  version: 0.0.0-use.local
-  resolution: "dtd2gtfs@workspace:apps/dtd2gtfs"
-  dependencies:
-    "@gb-transit/dtd-source": "workspace:^"
-    "@gb-transit/enrich-naptan": "workspace:^"
-    "@gb-transit/extend-station-groups": "workspace:^"
-    "@gb-transit/gtfs": "workspace:^"
-    "@gb-transit/gtfs-output": "workspace:^"
-    typescript: "npm:7.0.2"
-    yaml: "npm:^2.9.0"
-  bin:
-    dtd2gtfs: bin/dtd2gtfs.sh
-  languageName: unknown
-  linkType: soft
 
 "dtd2mysql@workspace:apps/dtd2mysql":
   version: 0.0.0-use.local

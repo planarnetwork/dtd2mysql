@@ -1,16 +1,16 @@
-# dtd2gtfs
+# cif2gtfs
 
 Build a GTFS feed from the CIF timetable in the British rail DTD feed. No database, one command.
 
 ```
-npm install -g dtd2gtfs
-dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
+npm install -g cif2gtfs
+cif2gtfs build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
 Or from a clone:
 
 ```
-yarn workspace dtd2gtfs run start build --source RJTTF918.ZIP --out gtfs.zip
+yarn workspace cif2gtfs run start build --source RJTTF918.ZIP --out gtfs.zip
 ```
 
 ## Requirements
@@ -21,7 +21,7 @@ global from Node 26 onwards.
 ## Usage
 
 ```
-dtd2gtfs build [OPTIONS]
+cif2gtfs build [OPTIONS]
 
   --source PATH        a DTD timetable zip, or a directory of them. Repeat it to
                        combine sources
@@ -38,7 +38,7 @@ The DTD feed is published as a weekly full refresh followed by daily incremental
 order they were published and the result is the same as importing them in that order:
 
 ```
-dtd2gtfs build \
+cif2gtfs build \
   --source RJTTF918.ZIP \
   --source RJTTC919.ZIP \
   --source RJTTC920.ZIP \
@@ -48,7 +48,7 @@ dtd2gtfs build \
 Or point it at the directory you download into and let it work that out:
 
 ```
-dtd2gtfs build --source ./feeds --out gtfs.zip --range "6 months"
+cif2gtfs build --source ./feeds --out gtfs.zip --range "6 months"
 ```
 
 A directory contributes every `RJTTFxxx.ZIP` and `RJTTCxxx.ZIP` it holds, ordered by sequence
@@ -109,7 +109,7 @@ Building three months of the whole GB network takes around 45 seconds and 5 GB o
 
 Issues, pull requests and the source live at
 [planarnetwork/dtd2mysql](https://github.com/planarnetwork/dtd2mysql). This is
-`apps/dtd2gtfs` in that repository.
+`apps/cif2gtfs` in that repository.
 
 ## License
 

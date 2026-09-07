@@ -69,7 +69,7 @@ beforeAll(async () => {
   built = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
 
   await build([
-    "node", "dtd2gtfs", "build",
+    "node", "cif2gtfs", "build",
     "--source", path.join(fixtures, "RJTTF001.ZIP"),
     "--out", built,
     "--today", TODAY
@@ -99,7 +99,7 @@ describe("the mini fixture", () => {
   it("produces the same feed twice", async () => {
     const again = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
 
-    await build(["node", "dtd2gtfs", "build", "--source", path.join(fixtures, "RJTTF001.ZIP"),
+    await build(["node", "cif2gtfs", "build", "--source", path.join(fixtures, "RJTTF001.ZIP"),
                  "--out", again, "--today", TODAY]);
 
     for (const file of files) {
@@ -361,7 +361,7 @@ describe("a build that asks for overnight associations to be duplicated", () => 
       "duplicateOvernightAssociations: true"
     ].join("\n"));
 
-    await build(["node", "dtd2gtfs", "build", "--config", config]);
+    await build(["node", "cif2gtfs", "build", "--config", config]);
   }, 60_000);
 
   it("publishes the portion on the base's service day as well as its own", () => {

@@ -60,7 +60,7 @@ if [ "$failed" -ne 0 ]; then
   echo
   echo "The import changed. If that was the point, take a new baseline:"
   echo "  data/snapshot-db.sh $BASELINE"
-  echo "and add an entry to apps/dtd2gtfs/fixtures/BASELINE.md saying what changed and why."
+  echo "and add an entry to apps/cif2gtfs/fixtures/BASELINE.md saying what changed and why."
   exit 1
 fi
 

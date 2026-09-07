@@ -19,7 +19,7 @@ Plus an `RL` location, an `RR` railcard and the `/!!` header, so the records tha
 not groups are exercised too.
 
 To take a change: `UPDATE_GOLDEN=1 yarn vitest run`, then read the diff before you
-commit it. `apps/dtd2gtfs/src/build.spec.ts` is what compares them.
+commit it. `apps/cif2gtfs/src/build.spec.ts` is what compares them.
 
 ## What it holds
 

@@ -1,4 +1,4 @@
-# dtd2gtfs
+# cif2gtfs
 
 ## 1.0.1
 
@@ -33,7 +33,7 @@
 
 ### Major Changes
 
-- First published release. `npm install -g dtd2gtfs`.
+- First published release. `npm install -g cif2gtfs`.
 
   The package was private while there was no published feed to point people at. There is one now, so
   it goes to npm alongside the `@gb-transit` libraries it was held back with. No behaviour changes:

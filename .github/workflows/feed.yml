@@ -98,7 +98,7 @@ jobs:
       - name: Build the feed
         run: |
           mkdir -p feed
-          yarn tsx apps/dtd2gtfs/src/index.ts build --config gtfs.config.yaml --out feed | tee build.log
+          yarn tsx apps/cif2gtfs/src/index.ts build --config gtfs.config.yaml --out feed | tee build.log
 
       # The same timetable with the locations a service runs through kept in it:
       # 592,000 more stop times, at 597,000 of which nobody boards and nobody
@@ -111,7 +111,7 @@ jobs:
       - name: Build the feed with passing points
         run: |
           mkdir -p feed-passing-points
-          yarn tsx apps/dtd2gtfs/src/index.ts build --config gtfs.config.yaml \
+          yarn tsx apps/cif2gtfs/src/index.ts build --config gtfs.config.yaml \
             --out feed-passing-points --remove-passing-points=false | tee build-passing-points.log
 
       # A published feed that fails referential integrity must never reach a

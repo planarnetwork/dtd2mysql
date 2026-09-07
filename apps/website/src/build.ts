@@ -287,7 +287,7 @@ splits and joins, service days, and the columns it adds.
 
 <h2>Building it yourself</h2>
 <p>The tool that produces this feed is open source and needs no database:</p>
-<p><code>dtd2gtfs build --source RJTTFxxx.ZIP --out gtfs.zip</code></p>`);
+<p><code>cif2gtfs build --source RJTTFxxx.ZIP --out gtfs.zip</code></p>`);
 }
 
 /**

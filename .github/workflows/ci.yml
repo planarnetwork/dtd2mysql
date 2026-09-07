@@ -35,7 +35,7 @@ jobs:
           echo "Baselines changed:"; echo "$changed"
           if ! git diff --name-only "$base"...HEAD -- 'apps/*/fixtures/BASELINE.md' | grep -q .; then
             echo
-            echo "A baseline changed with no entry in apps/dtd2gtfs/fixtures/BASELINE.md."
+            echo "A baseline changed with no entry in apps/cif2gtfs/fixtures/BASELINE.md."
             echo "Say which ticket moved it and what the diff shows."
             exit 1
           fi
@@ -72,7 +72,7 @@ jobs:
       # own directory: tsx takes its compiler options from the nearest tsconfig
       # whose include matches the file.
       - run: yarn tsx apps/dtd2mysql/src/index.ts --help
-      - run: yarn tsx apps/dtd2gtfs/src/index.ts --help
+      - run: yarn tsx apps/cif2gtfs/src/index.ts --help
 
   # Nothing above unit tests could run without a database, so every claim about
   # the importer has been checked by hand. This is where that stops.
@@ -110,7 +110,7 @@ jobs:
       # parse-and-insert path against a real MariaDB - the fixed width records,
       # the generated ids and the schema DDL.
       - name: Import the mini fixture
-        run: yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP
+        run: yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP
       - name: Build a feed from the database
         run: |
           mkdir -p "$RUNNER_TEMP/from-db"
@@ -120,15 +120,15 @@ jobs:
       - name: The file source produces the same feed
         run: |
           mkdir -p "$RUNNER_TEMP/from-files"
-          yarn tsx apps/dtd2gtfs/src/index.ts build \
-            --source apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP \
+          yarn tsx apps/cif2gtfs/src/index.ts build \
+            --source apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP \
             --out "$RUNNER_TEMP/from-files" --today 2026-08-10
           diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/from-files"
       # Importing twice must land the same rows. Records that generate their own
       # id are the risk here, and a collision only shows on a second import.
       - name: Importing the same feed twice changes nothing
         run: |
-          yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP
+          yarn tsx apps/dtd2mysql/src/index.ts --timetable apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP
           mkdir -p "$RUNNER_TEMP/twice"
           GTFS_TODAY=2026-08-10 yarn tsx apps/dtd2mysql/src/index.ts --gtfs "$RUNNER_TEMP/twice"
           diff -r "$RUNNER_TEMP/from-db" "$RUNNER_TEMP/twice"
@@ -167,7 +167,7 @@ jobs:
             "https://github.com/MobilityData/gtfs-validator/releases/download/v$VALIDATOR_VERSION/gtfs-validator-$VALIDATOR_VERSION-cli.jar"
       - run: yarn install --immutable
       - run: yarn build
-      - run: node apps/dtd2gtfs/dist/validate.mjs gtfs-validator.jar
+      - run: node apps/cif2gtfs/dist/validate.mjs gtfs-validator.jar
 
   package:
     runs-on: ubuntu-latest
@@ -215,20 +215,20 @@ jobs:
           ./node_modules/.bin/dtd2mysql --help | tee help.txt
           grep -q "Usage: dtd2mysql" help.txt
           grep -q -- "--gtfs-zip" help.txt
-      # dtd2gtfs is published too, so the same mistake would ship the same way.
+      # cif2gtfs is published too, so the same mistake would ship the same way.
       # It gets its own install directory: the two CLIs share every @gb-transit
       # dependency, and resolving one from the other's tree would pass whatever
       # this one's tarball left out.
-      - name: Install the packaged dtd2gtfs and run the CLI
+      - name: Install the packaged cif2gtfs and run the CLI
         run: |
           for pkg in enrich-naptan extend-station-groups; do
             yarn workspace "@gb-transit/$pkg" pack --out "$RUNNER_TEMP/tarballs/$pkg.tgz"
           done
-          yarn workspace dtd2gtfs pack --out "$RUNNER_TEMP/tarballs/dtd2gtfs.tgz"
+          yarn workspace cif2gtfs pack --out "$RUNNER_TEMP/tarballs/cif2gtfs.tgz"
           mkdir -p "$RUNNER_TEMP/install-gtfs" && cd "$RUNNER_TEMP/install-gtfs"
           cat > package.json <<EOF
           {
-            "name": "dtd2gtfs-pack-smoke-test",
+            "name": "cif2gtfs-pack-smoke-test",
             "private": true,
             "version": "1.0.0",
             "overrides": {
@@ -242,23 +242,23 @@ jobs:
             }
           }
           EOF
-          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/dtd2gtfs.tgz"
-          ./node_modules/.bin/dtd2gtfs --help | tee help.txt
-          grep -q "dtd2gtfs" help.txt
+          npm install --no-audit --no-fund "$RUNNER_TEMP/tarballs/cif2gtfs.tgz"
+          ./node_modules/.bin/cif2gtfs --help | tee help.txt
+          grep -q "cif2gtfs" help.txt
       # As above: --help barely touches the package. Building the mini fixture
       # from the tarball resolves every @gb-transit dependency and runs the whole
       # build, which is what catches a files or main mistake that --help sails
       # past. It is diffed against the same golden the unit tests use, so the
       # packaged CLI has to produce the feed this commit produces rather than
       # merely produce one.
-      - name: The packaged dtd2gtfs builds the golden feed
+      - name: The packaged cif2gtfs builds the golden feed
         run: |
           cd "$RUNNER_TEMP/install-gtfs"
-          ./node_modules/.bin/dtd2gtfs build \
-            --source "$GITHUB_WORKSPACE/apps/dtd2gtfs/fixtures/mini/RJTTF001.ZIP" \
+          ./node_modules/.bin/cif2gtfs build \
+            --source "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/RJTTF001.ZIP" \
             --out ./feed --today 2026-08-10 > run.txt 2>&1
           cat run.txt
-          diff -r ./feed "$GITHUB_WORKSPACE/apps/dtd2gtfs/fixtures/mini/golden"
+          diff -r ./feed "$GITHUB_WORKSPACE/apps/cif2gtfs/fixtures/mini/golden"
           # a stack trace here means the entry point lost its error handling
           ! grep -q "at Object.<anonymous>" run.txt
       # --help barely touches the package. Running a real command with no

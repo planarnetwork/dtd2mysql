@@ -75,4 +75,4 @@ GTFS_TODAY=2026-08-10 data/snapshot-gtfs.sh data/snapshots/gtfs-<name>
 
 Both predate B22, which changed how generated ids are assigned during import, so they capture the
 behaviour that dropped an incremental's stop times. They are the *before* side of that fix. Rebase
-them under T8 with the diff as the evidence, and say so in `apps/dtd2gtfs/fixtures/BASELINE.md`.
+them under T8 with the diff as the evidence, and say so in `apps/cif2gtfs/fixtures/BASELINE.md`.

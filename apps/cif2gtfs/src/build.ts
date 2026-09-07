@@ -10,7 +10,7 @@ import {CifFileSource, timetableFeeds} from "@gb-transit/dtd-source";
 import {FileOutput, OutputGTFSZipCommand} from "@gb-transit/gtfs-output";
 
 /**
- * dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip
+ * cif2gtfs build --source RJTTF918.ZIP --out gtfs.zip
  *
  * The composition root for a build with no database in it. Give it the full
  * refresh and then each incremental, in the order they were published, and it

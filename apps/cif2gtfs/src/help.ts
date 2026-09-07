@@ -1,6 +1,6 @@
 export async function showHelp(argv: string[]): Promise<void> {
   console.log(`
-Usage: dtd2gtfs build [OPTIONS]
+Usage: cif2gtfs build [OPTIONS]
 Build a GTFS feed from the DTD timetable feed, with no database
 
   --source PATH              a DTD timetable zip, or a directory of them. A
@@ -35,9 +35,9 @@ Build a GTFS feed from the DTD timetable feed, with no database
 
 For example:
 
-  dtd2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"
-  dtd2gtfs build --source ./feeds --out gtfs.zip
-  dtd2gtfs build --config gtfs.config.yaml
+  cif2gtfs build --source RJTTF918.ZIP --out gtfs.zip --range "6 months"
+  cif2gtfs build --source ./feeds --out gtfs.zip
+  cif2gtfs build --config gtfs.config.yaml
 
 A config file looks like this. Only source is required:
 
