@@ -1,6 +1,7 @@
+import {describe, it, expect} from "vitest";
 import { LocalDate } from "@js-joda/core";
-import { getBankHolidaysForRange } from "../../src/reference/BankHolidays";
-import { Holiday } from "../../src/transxchange/TransXChange";
+import { getBankHolidaysForRange } from "./BankHolidays";
+import { Holiday } from "../transxchange/TransXChange";
 
 describe("BankHolidays", () => {
   const dates = getBankHolidaysForRange(2020, 2026);

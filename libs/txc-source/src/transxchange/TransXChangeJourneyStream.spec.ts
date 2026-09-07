@@ -1,11 +1,12 @@
-import {awaitStream} from "../util";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
 import {Duration, LocalDate, LocalTime} from "@js-joda/core";
-import {StopActivity} from "../../src/transxchange/TransXChange";
+import {StopActivity} from "../transxchange/TransXChange";
 import {
   BankHolidays,
   TransXChangeJourney,
   TransXChangeJourneyStream
-} from "../../src/transxchange/TransXChangeJourneyStream";
+} from "../transxchange/TransXChangeJourneyStream";
 
 
 describe("TransXChangeJourneyStream", () => {

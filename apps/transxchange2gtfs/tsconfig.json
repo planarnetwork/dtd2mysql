@@ -12,6 +12,12 @@
       "path": "../../libs/gtfs-schema"
     },
     {
+      "path": "../../libs/gtfs"
+    },
+    {
+      "path": "../../libs/naptan"
+    },
+    {
       "path": "../../libs/txc-source"
     },
     {

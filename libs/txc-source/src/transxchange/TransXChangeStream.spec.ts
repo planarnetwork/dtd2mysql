@@ -1,7 +1,8 @@
 
-import {awaitStream} from "../util";
-import {TransXChangeStream} from "../../src/transxchange/TransXChangeStream";
-import {TransXChange} from "../../src/transxchange/TransXChange";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
+import {TransXChangeStream} from "../transxchange/TransXChangeStream";
+import {TransXChange} from "../transxchange/TransXChange";
 import {LocalDate, LocalTime, Duration} from "@js-joda/core";
 
 describe("TransXChangeStream", () => {

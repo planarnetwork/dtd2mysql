@@ -13,7 +13,6 @@ import {
   RouteLink
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
-import autobind from "autobind-decorator";
 import {LocalDate, LocalTime, Duration, DateTimeFormatter} from "@js-joda/core";
 import {ATCOCode} from "../reference/NaPTAN";
 
@@ -21,7 +20,6 @@ import {ATCOCode} from "../reference/NaPTAN";
  * Transforms TransXChange objects into TransXChangeJourneys that are closer to GTFS calendars, calendar dates, trips
  * and stop times.
  */
-@autobind
 export class TransXChangeJourneyStream extends Transform {
   private calendars: Record<string, JourneyCalendar> = {};
   private serviceId: number = 1;

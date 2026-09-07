@@ -21,13 +21,11 @@ import {
   Location
 } from "./TransXChange";
 import {Transform, TransformCallback} from "stream";
-import autobind from "autobind-decorator";
 import {Duration, LocalDate, LocalTime} from "@js-joda/core";
 
 /**
  * Transforms JSON objects into a TransXChange objects
  */
-@autobind
 export class TransXChangeStream extends Transform {
 
   constructor() {
@@ -70,7 +68,7 @@ export class TransXChangeStream extends Transform {
     callback(undefined, result);
   }
 
-  private getStopFromAnnotatedStopPointRef(stop: any): StopPoint {
+  private getStopFromAnnotatedStopPointRef = (stop: any): StopPoint => {
     return {
       StopPointRef: stop?.StopPointRef?.[0] ?? "",
       CommonName: stop?.CommonName?.[0] ?? "",
@@ -80,14 +78,14 @@ export class TransXChangeStream extends Transform {
     };
   }
 
-  private getLocation(location: any): Location {
+  private getLocation = (location: any): Location => {
     return {
       Latitude: location?.Latitude ? Number(location.Latitude[0]) : 0.0,
       Longitude: location?.Longitude ? Number(location.Longitude[0]) : 0.0
     };
   }
 
-  private getStopFromStopPoint(stop: any): StopPoint {
+  private getStopFromStopPoint = (stop: any): StopPoint => {
     return {
       StopPointRef: stop?.AtcoCode?.[0] ?? "",
       CommonName: stop?.Descriptor?.[0]?.CommonName?.[0] ?? "",
@@ -100,7 +98,7 @@ export class TransXChangeStream extends Transform {
     };
   }
 
-  private getRouteLinks(index: RouteLinks, link: any): RouteLinks {
+  private getRouteLinks = (index: RouteLinks, link: any): RouteLinks => {
     index[link.$.id] = {
       From: link?.From?.[0] ?? "",
       To: link?.To?.[0] ?? "",
@@ -111,19 +109,19 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
-  private getJourneySections(index: JourneyPatternSections, section: any): JourneyPatternSections {
+  private getJourneySections = (index: JourneyPatternSections, section: any): JourneyPatternSections => {
     index[section.$.id] = section.JourneyPatternTimingLink ? section.JourneyPatternTimingLink.map(this.getJPLink) : [];
 
     return index;
   }
 
-  private getJPTimingLinks(index: JPTimingLinks, link: any): JPTimingLinks {
+  private getJPTimingLinks = (index: JPTimingLinks, link: any): JPTimingLinks => {
     index[link.$.id] = this.getJPLink(link);
 
     return index;
   }
 
-  private getJPLink(l: any): JPTimingLink {
+  private getJPLink = (l: any): JPTimingLink => {
     return {
       From: this.getJPJourneyStop(l?.From?.[0] ?? ""),
       To: this.getJPJourneyStop(l?.To?.[0] ?? ""),
@@ -132,7 +130,7 @@ export class TransXChangeStream extends Transform {
     };
   }
 
-  private getVJLink(l: any): VJTimingLink {
+  private getVJLink = (l: any): VJTimingLink => {
     return {
       JPTimingLinkRef: l?.JourneyPatternTimingLinkRef?.[0] ?? "",
       From: this.getVJJourneyStop(l?.From?.[0] ?? ""),
@@ -166,7 +164,7 @@ export class TransXChangeStream extends Transform {
     };
   }
 
-  private getOperators(index: Operators, operator: any): Operators {
+  private getOperators = (index: Operators, operator: any): Operators => {
     index[operator.$.id] = {
       NationalOperatorCode: operator?.NationalOperatorCode?.[0],
       OperatorCode: operator?.OperatorCode?.[0] ? operator.OperatorCode[0] : operator?.NationalOperatorCode?.[0] ?? "",
@@ -178,7 +176,7 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
-  private getServices(index: Services, service: any): Services {
+  private getServices = (index: Services, service: any): Services => {
     index[service.ServiceCode[0]] = {
       ServiceCode: service.ServiceCode[0],
       Lines: service.Lines[0].Line.reduce(this.getLines, {}),
@@ -199,7 +197,7 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
-  private getJourneyPattern(patterns: JourneyPatterns, pattern: any): JourneyPatterns {
+  private getJourneyPattern = (patterns: JourneyPatterns, pattern: any): JourneyPatterns => {
     patterns[pattern.$.id] = {
       Direction: pattern.Direction[0],
       Sections: pattern.JourneyPatternSectionRefs,
@@ -209,7 +207,7 @@ export class TransXChangeStream extends Transform {
     return patterns;
   }
 
-  private getLines(index: Lines, line: any): Lines {
+  private getLines = (index: Lines, line: any): Lines => {
     index[line.$.id] = {
       LineName: line.LineName[0],
       Description: line.OutboundDescription?.[0].Description?.[0] ?? ""
@@ -218,7 +216,7 @@ export class TransXChangeStream extends Transform {
     return index;
   }
 
-  private getDateRange(dates: any): DateRange {
+  private getDateRange = (dates: any): DateRange => {
     return {
       StartDate: LocalDate.parse(dates.StartDate[0]),
       EndDate: dates.EndDate?.[0] ? LocalDate.parse(dates.EndDate[0]) : LocalDate.parse("2099-12-31"),
@@ -303,7 +301,7 @@ export class TransXChangeStream extends Transform {
       : Object.keys(days).map(d => daysOfWeekIndex[d] || [0, 0, 0, 0, 0, 0, 0]);
   }
 
-  private getJourneyPatternIndex(index: JourneyPatternIndex, vehicle: any): JourneyPatternIndex {
+  private getJourneyPatternIndex = (index: JourneyPatternIndex, vehicle: any): JourneyPatternIndex => {
     if (vehicle.JourneyPatternRef) {
       index[vehicle.VehicleJourneyCode[0]] = vehicle.JourneyPatternRef[0];
     }

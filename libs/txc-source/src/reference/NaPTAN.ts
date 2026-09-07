@@ -1,37 +1,4 @@
-import {Parser} from "csv-parse";
-
-/**
- * Loads the NaPTAN data from the locally stored zip file
- */
-export class NaPTANFactory {
-
-  constructor(
-    private csvStream: Parser,
-  ) {}
-
-  /**
-   * Open the zip, extract the CSV, send it to the CSV parser, then return the results indexed by ATCO code
-   */
-  public getIndexes(): Promise<[NaPTANIndex, StopLocationIndex]> {
-    return new Promise((resolve, reject) => {
-      const atocIndex: NaPTANIndex = {};
-      const locationIndex: StopLocationIndex = {};
-
-      this.csvStream.on("data", data => {
-        const location = data[6] || data[5];
-
-        locationIndex[location] = locationIndex[location] || [];
-        locationIndex[location].push(data[0]);
-
-        atocIndex[data[0]] = data;
-      });
-
-      this.csvStream.on("end", () => resolve([atocIndex, locationIndex]));
-      this.csvStream.on("error", reject);
-    });
-  }
-
-}
+import {parseNaptanRows} from "@gb-transit/naptan";
 
 /**
  * String e.g. 3890D102801
@@ -39,11 +6,70 @@ export class NaPTANFactory {
 export type ATCOCode = string;
 
 /**
- * NaPTAN indexed by ATCO code
+ * One NaPTAN stop, as this conversion uses it.
+ *
+ * Read by column name. It used to be a nine element `string[]`, sliced out of
+ * the national CSV at positions [0,1,4,10,14,18,19,29,30] by a separate download
+ * step and then indexed by number all over `StopsStream` and `TransfersStream` -
+ * so a column added or moved by the DfT would have silently put a street name in
+ * the latitude.
  */
-export type NaPTANIndex = Record<ATCOCode, string[]>;
+export interface NaptanStopPoint {
+  readonly atcoCode: ATCOCode;
+  readonly naptanCode: string;
+  readonly name: string;
+  readonly street: string;
+  readonly indicator: string;
+  readonly locality: string;
+  readonly parentLocality: string;
+  /** Kept as text: re-serialising through a number drops trailing digits. */
+  readonly longitude: string;
+  readonly latitude: string;
+}
 
 /**
- * ATCO code indexed by location
+ * NaPTAN indexed by ATCO code
  */
-export type StopLocationIndex = Record<ATCOCode, string[]>;
+export type NaPTANIndex = Record<ATCOCode, NaptanStopPoint>;
+
+/**
+ * ATCO codes indexed by the locality they are in, which is how a stop's
+ * neighbours are found without comparing it to all 400,000 of them.
+ */
+export type StopLocationIndex = Record<string, ATCOCode[]>;
+
+/**
+ * Index a NaPTAN CSV by ATCO code and by locality.
+ */
+export function naptanIndexes(csv: string): [NaPTANIndex, StopLocationIndex] {
+  const byCode: NaPTANIndex = {};
+  const byLocation: StopLocationIndex = {};
+
+  for (const row of parseNaptanRows(csv)) {
+    const code = row.ATCOCode;
+
+    if (code === undefined || code === "") {
+      continue;
+    }
+
+    const stop: NaptanStopPoint = {
+      atcoCode: code,
+      naptanCode: row.NaptanCode ?? "",
+      name: row.CommonName ?? "",
+      street: row.Street ?? "",
+      indicator: row.Indicator ?? "",
+      locality: row.LocalityName ?? "",
+      parentLocality: row.ParentLocalityName ?? "",
+      longitude: row.Longitude ?? "",
+      latitude: row.Latitude ?? ""
+    };
+
+    byCode[code] = stop;
+
+    const location = stop.parentLocality || stop.locality;
+
+    (byLocation[location] ||= []).push(code);
+  }
+
+  return [byCode, byLocation];
+}

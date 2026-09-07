@@ -1,5 +1,6 @@
-import {awaitStream, splitCSV} from "../util";
-import {StopTimesStream} from "../../src/gtfs/StopTimesStream";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
+import {StopTimesStream} from "./StopTimesStream";
 
 
 describe("StopTimesStream", () => {
@@ -21,45 +22,45 @@ describe("StopTimesStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      let [trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      let {trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint} = rows[0];
 
       expect(trip_id).to.equal("2");
       expect(arrival_time).to.equal("10:00");
       expect(departure_time).to.equal("10:00");
       expect(stop_id).to.equal("A");
-      expect(stop_sequence).to.equal("0");
+      expect(stop_sequence).to.equal(0);
       expect(stop_headsign).to.equal("");
-      expect(pickup_type).to.equal("0");
-      expect(drop_off_type).to.equal("1");
+      expect(pickup_type).to.equal(0);
+      expect(drop_off_type).to.equal(1);
       expect(shape_dist_traveled).to.equal("");
-      expect(timepoint).to.equal("1");
+      expect(timepoint).to.equal(1);
 
-      [trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint] = splitCSV(rows[2]);
+      ({trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint} = rows[1]);
 
       expect(trip_id).to.equal("2");
       expect(arrival_time).to.equal("11:00");
       expect(departure_time).to.equal("11:10");
       expect(stop_id).to.equal("B");
-      expect(stop_sequence).to.equal("1");
+      expect(stop_sequence).to.equal(1);
       expect(stop_headsign).to.equal("");
-      expect(pickup_type).to.equal("0");
-      expect(drop_off_type).to.equal("0");
+      expect(pickup_type).to.equal(0);
+      expect(drop_off_type).to.equal(0);
       expect(shape_dist_traveled).to.equal("");
-      expect(timepoint).to.equal("1");
+      expect(timepoint).to.equal(1);
 
-      [trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint] = splitCSV(rows[3]);
+      ({trip_id, arrival_time, departure_time, stop_id, stop_sequence, stop_headsign, pickup_type, drop_off_type, shape_dist_traveled, timepoint} = rows[2]);
 
       expect(trip_id).to.equal("2");
       expect(arrival_time).to.equal("12:00");
       expect(departure_time).to.equal("12:00");
       expect(stop_id).to.equal("C");
-      expect(stop_sequence).to.equal("2");
+      expect(stop_sequence).to.equal(2);
       expect(stop_headsign).to.equal("");
-      expect(pickup_type).to.equal("1");
-      expect(drop_off_type).to.equal("0");
+      expect(pickup_type).to.equal(1);
+      expect(drop_off_type).to.equal(0);
       expect(shape_dist_traveled).to.equal("");
-      expect(timepoint).to.equal("1");
+      expect(timepoint).to.equal(1);
     });
   });
 

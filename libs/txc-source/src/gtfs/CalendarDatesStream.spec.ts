@@ -1,7 +1,8 @@
-import {awaitStream, splitCSV} from "../util";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
 import {LocalDate} from "@js-joda/core";
-import {CalendarStream} from "../../src/gtfs/CalendarStream";
-import {CalendarDatesStream} from "../../src/gtfs/CalendarDatesStream";
+import {CalendarStream} from "./CalendarStream";
+import {CalendarDatesStream} from "./CalendarDatesStream";
 
 
 describe("CalendarDatesStream", () => {
@@ -22,16 +23,16 @@ describe("CalendarDatesStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const exclude = splitCSV(rows[1]);
-      const include = splitCSV(rows[2]);
+    return awaitStream(stream, (rows: any[]) => {
+      const exclude = rows[0];
+      const include = rows[1];
 
-      expect(exclude[0]).to.equal("1");
-      expect(exclude[1]).to.equal("20181225");
-      expect(exclude[2]).to.equal("2");
-      expect(include[0]).to.equal("1");
-      expect(include[1]).to.equal("20180601");
-      expect(include[2]).to.equal("1");
+      expect(exclude.service_id).to.equal(1);
+      expect(exclude.date).to.equal("20181225");
+      expect(exclude.exception_type).to.equal(2);
+      expect(include.service_id).to.equal(1);
+      expect(include.date).to.equal("20180601");
+      expect(include.exception_type).to.equal(1);
     });
   });
 
@@ -51,11 +52,11 @@ describe("CalendarDatesStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      // header + 1 row only; the duplicate (service_id=1, date=20181225) must not be written twice
-      expect(rows.length).to.equal(2);
-      const [service_id, date] = splitCSV(rows[1]);
-      expect(service_id).to.equal("1");
+    return awaitStream(stream, (rows: any[]) => {
+      // one row only; the duplicate (service_id=1, date=20181225) must not be written twice
+      expect(rows.length).to.equal(1);
+      const {service_id, date} = rows[0];
+      expect(service_id).to.equal(1);
       expect(date).to.equal("20181225");
     });
   });
@@ -87,8 +88,8 @@ describe("CalendarDatesStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      expect(rows.length).to.equal(2);
+    return awaitStream(stream, (rows: any[]) => {
+      expect(rows.length).to.equal(1);
     });
   });
 

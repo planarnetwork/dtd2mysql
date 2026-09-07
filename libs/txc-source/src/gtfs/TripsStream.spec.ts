@@ -1,6 +1,7 @@
-import {awaitStream, splitCSV} from "../util";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
 import {LocalDate} from "@js-joda/core";
-import {TripsStream} from "../../src/gtfs/TripsStream";
+import {TripsStream} from "./TripsStream";
 
 
 describe("TripsStream", () => {
@@ -23,7 +24,7 @@ describe("TripsStream", () => {
         direction: "inbound",
         headsign: "Victoria"
       },
-      route: 1,
+      route: "1",
       blockId: "abc134",
       routeLinkIds: [],
       routeLinks: []
@@ -31,17 +32,17 @@ describe("TripsStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const [route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, wheelchair_accessible, bikes_allowed, block_id, shape_id] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      const {route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id, wheelchair_accessible, bikes_allowed, block_id, shape_id} = rows[0];
 
       expect(route_id).to.equal("1");
-      expect(service_id).to.equal("3");
+      expect(service_id).to.equal(3);
       expect(trip_id).to.equal("2");
       expect(trip_headsign).to.equal("Victoria");
       expect(trip_short_name).to.equal('Victoria, London');
-      expect(direction_id).to.equal("1");
-      expect(wheelchair_accessible).to.equal("0");
-      expect(bikes_allowed).to.equal("0");
+      expect(direction_id).to.equal(1);
+      expect(wheelchair_accessible).to.equal(0);
+      expect(bikes_allowed).to.equal(0);
       expect(block_id).to.equal("abc134");
       expect(shape_id).to.match(/^[0-9a-f]{32}$/);
     });
@@ -65,15 +66,15 @@ describe("TripsStream", () => {
         direction: "inbound",
         headsign: "Victoria"
       },
-      route: 1,
+      route: "1",
       routeLinkIds: [],
       routeLinks: []
     });
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const [, , , , , , , , block_id] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      const {block_id} = rows[0];
       expect(block_id).to.equal("")
     });
   });

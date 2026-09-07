@@ -1,90 +1,80 @@
-import {FileStream} from "./FileStream";
-import autobind from "autobind-decorator";
-import {Writable} from "stream";
-import {Container} from "../Container";
+import {FeedRow, RowWriter} from "@gb-transit/gtfs-schema";
+import {FileOutput, writeZip} from "@gb-transit/gtfs-output";
+import {FileStream, RowStream} from "@gb-transit/txc-source";
 import * as fs from "fs";
-import {sync as rimraf} from "rimraf";
-import { ZipFile } from "yazl";
-import ReadableStream = NodeJS.ReadableStream;
-
+import * as path from "node:path";
+import {Readable} from "stream";
 
 /**
- * Converts the TransXChange input stream to a GTFS zip output stream
+ * Runs the pipeline and writes what comes out of it.
+ *
+ * Each stream declares the file it writes and the columns of it, so the writer
+ * is opened from the stream rather than from a filename passed alongside it -
+ * which is what used to let a stream's header and its rows disagree.
  */
-@autobind
 export class Converter {
 
   constructor(
     private readonly inputStream: FileStream,
-    private readonly gtfsFiles: Record<string, ReadableStream>,
+    private readonly gtfsFiles: readonly RowStream<any, any>[],
+    private readonly directory: string
   ) {}
 
-  /**
-   * Load the XML into memory, convert it to JSON, then a TransXChange object and the pass that to each of the GTFS file
-   * factory methods.
-   */
   public async process(input: string[], output: string | undefined): Promise<void> {
     if (input.length === 0 || output === undefined) {
       throw Error("Invalid number of arguments");
     }
 
-    this.init();
-    this.pushInputFiles(input);
+    fs.rmSync(this.directory, {recursive: true, force: true});
+    fs.mkdirSync(this.directory, {recursive: true});
 
-    const streams = Object
-      .keys(this.gtfsFiles)
-      .map(file => this.gtfsFiles[file].pipe(fs.createWriteStream(Container.TMP + file)));
+    const target = new FileOutput();
+    const written = this.gtfsFiles.map(stream => {
+      const writer = target.open(
+        path.join(this.directory, stream.file.filename),
+        stream.file.columns
+      );
 
-    await this.streamsFinished(streams);
+      return pump(stream, writer);
+    });
 
-    const zipFile = new ZipFile();
-
-    for (const file in this.gtfsFiles) {
-      zipFile.addFile(Container.TMP + file, file);
-    }
-
-    zipFile.end();
-
-    await this.writeToFile(zipFile.outputStream, output);
-
-    rimraf(Container.TMP);
-
-    console.log("Complete.");
-    console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
-  }
-
-  public init() {
-    if (fs.existsSync(Container.TMP)) {
-      rimraf(Container.TMP);
-    }
-
-    fs.mkdirSync(Container.TMP);
-  }
-
-  private pushInputFiles(input: string[]) {
     for (const file of input) {
       this.inputStream.write(file);
     }
 
     this.inputStream.end();
+
+    await Promise.all(written);
+    await target.end();
+
+    if (output.endsWith(".zip")) {
+      await writeZip(this.directory, output);
+      fs.rmSync(this.directory, {recursive: true, force: true});
+    }
+    else {
+      // A directory of files, which is what the end to end tests want and what
+      // anything piping this into another tool wants.
+      fs.rmSync(output, {recursive: true, force: true});
+      fs.renameSync(this.directory, output);
+    }
+
+    console.log("Complete.");
+    console.log(`Memory usage: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`);
   }
 
-  private streamsFinished(streams: Writable[]): Promise<any> {
-    const promises = streams.map(s => new Promise((resolve, reject) => {
-      s.on("finish", resolve);
-      s.on("error", reject);
-    }));
-
-    return Promise.all(promises);
-  }
-
-  private writeToFile(outputStream: ReadableStream, output: string): Promise<void> {
-    const stream = outputStream.pipe(fs.createWriteStream(output));
-
-    return new Promise((resolve, reject) => {
-      stream.on("close", resolve);
-      stream.on("error", reject);
-    });
-  }
 }
 
+/**
+ * Feed a stream's rows into a writer, respecting backpressure.
+ */
+async function pump<R extends FeedRow>(source: Readable, writer: RowWriter<R>): Promise<void> {
+  for await (const row of source) {
+    if (!writer.write(row as R)) {
+      await writer.drain();
+    }
+  }
+
+  writer.end();
+
+  return writer.finished();
+}

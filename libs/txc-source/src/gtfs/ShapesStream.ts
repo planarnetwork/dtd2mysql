@@ -1,6 +1,8 @@
-import {GTFSFileStream} from "./GTFSFileStream";
+import {ShapeRow} from "@gb-transit/gtfs-schema";
+import {RowStream} from "./RowStream";
+import {SHAPES} from "./TxcFeed";
 import {TransXChangeJourney} from "../transxchange/TransXChangeJourneyStream";
-import {createHash} from "crypto";
+import {shapeIdOf} from "./ShapeId";
 import {Location, RouteLink} from "../transxchange/TransXChange";
 
 // https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
@@ -35,16 +37,14 @@ function routeLinkDistance(routeLink: RouteLink): number {
 /**
  * Generate shapes from the location data
  */
-export class ShapesStream extends GTFSFileStream<TransXChangeJourney> {
-  protected header = "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled";
+export class ShapesStream extends RowStream<TransXChangeJourney, ShapeRow> {
+  public readonly file = SHAPES;
 
   protected existingShapes: Set<string> = new Set();
 
   protected transform(journey: TransXChangeJourney): void {
     let sequence = 0;
-    const shapeId = createHash("md5")
-      .update(JSON.stringify({ routeId: journey.route, routeLinkSeq: journey.routeLinkIds }))
-      .digest("hex");
+    const shapeId = shapeIdOf(journey);
 
     if (this.existingShapes.has(shapeId)) {
       return;
@@ -75,13 +75,15 @@ export class ShapesStream extends GTFSFileStream<TransXChangeJourney> {
           ? getDistanceFromLatLonInM(lastLocAdded.Latitude, lastLocAdded.Longitude, location.Latitude, location.Longitude)
           : 0;
 
-        this.pushLine(
-          shapeId,
-          location.Latitude,
-          location.Longitude,
-          sequence++,
-          ((distanceSoFarM + linkDistance * scaleFactor) / 1000).toFixed(5)
-        );
+        this.pushRow({
+          shape_id: shapeId,
+          shape_pt_lat: location.Latitude,
+          shape_pt_lon: location.Longitude,
+          shape_pt_sequence: sequence++,
+          // Kept as the fixed five decimal places it was written with: turning
+          // it into a number would drop the trailing zeros.
+          shape_dist_traveled: ((distanceSoFarM + linkDistance * scaleFactor) / 1000).toFixed(5)
+        });
 
         lastLocAdded = location;
       }

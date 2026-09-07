@@ -22,8 +22,12 @@ export type {
   BankHolidays, TransXChangeJourney, JourneyCalendar, StopTime
 } from "./transxchange/TransXChangeJourneyStream";
 
+// Which files a conversion writes, and the columns of each
+export * as TxcFeed from "./gtfs/TxcFeed";
+
 // The rows of each GTFS file, one stream per file
-export {GTFSFileStream} from "./gtfs/GTFSFileStream";
+export {RowStream} from "./gtfs/RowStream";
+export {shapeIdOf} from "./gtfs/ShapeId";
 export {AgencyStream} from "./gtfs/AgencyStream";
 export {CalendarDatesStream} from "./gtfs/CalendarDatesStream";
 export {CalendarStream} from "./gtfs/CalendarStream";
@@ -36,6 +40,5 @@ export {TripsStream} from "./gtfs/TripsStream";
 
 // Reference data the conversion needs and TransXChange does not carry
 export {getBankHolidays, getBankHolidaysForRange} from "./reference/BankHolidays";
-export {NaPTANFactory} from "./reference/NaPTAN";
-export type {ATCOCode, NaPTANIndex, StopLocationIndex} from "./reference/NaPTAN";
-export {GetStopData} from "./reference/GetStopData";
+export {naptanIndexes} from "./reference/NaPTAN";
+export type {ATCOCode, NaPTANIndex, NaptanStopPoint, StopLocationIndex} from "./reference/NaPTAN";

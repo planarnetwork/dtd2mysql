@@ -1,15 +1,21 @@
-import {GTFSFileStream} from "./GTFSFileStream";
+import {TransferRow, TransferType} from "@gb-transit/gtfs-schema";
+import {RowStream} from "./RowStream";
+import {TRANSFERS} from "./TxcFeed";
 import {TransXChange} from "../transxchange/TransXChange";
 import {ATCOCode, NaPTANIndex, StopLocationIndex} from "../reference/NaPTAN";
 
 /**
  * Calculate transfers between stops
  */
-export class TransfersStream extends GTFSFileStream<TransXChange> {
-  private readonly stopsSeen: Record<ATCOCode, boolean> = {};
-  protected header = "from_stop_id,to_stop_id,transfer_type,min_transfer_time";
+export class TransfersStream extends RowStream<TransXChange, TransferRow> {
+  public readonly file = TRANSFERS;
 
-  constructor(private readonly naptan: NaPTANIndex, private readonly naptanByLocation: StopLocationIndex) {
+  private readonly stopsSeen: Record<ATCOCode, boolean> = {};
+
+  constructor(
+    private readonly naptan: NaPTANIndex,
+    private readonly naptanByLocation: StopLocationIndex
+  ) {
     super();
   }
 
@@ -20,7 +26,7 @@ export class TransfersStream extends GTFSFileStream<TransXChange> {
   protected transform(data: TransXChange): void {
     for (const stop of data.StopPoints) {
       if (!this.stopsSeen[stop.StopPointRef]) {
-        this.pushLine(stop.StopPointRef, stop.StopPointRef, 2, 180);
+        this.pushTransfer(stop.StopPointRef, stop.StopPointRef, 180);
 
         if (this.naptan[stop.StopPointRef]) {
           this.addNearbyStops(stop.StopPointRef);
@@ -35,21 +41,34 @@ export class TransfersStream extends GTFSFileStream<TransXChange> {
    * Search any stops we've seen to see if we can walk there
    */
   private addNearbyStops(stop: ATCOCode): void {
-    const aLon = Number(this.naptan[stop][7]);
-    const aLat = Number(this.naptan[stop][8]);
-    const key = this.naptan[stop][6] || this.naptan[stop][5];
+    const here = this.naptan[stop];
+    const aLon = Number(here.longitude);
+    const aLat = Number(here.latitude);
+    const key = here.parentLocality || here.locality;
 
-    for (const j of this.naptanByLocation[key]) {
-      if (this.naptan[j] && this.stopsSeen[j]) {
-        const distance = this.getDistance(aLon, aLat, Number(this.naptan[j][7]), Number(this.naptan[j][8]));
+    for (const j of this.naptanByLocation[key] ?? []) {
+      const other = this.naptan[j];
+
+      if (other && this.stopsSeen[j]) {
+        const distance = this.getDistance(aLon, aLat, Number(other.longitude), Number(other.latitude));
 
         if (distance < 0.01) {
           const time = Math.max(60, Math.round((distance / 0.0005) * 120));
-          this.pushLine(stop, j, 2, time);
-          this.pushLine(j, stop, 2, time);
+
+          this.pushTransfer(stop, j, time);
+          this.pushTransfer(j, stop, time);
         }
       }
     }
+  }
+
+  private pushTransfer(from: ATCOCode, to: ATCOCode, seconds: number): void {
+    this.pushRow({
+      from_stop_id: from,
+      to_stop_id: to,
+      transfer_type: TransferType.MinTime,
+      min_transfer_time: seconds
+    });
   }
 
   /**
@@ -59,4 +78,3 @@ export class TransfersStream extends GTFSFileStream<TransXChange> {
     return Math.abs(bLat - aLat) + Math.abs(bLon - aLon);
   }
 }
-

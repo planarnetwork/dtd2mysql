@@ -380,8 +380,6 @@
     "CalendarDatesStream",
     "CalendarStream",
     "FileStream",
-    "GTFSFileStream",
-    "GetStopData",
     "JPJourneyStop",
     "JPTimingLink",
     "JPTimingLinks",
@@ -390,12 +388,13 @@
     "JourneyPatternSectionID",
     "JourneyPatternSections",
     "Location",
-    "NaPTANFactory",
     "NaPTANIndex",
+    "NaptanStopPoint",
     "ParseXML",
     "RouteLink",
     "RouteLinks",
     "RoutesStream",
+    "RowStream",
     "ShapesStream",
     "StopLocationIndex",
     "StopPoint",
@@ -413,6 +412,8 @@
     "XMLStream",
     "daysOfWeekIndex",
     "getBankHolidays",
-    "getBankHolidaysForRange"
+    "getBankHolidaysForRange",
+    "naptanIndexes",
+    "shapeIdOf"
   ]
 }

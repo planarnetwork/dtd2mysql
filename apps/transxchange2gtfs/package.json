@@ -42,11 +42,15 @@
     "node": ">=26"
   },
   "dependencies": {
+    "@gb-transit/gtfs": "workspace:^",
     "@gb-transit/gtfs-output": "workspace:^",
     "@gb-transit/gtfs-schema": "workspace:^",
-    "@gb-transit/txc-source": "workspace:^"
+    "@gb-transit/naptan": "workspace:^",
+    "@gb-transit/txc-source": "workspace:^",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/xml2js": "^0.4.14",
     "typescript": "7.0.2"
   }
 }

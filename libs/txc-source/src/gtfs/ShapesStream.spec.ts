@@ -1,5 +1,6 @@
-import {awaitStream, splitCSV} from "../util";
-import {ShapesStream} from "../../src/gtfs/ShapesStream";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
+import {ShapesStream} from "./ShapesStream";
 
 describe("ShapesStream", () => {
 
@@ -34,8 +35,10 @@ describe("ShapesStream", () => {
     stream.write(journey());
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      expect(rows[0].trim()).to.equal("shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled");
+    return awaitStream(stream, (rows: any[]) => {
+      expect(stream.file.columns).to.deep.equal(
+        ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence", "shape_dist_traveled"]
+      );
     });
   });
 
@@ -44,15 +47,15 @@ describe("ShapesStream", () => {
     stream.write(journey());
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const points = rows.slice(1).map(splitCSV);
+    return awaitStream(stream, (rows: any[]) => {
+      const points = rows.map(r => [r.shape_id, r.shape_pt_lat, r.shape_pt_lon, r.shape_pt_sequence, r.shape_dist_traveled]);
       // 4 locations across two links, but the shared endpoint between them dedupes to 3 points.
       expect(points.length).to.equal(3);
 
       const shapeId = points[0][0];
       for (const p of points) expect(p[0]).to.equal(shapeId);
 
-      expect(points.map(p => p[3])).to.deep.equal(["0", "1", "2"]);
+      expect(points.map(p => p[3])).to.deep.equal([0, 1, 2]);
 
       const distances = points.map(p => parseFloat(p[4]));
       for (let i = 1; i < distances.length; i++) {
@@ -69,9 +72,9 @@ describe("ShapesStream", () => {
     stream.write(journey());
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      // 1 header + 3 points from the first journey; the duplicate journey should be suppressed
-      expect(rows.length).to.equal(4);
+    return awaitStream(stream, (rows: any[]) => {
+      // 3 points from the first journey; the duplicate journey should be suppressed
+      expect(rows.length).to.equal(3);
     });
   });
 
@@ -98,7 +101,7 @@ describe("ShapesStream", () => {
     stream.write(degenerate);
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
+    return awaitStream(stream, (rows: any[]) => {
       for (const row of rows.slice(1)) {
         expect(row).to.not.include("NaN");
       }

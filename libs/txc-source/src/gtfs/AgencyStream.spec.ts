@@ -1,5 +1,6 @@
-import {awaitStream, splitCSV} from "../util";
-import {AgencyStream} from "../../src/gtfs/AgencyStream";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
+import {AgencyStream} from "./AgencyStream";
 
 
 describe("AgencyStream", () => {
@@ -19,8 +20,8 @@ describe("AgencyStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const [agency_id, agency_name, agency_url, agency_timezone, agency_lang] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      const {agency_id, agency_name, agency_url, agency_timezone, agency_lang} = rows[0];
 
       expect(agency_id).to.equal("ID");
       expect(agency_name).to.equal("Name");
@@ -49,8 +50,8 @@ describe("AgencyStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const [agency_id, agency_name, agency_url, agency_timezone, agency_lang] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      const {agency_id, agency_name, agency_url, agency_timezone, agency_lang} = rows[0];
 
       expect(agency_id).to.equal("ID");
       expect(agency_name).to.equal("Name");

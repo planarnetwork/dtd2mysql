@@ -1,6 +1,7 @@
-import {awaitStream, splitCSV} from "../util";
+import {describe, it, expect} from "vitest";
+import {awaitStream} from "../testing/util";
 import {LocalDate} from "@js-joda/core";
-import {RoutesStream} from "../../src/gtfs/RoutesStream";
+import {RoutesStream} from "./RoutesStream";
 
 
 describe("RoutesStream", () => {
@@ -26,11 +27,11 @@ describe("RoutesStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const [route_id, , , , route_type] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      const {route_id, route_type} = rows[0];
 
       expect(route_id).to.equal("25-DLR-_-y05-216|l_DLR");
-      expect(route_type).to.equal("2");
+      expect(route_type).to.equal(2);
     });
   });
 
@@ -57,14 +58,14 @@ describe("RoutesStream", () => {
 
     stream.end();
 
-    return awaitStream(stream, (rows: string[]) => {
-      const [route_id, agency_id, route_short_name, route_long_name, route_type] = splitCSV(rows[1]);
+    return awaitStream(stream, (rows: any[]) => {
+      const {route_id, agency_id, route_short_name, route_long_name, route_type} = rows[0];
 
       expect(route_id).to.equal("M6_MEGA|l_M6_MEGA");
       expect(agency_id).to.equal("OId_MEGA");
       expect(route_short_name).to.equal("M6");
       expect(route_long_name).to.equal("Falmouth - Victoria,London");
-      expect(route_type).to.equal("3");
+      expect(route_type).to.equal(3);
     });
   });
 

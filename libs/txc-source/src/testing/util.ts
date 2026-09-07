@@ -1,42 +1,28 @@
 import {Transform} from "stream";
 
+/**
+ * Collect everything a stream emits, then assert on it.
+ *
+ * The error listener matters: a throw inside `_transform` means its callback is
+ * never called, so without it the stream simply stalls and the test fails five
+ * seconds later saying nothing about why.
+ */
 export function awaitStream<T>(stream: Transform, fn: StreamTest<T>) {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve, reject) => {
     const data: T[] = [];
 
     stream.on("data", row => data.push(row));
+    stream.on("error", reject);
     stream.on("end", () => {
-      fn(data);
-      resolve();
+      try {
+        fn(data);
+        resolve();
+      }
+      catch (err) {
+        reject(err);
+      }
     });
   });
 }
 
 export type StreamTest<T> = (data: T[]) => any;
-
-export function splitCSV(csv: string): string[] {
-  csv = csv.replace("\n", "");
-  const row = [];
-  let i = 0;
-
-  while (i < csv.length) {
-    if (csv.charAt(i) === "\"") {
-      const endIndex = csv.indexOf("\"", i + 1);
-      const j = endIndex > 0 ? endIndex : csv.length;
-      const value = csv.substring(i + 1, j);
-
-      row.push(value);
-      i = j + 2;
-    }
-    else {
-      const endIndex = csv.indexOf(",", i);
-      const j = endIndex > 0 ? endIndex : csv.length;
-      const value = csv.substring(i, j);
-
-      row.push(value);
-      i = j + 1;
-    }
-  }
-
-  return row;
-}

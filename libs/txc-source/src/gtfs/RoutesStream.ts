@@ -1,22 +1,24 @@
-import {GTFSFileStream} from "./GTFSFileStream";
+import {RouteRow, RouteType} from "@gb-transit/gtfs-schema";
+import {RowStream} from "./RowStream";
+import {ROUTES} from "./TxcFeed";
 import {Mode, Service, TransXChange} from "../transxchange/TransXChange";
 
 /**
  * Extract the routes from the TransXChange objects
  */
-export class RoutesStream extends GTFSFileStream<TransXChange> {
-  protected header = "route_id,agency_id,route_short_name,route_long_name,route_type,route_text_color,route_color,route_url,route_desc";
+export class RoutesStream extends RowStream<TransXChange, RouteRow> {
+  public readonly file = ROUTES;
 
   private routesSeen: Record<string, boolean> = {};
-  private routeType: Record<Mode, number> = {
-    [Mode.Air]: 1100,
-    [Mode.Bus]: 3,
-    [Mode.Coach]: 3,
-    [Mode.Ferry]: 4,
-    [Mode.Rail]: 2,
-    [Mode.Train]: 2,
-    [Mode.Tram]: 0,
-    [Mode.Underground]: 1
+  private routeType: Record<Mode, RouteType> = {
+    [Mode.Air]: RouteType.Air,
+    [Mode.Bus]: RouteType.Bus,
+    [Mode.Coach]: RouteType.Bus,
+    [Mode.Ferry]: RouteType.Ferry,
+    [Mode.Rail]: RouteType.Rail,
+    [Mode.Train]: RouteType.Rail,
+    [Mode.Tram]: RouteType.Tram,
+    [Mode.Underground]: RouteType.Subway
   };
 
   protected transform(data: TransXChange): void {
@@ -36,17 +38,17 @@ export class RoutesStream extends GTFSFileStream<TransXChange> {
       if (!this.routesSeen[id]) {
         this.routesSeen[id] = true;
 
-        this.pushLine(
-          id,
-          service.RegisteredOperatorRef,
-          line.LineName,
-          line.Description || service.Description,
-          this.routeType[service.Mode],
-          "",
-          "",
-          "",
-          service.Description
-        );
+        this.pushRow({
+          route_id: id,
+          agency_id: service.RegisteredOperatorRef,
+          route_short_name: line.LineName,
+          route_long_name: line.Description || service.Description,
+          route_type: this.routeType[service.Mode],
+          route_text_color: "",
+          route_color: "",
+          route_url: "",
+          route_desc: service.Description
+        });
       }
     }
   }
