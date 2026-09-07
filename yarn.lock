@@ -512,6 +512,7 @@ __metadata:
   resolution: "@gb-transit/website@workspace:apps/website"
   dependencies:
     "@gb-transit/gtfs": "workspace:^"
+    marked: "npm:^18.0.11"
     typescript: "npm:7.0.2"
   languageName: unknown
   linkType: soft
@@ -1904,6 +1905,15 @@ __metadata:
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.5.5"
   checksum: 10c0/299378e38f9a270069fc62358522ddfb44e94244baa0d6a8980ab2a9b2490a1d03b236b447eee309e17eb3bddfa482c61259d47960eb018a904f0ded52780c4a
+  languageName: node
+  linkType: hard
+
+"marked@npm:^18.0.11":
+  version: 18.0.11
+  resolution: "marked@npm:18.0.11"
+  bin:
+    marked: bin/marked.js
+  checksum: 10c0/6c2a2bea05974f08f869d591a8eb6aa7fe68e56edbfe74c2d15eea3b85d45aabfea9dada6914d6f4a7917d612059b64eb8b9e5fd190c74ad8ab79c1f48a249b3
   languageName: node
   linkType: hard
 

@@ -1,0 +1,341 @@
+# Using this data
+
+<p class="lede">The decisions this feed makes, and the behaviour they produce. Not an introduction to GTFS.</p>
+
+<p><a href="./">Download the feed</a></p>
+
+The feed is built from the CIF timetable the Rail Delivery Group publishes through its DTD portal.
+CIF describes the railway in terms GTFS has no field for, so the build has to decide how to express
+them. This page lists those decisions and the behaviour they produce.
+
+## What you get
+
+Two feeds, from the same build, holding the same trips:
+
+| feed | what it holds |
+|---|---|
+| [`gtfs.zip`]({{download}}) | where a service calls |
+| [`gtfs-passing-points.zip`]({{downloadPassingPoints}}) | where a service calls, and where it runs through without stopping |
+
+A journey planner wants the first. Anything tracing where a train actually goes — what uses which
+line, where a delay was picked up, why two services conflict — wants the second. See
+[the passing points feed](#the-passing-points-feed).
+
+Both links resolve to the most recent release, so they can be bookmarked or scripted against.
+
+<div class="feed">{{summary}}</div>
+
+The release carries four JSON files as separate assets rather than inside the zips, because they
+describe the feed rather than being part of it and somebody unzipping a GTFS feed should get GTFS:
+
+| asset | what it is |
+|---|---|
+| `validation.json` | the validator's report, including every accepted error |
+| `feed-meta.json` | what was built, from what, and when |
+| `enrichment-report.json` | what each external source matched and missed |
+| `provenance.json` | every field an external source wrote, and every write that lost |
+
+A feed is published nightly. A build that fails validation is not released, so a missing night means
+the build was stopped rather than that a degraded feed was published. Releases are pruned to the
+last thirty days plus the earliest release of each month.
+
+## Reading the feed
+
+The five things most likely to break a consumer written against the specification alone:
+
+- No identifier in the feed is a three-letter station code. `stop_id` is a NaPTAN ATCO code and
+  `agency_id` a National Operator Code. The CRS is in `stop_code`. See
+  [identifiers](#identifiers).
+- `stop_times.txt` references boarding points, never stations. Interchange and fixed-link rows in
+  `transfers.txt` reference stations, and couplings reference boarding points. See
+  [stops, stations and platforms](#stops-stations-and-platforms).
+- Times run past `24:00:00`, and a service departing before 02:00 belongs to the previous service
+  day. See [calendars and time](#calendars-and-time).
+- `stop_headsign` is the only quoted field in the feed, and it contains commas on trains that
+  divide. A reader that splits each line on every comma will misparse those rows.
+- `service_id` is a plain integer, assigned from the calendar it describes. It is stable between
+  two builds of the same data and not between builds on different days. Join on it within one feed;
+  do not store it.
+
+## Identifiers
+
+Every identifier below is derived from the data rather than assigned in the order rows happen to
+arrive, so it does not move between builds. `service_id` is the exception, as above.
+
+**Stops** take NaPTAN's identifiers, so the feed can be merged with the Department for Transport's
+bus and metro data without a translation table.
+
+| | station | platform | call naming no platform |
+|---|---|---|---|
+| `stop_id` | `910GCLPHMJC` | `9100CLPHMJC15` | `9100CLPHMJC` |
+| `stop_code` | `CLJ` | `CLJ` | `CLJ` |
+| `stop_name` | Clapham Junction | Clapham Junction Platform 15 | Clapham Junction |
+| `location_type` | 1 | 0 | 0 |
+| `parent_station` | — | `910GCLPHMJC` | `910GCLPHMJC` |
+
+A boarding point takes the TIPLOC of the timing point rather than the station's, which is how
+Clapham Junction's West London and Main Line platforms come out as `9100CLPHMJW3` and
+`9100CLPHMJM11` under one station.
+
+**`agency_id`** is the National Operator Code form of the ATOC code: `=SN`, `=AW`, `=GW`. The
+equals sign is how the catalogue distinguishes a rail operator from an airline holding the same two
+letters.
+
+**`route_id`** is the ATOC code, or a brand where an operator runs more than one — `LN` and `WM`
+for West Midlands Trains, `WEA` and `LIB` for Overground lines, `BAK` and `MET` for the
+Underground. Which brand a service belongs to is recovered from where it calls. A scheduled bus is
+suffixed `_BUS` and a rail replacement bus `_RRB`, so `AW` and `AW_RRB` are one operator in two
+modes.
+
+An operator the software does not know about keeps a route of its own under its ATOC code rather
+than being collapsed into a catch-all, so its route id does not move when the operator list catches
+up.
+
+**`trip_id`** is the train UID, the date the schedule starts and the date it ends:
+`C00049_20260517_20261206`. The short term plan indicator is deliberately not part of it, so a
+schedule withdrawn and reissued reads as an amended timetable rather than one trip disappearing and
+another appearing. Where two schedules would produce the same id, the second gets a `_2` suffix.
+
+**`trip_short_name`** is the retail service id, which is what a ticketing system will recognise.
+
+## Stops, stations and platforms
+
+The hierarchy is exactly one level: stations with `location_type=1`, boarding points beneath them.
+
+Every call gets a boarding point, whether or not it names a platform, because a stop time may not
+reference a station. A station where some calls name a platform and some do not therefore has a
+platform-less child as well, which is what NaPTAN calls the station's access node.
+
+Four things are worth knowing before joining anything to `stops.txt`:
+
+- **`stop_desc` is not a description.** It holds the CATE interchange status as a bare number: 0 is
+  not an interchange, 1 to 3 its significance, 9 a subsidiary location.
+- **Running lines are not platforms.** `DF`, `UM`, `DPL` and `UGL` are designations for a line
+  rather than somewhere a passenger can stand, so a call naming one gets the station's boarding
+  point.
+- **A station with no coordinate is either absent or at 0,0.** One that nothing references is not
+  published. One that something references is published at 0,0 and named in a warning. It is not
+  given a plausible centroid, because a validator will flag 0,0 and a centroid would pass as a real
+  position.
+- **Coordinates and station names come from NaPTAN**, which supersedes the upper case, sixteen
+  character names the timetable carries. Boarding points are created before enrichment runs, so a
+  platform keeps the pre-enrichment name and coordinate while its station gets NaPTAN's. Read a
+  station's geometry from the station.
+
+A station nothing calls at within the window is still published, as a childless `location_type=1`
+row, so the station list does not change with the length of the build window.
+
+Two kinds of location are removed rather than published. Operator placeholders — `CH ORIGIN`,
+`XC DESTINATION` — exist so a schedule has somewhere to start when the real terminus is unknown,
+and are not places. Calls at locations the timetable never declares are dropped and
+`stop_sequence` renumbered, so the sequence is contiguous.
+
+## Routes, trips and headsigns
+
+`route_type` is `714`, rail replacement bus, for replacement services. It is an extended route type
+rather than one of the original seven, and a strict consumer will not recognise it.
+
+`route_desc` is empty throughout. Train class and whether a seat can be reserved are properties of a
+train rather than of a line, so neither belongs on a route.
+
+`direction_id`, `wheelchair_accessible` and `bikes_allowed` are `0` on every trip. In GTFS that
+means *no information*, not *no*; the timetable does not carry these. `timepoint` is `1` on every
+stop time, because CIF gives scheduled times rather than estimates, and
+`shape_dist_traveled` is empty because the feed has no shapes.
+
+`trip_headsign` is the name of the station the trip terminates at. Where a portion joins another
+train it is the destination the passenger reaches, not the station where the coupling happens: a
+Carstairs portion of a Euston service says London Euston.
+
+`stop_headsign` is empty except on a train that divides, where it names every destination the
+train is carrying, at the calls before the divide — `Caterham and Tattenham Corner` as far as
+Purley, and nothing from Purley on, where the trip headsign is right by itself. A train that
+divides twice names all three. This is the only field in the feed that contains a comma and is
+therefore quoted.
+
+Pickup and drop off come from the activity codes on each call:
+
+| activity | what it produces |
+|---|---|
+| `T`, `TB`, `U` | `pickup_type` `0`, scheduled |
+| `T`, `TF`, `D` | `drop_off_type` `0`, scheduled |
+| `R`, request stop | `3` on both, coordinate with the driver |
+| `N`, not advertised | `1` on both, and it takes precedence over `R` |
+| none of these | `1`, an operational stop where the train stops and nobody boards |
+
+The two directions are decided independently, so a call can be pick up only or set down only.
+
+**Known and unresolved.** Only buses take a route id of their own by mode, so an operator running
+trains and a ferry publishes both on one route, and the route calls itself a train. A handful of
+operators are affected, each running a small number of ship schedules.
+
+## Splits and joins
+
+A CIF association is two trains sharing a vehicle for part of their run. The feed does not fold one
+into the other. Both keep their own stops and their own trip, and the association is a row in
+`transfers.txt`:
+
+```
+from_stop_id,to_stop_id,from_trip_id,to_trip_id,transfer_type,min_transfer_time,...
+9100SWANSEA4,9100SWANSEA4,G38297_20261018_20261018,G38968_20261018_20261018,4,,...
+```
+
+`transfer_type=4` is an in-seat transfer: stay on board and you are on the other train. On a split
+the base is the `from` trip and the portion the `to`; on a join it is the other way round.
+
+Four consequences:
+
+- **The base is not cut at the coupling.** A through journey stays one trip, so a consumer
+  ignoring `transfers.txt` sees a through service rather than a change of trains. It costs a
+  validator warning about a mid-trip in-seat transfer, which is accepted deliberately.
+- **The coupling carries no calendar.** The two trips' own calendars say exactly when it applies:
+  the days both run are the days they are coupled.
+- **The two trips may be on different service days.** A portion that leaves after midnight is
+  published on the day its own record gives it, at its own times, so the Aberdeen portion of the
+  sleeper is the 04:28 out of Edinburgh rather than a 28:28 the day before. GTFS does not require
+  the two trips a transfer names to run on one service day.
+- **A split cannot say which coaches to be in.** The feed states that a passenger may stay on board
+  for the portion, and that the base continues to its own destination. Which of the two a passenger
+  reaches depends on which coaches they are in, and GTFS cannot express that, so a planner may
+  offer both.
+
+If your planner cannot follow a transfer across a service day,
+`--duplicate-overnight-associations` publishes the portion twice: once on its own day and once on
+the base's, at times past 24:00. The published feed does not use it, because that puts the same
+train in the feed twice and a departure board built from it shows the train leaving twice.
+
+## Calendars and time
+
+Every schedule gets a `calendar.txt` row for the days it runs and `calendar_dates.txt` rows for the
+days it does not. `exception_type` is always `2`, a removal. The feed never adds a date to a
+service.
+
+**An overlay reads as absence.** Where a short term plan schedule replaces part of a permanent one,
+the permanent trip simply has those dates excluded and the replacement is its own trip. GTFS has no
+way to say *this trip replaces that one*, so a consumer diffing two days will see one trip stop and
+another start, with nothing linking them.
+
+**`feed_start_date` and `feed_end_date` are the window the feed is complete for**, not the range of
+its calendars. A schedule that began in 2021 and still runs carries its real start date, and a
+calendar routinely runs to 2099, so the earliest and latest dates in `calendar.txt` describe the
+source data rather than the feed. Read the window from `feed_info.txt`.
+
+**Service days run to 02:00.** A service departing its origin before 02:00 is published on the
+previous service day, with every time shifted past 24:00 — a 00:35 departure is `24:35:00`. Times
+above 24 hours appear on any overnight service, not only these.
+
+Bank holiday running is in the source and is not modelled. A schedule that does not run on bank
+holidays is published as running on them.
+
+## The passing points feed
+
+Half of CIF's intermediate location records are places a service runs through without stopping.
+The standard feed drops them. `gtfs-passing-points.zip` keeps them, as calls with `pickup_type` and
+`drop_off_type` of `1` and the pass time as both arrival and departure — the only time the record
+has.
+
+```
+trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,...
+C82958_20260517_20261206,05:00:00,05:00:00,9100VICTRIC18,1,,0,1,...
+C82958_20260517_20261206,05:03:30,05:03:30,9100BATRSPK3,2,,1,1,...
+C82958_20260517_20261206,05:06:00,05:06:00,9100CLPHMJC15,3,,1,1,...
+```
+
+A pass names its platform like any other call, and nearly all passes land on a boarding point the
+feed already publishes because something stops there — so a consumer promoting a passing point to a
+real stop has nothing to translate. A pass whose record names no platform gets the station's
+boarding point.
+
+Everything else is identical. The two feeds hold the same trips, routes and calendars, and the
+nightly stops rather than publishing if the two disagree about how many trips there are.
+
+**One caveat.** A call publishes its public time and a passing point has only its working time, and
+the two do not agree. A small number of passes therefore read as later than the call after them.
+Correcting it would mean inventing a time for one of the two, so the feed reports the source as it
+is. `validation.json` names every occurrence, with the trip it is on.
+
+## transfers.txt
+
+Three kinds of row share the file, distinguishable by which columns are populated:
+
+| | `from`/`to` stop | trip ids | `transfer_type` | `min_transfer_time` |
+|---|---|---|---|---|
+| interchange within a station | the same station | empty | 2 | seconds |
+| a fixed link between stations | two stations | empty | 2 | seconds |
+| a split or a join | the same boarding point | both set | 4 | empty |
+
+`min_transfer_time` is in seconds. A self-transfer — `from_stop_id` equal to `to_stop_id` — is the
+documented way to express the time it takes to change platforms, and there is one for every station
+the timetable gives an interchange time for.
+
+Fixed links come from the feed's own file of walking, tube, bus and ferry connections, which holds
+one record per time window and day pattern. GTFS allows one row per stop pair, so where several
+records describe a pair the row is their envelope: the shortest time, the earliest start to the
+latest end, the union of the days, and every mode. Most pairs have a single mode and are exact. A
+row saying `METRO|WALK` means the connection exists by some means during that window, not that both
+run throughout it.
+
+## Non-standard columns and extension files
+
+The specification requires a consumer to ignore columns it does not recognise. Everything here is
+safe to drop.
+
+| where | what | why |
+|---|---|---|
+| `transfers.txt` | `mode`, `start_time`, `end_time`, `start_date`, `end_date` and seven day flags | GTFS has no way to express a conditional transfer, and a fixed link that only runs in the evening is a different thing from one that always does |
+| `attributions.txt` | `attribution_licence` | the file has an organisation and a URL and no field for the terms, which is the one thing an attribution has to state |
+| `routes.txt` | `route_type` `714` | an extended route type for a rail replacement bus |
+| `areas.txt`, `stop_areas.txt` | whole files, from GTFS Fares v2 | see below |
+
+The dates in the `transfers.txt` extension columns are `YYYY-MM-DD`, not the `YYYYMMDD` GTFS uses
+elsewhere.
+
+**Areas** publish the industry's group stations: `1072`, London Terminals, is Euston, Waterloo,
+King's Cross and the rest of the London termini, and a rider holding a ticket to it needs to know
+which stations that is. GTFS has
+no station-of-stations — `parent_station` is one level and forbidden between stations, and a
+transfer would assert you can walk from Euston to Waterloo — so a flat set of areas is what the
+source actually says. `area_id` is the four-digit National Location Code, which is what the rest of
+the industry joins on. The source table mixes group stations with travelcard zones and bus groups,
+and all three are published, each under the description the source gives it.
+
+There is also a `links.txt`, this project's own format, which the build writes only when asked and
+which the published feed does not contain. It is the fixed links unsummarised, one row per window.
+
+## What the feed does not say
+
+These are out of scope rather than pending:
+
+- **No `shapes.txt`.** Nothing in CIF describes track geometry, and the route between two calls
+  cannot be derived from the timetable.
+- **No fares.** `areas.txt` is the group station membership and nothing else; there are no fare
+  products, rules or transfer rules.
+- **No real time.** This is the planned timetable. Cancellations and alterations published after
+  the refresh are not in it.
+- **No `pathways.txt` and no station entrances.** Without pathways an entrance is a node nothing
+  can route through, so both wait on the other.
+- **No bank holiday variations**, as above.
+- **Accessibility is station-level only.** `wheelchair_boarding` comes from a hand-maintained table
+  covering most stations, is not per platform, and is `0` — no information — where the table has no
+  entry.
+
+## Validation, and reporting a problem
+
+Every build is validated with a pinned version of MobilityData's `gtfs-validator` before anything is
+released, and a feed with an unlisted error is not published.
+
+A small number of errors are accepted, each named and capped in a baseline file with its reason.
+They are all the same case: the source states something that cannot be true, and the feed reports it
+rather than correcting it. A train that reaches its second station before it leaves its first is in
+the timetable operators and passengers are working from, and changing it here would hide the fault
+from the people who can correct it at source. `validation.json` on each release is the full report.
+
+If the feed says something wrong about a train, it is either the source data, which the feed is
+reporting as it stands, or one of the decisions on this page. Both are worth raising: the second is
+a bug, and the first is worth a record so that the next person does not investigate it again.
+
+<p><a href="https://github.com/planarnetwork/dtd2mysql/issues">Issues and source</a></p>
+
+## Sources and licences
+
+<dl>{{sources}}</dl>

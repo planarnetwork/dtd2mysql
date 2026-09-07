@@ -8,7 +8,8 @@
     "build": "tsc -b && node dist/build.js"
   },
   "dependencies": {
-    "@gb-transit/gtfs": "workspace:^"
+    "@gb-transit/gtfs": "workspace:^",
+    "marked": "^18.0.11"
   },
   "devDependencies": {
     "typescript": "7.0.2"
