@@ -1,0 +1,137 @@
+import type { ServiceCalendar } from "./Service.js";
+
+// A duration is seconds and a day of week is Sunday-first, exactly as the feed build has them.
+// Imported rather than declared again so that a feed read here and a feed written by
+// @gb-transit/gtfs cannot come to disagree about either. Both are type only, so nothing of the
+// schema package survives into the output.
+import type { DayOfWeek, Duration } from "@gb-transit/gtfs-schema/scalars";
+
+export type { DayOfWeek, Duration };
+
+/**
+ * StopID e.g. NRW
+ */
+export type StopID = string;
+
+/**
+ * Time in seconds since midnight (note this may be greater than 24 hours).
+ */
+export type Time = number;
+
+/**
+ * GTFS stop time
+ */
+export interface StopTime {
+  /** The stop as the feed gives it, which may identify a platform within a station */
+  stop: StopID;
+  arrivalTime: Time;
+  departureTime: Time;
+  pickUp: boolean;
+  dropOff: boolean;
+}
+
+/**
+ * A walk between two stops, available between the given times.
+ *
+ * Declares its own origin and destination rather than extending the journey Leg it also satisfies,
+ * so that the feed's own types do not depend on the shape results are returned in.
+ */
+export interface Transfer {
+  origin: StopID;
+  destination: StopID;
+  duration: Duration;
+  startTime: Time;
+  endTime: Time;
+}
+
+/**
+ * GTFS trip_id
+ */
+export type TripID = string;
+
+/**
+ * GTFS service_id, used to determine the trip's calendar
+ */
+export type ServiceID = string;
+
+/**
+ * GTFS trip
+ */
+export interface Trip {
+  tripId: TripID;
+  /** The trip's stopping pattern as the feed gives it, passing points and all */
+  stopTimes: StopTime[];
+  serviceId: ServiceID;
+  service: ServiceCalendar;
+}
+
+/**
+ * A transfers.txt row of transfer_type 4, saying the vehicle of one trip carries on as another.
+ *
+ * The stops are optional in GTFS and identify platforms rather than the station the coupling
+ * happens at, so they place the coupling within each trip rather than name where it is.
+ */
+export interface TripLink {
+  fromTripId: TripID;
+  toTripId: TripID;
+  fromStop?: StopID;
+  toStop?: StopID;
+}
+
+/**
+ * Date stored as a number, e.g 20181225
+ */
+export type DateNumber = number;
+
+/**
+ * Index of dates, used to access exclude/include dates in O(1) time
+ */
+export type DateIndex = Record<DateNumber, boolean>;
+
+/**
+ * GTFS calendar
+ */
+export interface Calendar {
+  serviceId: ServiceID;
+  startDate: DateNumber;
+  endDate: DateNumber;
+  days: Record<DayOfWeek, boolean>;
+  exclude: DateIndex;
+  include: DateIndex;
+}
+
+/**
+ * Calendars indexed by service ID
+ */
+export type CalendarIndex = Record<ServiceID, Calendar>;
+
+/**
+ * GTFS stop
+ */
+export interface Stop {
+  id: StopID,
+  code: string,
+  name: string,
+  description: string,
+  latitude: number,
+  longitude: number,
+  timezone: string,
+  locationType: number,
+  parentStation?: StopID,
+  platformCode?: string
+}
+
+/**
+ * Stops indexed by ID
+ */
+export type StopIndex = Record<StopID, Stop>;
+
+/**
+ * Minimum time needed to change vehicles at each stop
+ */
+export type Interchange = Record<StopID, Time>;
+
+/**
+ * Footpaths out of each stop
+ */
+export type TransfersByOrigin = Record<StopID, Transfer[]>;

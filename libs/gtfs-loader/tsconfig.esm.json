@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // See libs/gtfs-schema/tsconfig.esm.json: nodenext takes the module format from the package's
+    // "type" field, so esnext modules with bundler resolution is the only way to get a second,
+    // ESM output from a package whose default build is CommonJS.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "dist/esm",
+    "tsBuildInfoFile": "tsconfig.esm.tsbuildinfo"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../gtfs-schema"
+    }
+  ],
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}

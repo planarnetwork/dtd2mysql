@@ -1,0 +1,39 @@
+// The imports in this package carry explicit .js extensions, which the rest of the repository does
+// not. It publishes ESM as well as CommonJS and node's ESM loader will not resolve a specifier
+// without one; nodenext maps them back onto the .ts sources for either build. Do not take them off.
+
+// The feed, and the two ways in
+export { GTFSFetchError, loadGTFS, loadGTFSFromUrl } from "./GTFSLoader.js";
+export type { FeedInfo, FetchOptions, GTFSFeed } from "./GTFSLoader.js";
+export { sizeOf, toChunks } from "./Source.js";
+export type { GTFSSource } from "./Source.js";
+export { ProgressReporter } from "./Progress.js";
+export type { LoadOptions, LoadProgress } from "./Progress.js";
+
+// What the feed is made of. Several of these names are also exported by @gb-transit/gtfs, where
+// they mean something else: those are the rows a GB rail feed is written as, these are what any
+// feed is read into. Same words, opposite directions - see the README.
+export type {
+  Calendar, CalendarIndex, DateIndex, DateNumber, DayOfWeek, Duration, Interchange, ServiceID,
+  Stop, StopID, StopIndex, StopTime, Time, Transfer, TransfersByOrigin, Trip, TripID, TripLink
+} from "./GTFS.js";
+export { LinkedService, Service } from "./Service.js";
+export type { ServiceCalendar } from "./Service.js";
+export { addDays, daysBetween, getDateNumber, getDayOfWeek } from "./DateUtil.js";
+
+// Coupled trips: the through trip a passenger stays on across a coupling
+export { coupledTripIds, linkTrips } from "./LinkedTrips.js";
+
+// The feed put into the terms a journey planner plans in
+export { isCall, normalise } from "./Normalise.js";
+export type { TimetableInput } from "./Normalise.js";
+
+// The parts, for a caller that wants to read a feed some other way
+export { CSVParser } from "./CSVParser.js";
+export type { Row } from "./CSVParser.js";
+export { COLUMNS, entityTypeOf } from "./EntityType.js";
+export type { EntityType } from "./EntityType.js";
+export { FeedBuilder } from "./FeedBuilder.js";
+export { TimeParser } from "./TimeParser.js";
+export { readZip } from "./ZipReader.js";
+export type { EntrySink, ReadZipOptions, ZipEntry } from "./ZipReader.js";

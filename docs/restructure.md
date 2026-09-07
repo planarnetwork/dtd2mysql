@@ -2033,6 +2033,35 @@ remainder of T.
    is two associations for the same pair of TUIDs live over the same dates, and a pair divides once,
    so the feed always cancels one: there are no uncancelled multi-location overlaps. `mergeSchedules`
    suffixes rather than throwing anyway, so bad data cannot fail a build.
+7. **A GTFS reader lives here too, and it brought three deviations with it.** `libs/gtfs-loader` is
+   raptor's GTFS reader, moved into this repository so that the code which reads feeds sits beside
+   the code that writes them and can be versioned and consumed like anything else. raptor becomes a
+   consumer of it and deletes its copy — separate work, in a separate repository, after this is
+   published.
+
+   It is the first package here with a consumer that is not node, which is what the deviations are
+   for. It **publishes ESM as well as CommonJS**, so the root build no longer ends at `tsc -b`:
+   `scripts/dual-package-markers.mjs` writes the `{"type": "module"}` marker into `dist/esm`,
+   because tsc cannot emit a file it was not given and `tsc -b` does not run per-workspace build
+   scripts. Its **imports carry explicit `.js` extensions**, without which node's ESM loader cannot
+   resolve the output at all — this was not a preference, the extensionless build simply did not
+   run. And its **`engines` says `>= 22`**, not 26.
+
+   That last one is only true because of the split above it. `libs/gtfs-schema` exists so the reader
+   and the writer cannot come to disagree about what a duration is or how a day of the week is
+   numbered, and the reader takes those four declarations through `@gb-transit/gtfs-schema/scalars`
+   rather than the package itself. The subpath is not a bundle-size nicety: `model/PlainDate` is
+   typed against the `Temporal` global, and a consumer whose TypeScript predates Temporal — raptor
+   is on 5.9.3, which ships no Temporal lib at all — cannot read that declaration. Going through the
+   barrel made the published types fail to compile for exactly the project this was moved for. It is
+   checked now: the packaged loader is required, imported and run against the golden feed in CI, and
+   the install is asserted to contain neither proj4 nor the memoisation decorator.
+
+   The eight type names `gtfs-loader` shares with `gtfs` — `Stop`, `StopTime`, `Trip`, `Transfer`,
+   `Calendar`, `TripLink`, `StopID`, `FeedInfo` — are deliberate. One set is the rows a GB rail feed
+   is written as, the other is what any feed is read into, and the two `LinkedTrips` modules are
+   inverse operations across the same `transfer_type: 4` row. They sit side by side in
+   `type-surface.json` and must not be merged.
 
 ---
 

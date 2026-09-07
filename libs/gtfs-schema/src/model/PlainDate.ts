@@ -3,14 +3,9 @@
  * The Temporal.PlainDate operations this project needs that Temporal itself does not provide.
  */
 
-/**
- * Index into a Days map: 0 = Sunday through to 6 = Saturday.
- *
- * This is deliberately not Temporal's numbering. Temporal.PlainDate.dayOfWeek is ISO
- * (1 = Monday .. 7 = Sunday) whereas the GTFS calendar columns and the CIF schedule rows are both
- * Sunday-first, so the conversion happens here rather than at every call site.
- */
-export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+import type { DayOfWeek } from "./DayOfWeek.js";
+
+export type { DayOfWeek };
 
 export function dayOfWeek(date: Temporal.PlainDate): DayOfWeek {
   return (date.dayOfWeek % 7) as DayOfWeek;

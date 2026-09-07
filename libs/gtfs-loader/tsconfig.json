@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    // This package runs in a browser as well as in node. HeadersInit, in GTFSLoader's
+    // FetchOptions, is the only name dom supplies that @types/node does not - Blob, Response,
+    // ReadableStream, fetch, AbortSignal, TextDecoder and TextEncoder all come from node's types.
+    "lib": [
+      "esnext",
+      "dom"
+    ]
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../gtfs-schema"
+    }
+  ],
+  "exclude": [
+    "**/*.spec.ts"
+  ]
+}
