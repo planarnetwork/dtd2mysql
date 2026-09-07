@@ -54,7 +54,9 @@ gtfsmerge gtfs.zip bus.zip gb.zip
 ```
 
 `transxchange2gtfs` converts TransXChange, the format GB bus and coach timetables are published in,
-and `gtfsmerge` merges feeds into one. They compose with the rail feed because all three identify a
+and `gtfsmerge` merges feeds into one. The first conversion downloads the national NaPTAN dataset —
+around 100 MB — to say where the stops are, and caches it; `--naptan <file>` reads a copy you
+already have instead. They compose with the rail feed because all three identify a
 stop by its ATCO code, so a merged feed knows that the bus stop outside a station is outside that
 station — no `--stop-prefix`, no reconciliation.
 [`tests`](tests/README.md) is what keeps that true.
@@ -90,7 +92,7 @@ README describing what it is for and how to use it.
 | [`libs/dtd-source`](libs/dtd-source/README.md) | `@gb-transit/dtd-source` | SFTP download, feed sequencing, and a timetable source that reads the files directly |
 | [`libs/gtfs`](libs/gtfs/README.md) | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | [`libs/gtfs-output`](libs/gtfs-output/README.md) | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
-| [`libs/gtfs-loader`](libs/gtfs-loader/README.md) | `@gb-transit/gtfs-loader` | The reader: a GTFS zip, stream or response, as rows or as a timetable |
+| [`libs/gtfs-loader`](libs/gtfs-loader/README.md) | `@gb-transit/gtfs-loader` | The reader: a GTFS zip, stream or response, as a timetable or as its rows |
 | [`libs/naptan`](libs/naptan/README.md) | `@gb-transit/naptan` | Download, cache and read the NaPTAN national stop dataset |
 | [`libs/enrich-naptan`](libs/enrich-naptan/README.md) | `@gb-transit/enrich-naptan` | Station coordinates and names from NaPTAN |
 | [`libs/extend-station-groups`](libs/extend-station-groups/README.md) | `@gb-transit/extend-station-groups` | Group stations as GTFS Fares v2 areas |
@@ -129,7 +131,7 @@ references and makes it incremental.
 Issues and pull requests are very welcome. To get set up:
 
 ```
-git clone git@github.com:planarnetwork/dtd2mysql
+git clone git@github.com:planarnetwork/gb-transit
 yarn install
 yarn test
 ```
