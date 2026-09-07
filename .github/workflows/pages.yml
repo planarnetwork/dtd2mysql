@@ -41,6 +41,13 @@ jobs:
       - run: yarn install --immutable
       - run: yarn build
       - run: node apps/website/dist/build.js
+      - name: Publish the feed alongside the site
+        run: |
+          mkdir -p apps/website/public
+          curl -fsSL --retry 3 --retry-delay 5 \
+            https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip \
+            -o apps/website/public/gtfs.zip
+          ls -lh apps/website/public/gtfs.zip
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
