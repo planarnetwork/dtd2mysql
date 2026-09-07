@@ -2,6 +2,8 @@ import {describe, it, expect, beforeAll} from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import {zipSync, strToU8} from "fflate";
+import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
 import {build} from "./build.js";
 
 /**
@@ -23,47 +25,19 @@ const TODAY = "2026-08-10";
 let built: string;
 
 const feed = (file: string) => fs.readFileSync(path.join(built, file), "utf8");
-const columns = (file: string) => {
-  const lines = feed(file).split("\n").filter(line => line !== "");
-  const names = values(lines[0]);
-
-  return lines.slice(1).map(line => Object.fromEntries(names.map((name, i) => [name, values(line)[i]])));
-};
 
 /**
- * One CSV line, with quoted fields kept whole.
+ * The rows of one built file.
  *
- * A headsign naming more than one destination has a comma in it - "Inverness, Aberdeen and Fort
- * William" - and is the only thing in the feed that has ever needed quoting, so splitting on every
- * comma used to be enough and no longer is.
+ * Read with @gb-transit/gtfs-read rather than by splitting on commas here. This
+ * spec used to carry its own CSV parser, because a headsign naming more than one
+ * destination - "Inverness, Aberdeen and Fort William" - is quoted and splitting
+ * on every comma got it wrong. The reader handles that, and reading the feed
+ * back with the package built for it also means these assertions are checking
+ * what a consumer would actually see.
  */
-const values = (line: string): string[] => {
-  const found: string[] = [];
-  let value = "";
-  let quoted = false;
-
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      // "" inside a quoted field is one literal quote
-      if (quoted && line[i + 1] === '"') {
-        value += '"';
-        i++;
-      }
-      else {
-        quoted = !quoted;
-      }
-    }
-    else if (line[i] === "," && !quoted) {
-      found.push(value);
-      value = "";
-    }
-    else {
-      value += line[i];
-    }
-  }
-
-  return [...found, value];
-};
+let rows: Awaited<ReturnType<typeof readFeedRows>>;
+const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
 
 beforeAll(async () => {
   built = fs.mkdtempSync(path.join(os.tmpdir(), "golden"));
@@ -83,6 +57,17 @@ beforeAll(async () => {
       fs.copyFileSync(path.join(built, file), path.join(golden, file));
     }
   }
+
+  // The built directory as a zip, so the reader can be pointed at it. Zipping
+  // is cheaper than teaching the reader about directories, and it exercises the
+  // path a consumer actually takes.
+  const entries: Record<string, Uint8Array> = {};
+
+  for (const file of fs.readdirSync(built).filter(f => f.endsWith(".txt"))) {
+    entries[file] = strToU8(fs.readFileSync(path.join(built, file), "utf8"));
+  }
+
+  rows = await readFeedRows(zipSync(entries));
 }, 60_000);
 
 describe("the mini fixture", () => {
@@ -191,7 +176,7 @@ describe("the feed the mini fixture produces", () => {
     // of the train says. Those are the trips a coupling arrives on.
     const joining = new Set(
       columns("transfers.txt")
-        .filter(t => t.transfer_type === "4" && t.from_stop_id === last.get(t.from_trip_id)?.stop)
+        .filter(t => t.transfer_type === 4 && t.from_stop_id === last.get(t.from_trip_id ?? "")?.stop)
         .map(t => t.from_trip_id)
     );
     const trips = columns("trips.txt");
@@ -220,16 +205,20 @@ describe("the feed the mini fixture produces", () => {
   it("claims nothing about wheelchairs or bicycles", () => {
     const trips = columns("trips.txt");
 
-    expect(trips.every(t => t.wheelchair_accessible === "0")).to.equal(true);
-    expect(trips.every(t => t.bikes_allowed === "0")).to.equal(true);
+    expect(trips.every(t => t.wheelchair_accessible === 0)).to.equal(true);
+    expect(trips.every(t => t.bikes_allowed === 0)).to.equal(true);
   });
 
   it("puts no platform in stop_headsign", () => {
     // B13: the platform belongs on the stop, and a headsign saying "3" is what that mistake looked
     // like. It says where the train goes, so a bare platform number never appears in it.
-    const headsigns = columns("stop_times.txt").map(s => s.stop_headsign).filter(h => h !== "");
+    // An empty stop_headsign reads back as undefined, which is how the writer
+    // was given it.
+    const headsigns = columns("stop_times.txt")
+      .map(s => s.stop_headsign)
+      .filter(h => h !== undefined && h !== "");
 
-    expect(headsigns.filter(h => /^\d/.test(h))).to.deep.equal([]);
+    expect(headsigns.filter(h => /^\d/.test(h!))).to.deep.equal([]);
   });
 
   it("names every destination a dividing train is still carrying", () => {
@@ -240,7 +229,9 @@ describe("the feed the mini fixture produces", () => {
       .map(s => [s.stop_id, s.stop_headsign]);
 
     expect(sleeper[4]).to.deep.equal(["9100CARLILE3", "Inverness, Aberdeen and Fort William"]);
-    expect(sleeper[5]).to.deep.equal(["9100EDINBUR2", ""]);
+    // An empty stop_headsign reads back as undefined, which is what the writer
+    // wrote it from - the trip headsign holds from here on.
+    expect(sleeper[5]).to.deep.equal(["9100EDINBUR2", undefined]);
   });
 
   it("does not publish a station it cannot locate and nothing calls at", () => {
@@ -271,8 +262,8 @@ describe("the feed the mini fixture produces", () => {
     const types = new Set(columns("routes.txt").map(r => r.route_type));
 
     // 3 bus, 4 ferry, 1 underground, 2 rail
-    expect(types).to.include("3");
-    expect(types).to.include("4");
+    expect(types).to.include(3);
+    expect(types).to.include(4);
   });
 
   it("rolls a service that departs after midnight into the previous day", () => {
@@ -285,7 +276,7 @@ describe("the feed the mini fixture produces", () => {
     const excluded = columns("calendar_dates.txt");
 
     expect(excluded.length).to.be.greaterThan(0);
-    expect(excluded.every(d => d.exception_type === "2")).to.equal(true);
+    expect(excluded.every(d => d.exception_type === 2)).to.equal(true);
   });
 
   it("writes no trip for a cancellation, which carries no stops", () => {
@@ -331,7 +322,7 @@ describe("the feed the mini fixture produces", () => {
     expect(trips).to.not.include("C04543_20260518_20261207");
 
     const link = columns("transfers.txt")
-      .find(t => t.from_trip_id === "C04569_20260518_20261207" && t.to_trip_id.startsWith("C04543_"));
+      .find(t => t.from_trip_id === "C04569_20260518_20261207" && !!t.to_trip_id?.startsWith("C04543_"));
 
     expect(link?.to_trip_id).to.equal("C04543_20260519_20261208");
   });

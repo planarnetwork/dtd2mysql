@@ -292,7 +292,18 @@
     "field",
     "writeZip"
   ],
-  "gtfs-read": [],
+  "gtfs-read": [
+    "FEED_FILES",
+    "FeedFileName",
+    "FeedHandlers",
+    "FeedRowTypes",
+    "READ_COLUMNS",
+    "ReadFeedOptions",
+    "feedFileOf",
+    "readFeed",
+    "readFeedRows",
+    "toRow"
+  ],
   "gtfs-schema": [
     "Agency",
     "AgencyID",
