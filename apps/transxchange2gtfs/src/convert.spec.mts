@@ -166,25 +166,26 @@ describe("the feed the mini fixture produces", () => {
   });
 
   it("names a stop from NaPTAN rather than from the feed", () => {
-    const temple = columns("stops.txt").find(s => s.stop_id === "0100BRP90310");
+    const station = columns("stops.txt").find(s => s.stop_id === "0400AMSHM001");
 
-    // The feed says "Temple Meads Station". NaPTAN adds the indicator, the
-    // street and the town, and the `->` in an indicator is dropped.
-    expect(temple!.stop_name).to.equal("Temple Meads Station (NE), Station Approach, Bristol");
-    expect(temple!.stop_code).to.equal("bstgjpm");
+    // The feed says "Amersham Station". NaPTAN adds the indicator, the street
+    // and the town, and the `->` in an indicator is dropped.
+    expect(station!.stop_name).to.equal("Amersham Station (NE), Station Approach, Amersham");
+    expect(station!.stop_code).to.equal("bucgjpm");
   });
 
   it("does not add a street name that the stop name already contains", () => {
-    // "Victoria Street" is on Victoria Street, and saying so twice reads badly.
-    const victoria = columns("stops.txt").find(s => s.stop_id === "0100BRP90311");
+    // "Hill Avenue" is on Hill Avenue, and saying so twice reads badly.
+    const hill = columns("stops.txt").find(s => s.stop_id === "0400AMSHM002");
 
-    expect(victoria!.stop_name).to.equal("Victoria Street (SW), Bristol");
+    expect(hill!.stop_name).to.equal("Hill Avenue (SW), Amersham");
   });
 
   it("keeps a route description containing a comma", () => {
     const quoted = columns("routes.txt").find(r => r.route_id === "PB0000815:1|L2");
 
-    expect(quoted!.route_long_name).to.equal("Temple Meads to Clifton, via Victoria Street");
+    expect(quoted!.route_long_name)
+      .to.equal("Amersham Station to Old Amersham, via Hill Avenue");
   });
 
   it("excludes the bank holidays the operating profile does not run on", () => {

@@ -1,8 +1,14 @@
 # The mini fixture
 
 `mini.xml` is a hand-written TransXChange 2.4 document — one bus service in
-Bristol, four stops, three vehicle journeys — and `golden/` is the feed it
+Amersham, four stops, three vehicle journeys — and `golden/` is the feed it
 produces.
+
+It is set in Amersham because Amersham is a station the DTD mini fixture
+actually serves, so `apps/feed-e2e` can merge this feed with the rail one and
+find the walk transfer between the train and the bus outside. Bristol was the
+first choice; Temple Meads is in the rail feed, but only because a fixed link
+reaches it rather than because any train in that fixture calls there.
 
 It is written rather than sliced out of a real Bus Open Data Service download.
 That was the first choice, and the trade is worth stating: a real slice would
@@ -14,8 +20,8 @@ cannot reproduce, take the BODS slice then — it is Open Government Licence v3.
 so it may be redistributed with attribution, and the attribution belongs in this
 file and in the feed's `attributions.txt`.
 
-The stop identifiers are real Bristol ATCO codes, and `naptan.csv` carries the
-four NaPTAN rows for them, so the conversion runs offline. Without it the tool
+The stop identifiers are Buckinghamshire-shaped ATCO codes, and `naptan.csv`
+carries the four NaPTAN rows for them, so the conversion runs offline. Without it the tool
 downloads the ~100MB national dataset, which is not something a test should do.
 
 | Element | What it covers |
@@ -32,8 +38,8 @@ downloads the ~100MB national dataset, which is not something a test should do.
 | `RL3`'s repeated `<Location>` | Two consecutive identical points, which must not become two shape points. |
 | `<Activity>pickUp` and `setDown` | `pickup_type` and `drop_off_type` on the first and last calls. |
 | `<TimingStatus>PTP` and `OTH` | `timepoint` 1 and 0. |
-| NaPTAN `Temple Meads Station` | An `->NE` indicator, whose arrow is dropped, and a street worth appending. |
-| NaPTAN `Victoria Street` | A name that already contains its street, so the street is not appended twice. |
+| NaPTAN `Amersham Station` | An `->NE` indicator, whose arrow is dropped, and a street worth appending. |
+| NaPTAN `Hill Avenue` | A name that already contains its street, so the street is not appended twice. |
 
 `nested.zip` is `mini.xml` inside a zip inside a zip, which is the shape a BODS
 download arrives in, and is the only thing covering `FileStream`'s recursion.

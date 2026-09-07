@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../libs/gtfs-schema"
+    },
+    {
+      "path": "../../libs/gtfs-read"
+    },
+    {
+      "path": "../../libs/gtfs-output"
+    },
+    {
+      "path": "../cif2gtfs"
+    },
+    {
+      "path": "../transxchange2gtfs"
+    },
+    {
+      "path": "../gtfsmerge"
+    }
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.spec.mts"
+  ]
+}

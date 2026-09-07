@@ -57,6 +57,9 @@
     },
     {
       "path": "./apps/website"
+    },
+    {
+      "path": "./apps/feed-e2e"
     }
   ]
 }

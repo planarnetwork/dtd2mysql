@@ -475,6 +475,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@gb-transit/feed-e2e@workspace:apps/feed-e2e":
+  version: 0.0.0-use.local
+  resolution: "@gb-transit/feed-e2e@workspace:apps/feed-e2e"
+  dependencies:
+    "@gb-transit/gtfs-output": "workspace:^"
+    "@gb-transit/gtfs-read": "workspace:^"
+    "@gb-transit/gtfs-schema": "workspace:^"
+    cif2gtfs: "workspace:^"
+    fflate: "npm:^0.8.3"
+    gtfsmerge: "workspace:^"
+    transxchange2gtfs: "workspace:^"
+    typescript: "npm:7.0.2"
+  languageName: unknown
+  linkType: soft
+
 "@gb-transit/feed-parser@workspace:^, @gb-transit/feed-parser@workspace:libs/feed-parser":
   version: 0.0.0-use.local
   resolution: "@gb-transit/feed-parser@workspace:libs/feed-parser"
@@ -1257,7 +1272,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cif2gtfs@workspace:apps/cif2gtfs":
+"cif2gtfs@workspace:^, cif2gtfs@workspace:apps/cif2gtfs":
   version: 0.0.0-use.local
   resolution: "cif2gtfs@workspace:apps/cif2gtfs"
   dependencies:
@@ -1733,7 +1748,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"gtfsmerge@workspace:apps/gtfsmerge":
+"gtfsmerge@workspace:^, gtfsmerge@workspace:apps/gtfsmerge":
   version: 0.0.0-use.local
   resolution: "gtfsmerge@workspace:apps/gtfsmerge"
   dependencies:
@@ -2681,7 +2696,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"transxchange2gtfs@workspace:apps/transxchange2gtfs":
+"transxchange2gtfs@workspace:^, transxchange2gtfs@workspace:apps/transxchange2gtfs":
   version: 0.0.0-use.local
   resolution: "transxchange2gtfs@workspace:apps/transxchange2gtfs"
   dependencies:

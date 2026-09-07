@@ -255,7 +255,7 @@ describe("StopsAndTransfersMerger", () => {
       transfer_type: TransferType.InSeat, min_transfer_time: null
     };
 
-    await m.write([], [coupling], {}, {}, {"old-a": "1", "old-b": "2"});
+    await m.write([], [coupling], {}, {s: true}, {"old-a": "1", "old-b": "2"});
 
     expect(transfers.rows[0]).to.include({from_trip_id: "1", to_trip_id: "2"});
   });
@@ -267,7 +267,21 @@ describe("StopsAndTransfersMerger", () => {
       transfer_type: TransferType.InSeat, min_transfer_time: null
     };
 
-    await m.write([], [coupling], {}, {}, {"old-a": "1"});
+    await m.write([], [coupling], {}, {s: true}, {"old-a": "1"});
+
+    expect(transfers.rows).to.deep.equal([]);
+  });
+
+  it("drops a transfer to a stop nothing calls at", async () => {
+    const {transfers, merger: m} = merger(0);
+    const transfer: TransferRow = {
+      from_stop_id: "used", to_stop_id: "unused", transfer_type: TransferType.MinTime,
+      min_transfer_time: 120
+    };
+
+    // Only the stops something calls at are published, so the other end of this
+    // would be a reference to a row that is not in the feed.
+    await m.write([], [transfer], {}, {used: true}, {});
 
     expect(transfers.rows).to.deep.equal([]);
   });
@@ -279,7 +293,7 @@ describe("StopsAndTransfersMerger", () => {
       min_transfer_time: 120
     };
 
-    await m.write([], [transfer], {platform: "station"}, {}, {});
+    await m.write([], [transfer], {platform: "station"}, {station: true, other: true}, {});
 
     expect(transfers.rows[0].from_stop_id).to.equal("station");
   });

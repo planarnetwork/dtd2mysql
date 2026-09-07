@@ -1,0 +1,23 @@
+{
+  "name": "@gb-transit/feed-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The three tools, run in sequence, over the fixtures they each commit",
+  "license": "GPL-3.0",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "engines": {
+    "node": ">=26"
+  },
+  "devDependencies": {
+    "@gb-transit/gtfs-output": "workspace:^",
+    "@gb-transit/gtfs-read": "workspace:^",
+    "@gb-transit/gtfs-schema": "workspace:^",
+    "cif2gtfs": "workspace:^",
+    "fflate": "^0.8.3",
+    "gtfsmerge": "workspace:^",
+    "transxchange2gtfs": "workspace:^",
+    "typescript": "7.0.2"
+  }
+}

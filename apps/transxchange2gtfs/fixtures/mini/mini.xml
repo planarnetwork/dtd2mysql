@@ -2,64 +2,64 @@
 <TransXChange xmlns="http://www.transxchange.org.uk/" SchemaVersion="2.4">
   <StopPoints>
     <AnnotatedStopPointRef>
-      <StopPointRef>0100BRP90310</StopPointRef>
-      <CommonName>Temple Meads Station</CommonName>
-      <LocalityName>Bristol</LocalityName>
-      <LocalityQualifier>Redcliffe</LocalityQualifier>
-      <Location><Latitude>51.44921</Latitude><Longitude>-2.58113</Longitude></Location>
+      <StopPointRef>0400AMSHM001</StopPointRef>
+      <CommonName>Amersham Station</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Amersham on the Hill</LocalityQualifier>
+      <Location><Latitude>51.67421</Latitude><Longitude>-0.60759</Longitude></Location>
     </AnnotatedStopPointRef>
     <AnnotatedStopPointRef>
-      <StopPointRef>0100BRP90311</StopPointRef>
-      <CommonName>Victoria Street</CommonName>
-      <LocalityName>Bristol</LocalityName>
-      <LocalityQualifier>Redcliffe</LocalityQualifier>
-      <Location><Latitude>51.45153</Latitude><Longitude>-2.59021</Longitude></Location>
+      <StopPointRef>0400AMSHM002</StopPointRef>
+      <CommonName>Hill Avenue</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Amersham on the Hill</LocalityQualifier>
+      <Location><Latitude>51.67180</Latitude><Longitude>-0.60050</Longitude></Location>
     </AnnotatedStopPointRef>
     <AnnotatedStopPointRef>
-      <StopPointRef>0100BRP90312</StopPointRef>
-      <CommonName>The Centre</CommonName>
-      <LocalityName>Bristol</LocalityName>
-      <LocalityQualifier>City Centre</LocalityQualifier>
-      <Location><Latitude>51.45419</Latitude><Longitude>-2.59705</Longitude></Location>
+      <StopPointRef>0400AMSHM003</StopPointRef>
+      <CommonName>Amersham Broadway</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Amersham on the Hill</LocalityQualifier>
+      <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
     </AnnotatedStopPointRef>
     <AnnotatedStopPointRef>
-      <StopPointRef>0100BRP90313</StopPointRef>
-      <CommonName>Clifton Triangle</CommonName>
-      <LocalityName>Bristol</LocalityName>
-      <LocalityQualifier>Clifton</LocalityQualifier>
-      <Location><Latitude>51.45532</Latitude><Longitude>-2.60528</Longitude></Location>
+      <StopPointRef>0400AMSHM004</StopPointRef>
+      <CommonName>Old Amersham</CommonName>
+      <LocalityName>Amersham</LocalityName>
+      <LocalityQualifier>Old Amersham</LocalityQualifier>
+      <Location><Latitude>51.66720</Latitude><Longitude>-0.59380</Longitude></Location>
     </AnnotatedStopPointRef>
   </StopPoints>
 
   <RouteSections>
     <RouteSection id="RS1">
       <RouteLink id="RL1">
-        <From><StopPointRef>0100BRP90310</StopPointRef></From>
-        <To><StopPointRef>0100BRP90311</StopPointRef></To>
+        <From><StopPointRef>0400AMSHM001</StopPointRef></From>
+        <To><StopPointRef>0400AMSHM002</StopPointRef></To>
         <Distance>900</Distance>
         <Track><Mapping>
-          <Location><Latitude>51.44921</Latitude><Longitude>-2.58113</Longitude></Location>
-          <Location><Latitude>51.45010</Latitude><Longitude>-2.58600</Longitude></Location>
-          <Location><Latitude>51.45153</Latitude><Longitude>-2.59021</Longitude></Location>
+          <Location><Latitude>51.67421</Latitude><Longitude>-0.60759</Longitude></Location>
+          <Location><Latitude>51.67300</Latitude><Longitude>-0.60400</Longitude></Location>
+          <Location><Latitude>51.67180</Latitude><Longitude>-0.60050</Longitude></Location>
         </Mapping></Track>
       </RouteLink>
       <RouteLink id="RL2">
-        <From><StopPointRef>0100BRP90311</StopPointRef></From>
-        <To><StopPointRef>0100BRP90312</StopPointRef></To>
+        <From><StopPointRef>0400AMSHM002</StopPointRef></From>
+        <To><StopPointRef>0400AMSHM003</StopPointRef></To>
         <Distance>600</Distance>
         <Track><Mapping>
-          <Location><Latitude>51.45153</Latitude><Longitude>-2.59021</Longitude></Location>
-          <Location><Latitude>51.45419</Latitude><Longitude>-2.59705</Longitude></Location>
+          <Location><Latitude>51.67180</Latitude><Longitude>-0.60050</Longitude></Location>
+          <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
         </Mapping></Track>
       </RouteLink>
       <RouteLink id="RL3">
-        <From><StopPointRef>0100BRP90312</StopPointRef></From>
-        <To><StopPointRef>0100BRP90313</StopPointRef></To>
+        <From><StopPointRef>0400AMSHM003</StopPointRef></From>
+        <To><StopPointRef>0400AMSHM004</StopPointRef></To>
         <Distance>700</Distance>
         <Track><Mapping>
-          <Location><Latitude>51.45419</Latitude><Longitude>-2.59705</Longitude></Location>
-          <Location><Latitude>51.45419</Latitude><Longitude>-2.59705</Longitude></Location>
-          <Location><Latitude>51.45532</Latitude><Longitude>-2.60528</Longitude></Location>
+          <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
+          <Location><Latitude>51.66940</Latitude><Longitude>-0.59700</Longitude></Location>
+          <Location><Latitude>51.66720</Latitude><Longitude>-0.59380</Longitude></Location>
         </Mapping></Track>
       </RouteLink>
     </RouteSection>
@@ -70,11 +70,11 @@
       <JourneyPatternTimingLink id="JPTL1">
         <From SequenceNumber="1">
           <Activity>pickUp</Activity>
-          <StopPointRef>0100BRP90310</StopPointRef>
+          <StopPointRef>0400AMSHM001</StopPointRef>
           <TimingStatus>PTP</TimingStatus>
         </From>
         <To SequenceNumber="2">
-          <StopPointRef>0100BRP90311</StopPointRef>
+          <StopPointRef>0400AMSHM002</StopPointRef>
           <TimingStatus>OTH</TimingStatus>
         </To>
         <RouteLinkRef>RL1</RouteLinkRef>
@@ -82,11 +82,11 @@
       </JourneyPatternTimingLink>
       <JourneyPatternTimingLink id="JPTL2">
         <From SequenceNumber="2">
-          <StopPointRef>0100BRP90311</StopPointRef>
+          <StopPointRef>0400AMSHM002</StopPointRef>
           <TimingStatus>OTH</TimingStatus>
         </From>
         <To SequenceNumber="3">
-          <StopPointRef>0100BRP90312</StopPointRef>
+          <StopPointRef>0400AMSHM003</StopPointRef>
           <TimingStatus>PTP</TimingStatus>
         </To>
         <RouteLinkRef>RL2</RouteLinkRef>
@@ -94,12 +94,12 @@
       </JourneyPatternTimingLink>
       <JourneyPatternTimingLink id="JPTL3">
         <From SequenceNumber="3">
-          <StopPointRef>0100BRP90312</StopPointRef>
+          <StopPointRef>0400AMSHM003</StopPointRef>
           <TimingStatus>PTP</TimingStatus>
         </From>
         <To SequenceNumber="4">
           <Activity>setDown</Activity>
-          <StopPointRef>0100BRP90313</StopPointRef>
+          <StopPointRef>0400AMSHM004</StopPointRef>
           <TimingStatus>PTP</TimingStatus>
         </To>
         <RouteLinkRef>RL3</RouteLinkRef>
@@ -110,8 +110,8 @@
 
   <Operators>
     <Operator id="OP1">
-      <NationalOperatorCode>FBRI</NationalOperatorCode>
-      <OperatorCode>FBRI</OperatorCode>
+      <NationalOperatorCode>CHIL</NationalOperatorCode>
+      <OperatorCode>CHIL</OperatorCode>
       <OperatorShortName>Example Buses</OperatorShortName>
       <OperatorNameOnLicence>Example Buses Limited</OperatorNameOnLicence>
       <TradingName>Example Buses</TradingName>
@@ -124,11 +124,11 @@
       <Lines>
         <Line id="L1">
           <LineName>8</LineName>
-          <OutboundDescription><Description>Temple Meads to Clifton</Description></OutboundDescription>
+          <OutboundDescription><Description>Amersham Station to Old Amersham</Description></OutboundDescription>
         </Line>
         <Line id="L2">
           <LineName>8A</LineName>
-          <OutboundDescription><Description>Temple Meads to Clifton, via Victoria Street</Description></OutboundDescription>
+          <OutboundDescription><Description>Amersham Station to Old Amersham, via Hill Avenue</Description></OutboundDescription>
         </Line>
       </Lines>
       <OperatingPeriod>
@@ -137,12 +137,12 @@
       </OperatingPeriod>
       <RegisteredOperatorRef>OP1</RegisteredOperatorRef>
       <Mode>bus</Mode>
-      <Description>Temple Meads to Clifton</Description>
+      <Description>Amersham Station to Old Amersham</Description>
       <StandardService>
-        <Origin>Temple Meads</Origin>
-        <Destination>Clifton</Destination>
+        <Origin>Amersham Station</Origin>
+        <Destination>Old Amersham</Destination>
         <JourneyPattern id="JP1">
-          <DestinationDisplay>Clifton Triangle</DestinationDisplay>
+          <DestinationDisplay>Old Amersham</DestinationDisplay>
           <Direction>outbound</Direction>
           <JourneyPatternSectionRefs>JPS1</JourneyPatternSectionRefs>
         </JourneyPattern>

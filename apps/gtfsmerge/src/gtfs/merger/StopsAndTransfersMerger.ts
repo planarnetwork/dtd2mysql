@@ -26,7 +26,9 @@ export class StopsAndTransfersMerger {
     usedStops: UsedStops,
     tripIdMap: TripIDMap
   ): Promise<void> {
-    const existingTransfers = await this.writeTransfers(transfers, parentStops, tripIdMap);
+    const existingTransfers = await this.writeTransfers(
+      transfers, parentStops, tripIdMap, usedStops
+    );
 
     return this.writeStops(stops, existingTransfers, usedStops);
   }
@@ -34,13 +36,22 @@ export class StopsAndTransfersMerger {
   private async writeTransfers(
     transfers: TransferRow[],
     parentStops: ParentStops,
-    tripIdMap: TripIDMap
+    tripIdMap: TripIDMap,
+    usedStops: UsedStops
   ): Promise<ExistingTransfers> {
     const existingTransfers: ExistingTransfers = {};
 
     for (const transfer of transfers) {
       transfer.from_stop_id = parentStops[transfer.from_stop_id] || transfer.from_stop_id;
       transfer.to_stop_id = parentStops[transfer.to_stop_id] || transfer.to_stop_id;
+
+      // Only the stops something calls at are published, so a transfer to one
+      // that is not would be a reference to a row that is not in the feed. A
+      // rail feed publishes a station because a fixed link reaches it, and this
+      // does not, so this is where the two disagree.
+      if (!usedStops[transfer.from_stop_id] || !usedStops[transfer.to_stop_id]) {
+        continue;
+      }
 
       // A transfer_type 4 names the two trips it couples, and the trips have
       // just been re-indexed. Left alone it would point at trip ids from the

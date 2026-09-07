@@ -1,5 +1,5 @@
 stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding
-0100BRP90310,bstgjpm,"Temple Meads Station (NE), Station Approach, Bristol",Temple Meads Station,51.44921,-2.58113,,,,,,0
-0100BRP90311,bstgjpw,"Victoria Street (SW), Bristol",Victoria Street,51.45153,-2.59021,,,,,,0
-0100BRP90312,bstgjtd,"The Centre (C1), Colston Avenue, Bristol",The Centre,51.45419,-2.59705,,,,,,0
-0100BRP90313,bstgjwm,"Clifton Triangle (T2), Queens Road, Bristol",Clifton Triangle,51.45532,-2.60528,,,,,,0
+0400AMSHM001,bucgjpm,"Amersham Station (NE), Station Approach, Amersham",Amersham Station,51.67421,-0.60759,,,,,,0
+0400AMSHM002,bucgjpw,"Hill Avenue (SW), Amersham",Hill Avenue,51.67180,-0.60050,,,,,,0
+0400AMSHM003,bucgjtd,"Amersham Broadway (C1), Sycamore Road, Amersham",Amersham Broadway,51.66940,-0.59700,,,,,,0
+0400AMSHM004,bucgjwm,"Old Amersham (T2), High Street, Amersham",Old Amersham,51.66720,-0.59380,,,,,,0

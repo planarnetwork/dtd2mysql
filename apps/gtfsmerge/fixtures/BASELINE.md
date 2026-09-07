@@ -43,3 +43,16 @@ value. The shared writer doubles an embedded quote, quotes on a newline too, and
 writes an absent value as empty.
 
 **A file with no rows now has a header.** It used to be a zero-byte file.
+
+**`--no-date-filter` keeps the calendars instead of dropping all of them.** The
+test read `!filterBefore || end_date < filterBefore`, which is true whenever
+there is no filter — so running without a date filter dropped every calendar in
+every input, and the merged feed kept only the services `CalendarFactory` could
+synthesise out of orphan `calendar_dates` rows. Found by the end-to-end merge in
+`apps/feed-e2e`, which merges without a filter: 128 rail trips came out as 14.
+
+**A transfer to a stop nothing calls at is dropped.** Only the stops something
+calls at are published, so such a transfer was a reference to a row that is not
+in the feed. A rail feed publishes a station because a fixed link reaches it,
+and this does not, so the two disagree about exactly those stations — 97 of the
+337 transfers in a merged rail feed were dangling.

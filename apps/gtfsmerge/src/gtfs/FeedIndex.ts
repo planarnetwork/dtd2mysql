@@ -80,13 +80,20 @@ export class FeedIndex {
   /**
    * A calendar that has finished, or that runs on no day at all, is not worth
    * carrying into the merged feed.
+   *
+   * The filter being absent means keep everything. It used to read
+   * `!filterBefore || end_date < filterBefore`, which is true when there is no
+   * filter - so --no-date-filter dropped every calendar in every feed, and left
+   * only the services that CalendarFactory could synthesise out of orphan
+   * calendar_dates rows.
    */
   public calendar(row: CalendarRow): void {
-    const inPast = !this.filterBefore || (row.end_date ?? "") < this.filterBefore;
+    const finished = this.filterBefore !== undefined
+      && (row.end_date ?? "") < this.filterBefore;
     const runs = row.monday || row.tuesday || row.wednesday || row.thursday || row.friday
       || row.saturday || row.sunday;
 
-    if (!inPast && runs) {
+    if (!finished && runs) {
       this.result.calendars.push(row);
     }
   }

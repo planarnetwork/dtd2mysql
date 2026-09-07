@@ -2,8 +2,8 @@
   "name": "cif2gtfs",
   "version": "1.0.1",
   "description": "Build a GTFS feed from the GB rail DTD timetable feed, with no database",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/api.js",
+  "types": "./dist/api.d.ts",
   "files": [
     "dist",
     "bin"
@@ -47,5 +47,11 @@
     "@gb-transit/gtfs-read": "workspace:^",
     "fflate": "^0.8.3",
     "typescript": "7.0.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    }
   }
 }
