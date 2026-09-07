@@ -62,10 +62,16 @@ export class FeedZip {
       catch (err) {
         // Seven million lines in, "non-nullable field received null value" is
         // only useful with the line it came from attached.
-        throw new Error(
+        //
+        // Destroyed rather than thrown: an error thrown from a data listener
+        // only reaches finished() from Node 24 onwards. On 22 it escapes as an
+        // uncaught exception and the stream never settles, so the caller waits
+        // for a file that will never finish instead of being told which line
+        // it stopped on.
+        lines.destroy(new Error(
           `${path.basename(entry.entryName)} line ${number}: ${err instanceof Error ? err.message : err}\n  ${line}`,
           {cause: err}
-        );
+        ));
       }
     });
 
