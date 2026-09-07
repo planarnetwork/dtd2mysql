@@ -8,7 +8,9 @@ npm install @gb-transit/gtfs-schema
 
 Types only, near enough: an interface for every entity a feed publishes, a `Row` type for every file
 it writes, three enums for the coded columns, and the two scalar modules the rest is expressed in.
-It depends on nothing.
+Its one dependency is [`temporal-polyfill`](https://www.npmjs.com/package/temporal-polyfill), which
+the date helpers are written against so that a runtime without a `Temporal` global still has one;
+`@gb-transit/gtfs-schema/scalars` does not reach it and depends on nothing at all.
 
 That is the point of it. [`@gb-transit/gtfs`](https://www.npmjs.com/package/@gb-transit/gtfs) holds
 the transit model, the schedule transforms and the build, and to do the DTD's coordinates it pulls

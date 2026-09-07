@@ -22,7 +22,7 @@ gtfsmerge merges multiple GTFS feeds into a single one.
 npm install -g gtfsmerge
 ```
 
-Requires [node 26](https://nodejs.org) or above. No `zip` binary is needed — the archive is written
+Requires [node 22](https://nodejs.org) or above. No `zip` binary is needed — the archive is written
 in process.
 
 ## Usage

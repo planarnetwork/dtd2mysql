@@ -1,4 +1,5 @@
 import {describe, it, expect} from 'vitest';
+import {Temporal} from 'temporal-polyfill';
 import {compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "./PlainDate.js";
 
 const date = (value: string) => Temporal.PlainDate.from(value);

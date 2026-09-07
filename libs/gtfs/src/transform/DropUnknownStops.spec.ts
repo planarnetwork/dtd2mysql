@@ -1,4 +1,5 @@
 import {describe, it, expect} from "vitest";
+import {Temporal} from "temporal-polyfill";
 import {dropUnknownStops} from "./DropUnknownStops";
 import {PickupDropOffType, RouteType, StopTime} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";

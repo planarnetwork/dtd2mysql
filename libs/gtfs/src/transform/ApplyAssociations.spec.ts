@@ -1,4 +1,5 @@
 import {describe, it, expect} from 'vitest';
+import {Temporal} from 'temporal-polyfill';
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {STP} from "../model/OverlayRecord";
 import {CRS, PickupDropOffType, StopTime, TUID} from "@gb-transit/gtfs-schema";

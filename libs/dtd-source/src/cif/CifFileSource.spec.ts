@@ -1,4 +1,5 @@
 import {describe, it, expect, beforeEach, afterEach} from "vitest";
+import {Temporal} from "temporal-polyfill";
 import {interchange} from "@gb-transit/gtfs";
 import AdmZip from "adm-zip";
 import * as fs from "node:fs";

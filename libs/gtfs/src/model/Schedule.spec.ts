@@ -1,4 +1,5 @@
 import {describe, expect, it} from 'vitest';
+import {Temporal} from 'temporal-polyfill';
 import {STP} from "../model/OverlayRecord";
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {schedule} from "../transform/MergeSchedules.spec";

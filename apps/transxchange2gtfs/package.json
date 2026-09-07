@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
   "engines": {
-    "node": ">=26"
+    "node": ">=22"
   },
   "dependencies": {
     "@gb-transit/gtfs": "workspace:^",

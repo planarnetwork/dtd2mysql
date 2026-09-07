@@ -2,9 +2,8 @@
  * The scalars, on their own, for a consumer that wants nothing else.
  *
  * `@gb-transit/gtfs-schema` itself is cheap to import, but its declarations reach `PlainDate`,
- * which is typed against the `Temporal` global. A project whose TypeScript predates Temporal, or
- * which type checks its dependencies rather than skipping them, cannot read those declarations -
- * and would be stopped by a file it has no use for.
+ * which is typed against Temporal and so pulls in `temporal-polyfill` - a whole calendar
+ * implementation that a project reading a feed has no use for.
  *
  * So `@gb-transit/gtfs-schema/scalars` is the narrow way in: a duration and a day of the week, from
  * two modules that import nothing. It is what @gb-transit/gtfs-loader uses, which is how a browser

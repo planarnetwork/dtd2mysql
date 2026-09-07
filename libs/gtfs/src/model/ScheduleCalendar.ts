@@ -1,5 +1,6 @@
 
 import memoize from "memoized-class-decorator";
+import type {Temporal} from "temporal-polyfill";
 import {Calendar, CalendarDate, compare, dayOfWeek, maxDate, minDate, toYYYYMMDD} from "@gb-transit/gtfs-schema";
 
 export class ScheduleCalendar {
