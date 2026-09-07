@@ -14,9 +14,12 @@ describe("explainedBy", () => {
       .to.equal("apps/gtfsmerge/fixtures/BASELINE.md");
   });
 
-  it("lets anything answer for a repository wide baseline", () => {
-    expect(explainedBy("type-surface.json")).to.equal(null);
-    expect(explainedBy(".github/validator-baseline.json")).to.equal(null);
+  it("sends a repository wide baseline to the repository's own file", () => {
+    // Not an app's: a change to the published type surface has nothing to do
+    // with cif2gtfs's fixtures, and letting one excuse the other is how a
+    // baseline stops meaning anything.
+    expect(explainedBy("type-surface.json")).to.equal("BASELINE.md");
+    expect(explainedBy(".github/validator-baseline.json")).to.equal("BASELINE.md");
   });
 
 });
@@ -39,9 +42,10 @@ describe("unexplained", () => {
     expect(unexplained([RAIL, BUS], [RAIL_MD, BUS_MD])).to.deep.equal([]);
   });
 
-  it("accepts any entry for a baseline no app owns", () => {
-    expect(unexplained(["type-surface.json"], [BUS_MD])).to.deep.equal([]);
+  it("does not let an app's entry excuse a repository wide baseline", () => {
+    expect(unexplained(["type-surface.json"], [BUS_MD])).to.deep.equal(["type-surface.json"]);
     expect(unexplained(["type-surface.json"], [])).to.deep.equal(["type-surface.json"]);
+    expect(unexplained(["type-surface.json"], ["BASELINE.md"])).to.deep.equal([]);
   });
 
   it("passes when nothing changed", () => {

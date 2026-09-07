@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
-import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
+import {loadGTFS, FeedFileName} from "@gb-transit/gtfs-loader";
 import {build} from "../src/build.js";
 
 /**
@@ -29,14 +29,14 @@ const feed = (file: string) => fs.readFileSync(path.join(built, file), "utf8");
 /**
  * The rows of one built file.
  *
- * Read with @gb-transit/gtfs-read rather than by splitting on commas here. This
+ * Read with @gb-transit/gtfs-loader rather than by splitting on commas here. This
  * spec used to carry its own CSV parser, because a headsign naming more than one
  * destination - "Inverness, Aberdeen and Fort William" - is quoted and splitting
  * on every comma got it wrong. The reader handles that, and reading the feed
  * back with the package built for it also means these assertions are checking
  * what a consumer would actually see.
  */
-let rows: Awaited<ReturnType<typeof readFeedRows>>;
+let rows: Awaited<ReturnType<typeof loadGTFS<FeedFileName>>>;
 const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
 
 beforeAll(async () => {
@@ -67,7 +67,7 @@ beforeAll(async () => {
     entries[file] = strToU8(fs.readFileSync(path.join(built, file), "utf8"));
   }
 
-  rows = await readFeedRows(zipSync(entries));
+  rows = await loadGTFS(zipSync(entries), {raw: true});
 }, 60_000);
 
 describe("the mini fixture", () => {

@@ -32,7 +32,7 @@ const ROOT = path.resolve(import.meta.dirname, "..");
  */
 const LIBRARIES = [
   "gtfs-schema", "feed-parser", "dtd-schema", "dtd-source", "gtfs", "gtfs-output", "gtfs-loader",
-  "gtfs-read", "naptan", "txc-source", "enrich-naptan", "extend-station-groups"
+  "naptan", "txc-source", "enrich-naptan", "extend-station-groups"
 ];
 
 const APPLICATIONS = ["dtd2mysql", "cif2gtfs", "transxchange2gtfs", "gtfsmerge"];
@@ -163,32 +163,23 @@ const CHECKS = [
         if (feed.trips.length === 0 || feed.links.length === 0) throw new Error("the golden feed read as empty");
         normalise(feed);
       `, true);
+
+      // And the same feed the other way, since raw mode has its own column
+      // tables and its own coercion.
+      node(dir, `
+        import {loadGTFS} from "@gb-transit/gtfs-loader";
+        import * as fs from "node:fs";
+        const rows = await loadGTFS(fs.createReadStream(${JSON.stringify(feed)}), {raw: true});
+        console.log("raw trips", rows["trips.txt"].length, "stops", rows["stops.txt"].length);
+        if (rows["trips.txt"].length === 0 || rows["stops.txt"].length === 0) {
+          throw new Error("the golden feed read as empty in raw mode");
+        }
+        if (rows["stops.txt"][0].stop_code === undefined) {
+          throw new Error("raw mode dropped a column the planner feed does not read");
+        }
+      `, true);
     }
   },
-  {
-    name: "@gb-transit/gtfs-read",
-    // New, and nobody has installed it. Its exports map and files list have
-    // never been resolved by anything but this repository.
-    run: dir => {
-      node(dir, `
-        const {readFeedRows, FEED_FILES} = require("@gb-transit/gtfs-read");
-        if (typeof readFeedRows !== "function") throw new Error("readFeedRows is missing");
-        if (!Array.isArray(FEED_FILES)) throw new Error("FEED_FILES is missing");
-      `);
-
-      const feed = zip(path.join(ROOT, "apps/cif2gtfs/fixtures/mini/golden"), path.join(dir, "mini.zip"));
-
-      node(dir, `
-        const {readFeedRows} = require("@gb-transit/gtfs-read");
-        readFeedRows(require("node:fs").createReadStream(${JSON.stringify(feed)})).then(rows => {
-          const trips = rows["trips.txt"].length;
-          const stops = rows["stops.txt"].length;
-          console.log("trips", trips, "stops", stops);
-          if (trips === 0 || stops === 0) throw new Error("the golden feed read as empty");
-        });
-      `);
-    }
-  }
 ];
 
 function expect(condition, message) {

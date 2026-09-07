@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import {zipSync, strToU8} from "fflate";
 import {field} from "@gb-transit/gtfs-output";
-import {readFeedRows, FeedFileName} from "@gb-transit/gtfs-read";
+import {loadGTFS, FeedFileName} from "@gb-transit/gtfs-loader";
 import {GTFS_COLUMNS} from "@gb-transit/gtfs-schema";
 
 /**
@@ -33,8 +33,8 @@ describe.each(goldens)("the %s golden", (_name, directory) => {
 
   it.each(files)("round trips %s", async file => {
     const original = fs.readFileSync(path.join(directory, file), "utf8");
-    const rows = await readFeedRows(
-      zipSync({[file]: strToU8(original)}), [file as FeedFileName]
+    const rows = await loadGTFS(
+      zipSync({[file]: strToU8(original)}), {raw: true, files: [file as FeedFileName]}
     );
 
     // Written back from the columns the header declared, so a file that omits an

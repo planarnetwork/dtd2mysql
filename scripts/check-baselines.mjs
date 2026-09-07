@@ -24,20 +24,26 @@ const BASELINES = [
   ".github/validator-baseline*.json"
 ];
 
-const EXPLANATIONS = "apps/*/fixtures/BASELINE.md";
+const EXPLANATIONS = ["apps/*/fixtures/BASELINE.md", "BASELINE.md"];
+
+/**
+ * Where a baseline that belongs to no single package is explained.
+ */
+const REPOSITORY = "BASELINE.md";
 
 /**
  * Which BASELINE.md answers for a changed file.
  *
  * Each app answers for its own golden: accepting an entry in any of them would
  * let a note about the bus feed excuse a change to the rail one. Everything
- * else - the type surface, the release baselines - is repository wide, so any
- * entry will do.
+ * else - the type surface, the release baselines - belongs to no package, and
+ * is answered for by the repository's own BASELINE.md rather than by whichever
+ * app happened to be touched in the same branch.
  */
 export function explainedBy(file) {
   const app = /^(apps\/[^/]+)\/fixtures\//.exec(file);
 
-  return app === null ? null : `${app[1]}/fixtures/BASELINE.md`;
+  return app === null ? REPOSITORY : `${app[1]}/fixtures/BASELINE.md`;
 }
 
 /**
@@ -46,11 +52,7 @@ export function explainedBy(file) {
 export function unexplained(changed, explained) {
   const entries = new Set(explained);
 
-  return changed.filter(file => {
-    const required = explainedBy(file);
-
-    return required === null ? entries.size === 0 : !entries.has(required);
-  });
+  return changed.filter(file => !entries.has(explainedBy(file)));
 }
 
 export function report(changed, explained) {
@@ -73,9 +75,7 @@ export function report(changed, explained) {
   console.error("");
 
   for (const file of missing) {
-    const required = explainedBy(file) ?? "any apps/*/fixtures/BASELINE.md";
-
-    console.error(`${file} changed with no entry in ${required}.`);
+    console.error(`${file} changed with no entry in ${explainedBy(file)}.`);
   }
 
   console.error("\nSay which ticket moved it and what the diff shows.");
@@ -117,5 +117,5 @@ if (import.meta.filename === process.argv[1]) {
     process.exit(1);
   }
 
-  process.exit(report(changedFiles(base, BASELINES), changedFiles(base, [EXPLANATIONS])));
+  process.exit(report(changedFiles(base, BASELINES), changedFiles(base, EXPLANATIONS)));
 }

@@ -1,7 +1,7 @@
 import {describe, it, expect} from "vitest";
 import {zipSync, strToU8} from "fflate";
-import {readFeed, readFeedRows} from "./ReadFeed";
-import {feedFileOf} from "./FeedFile";
+import {readFeed, readFeedRows} from "./ReadFeed.js";
+import {feedFileOf} from "./FeedFile.js";
 
 function feed(files: Record<string, string>): Uint8Array {
   const entries: Record<string, Uint8Array> = {};

@@ -1,7 +1,7 @@
 {
   "name": "@gb-transit/gtfs-loader",
   "version": "1.0.0",
-  "description": "Read a GTFS feed - a zip, a stream, a Response or the bytes - into a timetable",
+  "description": "Read a GTFS feed - a zip, a stream, a Response or the bytes - as rows, or as a timetable",
   "license": "GPL-3.0",
   "repository": {
     "type": "git",
@@ -42,7 +42,7 @@
     "journey planning"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=26"
   },
   "dependencies": {
     "@gb-transit/gtfs-schema": "workspace:^",

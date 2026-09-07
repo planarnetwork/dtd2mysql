@@ -1,6 +1,6 @@
 # @gb-transit/gtfs-loader
 
-Read a GTFS feed — a zip, a stream, a `Response` or the bytes — into a timetable.
+Read a GTFS feed — a zip, a stream, a `Response` or the bytes — as rows, or as a timetable.
 
 ```
 npm install @gb-transit/gtfs-loader
@@ -17,6 +17,29 @@ still carries the shape that planner needs: `normalise` resolves platforms to th
 passenger changes at, and `linkTrips` turns a `transfer_type: 4` coupling into the through trip a
 passenger actually stays on. That last part closes a loop with `@gb-transit/gtfs`, which writes
 exactly the rows this reads back.
+
+## Two ways to read
+
+```ts
+// What a journey planner plans over: times as seconds, calls indexed by stop,
+// couplings resolved. Lossy on purpose - six of the ten columns of
+// stop_times.txt, seven of the files.
+const timetable = await loadGTFS(fs.createReadStream("gtfs.zip"));
+
+// The rows as they were written: every file, every column, values as the file
+// held them. What a tool that rewrites a feed needs.
+const rows = await loadGTFS(fs.createReadStream("gtfs.zip"), {raw: true});
+rows["stops.txt"][0].stop_code;
+
+// Or a file at a time, for a feed whose stop_times.txt is three million rows -
+// holding them to index them holds them twice.
+await readFeed(fs.createReadStream("gtfs.zip"), {
+  "stops.txt": stop => index(stop)
+});
+```
+
+`{raw: true, files: [...]}` reads only what you ask for; nothing else is
+decompressed.
 
 ## Usage
 
@@ -60,16 +83,13 @@ What the two packages *do* share is the vocabulary underneath, which they take f
 `@gb-transit/gtfs-schema` so they cannot drift: a `Duration` is seconds, a `DayOfWeek` is
 Sunday-first, and a time string is read by one `parseDuration`.
 
-## Two builds, and node 22
+## Two builds
 
 This package publishes both CommonJS and ESM, unlike the rest of the repository, because it runs in
 a browser as well as in node. Three things follow from that, all of them deliberate:
 
 - **Its imports carry explicit `.js` extensions.** Node's ESM loader will not resolve a specifier
   without one. Do not take them off.
-- **`engines` says `>= 22`** where the rest of the repository says 26. Nothing here needs `Temporal`,
-  and it imports `@gb-transit/gtfs-schema/scalars` rather than the schema package's main entry
-  precisely so that no declaration typed against `Temporal` is reachable from its public types.
 - **`sideEffects: false`**, so a bundler can drop the half it does not use.
 
 ## Two feeds it will refuse

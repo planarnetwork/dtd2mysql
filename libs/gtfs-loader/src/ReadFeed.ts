@@ -1,5 +1,7 @@
-import {CSVParser, GTFSSource, readZip, toChunks} from "@gb-transit/gtfs-loader";
-import {FeedFileName, FeedRowTypes, FEED_FILES, READ_COLUMNS, feedFileOf, toRow} from "./FeedFile";
+import {CSVParser} from "./CSVParser.js";
+import {GTFSSource, toChunks} from "./Source.js";
+import {readZip} from "./ZipReader.js";
+import {FeedFileName, FeedRowTypes, FEED_FILES, READ_COLUMNS, feedFileOf, toRow} from "./FeedFile.js";
 
 /**
  * What to do with each file's rows. A file with no handler is never inflated.

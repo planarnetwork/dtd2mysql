@@ -90,8 +90,7 @@ README describing what it is for and how to use it.
 | [`libs/dtd-source`](libs/dtd-source/README.md) | `@gb-transit/dtd-source` | SFTP download, feed sequencing, and a timetable source that reads the files directly |
 | [`libs/gtfs`](libs/gtfs/README.md) | `@gb-transit/gtfs` | GTFS entities, the transit model, the transforms and the build |
 | [`libs/gtfs-output`](libs/gtfs-output/README.md) | `@gb-transit/gtfs-output` | Writers: a directory of text files, or a zip |
-| [`libs/gtfs-loader`](libs/gtfs-loader/README.md) | `@gb-transit/gtfs-loader` | The reader: a GTFS zip, stream or response into a timetable |
-| [`libs/gtfs-read`](libs/gtfs-read/README.md) | `@gb-transit/gtfs-read` | A feed read back as the rows it was written as, every file and column |
+| [`libs/gtfs-loader`](libs/gtfs-loader/README.md) | `@gb-transit/gtfs-loader` | The reader: a GTFS zip, stream or response, as rows or as a timetable |
 | [`libs/txc-source`](libs/txc-source/README.md) | `@gb-transit/txc-source` | TransXChange parsing, and the streams that turn it into GTFS rows |
 | [`libs/naptan`](libs/naptan/README.md) | `@gb-transit/naptan` | Download, cache and read the NaPTAN national stop dataset |
 | [`libs/enrich-naptan`](libs/enrich-naptan/README.md) | `@gb-transit/enrich-naptan` | Station coordinates and names from NaPTAN |
@@ -105,12 +104,9 @@ are the two implementations, and they are the worked examples.
 `dtd2mysql` depends on the libraries the way any other consumer would, so a GTFS build reading from
 something other than this tool's MySQL schema needs `@gb-transit/gtfs` rather than the CLI.
 
-`gtfs-schema` and `gtfs-loader` are the two exceptions to how everything else here is built: they
-publish ESM as well as CommonJS, their imports carry explicit `.js` extensions, and they ask for
-node 22 rather than 26. That is because `gtfs-loader` reads a feed in a browser — it is the only
-package here with a consumer that is not node — and `gtfs-schema` is what it shares a vocabulary
-with. Neither may reach anything typed against `Temporal`, which is why the loader imports
-`@gb-transit/gtfs-schema/scalars` rather than the package itself.
+`gtfs-schema` and `gtfs-loader` publish both CommonJS and ESM, where everything else here publishes
+CommonJS only. That is because `gtfs-loader` reads a feed in a browser - it is the only package here
+with a consumer that is not node - and `gtfs-schema` is the vocabulary it shares with the rest.
 
 Libraries never depend on an app. Each package builds to its own `dist/` and the workspaces resolve
 to that output, so `yarn build` has to happen before anything runs; `tsc -b` walks the project
@@ -125,6 +121,7 @@ references and makes it incremental.
 | [`docs/station-names.md`](docs/station-names.md) | Where NaPTAN and the override table disagree about a station's name |
 | [`docs/coordinate-review.md`](docs/coordinate-review.md) | Stations whose two coordinate sources differ by more than 100 m |
 | [`apps/*/fixtures/BASELINE.md`](apps/cif2gtfs/fixtures/BASELINE.md) | Why each tool's committed output last changed, entry by entry |
+| [`BASELINE.md`](BASELINE.md) | The same for the baselines that belong to no one package: the type surface, the release baselines |
 | [`tests/README.md`](tests/README.md) | The end to end tests: the three tools run in sequence, and the validator over what they build |
 | [`scripts/`](scripts) | What CI runs and how a release is made, as scripts rather than as shell in a workflow |
 

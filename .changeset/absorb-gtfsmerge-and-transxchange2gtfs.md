@@ -1,8 +1,8 @@
 ---
 "@gb-transit/gtfs-schema": major
+"@gb-transit/gtfs-loader": minor
 "@gb-transit/gtfs": major
 "@gb-transit/gtfs-output": major
-"@gb-transit/gtfs-read": minor
 "@gb-transit/naptan": minor
 "@gb-transit/txc-source": minor
 "@gb-transit/enrich-naptan": minor
@@ -40,8 +40,10 @@ are unchanged, and the cases they do not reach are written down in
 `CSVRowWriter.spec.ts`.
 `writeZip` is exported so all three tools share one deterministic archiver.
 
-**`@gb-transit/gtfs-read`** is new: a feed read back as the rows it was written
-as, every file and every column, built on `@gb-transit/gtfs-loader`'s parts.
+**`@gb-transit/gtfs-loader`** gains `readFeed` and `readFeedRows`: the same feed
+read as the rows it was written as, every file and every column, for a tool that
+rewrites a feed rather than plans over one. Built from the parts `loadGTFS`
+already used.
 **`@gb-transit/naptan`** is new: the NaPTAN download, cache and CSV read, with
 no other dependency, so a bus converter does not inherit a rail transit model to
 get them. **`@gb-transit/txc-source`** is new: the TransXChange parsing, the bus
