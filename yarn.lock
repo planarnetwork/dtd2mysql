@@ -2687,10 +2687,12 @@ __metadata:
   dependencies:
     "@gb-transit/gtfs": "workspace:^"
     "@gb-transit/gtfs-output": "workspace:^"
+    "@gb-transit/gtfs-read": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
     "@gb-transit/naptan": "workspace:^"
     "@gb-transit/txc-source": "workspace:^"
     "@types/xml2js": "npm:^0.4.14"
+    fflate: "npm:^0.8.3"
     typescript: "npm:7.0.2"
     xml2js: "npm:^0.6.2"
   bin:
