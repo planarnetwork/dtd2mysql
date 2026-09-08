@@ -26,9 +26,12 @@ with the coverage window, what the current feed was built from, and a page for e
 
 All three are rebuilt every night by [`feed.yml`](.github/workflows/feed.yml) from the configuration
 in [`gtfs.config.yaml`](gtfs.config.yaml) and
-[`gtfs.national-rail-only.config.yaml`](gtfs.national-rail-only.config.yaml), validated against a
-[pinned baseline](.github/validator-baseline.json), and attached to a dated release. A build that
-fails validation is not published.
+[`gtfs.national-rail-only.config.yaml`](gtfs.national-rail-only.config.yaml), each validated against
+a pinned baseline of its own —
+[standard](.github/validator-baseline.json),
+[passing points](.github/validator-baseline-passing-points.json),
+[National Rail only](.github/validator-baseline-national-rail-only.json) — and attached to a dated
+release. A build that fails validation is not published.
 
 The feed makes decisions a consumer cannot infer from the GTFS specification — identifiers, splits
 and joins, service days, the columns it adds.

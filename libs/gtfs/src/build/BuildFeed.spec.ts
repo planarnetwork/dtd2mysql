@@ -172,11 +172,11 @@ const context: BuildContext = {
 async function build(
   source: TimetableSource,
   enrichers: Enricher[] = [],
-  build: BuildContext = context
+  ctx: BuildContext = context
 ): Promise<MemoryOutput> {
   const output = new MemoryOutput();
 
-  await new BuildFeed(source, output, build, enrichers).build(".");
+  await new BuildFeed(source, output, ctx, enrichers).build(".");
 
   return output;
 }

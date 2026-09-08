@@ -39,12 +39,16 @@ export const NO_EXCLUSIONS: ServiceExclusions = {modes: [], operators: [], repla
  * The modes by the name a config writes them under. Words rather than the GTFS
  * numbers, because `modes: [1, 3, 4]` is a config nobody can review. The first
  * name for each is the one messages use.
+ *
+ * Only the modes a CIF schedule can actually have - the five in
+ * ScheduleBuilder's category table. Tram is a GTFS mode and not one of them, so
+ * it is not offered: a rule that could only ever match nothing is the thing
+ * refusing `underground` at parse time exists to prevent.
  */
 export const MODES: ReadonlyMap<string, RouteType> = new Map([
   ["metro", RouteType.Subway],
   ["subway", RouteType.Subway],
   ["rail", RouteType.Rail],
-  ["tram", RouteType.Tram],
   ["bus", RouteType.Bus],
   ["ship", RouteType.Ferry],
   ["ferry", RouteType.Ferry],
@@ -129,7 +133,7 @@ export function excludeServices(schedules: ScheduleIndex, rules: ServiceExclusio
  */
 function report(rules: ServiceExclusions, dropped: Map<string, number>, total: number): void {
   const counted = [...dropped.entries()]
-    .sort(([a], [b]) => a < b ? -1 : 1)
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([rule, count]) => `${rule} (${count})`);
 
   console.log(`Excluded ${total} schedule(s)${counted.length > 0 ? `, matching ${counted.join(", ")}` : ""}`);

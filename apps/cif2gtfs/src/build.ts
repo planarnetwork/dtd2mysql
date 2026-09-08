@@ -146,8 +146,13 @@ function beside(given: readonly string[]): string {
   return fs.existsSync(first) && fs.statSync(first).isDirectory() ? first : path.dirname(first);
 }
 
-const REGISTERED = [NAPTAN];
-const REGISTERED_EXTENSIONS = [STATION_GROUPS];
+/**
+ * What a config here is allowed to name. Exported so a test checking a config
+ * reads it from the build rather than from a copy of it, which would fail on
+ * the day an enricher is added and blame the config for it.
+ */
+export const REGISTERED = [NAPTAN];
+export const REGISTERED_EXTENSIONS = [STATION_GROUPS];
 
 function readConfig(path: string | undefined): BuildConfig | undefined {
   if (path === undefined) {

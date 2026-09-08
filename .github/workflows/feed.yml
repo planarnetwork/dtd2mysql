@@ -123,11 +123,14 @@ jobs:
       #
       # A second config rather than a flag: what a published feed contains
       # should arrive as a diff somebody approved.
+      # No --out: the config carries it, so where this feed is written is a line
+      # in a reviewed file rather than a flag here, and the spec holding the two
+      # configs to different destinations is what stops the nightly building
+      # over itself.
       - name: Build the National Rail only feed
         run: |
-          mkdir -p feed-national-rail-only
           yarn tsx apps/cif2gtfs/src/index.ts build --config gtfs.national-rail-only.config.yaml \
-            --out feed-national-rail-only | tee build-national-rail-only.log
+            | tee build-national-rail-only.log
 
       # A published feed that fails referential integrity must never reach a
       # release, so the validator runs before anything is attached. What counts
@@ -295,6 +298,9 @@ jobs:
             feed/provenance.json
             feed-passing-points/validation.json
             feed-national-rail-only/validation.json
+            build.log
+            build-passing-points.log
+            build-national-rail-only.log
           retention-days: 14
 
       # The tag is the date, so the release list reads as a history of feeds and
