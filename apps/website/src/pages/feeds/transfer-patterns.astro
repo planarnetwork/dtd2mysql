@@ -81,28 +81,61 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   <section class="shell section">
     <h2 class="h2 h2--sm">What a pattern is</h2>
     <p style="margin: 14px 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
-      The stations a journey calls at, three characters each, nothing between them. One line is one
-      pattern.
+      The stations a journey calls at. Written out in full, the patterns from Norwich to Liverpool
+      Street are:
     </p>
     <Terminal lines={[
-      "NRWLST            Norwich to Liverpool Street, direct",
-      "NRWCBGLST         changing at Cambridge",
-      "NRWCBGELYLST      changing at Cambridge and Ely"
+      "NRW,LST              direct",
+      "NRW,CBG,LST          changing at Cambridge",
+      "NRW,CBG,ELY,LST      changing at Cambridge and Ely"
     ]} />
     <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
       The codes are the <code>stop_code</code> of the feed &mdash; CRS codes &mdash; so the two are
       read together: <code>stops.txt</code> is what turns <code>NRW</code> back into Norwich and
       into somewhere with a platform and a position. Patterns are found a day at a time and the
       published file holds a week of them, so it covers every shape of service the timetable has.
-      Sorting puts patterns beginning the same way together, so a line records only what it adds to
-      the one above it, and the whole thing is brotli compressed.
+    </p>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2 h2--sm">What is actually in the file</h2>
+    <p style="margin: 14px 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      Not that. The commas above are there to read; the file has no separators, because every code
+      is three characters and a line is cut up rather than split. And because the patterns are
+      sorted, each line records only what it adds to the line above it &mdash; so a station is
+      written once and never again.
+    </p>
+    <p style="margin: 0 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      The first character says how many leading stations to take from the previous line, counting up
+      from <code>0</code>. These are the opening lines of <code>NRW.br</code>, and what each one
+      means:
+    </p>
+    <Terminal lines={[
+      "0NRWACL      NRW ACL",
+      "1ALF         NRW ALF",
+      "1ALK         NRW ALK",
+      "1AUD         NRW AUD",
+      "2BIS         NRW AUD BIS",
+      "3ESM         NRW AUD BIS ESM"
+    ]} />
+    <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      So <code>NRW</code> appears exactly once in a file of tens of thousands of patterns that all
+      begin with it, and <code>2BIS</code> is four bytes for a journey of three stations. The count
+      carries on past <code>9</code> into the characters above it, because a pattern can run to
+      fourteen stations. Nothing marks a pattern that a longer one runs through &mdash;
+      <code>NRW AUD</code> is a journey in its own right as well as the start of
+      <code>NRW AUD BIS</code> &mdash; because every line is exactly one pattern.
+    </p>
+    <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      The whole thing is then brotli compressed, so decompress it before reading. Rather than
+      unpicking any of this yourself,
+      <a href={npm("transfer-pattern-planner")}> <code>transfer-pattern-planner</code></a> reads it
+      back for you.
     </p>
     <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
       They are built after the feed they describe is published, so a release without them is a night
       whose scan did not finish rather than a feed with something wrong.
-      <a href={`${base}/feeds/using-this-data/#the-transfer-patterns`}>Using this data</a> says more,
-      and <a href={npm("transfer-pattern-planner")}><code>transfer-pattern-planner</code></a> both
-      writes them and reads them back.
+      <a href={`${base}/feeds/using-this-data/#the-transfer-patterns`}>Using this data</a> says more.
     </p>
   </section>
 
