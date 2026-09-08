@@ -125,7 +125,7 @@ describe("transfer-patterns", () => {
 
     expect(described.patterns).to.equal((await patternsIn(output)).length);
     expect(described.shards).to.equal(1);
-    expect(described.raptor).to.match(/^\d+\.\d+\.\d+/);
+    expect(described.generator).to.match(/^\d+\.\d+\.\d+/);
     expect(described.dates).to.deep.equal(["2026-06-03"]);
     expect(described.feed_version).to.equal("tiny");
   }, 240_000);

@@ -36,7 +36,7 @@ describe("readStations", () => {
   });
 
   it("falls back to the stop id where a station has no code", async () => {
-    // raptor names its stations the same way, so checkCodeWidths sees this too and stops the run.
+    // The network names its stations the same way, so checkCodeWidths sees this too and stops.
     expect(await readStations(feedOf(
       "910GNRW,NRW,Norwich,52.6,1.3,1,,,Europe/London",
       "910GNOCODE,,Anonymous,52.6,1.3,1,,,Europe/London"

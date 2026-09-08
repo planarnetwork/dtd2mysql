@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {Worker} from "node:worker_threads";
-import type {Network, StopID} from "raptor-journey-planner";
+import type {StopID} from "@gb-transit/gtfs-loader";
+import type {Network} from "raptor-journey-planner";
 import {DONE, READY} from "./worker.js";
 import type {WorkerInput} from "./worker.js";
 

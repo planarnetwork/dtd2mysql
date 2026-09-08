@@ -8,15 +8,14 @@ changes, where it ends. Hannah Bast's
 plans a journey by looking up the patterns between two stations and pricing only those, which is
 fast because the patterns were found in advance. Finding them is what this does.
 
-The algorithm is [raptor](https://github.com/planarnetwork/raptor)'s, and so is the file format.
-This exists because a whole national feed is too much work for one CI job: it splits the scan into
-shards that can run as separate jobs and merges their output back into the single file raptor would
-have written.
+The scan and the file format are
+[`transfer-pattern-planner`](https://github.com/planarnetwork/transfer-pattern-planner)'s, from its
+`/generate` entry point, and it reaches into
+[raptor](https://github.com/planarnetwork/raptor) for the algorithm underneath. This exists because
+a whole national feed is too much work for one CI job: it splits the scan into shards that can run
+as separate jobs and merges their output back into one file.
 
-Not published to npm; the nightly is the only caller. raptor finds the patterns and writes the file,
-and [`transfer-pattern-planner`](https://github.com/planarnetwork/transfer-pattern-planner) reads it
-and plans journeys with it. Only raptor holds a scan, so it is the dependency, and the planner is a
-devDependency the tests read the output back with.
+Not published to npm; the nightly is the only caller.
 
 ## Usage
 
@@ -43,7 +42,7 @@ transfer-patterns merge shard-*.br --out transfer-patterns.br --meta meta.json
 | | |
 |---|---|
 | `--out <file>` | Where the patterns go. Required. |
-| `--dates <list>` | Comma separated `YYYY-MM-DD`. Defaults to the next Tuesday, Friday, Saturday and Sunday. |
+| `--dates <list>` | Comma separated `YYYY-MM-DD`. Defaults to the week beginning today. |
 | `--shard <n>/<of>` | Plan this shard's share of the stations. Default `1/1`. |
 | `--workers <n>` | Threads to scan on. Defaults to two fewer than the machine has cores. |
 | `--tmp <dir>` | Where the workers' files go. Defaults to a temp directory, removed afterwards. |
@@ -53,6 +52,7 @@ transfer-patterns merge shard-*.br --out transfer-patterns.br --meta meta.json
 | | |
 |---|---|
 | `--out <file>` | Where the patterns go. Required. |
+| `--shards <n>` | How many shards to expect. A merge short of one is missing that share of the network. |
 | `--meta <file>` | Also write how many patterns there are, as JSON. |
 
 ## Dates
@@ -60,10 +60,10 @@ transfer-patterns merge shard-*.br --out transfer-patterns.br --meta meta.json
 A pattern set is built for a date: the network is filtered to the trips running that day, so a
 pattern only exists if something ran it.
 
-What varies between one date and the next is mostly the shape of the day rather than the season — a
-Sunday has a different service to a Tuesday, and a Friday evening has trains a Tuesday evening does
-not — so the default is one date of each shape rather than four consecutive days, which would plan
-four Tuesdays and call it coverage.
+The default is the week beginning today. What varies between one date and the next is mostly the
+shape of the day rather than the season — a Sunday has a different service to a Tuesday, and a
+Friday evening has trains a Tuesday evening does not — and a week covers every shape there is
+without anybody having to decide which of them differ.
 
 The patterns of every date are published together. That is the right way round: a pattern the
 planner does not hold is a journey it cannot offer, while a pattern whose trains do not run on the
@@ -99,23 +99,20 @@ Because a station is three characters, this needs a feed whose `stop_code` is th
 CRS code, which is what the GB rail feeds use. A code of any other width would run into the station
 after it and the whole line would come back wrong, so a run stops rather than writing one.
 
-Read it back with raptor:
+Read it back with the planner it is written for, which indexes it against the feed's stations:
 
 ```js
 const fs = require("node:fs");
-const readline = require("node:readline");
-const zlib = require("node:zlib");
-const {readPatterns} = require("raptor-journey-planner");
+const {PatternLoader, StopTable, loadGtfs} = require("transfer-pattern-planner");
 
 async function main() {
-  const lines = readline.createInterface({
-    input: fs.createReadStream("transfer-patterns.br").pipe(zlib.createBrotliDecompress()),
-    crlfDelay: Number.POSITIVE_INFINITY
-  });
+  const stops = new StopTable();
 
-  for await (const stations of readPatterns(lines)) {
-    // ["LST", "CBG", "NRW"]
-  }
+  await loadGtfs(fs.createReadStream("gtfs.zip"), stops);
+
+  const tree = await new PatternLoader(stops).load(fs.createReadStream("transfer-patterns.br"));
+
+  tree.getPatterns(stops.indexOf("NRW"), stops.indexOf("LST"));
 }
 
 main();
@@ -132,9 +129,9 @@ A shard is a stride through the sorted stations rather than a block of them, for
 blocks follow the alphabet, and `LST`, `LBG` and `LIV` in one block would leave that job running
 long after the others finished.
 
-Each shard merges its own workers' files before it uploads anything. The same station on four days
-finds largely the same patterns, and that is where those copies go — it is the difference between
-moving tens of megabytes between jobs and moving gigabytes.
+Each shard merges its own workers' files before it uploads anything. The same station on
+consecutive days finds largely the same patterns, and that is where those copies go — it is the
+difference between moving tens of megabytes between jobs and moving gigabytes.
 
 The final merge is the one stage that cannot be split: every pattern goes through it. Because the
 shards arrive sorted and free of duplicates it is a streaming k-way merge rather than another sort,
@@ -142,16 +139,19 @@ so it holds one pattern per shard rather than a bucket of them.
 
 Measured on a national feed of 3,014 stations, six shards:
 
-| | one date | four dates, as the nightly runs it |
+| | one date | a week, as the nightly runs it |
 |---|---|---|
-| Patterns | 34,557,853 | 52,440,684 |
-| File | 32.5MB | 52.5MB |
-| A shard's file | 7.2 – 7.7MB | 11.6 – 12.2MB |
-| Final merge | 3m16s, 242MB | 4m55s, 250MB |
+| Patterns | 34,557,853 | 57,200,119 |
+| File | 32.5MB | 57.6MB |
+| A shard's file | 7.2 – 7.7MB | 12.6 – 13.6MB |
+| A shard, at `--workers 4` | 1m17s | 6m02s – 6m48s, 1.85GB |
+| Final merge | 3m16s, 242MB | 5m24s, 237MB |
 
 The one date figure is the same count, to the pattern, that raptor's own unsharded CLI produces
-from the same feed — which is what says the sharding and the merge lose nothing.
+from the same feed, and the file is byte for byte the same — which is what says the sharding and
+the merge lose nothing.
 
-Four dates rather than one is half as many patterns again, which is the argument for planning more
-than one day: a Saturday is not a thin Tuesday, it is a different railway. The final merge grows
-with the days planned and the shards do not, because it is the only stage that sees all of them.
+A week is two thirds as many patterns again as one day, and it is where the returns flatten: four
+days of it already found 52,440,684, so the last three days are worth about 9% more patterns for
+75% more scanning. The merge grows with the days planned and the shards do not, since it is the
+only stage that sees all of them.

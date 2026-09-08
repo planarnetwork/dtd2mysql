@@ -1,9 +1,11 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import {
-  TransferPatternMerge, checkCodeWidths, createNetwork, loadGTFS
-} from "raptor-journey-planner";
+// The feed is read by raptor's copy of the loader rather than the workspace's, because
+// `createNetwork` is what consumes it and the two versions describe a feed differently.
+import {createNetwork, loadGTFS} from "raptor-journey-planner";
+import {checkCodeWidths} from "transfer-pattern-planner";
+import {TransferPatternMerge} from "transfer-pattern-planner/generate";
 import {checkWithinFeed, toISODate} from "./dates.js";
 import {kWayMerge} from "./merge/kWayMerge.js";
 import {readPatternFile, writePatternFile} from "./merge/patternFile.js";
@@ -132,7 +134,7 @@ export async function plan(options: PlanOptions): Promise<PatternResult> {
       feed_version: feed.feedInfo?.version ?? null,
       shard: `${n}/${of}`,
       patterns: result.patterns,
-      raptor: raptorVersion()
+      generator: generatorVersion()
     }, null, 2)}\n`);
 
     return result;
@@ -175,7 +177,7 @@ export async function merge(options: MergeOptions): Promise<PatternResult> {
       bytes: result.bytes,
       shards: inputs.length,
       ...planned,
-      raptor: raptorVersion()
+      generator: generatorVersion()
     }, null, 2)}\n`);
   }
 
@@ -234,11 +236,11 @@ async function provenanceOf(inputs: readonly string[]): Promise<{
 }
 
 /**
- * Which raptor found these patterns. The format is raptor's, so a file is only as readable as the
- * version that wrote it is documented.
+ * Which generator found these patterns. A file is only as readable as the version that wrote it is
+ * documented.
  */
-function raptorVersion(): string {
-  const manifest = require.resolve("raptor-journey-planner/package.json");
+function generatorVersion(): string {
+  const manifest = require.resolve("transfer-pattern-planner/package.json");
 
   return JSON.parse(fs.readFileSync(manifest, "utf8")).version;
 }

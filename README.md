@@ -29,7 +29,7 @@ in [`gtfs.config.yaml`](gtfs.config.yaml), validated against a
 [pinned baseline](.github/validator-baseline.json), and attached to a dated release. A build that
 fails validation is not published.
 
-`transfer-patterns.br` is not a feed but a companion to the first one: 52 million routes through the
+`transfer-patterns.br` is not a feed but a companion to the first one: 57 million routes through the
 network, found in advance so a journey planner does not have to search for them. It is built from
 `gtfs.zip` after that release is published — see
 [`apps/transfer-patterns`](apps/transfer-patterns) for the format and how to read it — so a release

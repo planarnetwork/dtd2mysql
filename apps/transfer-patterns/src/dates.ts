@@ -1,40 +1,30 @@
 /**
- * Which days to plan.
+ * Days planned by default.
  *
  * A pattern set is built for a date: the network is filtered to the trips running that day, so a
- * pattern only exists if something ran it. What varies between one date and the next is mostly the
- * shape of the day rather than the season - a Sunday has a different service to a Tuesday, and a
- * Friday evening has trains a Tuesday evening does not - so the default is one date of each shape
- * rather than a run of consecutive days, which would plan four Tuesdays and call it coverage.
+ * pattern only exists if something ran it. A week covers every shape of day the timetable has -
+ * each weekday, the Saturday and the Sunday - without having to decide which of them differ.
  *
  * The union is what gets published, so a pattern found on any of these days is available to plan
  * with on all of them. That is the right way round: a pattern the planner does not hold is a
  * journey it cannot offer, while one whose trains do not run that day costs a scan that finds
  * nothing.
  */
-const SHAPES = [
-  {day: 2, name: "Tuesday"},
-  {day: 5, name: "Friday"},
-  {day: 6, name: "Saturday"},
-  {day: 0, name: "Sunday"}
-];
+const DEFAULT_DAYS = 7;
 
 /**
- * The next date of each distinct shape of day, on or after `from`.
+ * The week beginning at `from`.
  */
 export function defaultDates(from: Date): Date[] {
-  return SHAPES.map(({day}) => next(from, day));
-}
+  const start = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()));
 
-/**
- * The first date on or after `from` falling on `day`, counted from Sunday as 0.
- */
-function next(from: Date, day: number): Date {
-  const date = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()));
+  return Array.from({length: DEFAULT_DAYS}, (_, day) => {
+    const date = new Date(start);
 
-  date.setUTCDate(date.getUTCDate() + (day - date.getUTCDay() + 7) % 7);
+    date.setUTCDate(date.getUTCDate() + day);
 
-  return date;
+    return date;
+  });
 }
 
 /**
@@ -71,7 +61,7 @@ export function toISODate(date: Date): string {
 
 /**
  * Reject a date the feed says nothing about, rather than letting the scan fail on the first
- * station with raptor's own message about a calendar window.
+ * station with a message about a calendar window.
  *
  * A feed built with a three month range covers every default date. One given by hand might not, and
  * finding that out after an hour of scanning is a bad way to find it out.

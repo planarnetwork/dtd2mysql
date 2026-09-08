@@ -307,13 +307,15 @@ The station codes are the `stop_code` of `gtfs.zip` — CRS codes — so the two
 together. `stops.txt` is what turns `NRW` back into Norwich and into somewhere with a platform and a
 position.
 
-Patterns are found for one day at a time, and the published file holds those of the next Tuesday,
-Friday, Saturday and Sunday together: what changes between days is the shape of the service rather
-than the geography, and four consecutive days would be four Tuesdays.
+Patterns are found for one day at a time, and the published file holds a week of them together —
+the seven days beginning the day it was built. What changes between days is the shape of the service
+rather than the geography, so a week covers every shape the timetable has. `transfer-patterns-meta.json`
+on the same release names the days it actually holds.
 
 It is built after the feed it describes is published, so a release that does not carry it is a night
-the scan did not finish rather than a feed with something wrong. [raptor](https://github.com/planarnetwork/raptor)
-finds the patterns and reads them back; `readPatterns` is the function.
+the scan did not finish rather than a feed with something wrong.
+[`transfer-pattern-planner`](https://www.npmjs.com/package/transfer-pattern-planner) both writes it
+and reads it back — `PatternLoader` indexes it against the feed's stations.
 
 ## transfers.txt
 

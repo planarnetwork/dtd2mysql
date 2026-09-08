@@ -1,6 +1,9 @@
 import {parentPort, workerData} from "node:worker_threads";
-import {StringResults, TransferPatternFile, TransferPatternQuery} from "raptor-journey-planner";
-import type {Network, StopID, Timetable, Transfer} from "raptor-journey-planner";
+import type {StopID, Transfer} from "@gb-transit/gtfs-loader";
+import type {Network, Timetable} from "raptor-journey-planner";
+import {
+  StringResults, TransferPatternFile, TransferPatternQuery
+} from "transfer-pattern-planner/generate";
 
 /**
  * Finds the transfer patterns for the stations it is given, one at a time.

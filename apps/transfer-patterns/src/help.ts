@@ -10,8 +10,8 @@ and brotli compressed. merge folds the shards of a run into one such file.
 
 plan options:
   --out <file>       Where to write the patterns. Required.
-  --dates <list>     Comma separated YYYY-MM-DD. Defaults to the next Tuesday,
-                     Friday, Saturday and Sunday - one of each shape of day.
+  --dates <list>     Comma separated YYYY-MM-DD. Defaults to the week beginning
+                     today, which covers every shape of day.
   --shard <n>/<of>   Plan only this shard's share of the stations. Default 1/1.
   --workers <n>      Threads to scan on. Defaults to two fewer than the cores.
   --tmp <dir>        Where the workers' files go. Defaults to a temp directory,

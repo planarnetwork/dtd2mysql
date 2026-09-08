@@ -73,11 +73,11 @@ describe("writePatternFile", () => {
     expect(read).to.deep.equal(written);
   });
 
-  it("codes a chunk boundary exactly as a single pass would", async () => {
-    // More than the 10,000 lines a chunk holds, so the seam is exercised.
+  it("writes the bytes raptor's own coder would", async () => {
+    // Two implementations of one format: the file is written with the planner's FrontCoder and
+    // read by raptor's readPatterns as readily, so a difference between them is a file that
+    // decodes into patterns nobody found rather than one that fails.
     const written = patterns(25_000);
-
-    expect(written.length).to.be.greaterThan(10_000);
 
     const file = path.join(workDir, "patterns.br");
 

@@ -2,21 +2,27 @@ import {describe, expect, it} from "vitest";
 import {checkWithinFeed, defaultDates, parseDates, toISODate} from "./dates.js";
 
 describe("defaultDates", () => {
-  it("takes the next day of each shape", () => {
+  it("takes the week beginning with the day it is asked on", () => {
     // 2026-09-07 is a Monday.
     expect(defaultDates(new Date("2026-09-07T00:00:00Z")).map(toISODate)).to.deep.equal([
-      "2026-09-08", // Tuesday
-      "2026-09-11", // Friday
-      "2026-09-12", // Saturday
-      "2026-09-13"  // Sunday
+      "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10",
+      "2026-09-11", "2026-09-12", "2026-09-13"
     ]);
   });
 
-  it("counts today as the next of its own shape", () => {
-    // A Saturday, so Saturday is today rather than a week away.
-    const dates = defaultDates(new Date("2026-09-12T00:00:00Z")).map(toISODate);
+  it("covers every day of the week whenever it is asked", () => {
+    for (const start of ["2026-09-07", "2026-09-12", "2026-09-13"]) {
+      const days = defaultDates(new Date(`${start}T00:00:00Z`)).map(date => date.getUTCDay());
 
-    expect(dates).to.contain("2026-09-12");
+      expect([...days].sort(), start).to.deep.equal([0, 1, 2, 3, 4, 5, 6]);
+    }
+  });
+
+  it("crosses a month end", () => {
+    expect(defaultDates(new Date("2026-09-28T00:00:00Z")).map(toISODate)).to.deep.equal([
+      "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01",
+      "2026-10-02", "2026-10-03", "2026-10-04"
+    ]);
   });
 
   it("stays inside a week of the date it starts from", () => {
@@ -29,10 +35,10 @@ describe("defaultDates", () => {
     }
   });
 
-  it("gives four distinct days", () => {
+  it("gives seven distinct days", () => {
     const dates = defaultDates(new Date("2026-09-07T00:00:00Z")).map(toISODate);
 
-    expect(new Set(dates).size).to.equal(4);
+    expect(new Set(dates).size).to.equal(7);
   });
 
   it("is not thrown by the time of day it is asked at", () => {
