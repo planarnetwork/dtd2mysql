@@ -111,12 +111,13 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ---------------------------------------------------------------- layout -- */
 
-/* Left aligned rather than centred: the masthead runs to the page gutter, so
- * content that centred itself would start somewhere else on a wide screen. The
- * max-width is here to stop a line getting too long, not to place the column. */
+/* One centred column, and everything sits in it - the masthead and the footer
+ * included, so nothing starts at a different place from the rest of the page on
+ * a wide screen. Full bleed is for backgrounds and the ticker only. */
 .shell {
   max-width: var(--measure);
   padding-inline: var(--gutter);
+  margin-inline: auto;
 }
 
 .section { padding-top: clamp(48px, 7vw, 82px); }
@@ -138,14 +139,17 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 /* ---------------------------------------------------------------- header -- */
 
 .masthead {
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.masthead__inner {
   display: flex;
   flex-wrap: wrap;
   gap: 16px 28px;
   align-items: center;
   justify-content: space-between;
-  padding: 20px var(--gutter);
-  border-bottom: 1px solid var(--rule);
-  background: var(--paper);
+  padding-block: 20px;
 }
 
 .wordmark {
@@ -240,7 +244,7 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ------------------------------------------------------------------ hero -- */
 
-.hero { padding: clamp(44px, 7vw, 88px) var(--gutter) 40px; }
+.hero { padding-block: clamp(44px, 7vw, 88px) 40px; }
 
 .hero h1 {
   font-weight: 700;
@@ -629,7 +633,7 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 .footer {
   background: var(--board);
   color: var(--on-dark-muted);
-  padding: clamp(30px, 4vw, 44px) var(--gutter);
+  padding-block: clamp(30px, 4vw, 44px);
   margin-top: clamp(48px, 7vw, 82px);
 }
 
@@ -639,7 +643,6 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
   gap: 18px 32px;
   align-items: center;
   justify-content: space-between;
-  max-width: var(--measure);
 }
 
 .footer__mark {

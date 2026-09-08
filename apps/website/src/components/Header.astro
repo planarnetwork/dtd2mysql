@@ -28,17 +28,19 @@ const active = links
   .sort((a, b) => b.href.length - a.href.length)[0];
 ---
 <header class="masthead">
-  <a class="wordmark" href={`${base}/`}>
-    <span class="roundel" aria-hidden="true">t</span>
-    <span class="wordmark__name">gb&#8209;transit</span>
-  </a>
-  <nav class="nav" aria-label="Main">
-    {links.map(link => (
-      <a href={`${base}${link.href}`} aria-current={link === active ? "page" : undefined}>
-        {link.label}
-      </a>
-    ))}
-    <a href={GITHUB}>Source</a>
-    <a class="btn btn--sm btn--ink" href={`${RELEASE}/gtfs.zip`}>Download gtfs.zip</a>
-  </nav>
+  <div class="shell masthead__inner">
+    <a class="wordmark" href={`${base}/`}>
+      <span class="roundel" aria-hidden="true">t</span>
+      <span class="wordmark__name">gb&#8209;transit</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      {links.map(link => (
+        <a href={`${base}${link.href}`} aria-current={link === active ? "page" : undefined}>
+          {link.label}
+        </a>
+      ))}
+      <a href={GITHUB}>Source</a>
+      <a class="btn btn--sm btn--ink" href={`${RELEASE}/gtfs.zip`}>Download gtfs.zip</a>
+    </nav>
+  </div>
 </header>
