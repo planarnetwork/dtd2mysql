@@ -1,5 +1,5 @@
 import {option} from "@gb-transit/gtfs";
-import {merge, plan} from "./api.js";
+import {merge, plan, split} from "./api.js";
 import {parseDates, toISODate} from "./dates.js";
 import {showHelp} from "./help.js";
 import {parseShard, parseWorkers} from "./plan/stations.js";
@@ -24,6 +24,8 @@ async function main(argv: string[]): Promise<void> {
       return planFeed(argv, out(argv));
     case "merge":
       return mergeShards(argv, out(argv));
+    case "split":
+      return splitByStation(argv, out(argv));
     default:
       return showHelp();
   }
@@ -94,6 +96,23 @@ async function mergeShards(argv: string[], output: string): Promise<void> {
 
   console.log(
     `${patterns.toLocaleString()} patterns, ${megabytes(bytes)} in ${output}, ${elapsed(started)}`
+  );
+}
+
+async function splitByStation(argv: string[], output: string): Promise<void> {
+  const [input] = positionalArgs(argv);
+
+  if (input === undefined) {
+    throw new Error("Which file? transfer-patterns split <transfer-patterns.br> --out <dir>");
+  }
+
+  console.log(`Splitting ${input} into ${output}`);
+
+  const started = Date.now();
+  const {stations, bytes} = await split({input, output});
+
+  console.log(
+    `${stations.toLocaleString()} stations, ${megabytes(bytes)} in ${output}, ${elapsed(started)}`
   );
 }
 

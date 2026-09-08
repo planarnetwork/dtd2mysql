@@ -22,6 +22,7 @@ Not published to npm; the nightly is the only caller.
 ```
 transfer-patterns plan <gtfs.zip> --out <shard.br> [options]
 transfer-patterns merge <shard.br>... --out <transfer-patterns.br>
+transfer-patterns split <transfer-patterns.br> --out <dir>
 ```
 
 `plan` scans the feed and writes the patterns it found, sorted and free of duplicates. `merge`
@@ -54,6 +55,35 @@ transfer-patterns merge shard-*.br --out transfer-patterns.br --meta meta.json
 | `--out <file>` | Where the patterns go. Required. |
 | `--shards <n>` | How many shards to expect. A merge short of one is missing that share of the network. |
 | `--meta <file>` | Also write how many patterns there are, as JSON. |
+
+### split
+
+| | |
+|---|---|
+| `--out <dir>` | Where the per station files go. Required. |
+
+## A station at a time
+
+A release takes 1000 assets and the network has 2,797 stations, so the release carries the patterns
+as one file. Reading them is the other way round: a planner wants the station somebody is departing
+from, not the rest of the country.
+
+`split` breaks the merged file up, one file per station, named for it — `LST.br`, `NRW.br`. The
+work is the planner's own `StationPatternFiles`, which writes a pattern under **both** of the
+stations it runs between, each time starting with the station whose file it is. So a query only
+ever fetches where it departs from, with no rule about which end to look under:
+
+```
+NRW.br    NRW AUD LST
+LST.br    LST AUD NRW
+```
+
+That doubles what is stored — 163MB against 57.6MB — which costs nothing when a reader only ever
+takes one of them. `NRW.br` is 100KB.
+
+The site publishes them under `/transfer-patterns/`, rebuilt from the release each time the Pages
+workflow runs, and `UrlPatternProvider` reads them straight from there. It is a plain `GET` per
+station, so a browser and a CDN can each make sense of it without being told anything.
 
 ## Dates
 

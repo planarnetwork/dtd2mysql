@@ -4,6 +4,7 @@ transfer-patterns - build the transfer pattern file a journey planner reads
 
   transfer-patterns plan <gtfs.zip> --out <shard.br> [options]
   transfer-patterns merge <shard.br>... --out <transfer-patterns.br>
+  transfer-patterns split <transfer-patterns.br> --out <dir>
 
 plan finds every transfer pattern in a feed and writes them sorted, de-duplicated
 and brotli compressed. merge folds the shards of a run into one such file.
@@ -16,6 +17,9 @@ plan options:
   --workers <n>      Threads to scan on. Defaults to two fewer than the cores.
   --tmp <dir>        Where the workers' files go. Defaults to a temp directory,
                      which is removed afterwards.
+
+split writes one file per station, named for it, so a planner can read the
+patterns for a journey without reading the rest of the network.
 
 merge options:
   --out <file>       Where to write the patterns. Required.

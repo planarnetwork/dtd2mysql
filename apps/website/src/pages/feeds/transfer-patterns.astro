@@ -1,0 +1,159 @@
+---
+import Base from "../../layouts/Base.astro";
+import Terminal from "../../components/Terminal.astro";
+import {latest} from "../../feed.js";
+import {PATTERNS_PATH, byLetter, kilobytes, patternStations} from "../../patterns.js";
+import {RELEASE, npm, source} from "../../site.js";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const meta = await latest();
+const stations = await patternStations();
+const letters = byLetter(stations);
+const total = stations.reduce((bytes, station) => bytes + station.bytes, 0);
+---
+<Base
+  title="Transfer patterns"
+  description="Every route through the GB rail network, found in advance so a journey planner does not have to search for them. One file for the lot, or one per station."
+>
+  <div class="shell page-head">
+    <p class="crumb"><a href={`${base}/feeds/`}>Feeds</a></p>
+    <h1>Transfer patterns.</h1>
+    <p class="lede">
+      Every sequence of stations a journey can be made of, found in advance. A planner reads them
+      instead of searching the network, which is what makes it answer in milliseconds.
+    </p>
+  </div>
+
+  <section class="shell section--tight" style="padding-top: clamp(32px, 4vw, 44px);">
+    <div class="cards cards--wide" style="margin-top: 0;">
+      <div class="card">
+        <div class="eyebrow">The whole network</div>
+        <div>
+          <h3 class="card__title--display">One file</h3>
+          <p>
+            Every pattern, sorted and front coded, once under whichever of its two ends sorts first.
+            What you want if you are planning journeys across the country, or want to hold the lot
+            in memory.
+          </p>
+        </div>
+        <div class="card__foot">
+          <a class="btn btn--signal" href={`${RELEASE}/transfer-patterns.br`}>
+            transfer-patterns.br &rarr;
+          </a>
+          <p style="margin: 12px 0 0; font-size: 15px; color: var(--ink-quiet);">
+            On the latest release, beside the feed it describes.
+          </p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">One station</div>
+        <div>
+          <h3 class="card__title--display">A file each</h3>
+          <p>
+            The same patterns, written under both of the stations they run between, so a query only
+            ever fetches where it departs from. Tens of kilobytes rather than tens of megabytes.
+          </p>
+        </div>
+        <div class="card__foot">
+          {stations.length > 0
+            ? <a class="btn btn--signal" href="#stations">
+                {stations.length.toLocaleString()} stations &darr;
+              </a>
+            : <p style="margin: 0; font-size: 15px; color: var(--ink-quiet);">
+                Published once a nightly feed carries them.
+              </p>}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2 h2--sm">What a pattern is</h2>
+    <p style="margin: 14px 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      The stations a journey calls at, three characters each, nothing between them. One line is one
+      pattern.
+    </p>
+    <Terminal lines={[
+      "NRWLST            Norwich to Liverpool Street, direct",
+      "NRWCBGLST         changing at Cambridge",
+      "NRWCBGELYLST      changing at Cambridge and Ely"
+    ]} />
+    <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      The codes are the <code>stop_code</code> of the feed &mdash; CRS codes &mdash; so the two are
+      read together: <code>stops.txt</code> is what turns <code>NRW</code> back into Norwich and
+      into somewhere with a platform and a position. Patterns are found a day at a time and the
+      published file holds a week of them, so it covers every shape of service the timetable has.
+      Sorting puts patterns beginning the same way together, so a line records only what it adds to
+      the one above it, and the whole thing is brotli compressed.
+    </p>
+    <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      They are built after the feed they describe is published, so a release without them is a night
+      whose scan did not finish rather than a feed with something wrong.
+      <a href={`${base}/feeds/using-this-data/#the-transfer-patterns`}>Using this data</a> says more,
+      and <a href={npm("transfer-pattern-planner")}><code>transfer-pattern-planner</code></a> both
+      writes them and reads them back.
+    </p>
+  </section>
+
+  <section class="shell section">
+    <h2 class="h2 h2--sm">Reading one station</h2>
+    <p style="margin: 14px 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      Each file is named for its station and holds every pattern departing it, so nothing has to
+      keep an index of where they are. It is a plain <code>GET</code>, which a browser and a cache
+      can each make sense of on their own.
+    </p>
+    <Terminal lines={[
+      `curl -O https://planarnetwork.github.io${PATTERNS_PATH}/NRW.br`
+    ]} />
+  </section>
+
+  {stations.length > 0 && (
+    <section class="shell section section--last" id="stations">
+      <h2 class="h2 h2--sm">Every station</h2>
+      <p style="margin: 14px 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+        {stations.length.toLocaleString()} of them, {kilobytes(total / stations.length)} each on
+        average, from the feed on the most recent release
+        {meta?.feed_version && <> &mdash; <code>{meta.feed_version}</code></>}.
+      </p>
+      <p style="margin: 0 0 22px; font-size: 15px;">
+        {letters.map(([letter], index) => (
+          <>
+            {index > 0 && " · "}
+            <a href={`#letter-${letter}`}>{letter}</a>
+          </>
+        ))}
+      </p>
+      {letters.map(([letter, group]) => (
+        <div style="margin-bottom: 26px;" id={`letter-${letter}`}>
+          <h3 class="h3" style="margin: 0 0 10px;">{letter}</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>station</th><th>code</th><th>patterns</th></tr>
+              </thead>
+              <tbody>
+                {group.map(station => (
+                  <tr>
+                    <td>{station.name ?? <span style="color: var(--ink-quiet);">&mdash;</span>}</td>
+                    <td>
+                      <a href={`${PATTERNS_PATH}/${station.code}.br`}>
+                        <code>{station.code}.br</code>
+                      </a>
+                    </td>
+                    <td>{kilobytes(station.bytes)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+      <p style="margin: 20px 0 0; font-size: 14.5px; color: var(--ink-quiet); max-width: 70ch;">
+        Read from the directory the build published rather than written here, so this cannot offer a
+        station whose file is not there. The split itself is
+        <a href={source("apps/transfer-patterns/README.md")}> <code>transfer-patterns split</code></a>,
+        run over the release each time this site is built.
+      </p>
+    </section>
+  )}
+</Base>
