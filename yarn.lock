@@ -922,6 +922,7 @@ __metadata:
     "@astrojs/mdx": "npm:^8.0.0"
     "@gb-transit/gtfs-loader": "workspace:^"
     astro: "npm:^7.3.1"
+    fflate: "npm:^0.8.3"
   languageName: unknown
   linkType: soft
 

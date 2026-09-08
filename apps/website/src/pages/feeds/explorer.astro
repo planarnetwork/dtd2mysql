@@ -1,0 +1,142 @@
+---
+import Base from "../../layouts/Base.astro";
+import {latest, built, date, number} from "../../feed.js";
+import {assets} from "../../explorer/mirrored.js";
+import {RELEASE} from "../../site.js";
+import "../../styles/explorer.css";
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const meta = await latest();
+const mirrored = assets();
+---
+<Base
+  title="Feed explorer"
+  description="Open the latest GB rail GTFS feed in your browser, or one of your own, and look inside it: every file, every row, every station and every train, with the checks and the enrichment ledger that say why it holds what it holds."
+>
+  <div class="shell page-head">
+    <p class="crumb"><a href={`${base}/feeds/`}>Feeds</a></p>
+    <h1>Feed explorer.</h1>
+    <p class="lede">
+      Open the feed and look inside it. Every file and every row, the stations and the trains they
+      belong to, the days a service runs and the reason it does not run on the others &mdash; and
+      where the feed's own build says each value came from.
+    </p>
+  </div>
+
+  <section class="shell section--tight" style="padding-top: clamp(24px, 3vw, 36px);">
+    <div id="explorer" class="x-explorer" data-base={base}>
+
+      {/* Everything the build actually left beside the site, so the page never asks for a 404. */}
+      <script id="explorer-assets" type="application/json" set:html={JSON.stringify(mirrored)} />
+
+      <div id="explorer-open" class="x-open">
+        {mirrored.feed === undefined
+          ? <div class="x-open__none">
+              <p>
+                The latest feed is not published beside this page. That is normal in a checkout
+                &mdash; the nightly build puts it here, not the repository.
+              </p>
+              <p>
+                <a class="btn btn--signal" href={`${RELEASE}/gtfs.zip`}>Download gtfs.zip &rarr;</a>
+                and drop it below.
+              </p>
+            </div>
+          : <div class="x-open__latest">
+              <button class="btn btn--signal" data-open-latest type="button">
+                Open the latest feed &rarr;
+              </button>
+              <p class="x-note">
+                {Math.round(mirrored.feed.bytes / 1024 / 1024)} MB, served from this site.
+                {meta === undefined ? null : ` Built ${built(meta)} from ${meta.feed_version},
+                  covering ${date(meta.feed_start_date)} to ${date(meta.feed_end_date)}
+                  with ${number(meta.trips)} trips.`}
+              </p>
+            </div>}
+
+        <div class="x-open__own">
+          <label class="x-open__file">
+            <span>or open a feed of your own</span>
+            <input type="file" accept=".zip,application/zip" data-file />
+          </label>
+          <p class="x-note">
+            Any GTFS zip, not just this one. It is read in your browser and goes nowhere.
+          </p>
+        </div>
+      </div>
+
+      <div id="explorer-status" class="x-status" role="status" aria-live="polite" hidden></div>
+      <p id="explorer-note" class="x-note x-note--block" hidden></p>
+
+      <nav id="explorer-nav" class="x-nav" aria-label="Explorer" hidden>
+        <span class="x-nav__name" id="explorer-name"></span>
+        <a href="#/" data-view="overview">Files</a>
+        <a href="#/checks" data-view="checks">Checks</a>
+        {/* Shown once the sidecar behind each has arrived, so neither is a link to an empty page. */}
+        <a href="#/validation" data-view="validation" hidden>Validation</a>
+        <a href="#/provenance" data-view="provenance" hidden>Provenance</a>
+        <button id="explorer-load-calls" class="x-btn x-btn--go" type="button" hidden></button>
+      </nav>
+
+      <div id="explorer-view" class="x-view">
+        {/*
+          What is here before the script runs, and what stays here if it never does. The explorer
+          replaces it.
+        */}
+        <noscript>
+          <p class="x-warn">
+            The explorer reads the feed in your browser, so it needs JavaScript. There is no server
+            here to read it for you &mdash; which is the point: a 21 MB zip stays on your machine and
+            nothing about what you look at leaves this page.
+          </p>
+          <p>
+            The same thing without it, given <code>curl</code> and <code>unzip</code>:
+          </p>
+          <pre><code>{`curl -LO ${RELEASE}/gtfs.zip
+unzip -o gtfs.zip
+grep '^910GCLPHMJC,' stops.txt`}</code></pre>
+        </noscript>
+      </div>
+
+      <div class="x-about">
+        <h2 class="h2 h2--sm">What it is for</h2>
+        <div class="cards cards--wide">
+          <div class="card">
+            <div class="eyebrow">Every file</div>
+            <p>
+              The zip's real contents: what each file holds, the columns it actually carries against
+              the ones the standard describes, and the rows themselves &mdash; filtered, sorted and
+              exported as CSV for pasting into an issue.
+            </p>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Stations and trains</div>
+            <p>
+              A station with the boarding points under it and how far each has drifted from it. A
+              train with its calling pattern, the days it runs, the dates it does not, and the trips
+              it splits from or joins to.
+            </p>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Why it says that</div>
+            <p>
+              The build records every value an enricher wrote and every write that lost. So
+              &ldquo;this station is in the wrong place&rdquo; has an answer that is a line rather
+              than an argument.
+            </p>
+          </div>
+        </div>
+        <p class="x-note x-note--block">
+          The explorer is the one page on this site that runs JavaScript, and the one place it may
+          make a request to anyone else &mdash; the map on a station is a button, and it says so.
+          Nothing else here loads a byte of it.
+        </p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import {boot} from "../../explorer/ui/boot.js";
+
+  boot();
+</script>

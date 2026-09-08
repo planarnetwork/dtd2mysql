@@ -1,5 +1,6 @@
 import {describe, it, expect} from "vitest";
-import {board, built, date, FEEDS, FeedMeta, number, sources} from "./feed.js";
+import {board, built, date, FEEDS, number, sources} from "./feed.js";
+import type {FeedMeta} from "./feed.js";
 
 const feed = (extra: Partial<FeedMeta> = {}): FeedMeta => ({
   built: "2026-08-27T05:00:00.000Z",

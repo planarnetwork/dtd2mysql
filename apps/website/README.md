@@ -18,6 +18,7 @@ yarn workspace @gb-transit/website run dev     # localhost:4321/gb-transit
 |---|---|
 | `/` | what the feeds are, and which one to take |
 | `/feeds/` | the three feeds in detail, and how one gets published |
+| `/feeds/explorer/` | open the feed and look inside it |
 | `/feeds/using-this-data/` | the decisions the feeds make that GTFS does not |
 | `/tools/` | the four tools, and how they compose |
 | `/tools/{cif2gtfs,dtd2mysql,transxchange2gtfs,gtfsmerge}/` | one page each |
@@ -35,6 +36,39 @@ every absolute link carries it; the prose pages link relatively so they do not h
 
 Fonts are fetched at build time and served from this origin. A download page that reports what the
 feed contains should not make its readers announce themselves to a third party to read it.
+
+### The explorer is the exception
+
+[`/feeds/explorer/`](src/pages/feeds/explorer.astro) is the one page here that ships JavaScript. The
+rule exists so that reading about the feed costs nothing and depends on nothing; the explorer is not
+reading about the feed, it is the feed. The alternative is a server that holds a 21 MB zip and
+answers questions about it — something to run, to pay for, and to trust with what its users are
+looking at. Doing it in the reader's own browser keeps the promise the rest of the site makes:
+nothing about you leaves this origin unless you ask it to, which is why a station draws its own plot
+and the map is a button that says what pressing it does. It is about 30 KB gzipped over two chunks,
+on one page, and no other page loads a byte of it.
+
+[`src/explorer/`](src/explorer) is laid out so that almost none of it is about the DOM.
+`model/` reads a zip into memory, `query/` filters it, `checks/` asks questions of it and `worker/`
+answers them off the main thread — all of it plain, testable TypeScript. `ui/` is the only part that
+builds HTML, and each view there is a function from a value to a string. That boundary is what
+stands in for a framework.
+
+The parse runs in a Web Worker because on the published feed it is a few seconds of solid CPU, which
+on the main thread is a frozen page. Two consequences worth knowing: the explorer is bundled twice,
+so a type imported without the word `type` breaks the worker build rather than the type check —
+which is why this workspace sets `verbatimModuleSyntax`; and a feed's 2.9 million calls are a second,
+explicit phase, offered with its cost on the button rather than loaded on arrival.
+
+### What the explorer reads
+
+The feed, and the sidecars the nightly publishes beside it. `validation.json` is the MobilityData
+validator's report, shown against the accepted errors in
+[`.github/validator-baseline.json`](../../.github/validator-baseline.json) so that a deliberate
+decision reads as one rather than as a failure. `provenance.json` is the enrichment ledger — every
+value a source wrote and every write that lost — which is what makes "this station is in the wrong
+place" answerable. Both are mirrored into `public/` by the Pages workflow, like the feed, and a
+release that carries neither leaves those views saying so.
 
 ### Nothing about the feed is written into a page
 

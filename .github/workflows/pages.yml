@@ -42,12 +42,33 @@ jobs:
 
       # Before the build, because everything in `public/` is copied into the
       # site as it stands.
-      - name: Publish the feed alongside the site
+      #
+      # The feed, and what the nightly publishes about it. The explorer reads
+      # all of them from this origin, the way it reads the feed - so what the
+      # validator made of the build, and what each source wrote and overruled,
+      # are things a reader can look at rather than assets nobody opens.
+      #
+      # Each is fetched on its own and none is fatal. A release published before
+      # one of these existed, or a night whose build did not write it, is a site
+      # with less to say rather than a deploy that does not happen.
+      - name: Publish the feed and what describes it alongside the site
         run: |
-          curl -fsSL --retry 3 --retry-delay 5 \
-            https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip \
-            -o apps/website/public/gtfs.zip
-          ls -lh apps/website/public/gtfs.zip
+          for asset in gtfs.zip feed-meta.json validation.json provenance.json \
+            enrichment-report.json; do
+            if curl -fsSL --retry 3 --retry-delay 5 \
+              "https://github.com/planarnetwork/gb-transit/releases/latest/download/$asset" \
+              -o "apps/website/public/.$asset.part"
+            then
+              mv "apps/website/public/.$asset.part" "apps/website/public/$asset"
+            else
+              # curl -f can still leave a partial file behind, and a truncated
+              # validation.json is worse than an absent one: the page handles
+              # absent, and reports what it has rather than what it half has.
+              rm -f "apps/website/public/.$asset.part" "apps/website/public/$asset"
+              echo "The latest release has no $asset, so the site goes up without it."
+            fi
+          done
+          ls -lh apps/website/public/
 
       # The site is built by astro rather than by the repository's `tsc -b`, so
       # nothing here has needed the workspaces compiled until now. Splitting the
