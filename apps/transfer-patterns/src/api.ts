@@ -84,7 +84,6 @@ export async function plan(options: PlanOptions): Promise<PatternResult> {
     throw new Error("No dates to plan.");
   }
 
-  // A pool of no workers plans nothing and writes a valid empty file.
   if (!Number.isInteger(workers) || workers < 1) {
     throw new Error(`A run needs at least one worker, not ${workers}.`);
   }
@@ -127,8 +126,7 @@ export async function plan(options: PlanOptions): Promise<PatternResult> {
 
     const result = await new TransferPatternMerge(workDir).merge(parts, output);
 
-    // A pattern file says nothing about which days it was planned for or which feed it came from.
-    // Carried per shard rather than written at the end so the merge can check the shards agree.
+    // Per shard rather than written at the end, so the merge can check the shards agree.
     await fs.promises.writeFile(provenanceFor(output), `${JSON.stringify({
       dates: dates.map(toISODate),
       feed_version: feed.feedInfo?.version ?? null,

@@ -24,8 +24,7 @@ const CHUNK = 10_000;
  * Streamed. There are 34 million of them and no reason to hold any two at once.
  */
 export function readPatternFile(file: string): AsyncIterable<string[]> {
-  // pipeline rather than pipe, which does not forward an error from the source: a file that is not
-  // there and a file that is not brotli should fail the same way.
+  // pipeline rather than pipe, which does not forward an error from the source.
   const decompressed = zlib.createBrotliDecompress();
   const done = pipeline(fs.createReadStream(file), decompressed);
   const lines = readline.createInterface({
@@ -37,10 +36,8 @@ export function readPatternFile(file: string): AsyncIterable<string[]> {
 }
 
 /**
- * The patterns, or whatever stopped the stream that was carrying them.
- *
- * `readPatterns` ends quietly when its input is destroyed, so without this a read that failed half
- * way through is a short file rather than an error.
+ * The patterns, or whatever stopped the stream that was carrying them. `readPatterns` ends quietly
+ * when its input is destroyed, which would otherwise make a failed read a short file.
  */
 async function* merged(
   patterns: AsyncIterable<string[]>,
@@ -59,9 +56,6 @@ async function* merged(
 
 /**
  * Write sorted patterns out in raptor's format, and say how many there were.
- *
- * The format is raptor's and so is the code that writes it, so `readPatterns` reads a file this
- * produced and one its own merge produced without knowing which was which.
  */
 export async function writePatternFile(
   patterns: AsyncIterable<string[]>,
@@ -70,9 +64,8 @@ export async function writePatternFile(
   const compressed = zlib.createBrotliCompress({
     params: {[zlib.constants.BROTLI_PARAM_QUALITY]: QUALITY}
   });
-  // Observed as it is created rather than where it is awaited: the loop below runs for minutes, and
-  // a sink failing during it would reject this with nothing listening, which node treats as an
-  // unhandled rejection and takes the process down for.
+  // Observed as it is created, so a sink that fails during the loop below is an error rather than
+  // an unhandled rejection.
   const written = pipeline(compressed, fs.createWriteStream(output))
     .then(() => undefined, (err: Error) => err);
 
@@ -96,13 +89,11 @@ export async function writePatternFile(
 }
 
 /**
- * Front code a stream of patterns, using raptor's own `frontCode`.
+ * Front code a stream of patterns.
  *
- * That is a synchronous generator over a synchronous iterable, and 34 million patterns arrive
- * asynchronously and will not be held, so they are handed over a chunk at a time. A line is coded
- * against the line before it and nothing else, so a chunk that starts with its predecessor and
- * throws away that first result gives the same bytes a single pass would - there is no window to
- * lose across the seam.
+ * `frontCode` is synchronous and over a synchronous iterable, so the patterns are handed to it a
+ * chunk at a time. A line is coded against the line before it and nothing else, so a chunk that
+ * starts with its predecessor and drops that first result gives the bytes a single pass would.
  */
 async function* code(patterns: AsyncIterable<string[]>): AsyncGenerator<string> {
   let chunk: string[] = [];
@@ -140,10 +131,8 @@ function* codeChunk(chunk: string[], previous: string | undefined): Generator<st
 }
 
 /**
- * Write a line, waiting only where the stream has fallen far enough behind to say so.
- *
- * Against the pipeline as well as the drain, since a stream that has already been destroyed will
- * never drain.
+ * Write a line, waiting only where the stream has fallen far enough behind to say so. Against the
+ * pipeline as well as the drain, since a destroyed stream never drains.
  */
 async function write(stream: Writable, line: string, written: Promise<Error | void>): Promise<void> {
   if (stream.write(`${line}\n`)) {

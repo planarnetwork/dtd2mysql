@@ -74,10 +74,7 @@ describe("writePatternFile", () => {
   });
 
   it("codes a chunk boundary exactly as a single pass would", async () => {
-    // More than the 10,000 lines a chunk holds, so the seam is exercised. A chunk coded without
-    // its predecessor would write the first line of every chunk out in full: still readable, but
-    // no longer the bytes raptor's own merge produces, and the whole point of chunking is that it
-    // makes no difference.
+    // More than the 10,000 lines a chunk holds, so the seam is exercised.
     const written = patterns(25_000);
 
     expect(written.length).to.be.greaterThan(10_000);

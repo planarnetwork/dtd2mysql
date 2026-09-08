@@ -98,8 +98,8 @@ async function mergeShards(argv: string[], output: string): Promise<void> {
 }
 
 /**
- * How many shards the merge is expecting. Checked like `--workers`, since a bad value here would
- * turn the assertion off rather than fail it.
+ * How many shards the merge is expecting. Checked, since a bad value would turn the assertion off
+ * rather than fail it.
  */
 function expectedShards(text: string): number {
   const shards = Number(text);

@@ -13,13 +13,10 @@ This exists because a whole national feed is too much work for one CI job: it sp
 shards that can run as separate jobs and merges their output back into the single file raptor would
 have written.
 
-Not published to npm. The nightly is the only caller, and the reader is
-[`transfer-pattern-planner`](https://github.com/planarnetwork/transfer-pattern-planner).
-
-The two packages divide as writer and reader: raptor scans a feed and writes the file, and
-`transfer-pattern-planner` reads it and plans journeys with it. Only raptor can find a pattern -
-the planner holds no scan - so it is the dependency here, and the planner is a devDependency used
-to check that what this writes is what that reads.
+Not published to npm; the nightly is the only caller. raptor finds the patterns and writes the file,
+and [`transfer-pattern-planner`](https://github.com/planarnetwork/transfer-pattern-planner) reads it
+and plans journeys with it. Only raptor holds a scan, so it is the dependency, and the planner is a
+devDependency the tests read the output back with.
 
 ## Usage
 

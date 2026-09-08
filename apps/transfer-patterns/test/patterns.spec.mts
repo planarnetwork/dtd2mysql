@@ -13,10 +13,9 @@ const run = promisify(execFile);
 /**
  * The whole thing, end to end, over `fixtures/tiny`.
  *
- * Through the CLI as a subprocess rather than through the api, because the part worth covering here
- * is the worker pool: workers are given a file to run, so which file that is depends on whether the
- * package is running from source or from its build, and calling the api from vitest would exercise
- * neither of the two ways it actually runs.
+ * Through the CLI as a subprocess rather than through the api: a worker is given a file to run, so
+ * the pool only works if that file is where it is looked for, which the api called from vitest
+ * would not show.
  */
 const cli = path.join(import.meta.dirname, "..", "src", "index.ts");
 const fixture = path.join(import.meta.dirname, "..", "fixtures", "tiny");
@@ -111,8 +110,7 @@ describe("transfer-patterns", () => {
       "plan", feed, "--dates", "2026-06-03,2026-06-06", "--workers", "2", "--out", both
     );
 
-    // Every service in the fixture runs every day, so a second day adds nothing - which is the
-    // point: the union must not gain a pattern nobody found, and must not lose one either.
+    // Every service in the fixture runs every day, so a second day adds nothing.
     expect(await patternsIn(both)).to.deep.equal(await patternsIn(tuesday));
   }, 240_000);
 
@@ -194,9 +192,8 @@ describe("transfer-patterns", () => {
   }, 120_000);
 
   /**
-   * The file is written for transfer-pattern-planner to read, and raptor's format and its reader
-   * are two packages that can drift apart. Reading it back with our own decoder would only say
-   * that we agree with ourselves.
+   * The format lives in two packages, so the round trip goes out through raptor and back in
+   * through the planner rather than through the decoder that wrote it.
    */
   it("writes a file the planner it is published for can read", async () => {
     const output = path.join(workDir, "readable.br");

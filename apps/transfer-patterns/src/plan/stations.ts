@@ -62,10 +62,8 @@ export function parseShard(text: string | undefined): {n: number; of: number} {
 }
 
 /**
- * Read a `--workers` argument, or leave it to the default.
- *
- * Checked rather than coerced: `Array.from({length: NaN})` is empty, as is `{length: -1}`, so a bad
- * value here plans nothing and writes a valid empty file rather than saying anything.
+ * Read a `--workers` argument, or leave it to the default. Checked rather than coerced: a pool
+ * sized NaN or less than one is an empty pool, which plans nothing and writes an empty file.
  */
 export function parseWorkers(text: string | undefined): number | undefined {
   if (text === undefined) {
