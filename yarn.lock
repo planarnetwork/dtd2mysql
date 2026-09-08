@@ -847,7 +847,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@gb-transit/gtfs-loader@npm:^1.1.0, @gb-transit/gtfs-loader@workspace:^, @gb-transit/gtfs-loader@workspace:libs/gtfs-loader":
+"@gb-transit/gtfs-loader@npm:^1.1.0, @gb-transit/gtfs-loader@npm:^1.2.0, @gb-transit/gtfs-loader@workspace:^, @gb-transit/gtfs-loader@workspace:libs/gtfs-loader":
   version: 0.0.0-use.local
   resolution: "@gb-transit/gtfs-loader@workspace:libs/gtfs-loader"
   dependencies:
@@ -856,16 +856,6 @@ __metadata:
     typescript: "npm:7.0.2"
   languageName: unknown
   linkType: soft
-
-"@gb-transit/gtfs-loader@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "@gb-transit/gtfs-loader@npm:1.2.0"
-  dependencies:
-    "@gb-transit/gtfs-schema": "npm:^2.1.0"
-    fflate: "npm:^0.8.3"
-  checksum: 10c0/b81dbcef40160f5debf0f9db6df2614710f08434a024964a5c496e141da75befc51bdd64021df1674945ecf8146622d4924becfe088a351ad19b29d1dcb85455
-  languageName: node
-  linkType: hard
 
 "@gb-transit/gtfs-output@workspace:^, @gb-transit/gtfs-output@workspace:libs/gtfs-output":
   version: 0.0.0-use.local
@@ -879,7 +869,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@gb-transit/gtfs-schema@npm:^2.1.0, @gb-transit/gtfs-schema@workspace:^, @gb-transit/gtfs-schema@workspace:libs/gtfs-schema":
+"@gb-transit/gtfs-schema@workspace:^, @gb-transit/gtfs-schema@workspace:libs/gtfs-schema":
   version: 0.0.0-use.local
   resolution: "@gb-transit/gtfs-schema@workspace:libs/gtfs-schema"
   dependencies:
