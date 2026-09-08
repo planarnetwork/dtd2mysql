@@ -907,6 +907,7 @@ __metadata:
     "@gb-transit/gtfs-loader": "workspace:^"
     fflate: "npm:^0.8.3"
     raptor-journey-planner: "npm:5.0.0"
+    transfer-pattern-planner: "npm:2.1.0"
     typescript: "npm:7.0.2"
   bin:
     transfer-patterns: bin/transfer-patterns.sh
@@ -4708,6 +4709,15 @@ __metadata:
   dependencies:
     is-number: "npm:^7.0.0"
   checksum: 10c0/487988b0a19c654ff3e1961b87f471702e708fa8a8dd02a298ef16da7206692e8552a0250e8b3e8759270f62e9d8314616f6da274734d3b558b1fc7b7724e892
+  languageName: node
+  linkType: hard
+
+"transfer-pattern-planner@npm:2.1.0":
+  version: 2.1.0
+  resolution: "transfer-pattern-planner@npm:2.1.0"
+  dependencies:
+    "@gb-transit/gtfs-loader": "npm:^1.1.0"
+  checksum: 10c0/cae7dded576036bcabdc89bd514bc8047f7371d3145ae381072f7ebbefb0fe3b1b358f9a66223360b9faff9ffbf849eaf3b4f5d882e61fea4dc2b4b256a059f6
   languageName: node
   linkType: hard
 

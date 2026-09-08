@@ -5,6 +5,7 @@ import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {zipSync, strToU8} from "fflate";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
+import {PatternLoader, StopTable, loadGtfs} from "transfer-pattern-planner";
 import {readPatternFile} from "../src/merge/patternFile.js";
 
 const run = promisify(execFile);
@@ -191,6 +192,30 @@ describe("transfer-patterns", () => {
       expect(stderr ?? "", stderr).not.to.contain("    at ");
     }
   }, 120_000);
+
+  /**
+   * The file is written for transfer-pattern-planner to read, and raptor's format and its reader
+   * are two packages that can drift apart. Reading it back with our own decoder would only say
+   * that we agree with ourselves.
+   */
+  it("writes a file the planner it is published for can read", async () => {
+    const output = path.join(workDir, "readable.br");
+
+    await transferPatterns("plan", feed, "--dates", "2026-06-03", "--workers", "2", "--out", output);
+
+    const stops = new StopTable();
+
+    await loadGtfs(fs.createReadStream(feed), stops);
+
+    const tree = await new PatternLoader(stops).load(fs.createReadStream(output));
+    const named = (origin: string, destination: string) =>
+      tree.getPatterns(stops.indexOf(origin), stops.indexOf(destination))
+        .map(pattern => [origin, ...pattern.map(stop => stops.nameOf(stop)), destination].join(" "));
+
+    // Ayton to Deeton has to change at Ceeton; Ayton to Ceeton does not have to change at all.
+    expect(named("AAA", "DDD")).to.deep.equal(["AAA CCC DDD"]);
+    expect(named("AAA", "CCC")).to.deep.equal(["AAA CCC"]);
+  }, 240_000);
 
   it("refuses a date the feed does not cover", async () => {
     await expect(transferPatterns(

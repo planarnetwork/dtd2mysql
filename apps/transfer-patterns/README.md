@@ -16,6 +16,11 @@ have written.
 Not published to npm. The nightly is the only caller, and the reader is
 [`transfer-pattern-planner`](https://github.com/planarnetwork/transfer-pattern-planner).
 
+The two packages divide as writer and reader: raptor scans a feed and writes the file, and
+`transfer-pattern-planner` reads it and plans journeys with it. Only raptor can find a pattern -
+the planner holds no scan - so it is the dependency here, and the planner is a devDependency used
+to check that what this writes is what that reads.
+
 ## Usage
 
 ```

@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "fflate": "^0.8.3",
+    "transfer-pattern-planner": "2.1.0",
     "typescript": "7.0.2"
   }
 }
