@@ -1067,7 +1067,7 @@ export const stationCoordinates: StationCoordinates = {
   "BDS": {
     "stop_name": "Bond Street (Elizabeth line)",
     "stop_lat": 51.514,
-    "stop_lon": 0.15,
+    "stop_lon": -0.15,
     "wheelchair_boarding": 0
   },
   "BDT": {
@@ -3863,7 +3863,7 @@ export const stationCoordinates: StationCoordinates = {
   "CWX": {
     "stop_name": "Canary Wharf (Elizabeth line)",
     "stop_lat": 51.5061,
-    "stop_lon": 0.01578,
+    "stop_lon": -0.01578,
     "wheelchair_boarding": 1
   },
   "CYB": {
