@@ -1,5 +1,91 @@
 # @gb-transit/gtfs
 
+## 3.2.0
+
+### Minor Changes
+
+- f9a4260: Leave the services National Rail does not run out of a feed, when a config asks.
+
+  The CIF is the National Rail timetable and it carries services National Rail does not hold
+  authority over: the tube, the Tyne & Wear Metro, the ferries and the scheduled buses. A feed
+  combined with other sources has better answers for those elsewhere — TfL names the NaPTAN stop a
+  replacement bus calls at and the letter route code it runs under, neither of which the CIF has — so
+  publishing them here describes the same journey worse.
+
+  A build config can now say what to leave out:
+
+  ```yaml
+  exclude:
+    modes: [metro, bus, ship] # replacement buses are their own mode and stay
+    operators: [ES, LT, TW, ZZ] # everything they run, replacement buses included
+    replacementBuses: [LO, XR] # only their replacement buses; the trains stay
+  ```
+
+  Three lists rather than one switch, because they are three questions. The operators are a blacklist
+  so that a National Rail operator this build has never heard of is published rather than silently
+  dropped, and the mode rule cannot say what the operator rule does: a London Underground replacement
+  bus is a replacement bus, and TfL is the one publishing it. Every list is empty unless a config says
+  otherwise, so a build that says nothing about this produces the feed it always did.
+
+  Config only. Everything else a build decides is a single value that a flag or an environment
+  variable could also say; these are three lists of codes.
+
+  `@gb-transit/gtfs` gains `excludeServices`, `ServiceExclusions`, `NO_EXCLUSIONS` and `MODES`, and
+  `BuildContext` an optional `exclude`. The schedules are dropped after the overlays are applied, so a
+  train replaced on some days by a service the rules exclude does not come back on those days, and
+  before the associations, so a portion is not cut into coupled and uncoupled days for a base that is
+  then excluded.
+
+  The nightly publishes a third feed, `gtfs-national-rail-only.zip`, built from
+  `gtfs.national-rail-only.config.yaml` with all three rules on. `gtfs.zip` and
+  `gtfs-passing-points.zip` are unchanged.
+
+### Patch Changes
+
+- d2c3ff6: Make the boarding points after the stations are final, not before.
+
+  A station with platforms is published as a station row and a boarding point beneath each platform
+  a train calls at, and each boarding point is a copy of its station with an id, a name and a platform
+  code of its own. The copies were taken before the enrichers ran. An enricher is handed the stations
+  alone — a source that knows where Clapham Junction is should not have to know it has sixteen
+  platforms — so NaPTAN's surveyed position landed on the station and the copies underneath kept the
+  DTD's rounded grid reference. Two rows for the same place, disagreeing, and `stop_times.txt`
+  references the stale one.
+
+  NaPTAN and the override file differ by more than 100 metres at 125 stations and by up to 3.2km, so
+  that is the error a journey was planned from. It would have grown: retiring the override file leaves
+  the boarding points on a grid reference rounded to 100 metres while their stations take NaPTAN.
+
+  The stations are now enriched first and everything derived from them follows: the boarding points,
+  and the headsigns, which named a train after the station as the DTD left it. Both now say what the
+  station says. The boarding points are also derived from the schedules the feed publishes rather than
+  from the schedules as they arrived, so a call dropped for referencing a station that is not in
+  `stops.txt` no longer leaves a boarding point behind that nothing references.
+
+  An extension still reads the whole feed, boarding points included. `MutableFeed.stations` is
+  unchanged and enrichers see exactly what they saw before.
+
+- 5d6c481: Put Bond Street back in Mayfair.
+
+  Bond Street and both of its Elizabeth line platforms were published 21km east, in Dagenham. The
+  override in `station-coordinates.ts` read `"stop_lon": 0.15`, which is the "51.514°N 0.15°W" of the
+  station's Wikipedia infobox copied without the W. Canary Wharf had the same injury from the same
+  source and was published 2.5km out, in the river off Blackwall. Both signs are now negative.
+
+  Neither station could be rescued by anything downstream. NaPTAN ships its rail records for both with
+  the position left blank, so they are two of the fourteen stations still relying on the override
+  file, and the bounds check cannot see a London longitude with its sign lost — it is comfortably
+  inside Great Britain.
+
+  The DTD can. Its own grid reference put Bond Street on Davies Street all along, and `toStop`
+  discarded it for the override without ever comparing the two. It now does: where an override and the
+  grid reference disagree by more than 5km, the DTD's position is kept and the station is named on
+  stderr, while the name and the accessibility the override also carries still apply. 5km is chosen to
+  sit above every honest disagreement — the grid reference is rounded to 100m and Birmingham New
+  Street's is 1.3km from the platforms, with the override in the right — and the largest across all
+  2,764 stations both sources describe is 3.3km. A station the DTD could not locate at all has only
+  the override, so it is taken as given.
+
 ## 3.1.0
 
 ### Minor Changes
