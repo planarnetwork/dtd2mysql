@@ -302,9 +302,13 @@ jobs:
   # core-seconds of work per day planned. Six jobs of four workers get through
   # it in the time one job of four would take on a sixth of it, and each stays
   # far enough inside its timeout to survive a slow night.
+  # Not guarded on publish, unlike the release steps above: a dispatch with
+  # publish off is the way to try a change to this without attaching anything,
+  # and a job that only ever runs when it is also publishing is one that gets
+  # tested for the first time on a night that matters. Nothing is uploaded to a
+  # release unless there is a release to upload it to - see the last step.
   patterns:
     needs: build
-    if: github.event_name == 'schedule' || inputs.publish
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -394,8 +398,11 @@ jobs:
             transfer-patterns-meta.json
           retention-days: 14
 
-      # --clobber so a rerun replaces the asset rather than failing on it.
+      # --clobber so a rerun replaces the asset rather than failing on it. The
+      # tag is empty when the build did not publish, which is the dispatch that
+      # only wanted to see whether this works.
       - name: Attach to the release
+        if: needs.build.outputs.tag != ''
         run: |
           gh release upload "${{ needs.build.outputs.tag }}" \
             transfer-patterns.br transfer-patterns-meta.json --clobber
