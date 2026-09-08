@@ -360,6 +360,53 @@ describe("BuildFeed with an enricher", () => {
     expect(Object.keys(files["stops.txt"][0])).to.not.contain("located");
   });
 
+  /**
+   * What NaPTAN is: a position for the station and nothing about the platforms
+   * beneath it. A boarding point is where its station is, and it is what a stop
+   * time references, so an enricher that reached the station alone would have
+   * moved nothing a journey is planned from.
+   */
+  const mover: Enricher<null> = {
+    key: "TEST_MOVER",
+    dependsOn: [],
+    priority: 50,
+    async fetch() {
+      return null;
+    },
+    apply(feed) {
+      for (const station of feed.stations) {
+        feed.set(station, "stop_lat", 51.5, this);
+        feed.set(station, "stop_lon", -0.1, this);
+      }
+
+      return {enricher: this.key, matched: feed.stations.length, unmatched: 0, conflicts: 0};
+    }
+  };
+
+  it("puts a boarding point where the enricher put its station", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG")]), [mover]);
+
+    expect(files["stops.txt"].map(s => [s.stop_id, s.stop_lat, s.stop_lon]))
+      .to.deep.equal([
+        ["9100TONBDG", 51.5, -0.1],
+        ["910GTONBDG", 51.5, -0.1]
+      ]);
+  });
+
+  it("names a boarding point after the station as the enricher left it", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG")]), [namer]);
+
+    expect(files["stops.txt"].find(s => s.stop_id === "9100TONBDG").stop_name)
+      .to.equal("910GTONBDG renamed");
+  });
+
+  it("names a train after the station as the enricher left it", async () => {
+    const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG"), stop("SEV", "SEVNOKS")]), [namer]);
+    const toTonbridge = files["trips.txt"].find(t => t.trip_id === "C00003_20240101_20240301");
+
+    expect(toTonbridge.trip_headsign).to.equal("910GTONBDG renamed");
+  });
+
   it("records who wrote what, and what the enricher could not place", async () => {
     const {files} = await build(new FakeSource(feed(), [stop("TON", "TONBDG"), stop("SEV", "SEVNOKS")]), [namer]);
     const [provenance] = files["provenance.json"];
