@@ -462,7 +462,6 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 .platform--1 { background: var(--signal); color: var(--on-dark); }
 .platform--2 { background: var(--ink); color: var(--on-dark); }
-.platform--3 { border: 1px dashed oklch(0.78 0.02 250); color: var(--ink-faint); }
 
 .tag {
   font-family: var(--font-mono), monospace;
@@ -474,12 +473,6 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
   color: var(--ink-nav);
   background: oklch(0.955 0.008 250);
   border: 1px solid oklch(0.88 0.015 250);
-}
-
-.tag--go {
-  color: var(--go-ink);
-  background: var(--go-paper);
-  border-color: var(--go-rule);
 }
 
 .tag--quiet {
