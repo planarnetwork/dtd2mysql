@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {readFeedRows} from "@gb-transit/gtfs-loader";
+import {REPO} from "./site.js";
 
 /**
  * A station somebody can fetch the patterns of.
@@ -26,14 +27,25 @@ const DIRECTORY = path.join(PUBLIC, "transfer-patterns");
 const WHOLE = path.join(PUBLIC, "transfer-patterns.br");
 const FEED = path.join(PUBLIC, "gtfs.zip");
 
+/**
+ * The site is served from a project page, so it lives under a path rather than at the root of the
+ * origin. Astro carries that path into the links it generates from routes, and these are not those:
+ * they are files in `public/`, addressed by hand, so they have to carry it themselves.
+ *
+ * From the repository name rather than from `import.meta.env.BASE_URL`, which is a vite global this
+ * module is not typechecked against, and which would say `/` under vitest either way. `base` in the
+ * astro config is the same name.
+ */
+const BASE = `/${REPO}`;
+
 /** Where a browser fetches them from, which is the same directory served. */
-export const PATTERNS_PATH = "/transfer-patterns";
+export const PATTERNS_PATH = `${BASE}/transfer-patterns`;
 
 /** The whole set, mirrored into the site beside the stations it was broken into. */
-export const WHOLE_PATH = "/transfer-patterns.br";
+export const WHOLE_PATH = `${BASE}/transfer-patterns.br`;
 
 /** The stations there are files for, for a reader that wants the list as data. */
-export const STATIONS_PATH = "/transfer-patterns.json";
+export const STATIONS_PATH = `${BASE}/transfer-patterns.json`;
 
 /**
  * How large the whole set is, where the site is serving it.
