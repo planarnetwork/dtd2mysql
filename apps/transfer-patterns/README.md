@@ -100,15 +100,23 @@ after it and the whole line would come back wrong, so a run stops rather than wr
 Read it back with raptor:
 
 ```js
+const fs = require("node:fs");
+const readline = require("node:readline");
+const zlib = require("node:zlib");
 const {readPatterns} = require("raptor-journey-planner");
 
-const lines = readline.createInterface({
-  input: fs.createReadStream("transfer-patterns.br").pipe(zlib.createBrotliDecompress())
-});
+async function main() {
+  const lines = readline.createInterface({
+    input: fs.createReadStream("transfer-patterns.br").pipe(zlib.createBrotliDecompress()),
+    crlfDelay: Number.POSITIVE_INFINITY
+  });
 
-for await (const stations of readPatterns(lines)) {
-  // ["LST", "CBG", "NRW"]
+  for await (const stations of readPatterns(lines)) {
+    // ["LST", "CBG", "NRW"]
+  }
 }
+
+main();
 ```
 
 ## How a run is split

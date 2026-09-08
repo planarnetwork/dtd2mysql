@@ -35,6 +35,13 @@ export interface MergeOptions {
   /** Where to write the patterns of all of them. */
   readonly output: string;
   /**
+   * How many shards the run was split into, if the caller knows.
+   *
+   * A merge of five shards of six is sorted, well formed, readable and quietly missing a sixth of
+   * the network, so the count is stated rather than inferred from whatever a glob matched.
+   */
+  readonly shards?: number;
+  /**
    * Where to write what the file holds, if anywhere.
    *
    * A release says how many patterns it carries, and counting them again means reading 34 million
@@ -77,6 +84,11 @@ export async function plan(options: PlanOptions): Promise<PatternResult> {
     throw new Error("No dates to plan.");
   }
 
+  // A pool of no workers plans nothing and writes a valid empty file.
+  if (!Number.isInteger(workers) || workers < 1) {
+    throw new Error(`A run needs at least one worker, not ${workers}.`);
+  }
+
   const stations = shard(await readStations(fs.createReadStream(source)), n, of);
 
   if (stations.length === 0) {
@@ -113,7 +125,19 @@ export async function plan(options: PlanOptions): Promise<PatternResult> {
       ));
     }
 
-    return await new TransferPatternMerge(workDir).merge(parts, output);
+    const result = await new TransferPatternMerge(workDir).merge(parts, output);
+
+    // A pattern file says nothing about which days it was planned for or which feed it came from.
+    // Carried per shard rather than written at the end so the merge can check the shards agree.
+    await fs.promises.writeFile(provenanceFor(output), `${JSON.stringify({
+      dates: dates.map(toISODate),
+      feed_version: feed.feedInfo?.version ?? null,
+      shard: `${n}/${of}`,
+      patterns: result.patterns,
+      raptor: raptorVersion()
+    }, null, 2)}\n`);
+
+    return result;
   }
   finally {
     if (tmp === undefined) {
@@ -130,12 +154,20 @@ export async function plan(options: PlanOptions): Promise<PatternResult> {
  * - the whole file goes through it - so it holds one pattern per shard and nothing else.
  */
 export async function merge(options: MergeOptions): Promise<PatternResult> {
-  const {inputs, output, meta} = options;
+  const {inputs, output, shards, meta} = options;
 
   if (inputs.length === 0) {
     throw new Error("No shards to merge.");
   }
 
+  if (shards !== undefined && inputs.length !== shards) {
+    throw new Error(
+      `${inputs.length} shards to merge, not the ${shards} this run was split into. A file short ` +
+      "of a shard is missing that share of the network and reads no differently for it."
+    );
+  }
+
+  const planned = await provenanceOf(inputs);
   const result = await writePatternFile(kWayMerge(inputs.map(readPatternFile)), output);
 
   if (meta !== undefined) {
@@ -144,11 +176,63 @@ export async function merge(options: MergeOptions): Promise<PatternResult> {
       patterns: result.patterns,
       bytes: result.bytes,
       shards: inputs.length,
+      ...planned,
       raptor: raptorVersion()
     }, null, 2)}\n`);
   }
 
   return result;
+}
+
+/**
+ * Where a shard records what it is.
+ */
+function provenanceFor(shard: string): string {
+  return `${shard}.json`;
+}
+
+/**
+ * What the shards were planned from, once it is established that they agree.
+ *
+ * Two that disagree are from different runs, and merging them gives a file whose patterns were
+ * never all true at once. An absent file is not an error: a shard made by hand still merges, it
+ * just has less to say about itself.
+ */
+async function provenanceOf(inputs: readonly string[]): Promise<{
+  dates?: string[];
+  feed_version?: string | null;
+}> {
+  const found = [];
+
+  for (const input of inputs) {
+    try {
+      found.push(JSON.parse(await fs.promises.readFile(provenanceFor(input), "utf8")));
+    }
+    catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw err;
+      }
+    }
+  }
+
+  if (found.length === 0) {
+    return {};
+  }
+
+  const [first] = found;
+  const differs = found.find(shard =>
+    JSON.stringify(shard.dates) !== JSON.stringify(first.dates)
+    || shard.feed_version !== first.feed_version);
+
+  if (differs !== undefined) {
+    throw new Error(
+      `Shard ${differs.shard} was planned for ${(differs.dates ?? []).join(", ")} from feed ` +
+      `${differs.feed_version}, and shard ${first.shard} for ${(first.dates ?? []).join(", ")} ` +
+      `from feed ${first.feed_version}. These are different runs.`
+    );
+  }
+
+  return {dates: first.dates, feed_version: first.feed_version};
 }
 
 /**

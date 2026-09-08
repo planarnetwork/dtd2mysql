@@ -127,7 +127,70 @@ describe("transfer-patterns", () => {
     expect(described.patterns).to.equal((await patternsIn(output)).length);
     expect(described.shards).to.equal(1);
     expect(described.raptor).to.match(/^\d+\.\d+\.\d+/);
+    expect(described.dates).to.deep.equal(["2026-06-03"]);
+    expect(described.feed_version).to.equal("tiny");
   }, 240_000);
+
+  it("refuses a merge that is short of a shard", async () => {
+    const shards = [1, 2].map(n => path.join(workDir, `short-${n}.br`));
+
+    for (const [index, shard] of shards.entries()) {
+      await transferPatterns(
+        "plan", feed, "--dates", "2026-06-03", "--shard", `${index + 1}/2`, "--workers", "2",
+        "--out", shard
+      );
+    }
+
+    await expect(transferPatterns(
+      "merge", shards[0], "--shards", "2", "--out", path.join(workDir, "short.br")
+    )).rejects.toThrow(/1 shards to merge, not the 2/);
+
+    await transferPatterns("merge", ...shards, "--shards", "2",
+      "--out", path.join(workDir, "short.br"));
+  }, 240_000);
+
+  it("refuses shards that were planned from different runs", async () => {
+    const tuesday = path.join(workDir, "run-tuesday.br");
+    const saturday = path.join(workDir, "run-saturday.br");
+
+    await transferPatterns(
+      "plan", feed, "--dates", "2026-06-03", "--shard", "1/2", "--workers", "2", "--out", tuesday
+    );
+    await transferPatterns(
+      "plan", feed, "--dates", "2026-06-06", "--shard", "2/2", "--workers", "2", "--out", saturday
+    );
+
+    await expect(transferPatterns(
+      "merge", tuesday, saturday, "--out", path.join(workDir, "mixed.br")
+    )).rejects.toThrow(/different runs/);
+  }, 240_000);
+
+  it("refuses a worker count that would plan nothing", async () => {
+    for (const workers of ["0", "-1", "four"]) {
+      await expect(transferPatterns(
+        "plan", feed, "--dates", "2026-06-03", "--workers", workers,
+        "--out", path.join(workDir, `w-${workers}.br`)
+      )).rejects.toThrow(/--workers wants a whole number of at least 1/);
+    }
+  }, 120_000);
+
+  it("fails the same way on a shard that is missing as on one that is corrupt", async () => {
+    await fs.promises.writeFile(path.join(workDir, "corrupt.br"), "this is not brotli");
+
+    const failed = async (shard: string): Promise<{stderr?: string}> => transferPatterns(
+      "merge", path.join(workDir, shard), "--out", path.join(workDir, `${shard}.out`)
+    ).then(() => ({}), (err: {stderr?: string}) => err);
+
+    const missing = await failed("not-here.br");
+    const corrupt = await failed("corrupt.br");
+
+    expect(missing.stderr).to.contain("ENOENT");
+    expect(corrupt.stderr).to.contain("Decompression failed");
+
+    for (const {stderr} of [missing, corrupt]) {
+      expect(stderr ?? "", stderr).not.to.contain("    at ");
+    }
+  }, 120_000);
 
   it("refuses a date the feed does not cover", async () => {
     await expect(transferPatterns(

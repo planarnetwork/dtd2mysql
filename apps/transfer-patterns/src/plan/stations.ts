@@ -60,3 +60,23 @@ export function parseShard(text: string | undefined): {n: number; of: number} {
 
   return {n, of};
 }
+
+/**
+ * Read a `--workers` argument, or leave it to the default.
+ *
+ * Checked rather than coerced: `Array.from({length: NaN})` is empty, as is `{length: -1}`, so a bad
+ * value here plans nothing and writes a valid empty file rather than saying anything.
+ */
+export function parseWorkers(text: string | undefined): number | undefined {
+  if (text === undefined) {
+    return undefined;
+  }
+
+  const workers = Number(text);
+
+  if (!Number.isInteger(workers) || workers < 1) {
+    throw new Error(`--workers wants a whole number of at least 1, not ${text}.`);
+  }
+
+  return workers;
+}

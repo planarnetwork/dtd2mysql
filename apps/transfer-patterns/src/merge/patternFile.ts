@@ -24,12 +24,37 @@ const CHUNK = 10_000;
  * Streamed. There are 34 million of them and no reason to hold any two at once.
  */
 export function readPatternFile(file: string): AsyncIterable<string[]> {
+  // pipeline rather than pipe, which does not forward an error from the source: a file that is not
+  // there and a file that is not brotli should fail the same way.
+  const decompressed = zlib.createBrotliDecompress();
+  const done = pipeline(fs.createReadStream(file), decompressed);
   const lines = readline.createInterface({
-    input: fs.createReadStream(file).pipe(zlib.createBrotliDecompress()),
+    input: decompressed,
     crlfDelay: Number.POSITIVE_INFINITY
   });
 
-  return readPatterns(lines);
+  return merged(readPatterns(lines), done);
+}
+
+/**
+ * The patterns, or whatever stopped the stream that was carrying them.
+ *
+ * `readPatterns` ends quietly when its input is destroyed, so without this a read that failed half
+ * way through is a short file rather than an error.
+ */
+async function* merged(
+  patterns: AsyncIterable<string[]>,
+  done: Promise<void>
+): AsyncGenerator<string[]> {
+  const failed = done.then(() => undefined, (err: Error) => err);
+
+  yield* patterns;
+
+  const err = await failed;
+
+  if (err !== undefined) {
+    throw err;
+  }
 }
 
 /**
@@ -45,18 +70,27 @@ export async function writePatternFile(
   const compressed = zlib.createBrotliCompress({
     params: {[zlib.constants.BROTLI_PARAM_QUALITY]: QUALITY}
   });
-  const written = pipeline(compressed, fs.createWriteStream(output));
+  // Observed as it is created rather than where it is awaited: the loop below runs for minutes, and
+  // a sink failing during it would reject this with nothing listening, which node treats as an
+  // unhandled rejection and takes the process down for.
+  const written = pipeline(compressed, fs.createWriteStream(output))
+    .then(() => undefined, (err: Error) => err);
 
   let total = 0;
 
   for await (const line of code(patterns)) {
     total++;
 
-    await write(compressed, line);
+    await write(compressed, line, written);
   }
 
   compressed.end();
-  await written;
+
+  const failed = await written;
+
+  if (failed !== undefined) {
+    throw failed;
+  }
 
   return {patterns: total, bytes: (await fs.promises.stat(output)).size};
 }
@@ -107,9 +141,18 @@ function* codeChunk(chunk: string[], previous: string | undefined): Generator<st
 
 /**
  * Write a line, waiting only where the stream has fallen far enough behind to say so.
+ *
+ * Against the pipeline as well as the drain, since a stream that has already been destroyed will
+ * never drain.
  */
-async function write(stream: Writable, line: string): Promise<void> {
-  if (!stream.write(`${line}\n`)) {
-    await once(stream, "drain");
+async function write(stream: Writable, line: string, written: Promise<Error | void>): Promise<void> {
+  if (stream.write(`${line}\n`)) {
+    return;
+  }
+
+  const failed = await Promise.race([once(stream, "drain").then(() => undefined), written]);
+
+  if (failed !== undefined) {
+    throw failed;
   }
 }

@@ -29,7 +29,8 @@ export async function planOnWorkers(
     (_, id) => path.join(workDir, `${prefix}-${id}.gz`)
   );
 
-  await Promise.all(parts.map(output => new Promise<void>((resolve, reject) => {
+  const running: Worker[] = [];
+  const scans = parts.map(output => new Promise<void>((resolve, reject) => {
     const input: WorkerInput = {
       timetable: network.timetable,
       stopIds: network.stopIds,
@@ -39,12 +40,20 @@ export async function planOnWorkers(
       output
     };
     const worker = new Worker(workerFile(), {workerData: input});
+    let finished = false;
+
+    running.push(worker);
 
     worker.on("message", (message: string) => {
       if (message === DONE) {
+        finished = true;
         resolve();
         worker.terminate();
 
+        return;
+      }
+
+      if (message !== READY) {
         return;
       }
 
@@ -60,7 +69,26 @@ export async function planOnWorkers(
     });
 
     worker.on("error", reject);
-  })));
+
+    // A thread can go without ever raising `error`, and the run would then wait on a worker that
+    // no longer exists until the job's own timeout took it.
+    worker.on("exit", code => {
+      if (!finished) {
+        reject(new Error(`A worker stopped without finishing, exit code ${code}.`));
+      }
+    });
+  }));
+
+  try {
+    await Promise.all(scans);
+  }
+  catch (err) {
+    // The others are still holding their files open, and the caller is about to remove the
+    // directory those files are in.
+    await Promise.all(running.map(worker => worker.terminate()));
+
+    throw err;
+  }
 
   return parts;
 }

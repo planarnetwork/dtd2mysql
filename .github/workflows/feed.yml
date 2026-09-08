@@ -267,7 +267,13 @@ jobs:
                   m.stop_times.toLocaleString() + ' stop times.',
                 '- \`gtfs-passing-points.zip\` - and where it runs through without stopping, ' +
                   'as calls with \`pickup_type\` and \`drop_off_type\` 1. ' +
-                  m.stop_times_with_passing_points.toLocaleString() + ' stop times.'
+                  m.stop_times_with_passing_points.toLocaleString() + ' stop times.',
+                '',
+                // Written before the scan has run, so it says what is coming
+                // rather than what arrived.
+                '\`transfer-patterns.br\` is attached separately, once the scan that builds it ' +
+                  'finishes. It holds the routes through the network that a transfer pattern ' +
+                  'journey planner reads, and belongs with \`gtfs.zip\` above.'
               ].join('\n')
             ")" \
             gtfs.zip gtfs-passing-points.zip \
@@ -311,6 +317,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Only the job that attaches to a release needs the write the workflow
+    # grants.
+    permissions:
+      contents: read
     strategy:
       # One shard failing means the merge cannot be complete, so there is
       # nothing to be gained by letting the rest run on.
@@ -345,11 +355,14 @@ jobs:
             --out shard-${{ matrix.shard }}.br
 
       # A day, not fourteen. These are read once by the job below and are worth
-      # nothing afterwards.
+      # nothing afterwards. The .json beside each shard is how the merge tells
+      # six shards of one run from six shards of two.
       - uses: actions/upload-artifact@v4
         with:
           name: patterns-${{ matrix.shard }}
-          path: shard-${{ matrix.shard }}.br
+          path: |
+            shard-${{ matrix.shard }}.br
+            shard-${{ matrix.shard }}.br.json
           retention-days: 1
 
   # The one stage that cannot be split up: every pattern goes through it. It is
@@ -381,9 +394,13 @@ jobs:
       # patterns there are without reading 34 million of them back, and
       # feed-meta.json is written by the build job before any of this happened
       # and so cannot honestly describe it.
+      #
+      # --shards 6 rather than trusting the glob: a merge of five is sorted,
+      # well formed, readable and quietly missing a sixth of the network.
       - name: Merge
         run: |
           yarn tsx apps/transfer-patterns/src/index.ts merge shard-*.br \
+            --shards 6 \
             --out transfer-patterns.br \
             --meta transfer-patterns-meta.json
           cat transfer-patterns-meta.json

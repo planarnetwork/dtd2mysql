@@ -19,6 +19,8 @@ plan options:
 
 merge options:
   --out <file>       Where to write the patterns. Required.
+  --shards <n>       How many shards to expect. A merge short of one is missing
+                     that share of the network and reads no differently for it.
   --meta <file>      Also write what the file holds, as JSON.
 
 A pattern names the stations a journey calls at, three characters each, so the
