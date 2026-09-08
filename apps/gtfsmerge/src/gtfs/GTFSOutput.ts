@@ -1,7 +1,7 @@
 import {GTFSZip} from "./FeedIndex";
 import {CalendarMerger} from "./merger/CalendarMerger";
 import {StopsAndTransfersMerger} from "./merger/StopsAndTransfersMerger";
-import {StopTimesMerger} from "./merger/StopTimesMerger";
+import {StopTimeReader, StopTimesMerger} from "./merger/StopTimesMerger";
 import {TripsMerger} from "./merger/TripsMerger";
 import {GenericMerger} from "./merger/GenericMerger";
 import {RouteMerger} from "./merger/RouteMerger";
@@ -27,15 +27,19 @@ export class GTFSOutput {
    * the trips are indexed against, the trips give the map the stop times and the
    * couplings are indexed against, and the stop times say which stops anything
    * actually calls at.
+   *
+   * The stop times arrive as a reader rather than as rows, because that order is
+   * also the reason they need not be held: nothing can be done with a call until
+   * its trip has been numbered, and nothing needs it afterwards.
    */
-  public async write(gtfs: GTFSZip): Promise<void> {
+  public async write(gtfs: GTFSZip, stopTimes: StopTimeReader): Promise<void> {
     const [routeIdMap, serviceIdMap] = await Promise.all([
       this.routes.write(gtfs.routes),
       this.calendar.write(gtfs.calendars, gtfs.calendarDates)
     ]);
 
     const tripIdMap = await this.trips.write(gtfs.trips, serviceIdMap, routeIdMap);
-    const usedStops = await this.stopTimes.write(gtfs.stopTimes, tripIdMap, gtfs.parentStops);
+    const usedStops = await this.stopTimes.write(stopTimes, tripIdMap, gtfs.parentStops);
 
     await Promise.all([
       this.stopsAndTransfers.write(

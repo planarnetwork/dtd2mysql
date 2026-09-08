@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {deliverFeed} from "@gb-transit/gtfs-output";
-import {readMergeInput} from "./FeedIndex";
+import {readMergeInput, stopTimesOf} from "./FeedIndex";
 import {GTFSOutputFactory} from "./GTFSOutputFactory";
 
 /**
@@ -29,7 +29,7 @@ export class MergeCommand {
       const gtfs = await readMergeInput(input, stopPrefix, filterDatesBefore);
 
       console.log("Processing " + input);
-      await output.write(gtfs);
+      await output.write(gtfs, stopTimesOf(input, stopPrefix));
     }
 
     await output.end();
