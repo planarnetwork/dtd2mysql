@@ -13,7 +13,6 @@ const stations = await patternStations();
 const letters = byLetter(stations);
 const total = stations.reduce((bytes, station) => bytes + station.bytes, 0);
 const whole = wholeBytes();
-const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 ---
 <Base
   title="Transfer patterns"
@@ -44,16 +43,6 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
           <a class="btn btn--signal" href={whole === undefined ? `${RELEASE}/transfer-patterns.br` : WHOLE_PATH}>
             transfer-patterns.br &rarr;
           </a>
-          <p style="margin: 12px 0 0; font-size: 15px; color: var(--ink-quiet);">
-            {whole === undefined
-              ? <>On the latest release, beside the feed it describes.</>
-              : <>
-                  {megabytes(whole)}, served from here so a browser reads it and the stations below
-                  from one origin. Also{" "}
-                  <a href={`${RELEASE}/transfer-patterns.br`}>on the release</a>, which is the copy
-                  to bookmark.
-                </>}
-          </p>
         </div>
       </div>
       <div class="card">
@@ -183,7 +172,11 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
           <div class="table-scroll">
             <table>
               <thead>
-                <tr><th>station</th><th>code</th><th>patterns</th></tr>
+                <tr>
+                  <th style="text-align: left;">station</th>
+                  <th style="text-align: left;">code</th>
+                  <th style="text-align: left;">patterns</th>
+                </tr>
               </thead>
               <tbody>
                 {group.map(station => (
