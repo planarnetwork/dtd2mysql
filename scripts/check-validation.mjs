@@ -16,10 +16,11 @@ import * as fs from "node:fs";
  *
  * Usage: check-validation.mjs [REPORT] [BASELINE] [OUT]
  *
- * The nightly builds the feed twice - once without the locations a service
- * passes through and once with them - and each gets its own baseline. One
- * baseline for both would mean accepting whatever the passing points introduce
- * for the feed that does not have them, which is not a gate.
+ * The nightly builds the feed three times - without the locations a service
+ * passes through, with them, and without the services National Rail does not
+ * hold authority over - and each gets its own baseline. One baseline for all
+ * three would mean accepting in every feed whatever only one of them raises,
+ * which is not a gate.
  */
 const [reportPath = "report/report.json",
        baselinePath = ".github/validator-baseline.json",

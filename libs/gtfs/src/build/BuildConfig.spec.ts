@@ -1,5 +1,7 @@
 import {describe, it, expect} from "vitest";
+import {RouteType} from "@gb-transit/gtfs-schema";
 import {parseConfig} from "./BuildConfig";
+import {NO_EXCLUSIONS} from "../transform/ExcludeServices";
 
 const minimal = {source: "RJTTF918.ZIP"};
 
@@ -180,6 +182,56 @@ describe("parseConfig, enrichers", () => {
     ).enrichers.map(e => e.key);
 
     expect(keys).to.deep.equal(["CORPUS", "NAPTAN", "OSM"]);
+  });
+
+});
+
+describe("parseConfig, reading what to exclude", () => {
+
+  it("excludes nothing when the config says nothing", () => {
+    expect(parseConfig(minimal).exclude).to.deep.equal(NO_EXCLUSIONS);
+  });
+
+  it("reads the modes as words rather than GTFS numbers", () => {
+    const {modes} = parseConfig({...minimal, exclude: {modes: ["metro", "bus", "ship"]}}).exclude;
+
+    expect(modes).to.deep.equal([RouteType.Subway, RouteType.Bus, RouteType.Ferry]);
+  });
+
+  it("takes the spellings GTFS uses as well as the ones the CIF does", () => {
+    const {modes} = parseConfig({...minimal, exclude: {modes: ["subway", "ferry"]}}).exclude;
+
+    expect(modes).to.deep.equal([RouteType.Subway, RouteType.Ferry]);
+  });
+
+  it("refuses a mode it cannot read, rather than excluding nothing quietly", () => {
+    expect(() => parseConfig({...minimal, exclude: {modes: ["underground"]}}))
+      .to.throw(/exclude.modes does not take "underground". Expected one of: metro, subway, rail/);
+  });
+
+  it("keeps the two operator lists apart", () => {
+    const {operators, replacementBuses} = parseConfig({
+      ...minimal,
+      exclude: {operators: ["ES", "LT"], replacementBuses: ["LO", "XR"]}
+    }).exclude;
+
+    expect(operators).to.deep.equal(["ES", "LT"]);
+    expect(replacementBuses).to.deep.equal(["LO", "XR"]);
+  });
+
+  it("takes an operator code however it was typed", () => {
+    expect(parseConfig({...minimal, exclude: {operators: "lt"}}).exclude.operators)
+      .to.deep.equal(["LT"]);
+  });
+
+  it("insists an operator is an ATOC code", () => {
+    expect(() => parseConfig({...minimal, exclude: {operators: ["London Underground"]}}))
+      .to.throw(/exclude.operators takes two-letter ATOC codes. Got "London Underground"./);
+  });
+
+  it("names something it was asked to exclude that is not a thing to exclude", () => {
+    expect(() => parseConfig({...minimal, exclude: {operatrs: ["LT"]}}))
+      .to.throw(/exclude.operatrs is not something to exclude. Expected one of: modes, operators, replacementBuses./);
   });
 
 });

@@ -11,6 +11,7 @@ import {Schedule} from "../model/Schedule";
 import {FixedLink, PickupDropOffType, RouteType, Stop, StopTime, Transfer} from "@gb-transit/gtfs-schema";
 import {STP} from "../model/OverlayRecord";
 import {interchange} from "../transform/MergeTransfers";
+import {NO_EXCLUSIONS, ServiceExclusions} from "../transform/ExcludeServices";
 import {TimetableSource} from "../source/TimetableSource";
 
 /**
@@ -67,7 +68,16 @@ const stopTime = (stop: string, tripId: string, sequence: number): StopTime => (
     tiploc: null
 });
 
-function schedule(id: number, tuid: string, from: string, to: string, operator: string, stops: string[]): Schedule {
+function schedule(
+  id: number,
+  tuid: string,
+  from: string,
+  to: string,
+  operator: string,
+  stops: string[],
+  mode: RouteType = RouteType.Rail,
+  stp: STP = STP.Permanent
+): Schedule {
   const trip = `${tuid}_${from.replace(/-/g, "")}_${to.replace(/-/g, "")}`;
 
   return new Schedule(
@@ -80,9 +90,9 @@ function schedule(id: number, tuid: string, from: string, to: string, operator: 
       Temporal.PlainDate.from(to),
       {...NO_DAYS, 1: 1}
     ),
-    RouteType.Rail,
+    mode,
     operator,
-    STP.Permanent,
+    stp,
     true,
     false
   );
@@ -159,10 +169,14 @@ const context: BuildContext = {
   duplicateOvernightAssociations: false
 };
 
-async function build(source: TimetableSource, enrichers: Enricher[] = []): Promise<MemoryOutput> {
+async function build(
+  source: TimetableSource,
+  enrichers: Enricher[] = [],
+  ctx: BuildContext = context
+): Promise<MemoryOutput> {
   const output = new MemoryOutput();
 
-  await new BuildFeed(source, output, context, enrichers).build(".");
+  await new BuildFeed(source, output, ctx, enrichers).build(".");
 
   return output;
 }
@@ -423,6 +437,76 @@ describe("BuildFeed with an association", () => {
     for (const row of rest) {
       expect(Object.keys(row)).to.deep.equal(Object.keys(first));
     }
+  });
+
+});
+
+/**
+ * Where excludeServices runs in the pipeline, which is the whole of the design.
+ *
+ * Both cases are about ordering rather than about the rules: the rules
+ * themselves are ExcludeServices.spec's business.
+ */
+describe("BuildFeed with services excluded", () => {
+
+  const excluding = (exclude: ServiceExclusions): BuildContext => ({...context, exclude});
+
+  it("does not run a train on the days it ran as something excluded", async () => {
+    // The Monday train, replaced by a bus on 15 January. Excluding the bus must
+    // not hand those days back to the train: the overlay has already taken them
+    // off its calendar, and it is only right because the exclusion happens after
+    // applyOverlays. Filtering the schedules as they arrive publishes a train
+    // that did not run.
+    const train = schedule(1, "A", "2024-01-08", "2024-03-04", "SE", ["TON", "ASH"]);
+    const replacement = schedule(
+      2, "A", "2024-01-15", "2024-01-15", "SE", ["TON", "ASH"], RouteType.Bus, STP.Overlay
+    );
+
+    const {files} = await build(
+      new FakeSource([train, replacement]), [], excluding({...NO_EXCLUSIONS, modes: [RouteType.Bus]})
+    );
+
+    expect(files["trips.txt"].map(t => t.trip_id)).to.deep.equal(["A_20240108_20240304"]);
+    expect(files["calendar_dates.txt"].map(d => [d.date, d.exception_type]))
+      .to.deep.equal([["20240115", 2]]);
+  });
+
+  it("does not cut a portion in two for a coupling to a train it excluded", async () => {
+    // applyAssociations cuts the associated schedule into the days it is
+    // coupled and the days it runs alone. Excluding the base after that has
+    // happened leaves the portion split in two with nothing coupled to either
+    // half; excluding it first means the association finds no base and the
+    // portion is published whole, which is what it is.
+    //
+    // The coupling itself is safe either way - linkedTrips drops a link whose
+    // trip is not in trips.txt - so the split is the observable difference.
+    const base = schedule(1, "A", "2024-01-08", "2024-03-04", "LT", ["TON", "ASH", "RAM"]);
+    const portion = schedule(2, "B", "2024-01-08", "2024-03-04", "SE", ["ASH", "DOV"]);
+    const divide = new Association(
+      1, "A", "B", "ASH", DateIndicator.Same, AssociationType.Split,
+      // Only the first three Mondays, so a cut leaves a remainder to see
+      new ScheduleCalendar(
+        Temporal.PlainDate.from("2024-01-08"), Temporal.PlainDate.from("2024-01-22"), {...NO_DAYS, 1: 1}
+      ),
+      STP.Permanent
+    );
+
+    const {files} = await build(
+      new FakeSource([base, portion], [], [], [], [divide]),
+      [],
+      excluding({...NO_EXCLUSIONS, operators: ["LT"]})
+    );
+
+    expect(files["trips.txt"].map(t => t.trip_id)).to.deep.equal(["B_20240108_20240304"]);
+    expect(files["transfers.txt"].filter(t => t.transfer_type === 4)).to.deep.equal([]);
+  });
+
+  it("publishes everything when the context says nothing about exclusions", async () => {
+    // The field is optional, so a caller that predates it builds the feed it
+    // always did rather than failing to compile or excluding by accident.
+    const {files} = await build(new FakeSource(feed()), [], {...context, exclude: undefined});
+
+    expect(files["trips.txt"]).to.have.length(3);
   });
 
 });

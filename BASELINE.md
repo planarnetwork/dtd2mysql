@@ -12,6 +12,17 @@ entry here does not excuse a golden feed moving, and an entry there does not exc
 
 ## The type surface
 
+**Leaving the non-National Rail services out (#176).** `@gb-transit/gtfs` gains `excludeServices`,
+`ServiceExclusions`, `NO_EXCLUSIONS` and `MODES` — the transform that drops the metro, bus and ship
+services a config asks it to, the rules it reads, and the mode names those rules are written in.
+Nothing is removed.
+
+`BuildContext` and `BuildConfig` also gain an `exclude` field, which this snapshot does not record:
+it pins the names a library exports and not their shapes. `BuildContext.exclude` is optional for
+that reason — a caller constructs one to reach `BuildFeed` or `dateRange`, so a required field would
+stop existing code compiling and the snapshot would not have said so. `BuildConfig.exclude` is
+required, because `parseConfig` returns that type rather than taking it.
+
 **Absorbing gtfsmerge and transxchange2gtfs.** `@gb-transit/gtfs-schema` gains `Columns`,
 `FileSchema`, `fileSchema`, `GTFS_COLUMNS`, `GTFSFileName`, `GTFSColumn`, `RowWriter`, and
 `Shape`/`ShapeID`/`ShapeRow`; `GTFSOutput` moves into it from `@gb-transit/gtfs`, which re-exports
@@ -37,3 +48,16 @@ and `AreaIndex` for areas.txt and stop_areas.txt read as one index, and `transfe
 the pipe separated mode of a transfer. Additions only. The types already exported gained fields —
 `GTFSFeed` has `routes`, `agencies` and `areas`, `Trip` has `routeId`, `shortName` and `headsign`,
 `Transfer` has `mode` — which the surface records by name and so does not show.
+
+## The validator baselines
+
+**A baseline for the National Rail only feed (#176).**
+[`.github/validator-baseline-national-rail-only.json`](.github/validator-baseline-national-rail-only.json)
+is new, for the third feed the
+nightly publishes. Seeded from `validator-baseline.json`, which is the ceiling this feed cannot
+exceed: it is the standard feed with services taken out, so nothing it accepts is new. Either may
+turn out to be zero here — `QBN`/`QBS` are Blackpool bus-tram stops and the services reaching them
+may be among the excluded — and `check-validation.mjs` reports a count under the baseline rather
+than failing on it, which is the moment to tighten this file. A baseline of its own rather than a
+shared one, for the reason the passing points feed has its own: a shared baseline accepts in one
+feed what only happens in another, which is not a gate.
