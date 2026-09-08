@@ -8,7 +8,11 @@ export type EntityType =
   | "stop_time"
   | "transfer"
   | "feed_info"
-  | "stop";
+  | "stop"
+  | "route"
+  | "agency"
+  | "area"
+  | "stop_area";
 
 /**
  * The file each entity comes from.
@@ -20,7 +24,11 @@ const FILES: Record<string, EntityType> = {
   "stop_times.txt": "stop_time",
   "transfers.txt": "transfer",
   "feed_info.txt": "feed_info",
-  "stops.txt": "stop"
+  "stops.txt": "stop",
+  "routes.txt": "route",
+  "agency.txt": "agency",
+  "areas.txt": "area",
+  "stop_areas.txt": "stop_area"
 };
 
 /**
@@ -36,17 +44,27 @@ export const COLUMNS: Record<EntityType, readonly string[]> = {
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
   ],
   calendar_date: ["service_id", "date", "exception_type"],
-  trip: ["trip_id", "service_id"],
+  trip: ["trip_id", "service_id", "route_id", "trip_short_name", "trip_headsign"],
   stop_time: ["trip_id", "arrival_time", "departure_time", "stop_id", "pickup_type", "drop_off_type"],
   transfer: [
     "from_stop_id", "to_stop_id", "from_trip_id", "to_trip_id",
-    "transfer_type", "min_transfer_time", "start_time", "end_time"
+    "transfer_type", "min_transfer_time", "mode", "start_time", "end_time"
   ],
   feed_info: ["feed_start_date", "feed_end_date", "feed_version"],
   stop: [
     "stop_id", "stop_code", "stop_name", "stop_desc", "stop_lat", "stop_lon",
     "stop_timezone", "location_type", "parent_station", "platform_code"
-  ]
+  ],
+  route: [
+    "route_id", "agency_id", "route_short_name", "route_long_name", "route_type",
+    "route_color", "route_text_color", "route_url", "route_desc"
+  ],
+  agency: [
+    "agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone",
+    "agency_fare_url"
+  ],
+  area: ["area_id", "area_name"],
+  stop_area: ["area_id", "stop_id"]
 };
 
 /**

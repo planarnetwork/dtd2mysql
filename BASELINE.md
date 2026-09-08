@@ -41,6 +41,14 @@ published — and its surface moves into `@gb-transit/gtfs-loader` as `readFeed`
 `loadGTFS(source, {raw: true})`. Nothing else moved: the reader is the same code under a different
 name, and `loadGTFS`'s own surface is unchanged.
 
+**Reading the operator, the trip names, the transfer mode and the areas** (#180, #181, #182).
+`@gb-transit/gtfs-loader` gains ten names for the four files it now opens: `Route`, `RouteID` and
+`RouteIndex` for routes.txt, `Agency`, `AgencyID` and `AgencyIndex` for agency.txt, `Area`, `AreaID`
+and `AreaIndex` for areas.txt and stop_areas.txt read as one index, and `transferModes` for splitting
+the pipe separated mode of a transfer. Additions only. The types already exported gained fields —
+`GTFSFeed` has `routes`, `agencies` and `areas`, `Trip` has `routeId`, `shortName` and `headsign`,
+`Transfer` has `mode` — which the surface records by name and so does not show.
+
 ## The validator baselines
 
 **A baseline for the National Rail only feed (#176).**

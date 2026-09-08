@@ -19,7 +19,7 @@ const meta = await latest();
   title="GB transit"
   description="The British rail timetable as GTFS, rebuilt every night from the Rail Delivery Group's DTD feed, validated, and published as a plain zip."
 >
-  <section class="hero">
+  <section class="shell hero">
     <div class="pill pill--go">
       <span class="lamp" aria-hidden="true"></span>
       Rebuilt every night
@@ -40,11 +40,9 @@ const meta = await latest();
     <DepartureBoard />
   </div>
 
-  <Ticker />
-
   <section id="feeds" class="shell section">
     <div class="heading-row">
-      <h2 class="h2">Choose your platform</h2>
+      <h2 class="h2">Choose your feed</h2>
       <p>
         Same identifiers, different level of detail.{" "}
         <a href={`${guide}#what-you-get`}>Which to take</a> depends on what you&rsquo;re building.
@@ -153,4 +151,6 @@ const meta = await latest();
       configuration it came from is <a href={source("gtfs.config.yaml")}><code>gtfs.config.yaml</code></a>.
     </p>
   </section>
+
+  <Ticker />
 </Base>

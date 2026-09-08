@@ -14,9 +14,11 @@ export type { LoadOptions, LoadProgress } from "./Progress.js";
 // they mean something else: those are the rows a GB rail feed is written as, these are what any
 // feed is read into. Same words, opposite directions - see the README.
 export type {
-  Calendar, CalendarIndex, DateIndex, DateNumber, DayOfWeek, Duration, Interchange, ServiceID,
-  Stop, StopID, StopIndex, StopTime, Time, Transfer, TransfersByOrigin, Trip, TripID, TripLink
+  Agency, AgencyID, AgencyIndex, Area, AreaID, AreaIndex, Calendar, CalendarIndex, DateIndex,
+  DateNumber, DayOfWeek, Duration, Interchange, Route, RouteID, RouteIndex, ServiceID, Stop, StopID,
+  StopIndex, StopTime, Time, Transfer, TransfersByOrigin, Trip, TripID, TripLink
 } from "./GTFS.js";
+export { transferModes } from "./TransferMode.js";
 export { LinkedService, Service } from "./Service.js";
 export type { ServiceCalendar } from "./Service.js";
 export { addDays, daysBetween, getDateNumber, getDayOfWeek } from "./DateUtil.js";

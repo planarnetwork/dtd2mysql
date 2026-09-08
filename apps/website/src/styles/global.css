@@ -111,12 +111,13 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ---------------------------------------------------------------- layout -- */
 
-/* Left aligned rather than centred: the masthead runs to the page gutter, so
- * content that centred itself would start somewhere else on a wide screen. The
- * max-width is here to stop a line getting too long, not to place the column. */
+/* One centred column, and everything sits in it - the masthead and the footer
+ * included, so nothing starts at a different place from the rest of the page on
+ * a wide screen. Full bleed is for backgrounds and the ticker only. */
 .shell {
   max-width: var(--measure);
   padding-inline: var(--gutter);
+  margin-inline: auto;
 }
 
 .section { padding-top: clamp(48px, 7vw, 82px); }
@@ -138,14 +139,17 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 /* ---------------------------------------------------------------- header -- */
 
 .masthead {
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.masthead__inner {
   display: flex;
   flex-wrap: wrap;
   gap: 16px 28px;
   align-items: center;
   justify-content: space-between;
-  padding: 20px var(--gutter);
-  border-bottom: 1px solid var(--rule);
-  background: var(--paper);
+  padding-block: 20px;
 }
 
 .wordmark {
@@ -240,7 +244,7 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ------------------------------------------------------------------ hero -- */
 
-.hero { padding: clamp(44px, 7vw, 88px) var(--gutter) 40px; }
+.hero { padding-block: clamp(44px, 7vw, 88px) 40px; }
 
 .hero h1 {
   font-weight: 700;
@@ -325,8 +329,9 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ---------------------------------------------------------------- ticker -- */
 
+/* A band the width of the screen, sitting on top of the footer. The section
+ * above it supplies the space, so it adds none of its own. */
 .ticker {
-  margin-top: 34px;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
   background: oklch(0.99 0.008 90);
@@ -457,7 +462,6 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 .platform--1 { background: var(--signal); color: var(--on-dark); }
 .platform--2 { background: var(--ink); color: var(--on-dark); }
-.platform--3 { border: 1px dashed oklch(0.78 0.02 250); color: var(--ink-faint); }
 
 .tag {
   font-family: var(--font-mono), monospace;
@@ -469,12 +473,6 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
   color: var(--ink-nav);
   background: oklch(0.955 0.008 250);
   border: 1px solid oklch(0.88 0.015 250);
-}
-
-.tag--go {
-  color: var(--go-ink);
-  background: var(--go-paper);
-  border-color: var(--go-rule);
 }
 
 .tag--quiet {
@@ -629,8 +627,14 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 .footer {
   background: var(--board);
   color: var(--on-dark-muted);
-  padding: clamp(30px, 4vw, 44px) var(--gutter);
+  padding-block: clamp(30px, 4vw, 44px);
   margin-top: clamp(48px, 7vw, 82px);
+}
+
+/* The footer's margin separates it from prose. A page ending in the ticker has
+ * a band there instead, and the two are meant to meet. */
+main:has(> .ticker:last-child) + .footer {
+  margin-top: 0;
 }
 
 .footer__row {
@@ -639,7 +643,6 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
   gap: 18px 32px;
   align-items: center;
   justify-content: space-between;
-  max-width: var(--measure);
 }
 
 .footer__mark {
