@@ -329,8 +329,9 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
 
 /* ---------------------------------------------------------------- ticker -- */
 
+/* A band the width of the screen, sitting on top of the footer. The section
+ * above it supplies the space, so it adds none of its own. */
 .ticker {
-  margin-top: 34px;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
   background: oklch(0.99 0.008 90);
@@ -635,6 +636,12 @@ code, pre, kbd, samp { font-family: var(--font-mono), ui-monospace, monospace; }
   color: var(--on-dark-muted);
   padding-block: clamp(30px, 4vw, 44px);
   margin-top: clamp(48px, 7vw, 82px);
+}
+
+/* The footer's margin separates it from prose. A page ending in the ticker has
+ * a band there instead, and the two are meant to meet. */
+main:has(> .ticker:last-child) + .footer {
+  margin-top: 0;
 }
 
 .footer__row {
