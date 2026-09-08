@@ -37,6 +37,9 @@ function feed(stops: Stop[], overrides: Partial<GTFSFeed> = {}): GTFSFeed {
     links: [],
     interchange: {},
     stops: Object.fromEntries(stops.map(s => [s.id, s])),
+    routes: {},
+    agencies: {},
+    areas: {},
     ...overrides
   };
 }

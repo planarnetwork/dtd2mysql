@@ -42,6 +42,7 @@ export interface Transfer {
   duration: Duration;
   startTime: Time;
   endTime: Time;
+  mode?: string;
 }
 
 /**
@@ -63,6 +64,9 @@ export interface Trip {
   stopTimes: StopTime[];
   serviceId: ServiceID;
   service: ServiceCalendar;
+  routeId?: RouteID;
+  shortName?: string;
+  headsign?: string;
 }
 
 /**
@@ -131,6 +135,73 @@ export interface Stop {
  * Stops indexed by ID
  */
 export type StopIndex = Record<StopID, Stop>;
+
+/**
+ * GTFS route_id
+ */
+export type RouteID = string;
+
+/**
+ * GTFS agency_id
+ */
+export type AgencyID = string;
+
+/**
+ * GTFS area_id
+ */
+export type AreaID = string;
+
+/**
+ * GTFS route
+ */
+export interface Route {
+  id: RouteID;
+  agencyId?: AgencyID;
+  shortName?: string;
+  longName?: string;
+  type: number;
+  color?: string;
+  textColor?: string;
+  url?: string;
+  description?: string;
+}
+
+/**
+ * Routes indexed by ID
+ */
+export type RouteIndex = Record<RouteID, Route>;
+
+/**
+ * GTFS agency. The id is as the feed wrote it, which in a GB rail feed is the NOC form, `=AW`.
+ */
+export interface Agency {
+  id: AgencyID;
+  name?: string;
+  url?: string;
+  timezone?: string;
+  lang?: string;
+  phone?: string;
+  fareUrl?: string;
+}
+
+/**
+ * Agencies indexed by ID
+ */
+export type AgencyIndex = Record<AgencyID, Agency>;
+
+/**
+ * A flat, named set of stops - areas.txt and stop_areas.txt read as one thing.
+ */
+export interface Area {
+  id: AreaID;
+  name?: string;
+  stops: StopID[];
+}
+
+/**
+ * Areas indexed by ID
+ */
+export type AreaIndex = Record<AreaID, Area>;
 
 /**
  * Minimum time needed to change vehicles at each stop

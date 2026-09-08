@@ -8,16 +8,19 @@ const FEED = {
   "calendar.txt":
     "service_id,start_date,end_date,monday,tuesday,wednesday,thursday,friday,saturday,sunday\n"
     + "s1,20250101,20251231,1,1,1,1,1,1,1\n",
-  "trips.txt": "trip_id,service_id\nt1,s1\n",
+  "trips.txt":
+    "route_id,service_id,trip_id,trip_headsign,trip_short_name\n"
+    + "r1,s1,t1,Beeton,X100\n",
   "stop_times.txt":
     "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type\n"
     + "t1,10:00:00,10:00:00,A,1,0,0\n"
     + "t1,10:30:00,10:30:00,B,2,0,0\n",
-  "transfers.txt": "from_stop_id,to_stop_id,min_transfer_time\nA,A,300\n",
+  "transfers.txt": "from_stop_id,to_stop_id,min_transfer_time,mode\nA,A,300,\nA,B,600,TRANSFER|TUBE\n",
   "feed_info.txt": "feed_start_date,feed_end_date,feed_version\n20250101,20251231,1\n",
-  // present in a real feed, and of no interest to the loader
-  "routes.txt": "route_id,route_short_name\nr1,X\n",
-  "agency.txt": "agency_id,agency_name\na1,Anytown Buses\n"
+  "routes.txt": "route_id,agency_id,route_short_name,route_type\nr1,=a1,X,2\n",
+  "agency.txt": "agency_id,agency_name\n=a1,Anytown Buses\n",
+  "areas.txt": "area_id,area_name\nz1,Anytown Central\n",
+  "stop_areas.txt": "area_id,stop_id\nz1,A\nz1,B\n"
 };
 
 function feedZip(files: Record<string, string> = FEED): Uint8Array<ArrayBuffer> {
@@ -28,6 +31,10 @@ function feedZip(files: Record<string, string> = FEED): Uint8Array<ArrayBuffer> 
   }
 
   return zipSync(contents);
+}
+
+function without(...files: string[]): Record<string, string> {
+  return Object.fromEntries(Object.entries(FEED).filter(([name]) => !files.includes(name)));
 }
 
 describe("loadGTFS", () => {
@@ -91,6 +98,47 @@ describe("loadGTFS", () => {
     expect(feed.links.length).to.equal(0);
     expect(Object.keys(feed.interchange).length).to.equal(0);
     expect(Object.keys(feed.transfers).length).to.equal(0);
+  });
+
+  it("resolves a trip through its route to its operator", async () => {
+    const feed = await loadGTFS(feedZip());
+    const [trip] = feed.trips;
+
+    expect(trip.shortName).to.equal("X100");
+    expect(trip.headsign).to.equal("Beeton");
+    expect(feed.routes[trip.routeId as string].shortName).to.equal("X");
+    expect(feed.agencies[feed.routes[trip.routeId as string].agencyId as string].name)
+      .to.equal("Anytown Buses");
+  });
+
+  it("reads the areas as one index", async () => {
+    const { areas } = await loadGTFS(feedZip());
+
+    expect(areas.z1.name).to.equal("Anytown Central");
+    expect(areas.z1.stops).to.deep.equal(["A", "B"]);
+  });
+
+  it("reads how a transfer is made", async () => {
+    const { transfers } = await loadGTFS(feedZip());
+
+    expect(transfers.A[0].mode).to.equal("TRANSFER|TUBE");
+  });
+
+  it("loads a feed that has none of the files those come from", async () => {
+    const feed = await loadGTFS(feedZip(without("routes.txt", "agency.txt", "areas.txt", "stop_areas.txt")));
+
+    expect(feed.trips.length).to.equal(1);
+    expect(feed.routes).to.deep.equal({});
+    expect(feed.agencies).to.deep.equal({});
+    expect(feed.areas).to.deep.equal({});
+  });
+
+  it("gives a trip no route when trips.txt does not name one", async () => {
+    const feed = await loadGTFS(feedZip({ ...FEED, "trips.txt": "trip_id,service_id\nt1,s1\n" }));
+
+    expect(feed.trips[0].routeId).to.equal(undefined);
+    expect(feed.trips[0].shortName).to.equal(undefined);
+    expect(feed.trips[0].headsign).to.equal(undefined);
   });
 
   it("reports progress and finishes with the building phase", async () => {

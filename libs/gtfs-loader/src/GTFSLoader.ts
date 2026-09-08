@@ -1,4 +1,4 @@
-import type { DateNumber, Interchange, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
+import type { AgencyIndex, AreaIndex, DateNumber, Interchange, RouteIndex, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
 import { COLUMNS, entityTypeOf } from "./EntityType.js";
 import { CSVParser } from "./CSVParser.js";
 import { FeedBuilder } from "./FeedBuilder.js";
@@ -190,6 +190,9 @@ export interface GTFSFeed {
   links: TripLink[];
   interchange: Interchange;
   stops: StopIndex;
+  routes: RouteIndex;
+  agencies: AgencyIndex;
+  areas: AreaIndex;
   /** feed_info.txt, which a feed does not have to provide */
   feedInfo?: FeedInfo;
 }
