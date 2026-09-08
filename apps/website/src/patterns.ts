@@ -23,10 +23,24 @@ export interface PatternStation {
  */
 const PUBLIC = path.join(process.cwd(), "public");
 const DIRECTORY = path.join(PUBLIC, "transfer-patterns");
+const WHOLE = path.join(PUBLIC, "transfer-patterns.br");
 const FEED = path.join(PUBLIC, "gtfs.zip");
 
 /** Where a browser fetches them from, which is the same directory served. */
 export const PATTERNS_PATH = "/transfer-patterns";
+
+/** The whole set, mirrored into the site beside the stations it was broken into. */
+export const WHOLE_PATH = "/transfer-patterns.br";
+
+/**
+ * How large the whole set is, where the site is serving it.
+ *
+ * Undefined rather than zero when it is not, which is what the page reads to decide between
+ * offering what it serves and pointing at the release.
+ */
+export function wholeBytes(): number | undefined {
+  return fs.existsSync(WHOLE) ? fs.statSync(WHOLE).size : undefined;
+}
 
 /**
  * Every station the split wrote a file for, named where the feed can say.

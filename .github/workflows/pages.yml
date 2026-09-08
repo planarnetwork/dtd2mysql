@@ -62,16 +62,18 @@ jobs:
       #
       # Not fatal if it is missing. A night whose scan did not finish publishes a
       # feed without patterns, and the site should still go up.
-      - name: Publish the transfer patterns, a station at a time
+      - name: Publish the transfer patterns, whole and a station at a time
         run: |
           if curl -fsSL --retry 3 --retry-delay 5 \
             https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.br \
-            -o transfer-patterns.br
+            -o apps/website/public/transfer-patterns.br
           then
-            yarn tsx apps/transfer-patterns/src/index.ts split transfer-patterns.br \
+            yarn tsx apps/transfer-patterns/src/index.ts split \
+              apps/website/public/transfer-patterns.br \
               --out apps/website/public/transfer-patterns
-            du -sh apps/website/public/transfer-patterns
+            du -sh apps/website/public/transfer-patterns.br apps/website/public/transfer-patterns
           else
+            rm -f apps/website/public/transfer-patterns.br
             echo "The latest release has no transfer-patterns.br, so the site goes up without them."
           fi
 

@@ -41,8 +41,10 @@ data/probe*
 # tracked - it holds the redirect that keeps the pre-redesign URL working.
 apps/website/public/gtfs.zip
 
-# The patterns, broken up a station at a time by the same workflow: 2,797 files
-# and 163MB, rebuilt from the release every time the site is.
+# The patterns, mirrored into the site by the same workflow and broken up a
+# station at a time beside themselves: 2,797 files and 163MB, rebuilt from the
+# release every time the site is.
+apps/website/public/transfer-patterns.br
 apps/website/public/transfer-patterns/
 
 # Downloaded by the validate job and by hand; 40MB and versioned by the workflow.
