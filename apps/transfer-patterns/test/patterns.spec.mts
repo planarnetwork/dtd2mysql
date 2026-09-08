@@ -5,7 +5,11 @@ import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {zipSync, strToU8} from "fflate";
 import {afterAll, beforeAll, describe, expect, it} from "vitest";
-import {PatternLoader, StopTable, loadGtfs} from "transfer-pattern-planner";
+import * as readline from "node:readline";
+import * as zlib from "node:zlib";
+import {Readable} from "node:stream";
+import {PatternLoader, PatternReader, StopTable, loadGtfs} from "transfer-pattern-planner";
+import {DirectoryPatternProvider} from "transfer-pattern-planner/node";
 import {readPatternFile} from "../src/merge/patternFile.js";
 
 const run = promisify(execFile);
@@ -212,6 +216,49 @@ describe("transfer-patterns", () => {
     // Ayton to Deeton has to change at Ceeton; Ayton to Ceeton does not have to change at all.
     expect(named("AAA", "DDD")).to.deep.equal(["AAA CCC DDD"]);
     expect(named("AAA", "CCC")).to.deep.equal(["AAA CCC"]);
+  }, 240_000);
+
+  it("splits into a file per station, each holding the journeys that depart it", async () => {
+    const whole = path.join(workDir, "whole-for-split.br");
+    const stations = path.join(workDir, "stations");
+
+    await transferPatterns("plan", feed, "--dates", "2026-06-03", "--workers", "2", "--out", whole);
+    await transferPatterns("split", whole, "--out", stations);
+
+    const provider = new DirectoryPatternProvider(stations);
+    const patternsAt = async (station: string) => {
+      const bytes = await provider.get(station);
+
+      if (bytes === undefined) {
+        return [];
+      }
+
+      const lines = readline.createInterface({
+        input: Readable.from([Buffer.from(bytes)]).pipe(zlib.createBrotliDecompress())
+      });
+      const found: string[] = [];
+
+      for await (const pattern of new PatternReader().read(lines)) {
+        found.push(pattern.join(" "));
+      }
+
+      return found;
+    };
+
+    // A pattern is written under both of its ends, each time starting with the station whose file
+    // it is, so a planner only ever fetches the station somebody is departing from.
+    expect(await patternsAt("AAA")).to.contain("AAA CCC DDD");
+    expect(await patternsAt("DDD")).to.contain("DDD CCC AAA");
+
+    // Every line of a station's file begins with that station.
+    for (const station of ["AAA", "BBB", "CCC", "DDD"]) {
+      const patterns = await patternsAt(station);
+
+      expect(patterns, station).not.to.be.empty;
+      expect(patterns.every(p => p.startsWith(station)), station).to.be.true;
+    }
+
+    expect(await provider.get("BAD")).to.be.undefined;
   }, 240_000);
 
   it("refuses a date the feed does not cover", async () => {

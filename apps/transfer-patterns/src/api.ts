@@ -3,11 +3,12 @@ import * as os from "node:os";
 import * as path from "node:path";
 import {loadGTFS} from "@gb-transit/gtfs-loader";
 import {createNetwork} from "raptor-journey-planner";
-import {checkCodeWidths} from "transfer-pattern-planner";
-import {TransferPatternMerge} from "transfer-pattern-planner/generate";
+import {PatternReader, checkCodeWidths} from "transfer-pattern-planner";
+import {StationPatternFiles, TransferPatternMerge} from "transfer-pattern-planner/generate";
+import type {WrittenFiles} from "transfer-pattern-planner/generate";
 import {checkWithinFeed, toISODate} from "./dates.js";
 import {kWayMerge} from "./merge/kWayMerge.js";
-import {readPatternFile, writePatternFile} from "./merge/patternFile.js";
+import {readPatternFile, readPatternLines, writePatternFile} from "./merge/patternFile.js";
 import {planOnWorkers} from "./plan/pool.js";
 import {readStations, shard} from "./plan/stations.js";
 
@@ -50,6 +51,15 @@ export interface MergeOptions {
    */
   readonly meta?: string;
 }
+
+export interface SplitOptions {
+  /** The pattern file to break up. */
+  readonly input: string;
+  /** Where the per station files go. Created if it is not there. */
+  readonly output: string;
+}
+
+export type SplitResult = WrittenFiles;
 
 export interface PatternResult {
   /** How many distinct patterns the file holds. */
@@ -181,6 +191,32 @@ export async function merge(options: MergeOptions): Promise<PatternResult> {
   }
 
   return result;
+}
+
+/**
+ * Break a pattern file into one file per station.
+ *
+ * A planner that knows where somebody is departing from reads one of these rather than all of them
+ * - tens of kilobytes against tens of megabytes. Writing them is the planner's own
+ * `StationPatternFiles`, which puts a pattern under both of the stations it runs between so that a
+ * query only ever needs the station it starts at, and takes out any station this run did not write
+ * so a directory cannot go on serving one the feed has dropped.
+ */
+export async function split(options: SplitOptions): Promise<SplitResult> {
+  const {input, output} = options;
+
+  await fs.promises.mkdir(output, {recursive: true});
+
+  const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "transfer-patterns-split-"));
+
+  try {
+    const files = new StationPatternFiles(workDir, new PatternReader());
+
+    return await files.write(readPatternLines(input), output);
+  }
+  finally {
+    await fs.promises.rm(workDir, {recursive: true, force: true});
+  }
 }
 
 /**

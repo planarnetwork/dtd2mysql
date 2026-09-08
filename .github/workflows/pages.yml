@@ -49,6 +49,32 @@ jobs:
             -o apps/website/public/gtfs.zip
           ls -lh apps/website/public/gtfs.zip
 
+      # The site is built by astro rather than by the repository's `tsc -b`, so
+      # nothing here has needed the workspaces compiled until now. Splitting the
+      # patterns runs one of them.
+      - run: yarn build
+
+      # A release carries the patterns as one file because a release takes 1000
+      # assets and the network has 2,797 stations. Serving them is the other way
+      # round: a planner wants the station somebody is departing from and not the
+      # rest of the country, so the file is broken up here rather than rebuilt.
+      # Nothing is generated - the scan already ran, this is a read and a write.
+      #
+      # Not fatal if it is missing. A night whose scan did not finish publishes a
+      # feed without patterns, and the site should still go up.
+      - name: Publish the transfer patterns, a station at a time
+        run: |
+          if curl -fsSL --retry 3 --retry-delay 5 \
+            https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.br \
+            -o transfer-patterns.br
+          then
+            yarn tsx apps/transfer-patterns/src/index.ts split transfer-patterns.br \
+              --out apps/website/public/transfer-patterns
+            du -sh apps/website/public/transfer-patterns
+          else
+            echo "The latest release has no transfer-patterns.br, so the site goes up without them."
+          fi
+
       # The site is its own build now rather than part of the repository's
       # `tsc -b`, and it reads the latest release over the network to report what
       # the feed currently holds. A build that cannot reach it still deploys; it

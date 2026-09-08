@@ -18,6 +18,14 @@ const QUALITY = 5;
  * Streamed. There are tens of millions of them and no reason to hold any two at once.
  */
 export function readPatternFile(file: string): AsyncIterable<string[]> {
+  return merged(decode(readPatternLines(file)));
+}
+
+/**
+ * The lines of a pattern file, still front coded, for a reader that wants them as they were
+ * written.
+ */
+export function readPatternLines(file: string): AsyncIterable<string> {
   // pipeline rather than pipe, which does not forward an error from the source.
   const decompressed = zlib.createBrotliDecompress();
   const done = pipeline(fs.createReadStream(file), decompressed);
@@ -26,7 +34,7 @@ export function readPatternFile(file: string): AsyncIterable<string[]> {
     crlfDelay: Number.POSITIVE_INFINITY
   });
 
-  return merged(decode(lines), done);
+  return merged(lines, done);
 }
 
 /**
@@ -55,13 +63,10 @@ async function* decode(lines: AsyncIterable<string>): AsyncGenerator<string[]> {
  * The patterns, or whatever stopped the stream that was carrying them. A reader ends quietly when
  * its input is destroyed, which would otherwise make a failed read a short file.
  */
-async function* merged(
-  patterns: AsyncIterable<string[]>,
-  done: Promise<void>
-): AsyncGenerator<string[]> {
-  const failed = done.then(() => undefined, (err: Error) => err);
+async function* merged<T>(items: AsyncIterable<T>, done?: Promise<void>): AsyncGenerator<T> {
+  const failed = done?.then(() => undefined, (err: Error) => err);
 
-  yield* patterns;
+  yield* items;
 
   const err = await failed;
 
