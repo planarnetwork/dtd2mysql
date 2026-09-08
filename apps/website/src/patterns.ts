@@ -32,6 +32,9 @@ export const PATTERNS_PATH = "/transfer-patterns";
 /** The whole set, mirrored into the site beside the stations it was broken into. */
 export const WHOLE_PATH = "/transfer-patterns.br";
 
+/** The stations there are files for, for a reader that wants the list as data. */
+export const STATIONS_PATH = "/transfer-patterns.json";
+
 /**
  * How large the whole set is, where the site is serving it.
  *

@@ -3,7 +3,7 @@ import Base from "../../layouts/Base.astro";
 import Terminal from "../../components/Terminal.astro";
 import {latest} from "../../feed.js";
 import {
-  PATTERNS_PATH, WHOLE_PATH, byLetter, kilobytes, patternStations, wholeBytes
+  PATTERNS_PATH, STATIONS_PATH, WHOLE_PATH, byLetter, kilobytes, patternStations, wholeBytes
 } from "../../patterns.js";
 import {RELEASE, npm, source} from "../../site.js";
 
@@ -149,6 +149,13 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     <Terminal lines={[
       `curl -O https://planarnetwork.github.io${PATTERNS_PATH}/NRW.br`
     ]} />
+    <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
+      Which stations there are is <a href={STATIONS_PATH}><code>transfer-patterns.json</code></a>
+      &mdash; every code, its name, its file and how large it is. Nothing needs it to fetch a
+      station, since a station names its own file, but something does need it to know what to ask
+      for. It is generated from the files the build published, so it cannot name one that is not
+      there.
+    </p>
   </section>
 
   {stations.length > 0 && (
@@ -158,6 +165,9 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
         {stations.length.toLocaleString()} of them, {kilobytes(total / stations.length)} each on
         average, from the feed on the most recent release
         {meta?.feed_version && <> &mdash; <code>{meta.feed_version}</code></>}.
+      </p>
+      <p style="margin: 0 0 8px; font-size: 15px;">
+        The same list as data: <a href={STATIONS_PATH}><code>transfer-patterns.json</code></a>.
       </p>
       <p style="margin: 0 0 22px; font-size: 15px;">
         {letters.map(([letter], index) => (
