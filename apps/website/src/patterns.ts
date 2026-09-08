@@ -9,6 +9,8 @@ import {REPO} from "./site.js";
 export interface PatternStation {
   /** The CRS code, which is what the file is named after. */
   code: string;
+  /** Where the site serves its patterns from, extension and all. */
+  path: string;
   /** What to call it, where the feed says. */
   name?: string;
   /** How large its file is. */
@@ -24,7 +26,7 @@ export interface PatternStation {
  */
 const PUBLIC = path.join(process.cwd(), "public");
 const DIRECTORY = path.join(PUBLIC, "transfer-patterns");
-const WHOLE = path.join(PUBLIC, "transfer-patterns.br");
+const WHOLE = path.join(PUBLIC, "transfer-patterns.gz");
 const FEED = path.join(PUBLIC, "gtfs.zip");
 
 /**
@@ -42,7 +44,7 @@ const BASE = `/${REPO}`;
 export const PATTERNS_PATH = `${BASE}/transfer-patterns`;
 
 /** The whole set, mirrored into the site beside the stations it was broken into. */
-export const WHOLE_PATH = `${BASE}/transfer-patterns.br`;
+export const WHOLE_PATH = `${BASE}/transfer-patterns.gz`;
 
 /** The stations there are files for, for a reader that wants the list as data. */
 export const STATIONS_PATH = `${BASE}/transfer-patterns.json`;
@@ -72,11 +74,16 @@ export async function patternStations(): Promise<PatternStation[]> {
 
   const names = await stationNames();
   const stations = fs.readdirSync(DIRECTORY)
-    .filter(file => file.endsWith(".br"))
+    .filter(file => file.endsWith(".gz"))
     .map(file => {
-      const code = file.slice(0, -".br".length);
+      const code = file.slice(0, -".gz".length);
 
-      return {code, name: names.get(code), bytes: fs.statSync(path.join(DIRECTORY, file)).size};
+      return {
+        code,
+        path: `${PATTERNS_PATH}/${file}`,
+        name: names.get(code),
+        bytes: fs.statSync(path.join(DIRECTORY, file)).size
+      };
     });
 
   return stations.sort((a, b) => a.code.localeCompare(b.code));

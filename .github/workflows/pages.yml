@@ -65,16 +65,16 @@ jobs:
       - name: Publish the transfer patterns, whole and a station at a time
         run: |
           if curl -fsSL --retry 3 --retry-delay 5 \
-            https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.br \
-            -o apps/website/public/transfer-patterns.br
+            https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.gz \
+            -o apps/website/public/transfer-patterns.gz
           then
             yarn tsx apps/transfer-patterns/src/index.ts split \
-              apps/website/public/transfer-patterns.br \
+              apps/website/public/transfer-patterns.gz \
               --out apps/website/public/transfer-patterns
-            du -sh apps/website/public/transfer-patterns.br apps/website/public/transfer-patterns
+            du -sh apps/website/public/transfer-patterns.gz apps/website/public/transfer-patterns
           else
-            rm -f apps/website/public/transfer-patterns.br
-            echo "The latest release has no transfer-patterns.br, so the site goes up without them."
+            rm -f apps/website/public/transfer-patterns.gz
+            echo "The latest release has no transfer-patterns.gz, so the site goes up without them."
           fi
 
       # The site is its own build now rather than part of the repository's

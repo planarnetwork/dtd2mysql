@@ -4,13 +4,25 @@ import * as zlib from "node:zlib";
 import {once} from "node:events";
 import {pipeline} from "node:stream/promises";
 import type {Writable} from "node:stream";
-import {CODE_WIDTH, FrontCoder, sharedStops} from "transfer-pattern-planner";
+import {BROTLI_QUALITY, CODE_WIDTH, FrontCoder, compressionFor, sharedStops} from
+  "transfer-pattern-planner";
 
 /**
- * How hard the finished file is compressed. The same five a shard is written at: brotli stops being
- * free above it.
+ * Compress and decompress the way the planner does, which is to say by what the file is called:
+ * `.gz` is gzip and anything else is brotli. Brotli is the smaller of the two; gzip is the one a
+ * browser can decompress, since none has `DecompressionStream("brotli")`.
  */
-const QUALITY = 5;
+function compressorFor(file: string): zlib.BrotliCompress | zlib.Gzip {
+  return compressionFor(file) === "gzip"
+    ? zlib.createGzip()
+    : zlib.createBrotliCompress({
+      params: {[zlib.constants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY}
+    });
+}
+
+function decompressorFor(file: string): zlib.BrotliDecompress | zlib.Gunzip {
+  return compressionFor(file) === "gzip" ? zlib.createGunzip() : zlib.createBrotliDecompress();
+}
 
 /**
  * The patterns in a pattern file, in the order they were written.
@@ -27,7 +39,7 @@ export function readPatternFile(file: string): AsyncIterable<string[]> {
  */
 export function readPatternLines(file: string): AsyncIterable<string> {
   // pipeline rather than pipe, which does not forward an error from the source.
-  const decompressed = zlib.createBrotliDecompress();
+  const decompressed = decompressorFor(file);
   const done = pipeline(fs.createReadStream(file), decompressed);
   const lines = readline.createInterface({
     input: decompressed,
@@ -82,9 +94,7 @@ export async function writePatternFile(
   patterns: AsyncIterable<string[]>,
   output: string
 ): Promise<{patterns: number; bytes: number}> {
-  const compressed = zlib.createBrotliCompress({
-    params: {[zlib.constants.BROTLI_PARAM_QUALITY]: QUALITY}
-  });
+  const compressed = compressorFor(output);
   // Observed as it is created, so a sink that fails during the loop below is an error rather than
   // an unhandled rejection.
   const written = pipeline(compressed, fs.createWriteStream(output))

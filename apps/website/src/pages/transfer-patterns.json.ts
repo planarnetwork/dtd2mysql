@@ -19,7 +19,7 @@ export async function GET(): Promise<Response> {
       stations: stations.map(station => ({
         code: station.code,
         name: station.name,
-        path: `${PATTERNS_PATH}/${station.code}.br`,
+        path: station.path,
         bytes: station.bytes
       }))
     }, null, 2)}\n`,

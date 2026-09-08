@@ -57,6 +57,11 @@ export interface SplitOptions {
   readonly input: string;
   /** Where the per station files go. Created if it is not there. */
   readonly output: string;
+  /**
+   * What each station's file is called after its code, which is also what it is compressed with:
+   * `.gz` is gzip and anything else is brotli.
+   */
+  readonly extension?: string;
 }
 
 export type SplitResult = WrittenFiles;
@@ -203,14 +208,14 @@ export async function merge(options: MergeOptions): Promise<PatternResult> {
  * so a directory cannot go on serving one the feed has dropped.
  */
 export async function split(options: SplitOptions): Promise<SplitResult> {
-  const {input, output} = options;
+  const {input, output, extension = ".gz"} = options;
 
   await fs.promises.mkdir(output, {recursive: true});
 
   const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "transfer-patterns-split-"));
 
   try {
-    const files = new StationPatternFiles(workDir, new PatternReader());
+    const files = new StationPatternFiles(workDir, new PatternReader(), extension);
 
     return await files.write(readPatternLines(input), output);
   }
