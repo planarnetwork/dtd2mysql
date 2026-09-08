@@ -225,7 +225,7 @@ describe("transfer-patterns", () => {
     await transferPatterns("plan", feed, "--dates", "2026-06-03", "--workers", "2", "--out", whole);
     await transferPatterns("split", whole, "--out", stations);
 
-    const provider = new DirectoryPatternProvider(stations);
+    const provider = new DirectoryPatternProvider(stations, ".gz");
     const patternsAt = async (station: string) => {
       const bytes = await provider.get(station);
 
@@ -233,8 +233,12 @@ describe("transfer-patterns", () => {
         return [];
       }
 
+      // Gzip's own two bytes. These are the files a browser reads, and no browser can decompress
+      // brotli, so writing one by mistake would be readable everywhere except where it has to be.
+      expect([bytes[0], bytes[1]], station).to.deep.equal([0x1f, 0x8b]);
+
       const lines = readline.createInterface({
-        input: Readable.from([Buffer.from(bytes)]).pipe(zlib.createBrotliDecompress())
+        input: Readable.from([Buffer.from(bytes)]).pipe(zlib.createGunzip())
       });
       const found: string[] = [];
 
@@ -259,6 +263,26 @@ describe("transfer-patterns", () => {
     }
 
     expect(await provider.get("BAD")).to.be.undefined;
+  }, 240_000);
+
+  it("compresses by what the file is called", async () => {
+    const shard = path.join(workDir, "compression.gz");
+    const gzipped = path.join(workDir, "merged-here.gz");
+    const brotlied = path.join(workDir, "merged-here.br");
+
+    await transferPatterns("plan", feed, "--dates", "2026-06-03", "--workers", "2", "--out", shard);
+    await transferPatterns("merge", shard, "--out", gzipped);
+    await transferPatterns("merge", shard, "--out", brotlied);
+
+    const head = async (file: string) => (await fs.promises.readFile(file)).subarray(0, 2);
+
+    // Gzip's two bytes, and brotli's lack of them. The extension is the only thing that differs.
+    expect([...await head(shard)]).to.deep.equal([0x1f, 0x8b]);
+    expect([...await head(gzipped)]).to.deep.equal([0x1f, 0x8b]);
+    expect([...await head(brotlied)]).not.to.deep.equal([0x1f, 0x8b]);
+
+    // And both say the same thing, whichever they were squeezed into.
+    expect(await patternsIn(gzipped)).to.deep.equal(await patternsIn(brotlied));
   }, 240_000);
 
   it("refuses a date the feed does not cover", async () => {

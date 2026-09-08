@@ -13,7 +13,6 @@ const stations = await patternStations();
 const letters = byLetter(stations);
 const total = stations.reduce((bytes, station) => bytes + station.bytes, 0);
 const whole = wholeBytes();
-const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 ---
 <Base
   title="Transfer patterns"
@@ -41,19 +40,9 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
           </p>
         </div>
         <div class="card__foot">
-          <a class="btn btn--signal" href={whole === undefined ? `${RELEASE}/transfer-patterns.br` : WHOLE_PATH}>
-            transfer-patterns.br &rarr;
+          <a class="btn btn--signal" href={whole === undefined ? `${RELEASE}/transfer-patterns.gz` : WHOLE_PATH}>
+            transfer-patterns.gz &rarr;
           </a>
-          <p style="margin: 12px 0 0; font-size: 15px; color: var(--ink-quiet);">
-            {whole === undefined
-              ? <>On the latest release, beside the feed it describes.</>
-              : <>
-                  {megabytes(whole)}, served from here so a browser reads it and the stations below
-                  from one origin. Also{" "}
-                  <a href={`${RELEASE}/transfer-patterns.br`}>on the release</a>, which is the copy
-                  to bookmark.
-                </>}
-          </p>
         </div>
       </div>
       <div class="card">
@@ -107,7 +96,7 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     </p>
     <p style="margin: 0 0 18px; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
       The first character says how many leading stations to take from the previous line, counting up
-      from <code>0</code>. These are the opening lines of <code>NRW.br</code>, and what each one
+      from <code>0</code>. These are the opening lines of <code>NRW.gz</code>, and what each one
       means:
     </p>
     <Terminal lines={[
@@ -127,7 +116,8 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
       <code>NRW AUD BIS</code> &mdash; because every line is exactly one pattern.
     </p>
     <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
-      The whole thing is then brotli compressed, so decompress it before reading. Rather than
+      The whole thing is then gzip compressed, so decompress it before reading &mdash; which a
+      browser will do for you with <code>DecompressionStream</code>. Rather than
       unpicking any of this yourself,
       <a href={npm("transfer-pattern-planner")}> <code>transfer-pattern-planner</code></a> reads it
       back for you.
@@ -147,7 +137,7 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
       can each make sense of on their own.
     </p>
     <Terminal lines={[
-      `curl -O https://planarnetwork.github.io${PATTERNS_PATH}/NRW.br`
+      `curl -O https://planarnetwork.github.io${PATTERNS_PATH}/NRW.gz`
     ]} />
     <p style="margin: 18px 0 0; font-size: 15.5px; color: var(--ink-body); max-width: 70ch;">
       Which stations there are is <a href={STATIONS_PATH}><code>transfer-patterns.json</code></a>
@@ -183,16 +173,18 @@ const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
           <div class="table-scroll">
             <table>
               <thead>
-                <tr><th>station</th><th>code</th><th>patterns</th></tr>
+                <tr>
+                  <th style="text-align: left;">station</th>
+                  <th style="text-align: left;">code</th>
+                  <th style="text-align: left;">patterns</th>
+                </tr>
               </thead>
               <tbody>
                 {group.map(station => (
                   <tr>
                     <td>{station.name ?? <span style="color: var(--ink-quiet);">&mdash;</span>}</td>
                     <td>
-                      <a href={`${PATTERNS_PATH}/${station.code}.br`}>
-                        <code>{station.code}.br</code>
-                      </a>
+                      <a href={station.path}><code>{station.code}.gz</code></a>
                     </td>
                     <td>{kilobytes(station.bytes)}</td>
                   </tr>
