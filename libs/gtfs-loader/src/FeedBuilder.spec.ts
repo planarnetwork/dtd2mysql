@@ -247,6 +247,138 @@ describe("FeedBuilder", () => {
     expect(builder.build().stops.A.locationType).to.equal(0);
   });
 
+  it("reads a route", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("route", {
+      route_id: "GW", agency_id: "=GW", route_short_name: "GWR",
+      route_long_name: "Great Western Railway", route_type: "2", route_color: "0a493e",
+      route_text_color: "ffffff", route_url: "https://www.gwr.com/", route_desc: ""
+    });
+
+    const route = builder.build().routes.GW;
+
+    expect(route.id).to.equal("GW");
+    expect(route.agencyId).to.equal("=GW");
+    expect(route.shortName).to.equal("GWR");
+    expect(route.longName).to.equal("Great Western Railway");
+    expect(route.type).to.equal(2);
+    expect(route.color).to.equal("0a493e");
+  });
+
+  /**
+   * The equals sign is the National Operator Catalogue form, which distinguishes a rail operator
+   * from the airline with the same two letters. Stripping it here would reintroduce the collision
+   * it exists to prevent, and leave routes.txt pointing at an agency id agency.txt does not have.
+   */
+  it("keeps an agency id exactly as the feed wrote it", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("agency", {
+      agency_id: "=GW", agency_name: "Great Western Railway", agency_url: "https://www.gwr.com/",
+      agency_timezone: "Europe/London", agency_lang: "en", agency_phone: "0345 700 0125"
+    });
+    builder.add("route", { route_id: "GW", agency_id: "=GW", route_type: "2" });
+
+    const feed = builder.build();
+
+    expect(Object.keys(feed.agencies)).to.deep.equal(["=GW"]);
+    expect(feed.agencies["=GW"].name).to.equal("Great Western Railway");
+    expect(feed.agencies[feed.routes.GW.agencyId as string].name).to.equal("Great Western Railway");
+  });
+
+  it("gives a trip its route, its headcode and its headsign", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("trip", {
+      trip_id: "G14978_A_B", service_id: "s1", route_id: "GW",
+      trip_short_name: "GW130700", trip_headsign: "PLYMOUTH"
+    });
+
+    const [trip] = builder.build().trips;
+
+    expect(trip.routeId).to.equal("GW");
+    expect(trip.shortName).to.equal("GW130700");
+    expect(trip.headsign).to.equal("PLYMOUTH");
+  });
+
+  it("leaves a trip's route and names undefined when the feed gives none", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("trip", { trip_id: "t1", service_id: "s1" });
+
+    const [trip] = builder.build().trips;
+
+    expect(trip.routeId).to.equal(undefined);
+    expect(trip.shortName).to.equal(undefined);
+    expect(trip.headsign).to.equal(undefined);
+  });
+
+  it("keeps how a transfer is made", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("transfer", {
+      from_stop_id: "910GKNGX", to_stop_id: "910GPADTON", min_transfer_time: "900",
+      mode: "TRANSFER|TUBE"
+    });
+    builder.add("transfer", { from_stop_id: "A", to_stop_id: "B", min_transfer_time: "300" });
+
+    const feed = builder.build();
+
+    expect(feed.transfers["910GKNGX"][0].mode).to.equal("TRANSFER|TUBE");
+    expect(feed.transfers.A[0].mode).to.equal(undefined);
+  });
+
+  it("reads an area from areas.txt and stop_areas.txt together", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("area", { area_id: "0032", area_name: "LONDON ZONES 1-2" });
+    builder.add("stop_area", { area_id: "0032", stop_id: "910GEUSTON" });
+    builder.add("stop_area", { area_id: "0032", stop_id: "910GCHRX" });
+
+    const area = builder.build().areas["0032"];
+
+    expect(area.id).to.equal("0032");
+    expect(area.name).to.equal("LONDON ZONES 1-2");
+    expect(area.stops).to.deep.equal(["910GEUSTON", "910GCHRX"]);
+  });
+
+  /**
+   * The GB feed writes stop_areas.txt ahead of areas.txt, so the memberships of an area arrive
+   * before it has been named.
+   */
+  it("reads an area whose stops arrive before its name", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("stop_area", { area_id: "0032", stop_id: "910GEUSTON" });
+    builder.add("area", { area_id: "0032", area_name: "LONDON ZONES 1-2" });
+
+    const area = builder.build().areas["0032"];
+
+    expect(area.name).to.equal("LONDON ZONES 1-2");
+    expect(area.stops).to.deep.equal(["910GEUSTON"]);
+  });
+
+  it("gives an area with no stops an empty list, and one with no name no name", () => {
+    const builder = new FeedBuilder();
+
+    builder.add("area", { area_id: "0032", area_name: "LONDON ZONES 1-2" });
+    builder.add("stop_area", { area_id: "0033", stop_id: "910GEUSTON" });
+
+    const { areas } = builder.build();
+
+    expect(areas["0032"].stops).to.deep.equal([]);
+    expect(areas["0033"].name).to.equal(undefined);
+  });
+
+  it("gives a feed with none of those files empty indexes", () => {
+    const feed = new FeedBuilder().build();
+
+    expect(feed.routes).to.deep.equal({});
+    expect(feed.agencies).to.deep.equal({});
+    expect(feed.areas).to.deep.equal({});
+  });
+
   /**
    * A feed that leaves stop_code empty names the station by its stop_id. If an empty field were
    * read as "" rather than undefined every such station would claim the same code and the

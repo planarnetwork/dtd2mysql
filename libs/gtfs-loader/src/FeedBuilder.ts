@@ -1,4 +1,4 @@
-import type { CalendarIndex, DateIndex, DayOfWeek, Interchange, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
+import type { AgencyIndex, Area, AreaIndex, CalendarIndex, DateIndex, DayOfWeek, Interchange, RouteIndex, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
 import type { EntityType } from "./EntityType.js";
 import type { Row } from "./CSVParser.js";
 import type { FeedInfo, GTFSFeed } from "./GTFSLoader.js";
@@ -27,6 +27,9 @@ export class FeedBuilder {
   private readonly calendars: CalendarIndex = {};
   private readonly dates: Record<string, DateIndex> = {};
   private readonly stops: StopIndex = {};
+  private readonly routes: RouteIndex = {};
+  private readonly agencies: AgencyIndex = {};
+  private readonly areas: AreaIndex = {};
   /**
    * Keyed by trip rather than stored on the trip, because stop_times.txt may arrive before
    * trips.txt. A Map rather than an object: a feed has hundreds of thousands of trips, and an
@@ -49,6 +52,10 @@ export class FeedBuilder {
       case "stop_time": this.addStopTime(row); break;
       case "feed_info": this.addFeedInfo(row); break;
       case "stop": this.addStop(row); break;
+      case "route": this.addRoute(row); break;
+      case "agency": this.addAgency(row); break;
+      case "area": this.addArea(row); break;
+      case "stop_area": this.addStopArea(row); break;
     }
   }
 
@@ -81,6 +88,9 @@ export class FeedBuilder {
       links: this.links,
       interchange: this.interchange,
       stops: this.stops,
+      routes: this.routes,
+      agencies: this.agencies,
+      areas: this.areas,
       feedInfo: this.feedInfo
     };
   }
@@ -171,8 +181,9 @@ export class FeedBuilder {
     }
     else {
       const transfers = this.transfers[origin] ?? [];
+      const mode = row.mode === undefined ? undefined : this.intern(row.mode);
 
-      transfers.push({ origin, destination, duration, startTime, endTime });
+      transfers.push({ origin, destination, duration, startTime, endTime, mode });
       this.transfers[origin] = transfers;
     }
   }
@@ -211,7 +222,10 @@ export class FeedBuilder {
       serviceId: this.intern(row.service_id as string),
       tripId: this.intern(row.trip_id as string),
       stopTimes: [],
-      service: {} as Service
+      service: {} as Service,
+      routeId: row.route_id === undefined ? undefined : this.intern(row.route_id),
+      shortName: row.trip_short_name === undefined ? undefined : this.intern(row.trip_short_name),
+      headsign: row.trip_headsign === undefined ? undefined : this.intern(row.trip_headsign)
     });
   }
 
@@ -259,6 +273,59 @@ export class FeedBuilder {
       parentStation: row.parent_station === undefined ? undefined : this.intern(row.parent_station),
       platformCode: row.platform_code
     };
+  }
+
+  private addRoute(row: Row): void {
+    const id = this.intern(row.route_id as string);
+
+    this.routes[id] = {
+      id,
+      agencyId: row.agency_id === undefined ? undefined : this.intern(row.agency_id),
+      shortName: row.route_short_name,
+      longName: row.route_long_name,
+      type: +(row.route_type as string),
+      color: row.route_color,
+      textColor: row.route_text_color,
+      url: row.route_url,
+      description: row.route_desc
+    };
+  }
+
+  private addAgency(row: Row): void {
+    const id = this.intern(row.agency_id as string);
+
+    this.agencies[id] = {
+      id,
+      name: row.agency_name,
+      url: row.agency_url,
+      timezone: row.agency_timezone,
+      lang: row.agency_lang,
+      phone: row.agency_phone,
+      fareUrl: row.agency_fare_url
+    };
+  }
+
+  /**
+   * Either file may arrive first - the GB feed writes stop_areas.txt ahead of areas.txt - so both
+   * sides fill in an entry the other may already have made rather than replacing it.
+   */
+  private addArea(row: Row): void {
+    this.area(row.area_id as string).name = row.area_name;
+  }
+
+  private addStopArea(row: Row): void {
+    this.area(row.area_id as string).stops.push(this.intern(row.stop_id as string));
+  }
+
+  private area(areaId: string): Area {
+    const id = this.intern(areaId);
+    const existing = this.areas[id];
+
+    if (existing !== undefined) {
+      return existing;
+    }
+
+    return this.areas[id] = { id, stops: [] };
   }
 
 }

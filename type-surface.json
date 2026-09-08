@@ -232,6 +232,12 @@
     "withoutPlaceholders"
   ],
   "gtfs-loader": [
+    "Agency",
+    "AgencyID",
+    "AgencyIndex",
+    "Area",
+    "AreaID",
+    "AreaIndex",
     "COLUMNS",
     "CSVParser",
     "Calendar",
@@ -262,6 +268,9 @@
     "RawOptions",
     "ReadFeedOptions",
     "ReadZipOptions",
+    "Route",
+    "RouteID",
+    "RouteIndex",
     "Row",
     "Service",
     "ServiceCalendar",
@@ -296,7 +305,8 @@
     "readZip",
     "sizeOf",
     "toChunks",
-    "toRow"
+    "toRow",
+    "transferModes"
   ],
   "gtfs-output": [
     "CSVRowWriter",

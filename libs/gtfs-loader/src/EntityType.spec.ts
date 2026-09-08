@@ -11,6 +11,10 @@ describe("entityTypeOf", () => {
     expect(entityTypeOf("transfers.txt")).to.equal("transfer");
     expect(entityTypeOf("feed_info.txt")).to.equal("feed_info");
     expect(entityTypeOf("stops.txt")).to.equal("stop");
+    expect(entityTypeOf("routes.txt")).to.equal("route");
+    expect(entityTypeOf("agency.txt")).to.equal("agency");
+    expect(entityTypeOf("areas.txt")).to.equal("area");
+    expect(entityTypeOf("stop_areas.txt")).to.equal("stop_area");
   });
 
   it("reads a feed that nests its files in a directory", () => {
@@ -20,9 +24,8 @@ describe("entityTypeOf", () => {
 
   it("ignores the files the loader does not read", () => {
     expect(entityTypeOf("links.txt")).to.equal(undefined);
-    expect(entityTypeOf("routes.txt")).to.equal(undefined);
-    expect(entityTypeOf("agency.txt")).to.equal(undefined);
     expect(entityTypeOf("shapes.txt")).to.equal(undefined);
+    expect(entityTypeOf("attributions.txt")).to.equal(undefined);
   });
 
   it("ignores directory entries", () => {
