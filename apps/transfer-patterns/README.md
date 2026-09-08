@@ -144,7 +144,7 @@ Measured on a national feed of 3,014 stations, six shards:
 | Patterns | 34,557,853 | 57,200,119 |
 | File | 32.5MB | 57.6MB |
 | A shard's file | 7.2 – 7.7MB | 12.6 – 13.6MB |
-| A shard, at `--workers 4` | 1m17s | 6m02s – 6m48s, 1.85GB |
+| A shard, at `--workers 4` | 1m17s | 6m18s – 7m06s, 1.48GB |
 | Final merge | 3m16s, 242MB | 5m24s, 237MB |
 
 The one date figure is the same count, to the pattern, that raptor's own unsharded CLI produces

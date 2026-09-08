@@ -79,7 +79,10 @@ const range = {
 
 const MSN = [
   "/!! Start of file",
-  station("TONBRIDGE", "TONBDG", "TON", 15862, 61462),
+  // 558,600 east and 146,200 north, which is Tonbridge. It read 15862, putting
+  // the station 28km away near Ashford, and nothing minded until an override
+  // that disagrees with the feed by that much stopped being taken.
+  station("TONBRIDGE", "TONBDG", "TON", 15586, 61462),
   station("SEVENOAKS", "SEVNOKS", "SEV", 15525, 61550),
   station("HILDENBOROUGH", "HLDNBRO", "HLD", 15558, 61478)
 ];

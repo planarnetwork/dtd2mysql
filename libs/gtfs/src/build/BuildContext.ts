@@ -1,4 +1,5 @@
 import {Temporal} from "temporal-polyfill";
+import {NO_EXCLUSIONS, ServiceExclusions} from "../transform/ExcludeServices";
 
 /**
  * Everything about a build that is not the data: which day it is being built for,
@@ -45,6 +46,17 @@ export interface BuildContext {
    * same train in the feed twice, so it is off unless asked for.
    */
   readonly duplicateOvernightAssociations: boolean;
+
+  /**
+   * The services to leave out - see ExcludeServices. The one setting a config
+   * file alone carries: everything else here is a single value a flag could
+   * also say, and these are three lists of codes.
+   *
+   * Optional because a caller constructs this interface rather than receiving
+   * one, so a required field would not compile against code written before it
+   * existed. Absent means the same as empty: exclude nothing.
+   */
+  readonly exclude?: ServiceExclusions;
 }
 
 /**
@@ -194,6 +206,9 @@ export function buildContext(argv: string[], env: NodeJS.ProcessEnv = process.en
     // A bare flag, read the way `--links` is, because absent means off. `flag`
     // is for the settings that default to on, where there is a value to refuse.
     duplicateOvernightAssociations: argv.includes("--duplicate-overnight-associations")
-      || env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS === "1"
+      || env.GTFS_DUPLICATE_OVERNIGHT_ASSOCIATIONS === "1",
+    // No flag and no environment variable to resolve. A caller holding a config
+    // puts its value in afterwards.
+    exclude: NO_EXCLUSIONS
   };
 }

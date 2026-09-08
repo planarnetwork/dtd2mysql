@@ -68,7 +68,12 @@ export function sources(feed: FeedMeta | undefined): Source[] {
 export interface Feed {
   platform: number;
   file: string;
-  tag: string;
+  /**
+   * What the card says this feed is, above its name. Only the feed whose name
+   * does not already say it has one - a tag that restates the heading is a
+   * label for the sake of having a label.
+   */
+  tag?: string;
   summary: string;
   points: string[];
   /** What this feed holds, from the release, or nothing when it holds nothing yet. */
@@ -90,7 +95,6 @@ export const FEEDS: Feed[] = [
   {
     platform: 1,
     file: "gtfs.zip",
-    tag: "Most people want this",
     summary: "The standard feed. Stops where passengers can board and alight, and nothing else — " +
       "the shape every routing engine and trip planner expects.",
     points: [
@@ -107,7 +111,6 @@ export const FEEDS: Feed[] = [
   {
     platform: 2,
     file: "gtfs-passing-points.zip",
-    tag: "For analysis",
     summary: "The same trips, plus every location a train runs through without stopping — " +
       "junctions, loops and timing points included.",
     points: [
@@ -127,7 +130,7 @@ export const FEEDS: Feed[] = [
     file: "gtfs-national-rail-only.zip",
     tag: "National Rail only",
     summary: "The standard feed without the services National Rail does not hold authority over — " +
-      "no tube, no Metro, no ferries, no buses that are not rail replacements.",
+      "no tube, no Metro, no ferries, no scheduled buses, and no replacement buses TfL runs.",
     points: [
       "For a feed merged with other sources",
       "Where those sources describe the metro better",

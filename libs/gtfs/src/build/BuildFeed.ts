@@ -6,6 +6,7 @@ import {Association} from "../model/Association";
 import {applyOverlays} from "../transform/ApplyOverlays";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyAssociations, AssociationIndex, ScheduleIndex} from "../transform/ApplyAssociations";
+import {excludeServices, NO_EXCLUSIONS} from "../transform/ExcludeServices";
 import {createCalendar, ServiceIdIndex} from "../transform/CreateCalendar";
 import {ScheduleResults} from "./ScheduleBuilder";
 import {FileSchema, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
@@ -109,26 +110,31 @@ export class BuildFeed {
     // whether an unlocated station is published depends on whether anything
     // references it.
     const [sourceStops, fixedLinks] = await Promise.all([stopsQ, fixedLinksQ]);
-    // The boarding points are added before anything asks which stops the feed
-    // publishes, because a call references one of them rather than the station.
-    // Only the hierarchy is built here; a call's id is composed when
-    // stop_times.txt is written, so nothing upstream of this sees it.
-    const withChildren = withStopPoints(sourceStops, schedules);
-    const stops = locate(withChildren, referenced(schedules, fixedLinks));
+    const located = locate(sourceStops, referenced(schedules, fixedLinks));
     // Every index the build keeps is on the CRS code, because that is what a
     // schedule, an association and a fixed link name a station by.
-    const stations = new Map(
-      stops.filter(stop => stop.parent_station === null).map(stop => [stop.crs, stop])
-    );
-    const stopNames = map(stations, stop => stop.stop_name);
-    // Named after the stops are settled, because which stop a train divides at decides where the
-    // answer changes, and dropUnknownStops can move it.
-    const called = combinedHeadsigns(dropUnknownStops(schedules, new Set(stations.keys())), links, stopNames);
+    const stations = new Map(located.map(stop => [stop.crs, stop]));
+    // Dropped before the stations are enriched, because which stops the feed
+    // publishes is already settled and no enricher may add one.
+    const serving = dropUnknownStops(schedules, new Set(stations.keys()));
     // Only the stops are offered to an enricher. Trips and routes are streamed
     // straight to their files rather than held, and materialising 276,000 trips
     // to enrich a handful is the wrong trade until something needs it.
-    const feed = new MutableFeed(stops, [], []);
+    const feed = new MutableFeed(located, [], []);
     const reports = this.enrichers.length > 0 ? await enrich(feed, this.enrichers) : [];
+    // Everything a station decides is decided here, once it is final: what a
+    // train is named after, and the boarding points that carry its position.
+    const stopNames = map(stations, stop => stop.stop_name);
+    // Named after the stops are settled, because which stop a train divides at decides where the
+    // answer changes, and dropUnknownStops can move it.
+    const called = combinedHeadsigns(serving, links, stopNames);
+    // A boarding point is a copy of its station with an id, a name and a
+    // platform of its own, so it is made after the station has everything it is
+    // going to get. A call references one of these rather than the station, and
+    // a coordinate that reached the station alone would be a coordinate the
+    // stop times never see. The id is composed when stop_times.txt is written,
+    // so nothing upstream of here knows a station has platforms.
+    const stops = withStopPoints(located, called);
     // Written whole rather than through copy(): it is a document, and the CSV
     // writer turns its nested arrays into `[object Object]`.
     const provenanceP = reports.length > 0
@@ -138,11 +144,13 @@ export class BuildFeed {
       )
       : undefined;
 
-    // Extensions run after enrichment, so a file built out of the stops is
-    // built out of the stops as they will be published rather than as the DTD
-    // left them.
+    // Extensions run after enrichment and after the boarding points are made,
+    // so a file built out of the stops is built out of the stops as they will
+    // be published rather than as the DTD left them. A second view of the same
+    // stations, because the one the enrichers wrote through is deliberately the
+    // stations alone and an extension is entitled to the whole feed.
     const extended = this.extensions.length > 0
-      ? await extend(feed, this.extensions)
+      ? await extend(new MutableFeed(stops, [], []), this.extensions)
       : {files: [], reports: []};
     const extensionsP = extended.files.map(
       file => this.copy([...file.rows], {filename: file.filename, columns: file.columns}, file.key)
@@ -334,7 +342,14 @@ export class BuildFeed {
 
   private getSchedules(associations: Association[], scheduleResults: ScheduleResults, duplicateOvernightAssociations: boolean): LinkedSchedules {
     const processedAssociations: AssociationIndex = applyOverlays(associations);
-    const processedSchedules: ScheduleIndex = applyOverlays(scheduleResults.schedules);
+    // After the overlays, so a train replaced on some days by a service the
+    // rules drop does not come back on those days. Before the associations, so
+    // a portion is not cut into coupled and uncoupled days for a base that is
+    // then excluded - the coupling itself is safe either way, because
+    // linkedTrips drops a link to a trip that is not published.
+    const processedSchedules: ScheduleIndex = excludeServices(
+      applyOverlays(scheduleResults.schedules), this.context.exclude ?? NO_EXCLUSIONS
+    );
     const associated = applyAssociations(processedSchedules, processedAssociations, scheduleResults.idGenerator, duplicateOvernightAssociations);
     const mergedSchedules = mergeSchedules(associated.schedules);
     const links = resolveLinks(associated.links, mergedSchedules);

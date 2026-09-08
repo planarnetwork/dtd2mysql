@@ -1,0 +1,43 @@
+# The nightly build, with the services National Rail does not hold authority
+# over left out.
+#
+# Everything above `exclude` is gtfs.config.yaml, which is the feed this one is
+# a variant of - the two are checked against each other in tests/src, so a
+# change to one that is not made here fails rather than drifting.
+
+source:
+  - data/feeds
+
+out: feed-national-rail-only
+
+enrichers:
+  NAPTAN:
+    options:
+      names: true
+    apply:
+      - stop_lat
+      - stop_lon
+      - located
+      - stop_name
+
+extensions:
+  - STATION_GROUPS
+
+# The CIF carries the tube, the Metro, the ferries and the buses, and a feed
+# combined with other sources has better answers for them elsewhere: TfL names
+# the NaPTAN stop a replacement bus calls at and the letter route code it runs
+# under, neither of which the CIF has.
+exclude:
+  # Rail replacement buses are a mode of their own, so they survive `bus`.
+  modes: [metro, bus, ship]
+  # The operators whose services National Rail does not publish, including their
+  # replacement buses - a London Underground replacement is TfL's to describe.
+  # A blacklist, so a new National Rail operator does not have to be added here
+  # to be published. ES should not reach the feed at all, but sometimes does.
+  operators: [ES, LT, TW, ZZ]
+  # The trains stay: the Overground and the Elizabeth line are National Rail and
+  # their timetable is here. Their replacement buses are TfL's own, run the way
+  # the Underground's are, and TfL gives the bus stop each one calls at and the
+  # letter route code it runs under - `R` for Willesden to Stratford - which the
+  # CIF has no field for.
+  replacementBuses: [LO, XR]

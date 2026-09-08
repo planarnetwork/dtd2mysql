@@ -54,6 +54,8 @@ export {mergeSchedules} from "./transform/MergeSchedules";
 export {TIMETABLE_ATTRIBUTION, createAttributions} from "./transform/CreateAttributions";
 export {createFeedInfo} from "./transform/CreateFeedInfo";
 export {dropUnknownStops} from "./transform/DropUnknownStops";
+export {excludeServices, MODES, NO_EXCLUSIONS} from "./transform/ExcludeServices";
+export type {ServiceExclusions} from "./transform/ExcludeServices";
 export {interchange, mergeTransfers} from "./transform/MergeTransfers";
 export {stopId, toStopTimeRow, withStopPoints} from "./transform/Platforms";
 export {stationId, stopPointId} from "./transform/Atco";

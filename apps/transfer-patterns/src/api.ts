@@ -1,9 +1,8 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-// The feed is read by raptor's copy of the loader rather than the workspace's, because
-// `createNetwork` is what consumes it and the two versions describe a feed differently.
-import {createNetwork, loadGTFS} from "raptor-journey-planner";
+import {loadGTFS} from "@gb-transit/gtfs-loader";
+import {createNetwork} from "raptor-journey-planner";
 import {checkCodeWidths} from "transfer-pattern-planner";
 import {TransferPatternMerge} from "transfer-pattern-planner/generate";
 import {checkWithinFeed, toISODate} from "./dates.js";
