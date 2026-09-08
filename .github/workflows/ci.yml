@@ -71,6 +71,7 @@ jobs:
       - run: yarn tsx apps/cif2gtfs/src/index.ts --help
       - run: yarn tsx apps/transxchange2gtfs/src/index.ts --help
       - run: yarn tsx apps/gtfsmerge/src/index.ts --help
+      - run: yarn tsx apps/transfer-patterns/src/index.ts --help
 
   # Nothing above unit tests could run without a database, so every claim about
   # the importer has been checked by hand. This is where that stops.
