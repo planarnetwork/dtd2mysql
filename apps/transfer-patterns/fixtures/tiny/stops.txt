@@ -1,0 +1,9 @@
+stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station,platform_code,stop_timezone
+910GAAA,AAA,Ayton,54.00000,-1.00000,1,,,Europe/London
+9100AAA1,AAA,Ayton,54.00000,-1.00000,0,910GAAA,1,
+910GBBB,BBB,Beeton,54.10000,-1.10000,1,,,Europe/London
+9100BBB1,BBB,Beeton,54.10000,-1.10000,0,910GBBB,1,
+910GCCC,CCC,Ceeton,54.20000,-1.20000,1,,,Europe/London
+9100CCC1,CCC,Ceeton,54.20000,-1.20000,0,910GCCC,1,
+910GDDD,DDD,Deeton,54.30000,-1.30000,1,,,Europe/London
+9100DDD1,DDD,Deeton,54.30000,-1.30000,0,910GDDD,1,

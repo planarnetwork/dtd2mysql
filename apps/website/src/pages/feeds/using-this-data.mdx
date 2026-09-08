@@ -280,6 +280,41 @@ Everything else is identical to `gtfs.zip`. A station left with no calls is stil
 tube-only station is still somewhere a ticket can be bought to — but its boarding points are not,
 because those are built from the calls.
 
+## The transfer patterns
+
+`transfer-patterns.br` is not a feed. It is a companion to `gtfs.zip`: every sequence of stations a
+journey can be made of, found in advance, so a
+[transfer pattern journey planner](https://ad.informatik.uni-freiburg.de/files/transferpatterns.pdf)
+can plan a journey by pricing the handful of routes that exist between two places rather than
+searching the network for them.
+
+Each line is one pattern — the stations it calls at, three characters each, nothing between them:
+
+```
+LSTNRW            Liverpool Street to Norwich, direct
+LSTCBGNRW         changing at Cambridge
+LSTCBGELYNRW      changing at Cambridge and Ely
+```
+
+The two ends are written in alphabetical order, so a pattern appears once for both directions of
+travel: a journey from Norwich to Liverpool Street is found under `LST` and read the other way.
+Sorting puts patterns beginning the same way together, so a line records only how many leading
+stations it takes from the line above and what follows it, and the whole thing is brotli
+compressed. It needs no marker for a pattern that a longer one runs through, because every line is
+exactly one pattern.
+
+The station codes are the `stop_code` of `gtfs.zip` — CRS codes — so the two files have to be read
+together. `stops.txt` is what turns `NRW` back into Norwich and into somewhere with a platform and a
+position.
+
+Patterns are found for one day at a time, and the published file holds those of the next Tuesday,
+Friday, Saturday and Sunday together: what changes between days is the shape of the service rather
+than the geography, and four consecutive days would be four Tuesdays.
+
+It is built after the feed it describes is published, so a release that does not carry it is a night
+the scan did not finish rather than a feed with something wrong. [raptor](https://github.com/planarnetwork/raptor)
+finds the patterns and reads them back; `readPatterns` is the function.
+
 ## transfers.txt
 
 Three kinds of row share the file, distinguishable by which columns are populated:

@@ -50,6 +50,9 @@
       "path": "./apps/gtfsmerge"
     },
     {
+      "path": "./apps/transfer-patterns"
+    },
+    {
       "path": "./tests"
     }
   ]

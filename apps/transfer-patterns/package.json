@@ -1,0 +1,42 @@
+{
+  "name": "@gb-transit/transfer-patterns",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Build the transfer pattern file the nightly feed publishes",
+  "main": "./dist/api.js",
+  "types": "./dist/api.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/api.d.ts",
+      "default": "./dist/api.js"
+    }
+  },
+  "bin": "bin/transfer-patterns.sh",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "yarn build && tsx ./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/planarnetwork/dtd2mysql.git",
+    "directory": "apps/transfer-patterns"
+  },
+  "author": "Linus Norton",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/planarnetwork/dtd2mysql/issues"
+  },
+  "homepage": "https://github.com/planarnetwork/dtd2mysql#readme",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@gb-transit/gtfs": "workspace:^",
+    "@gb-transit/gtfs-loader": "workspace:^",
+    "raptor-journey-planner": "5.0.0"
+  },
+  "devDependencies": {
+    "fflate": "^0.8.3",
+    "typescript": "7.0.2"
+  }
+}

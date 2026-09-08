@@ -22,11 +22,18 @@ with the coverage window, what the current feed was built from, and a page for e
 |---|---|
 | [`gtfs.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip) | where a service calls |
 | [`gtfs-passing-points.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-passing-points.zip) | and where it runs through without stopping |
+| [`transfer-patterns.br`](https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.br) | the stations a journey can change at, for a transfer pattern journey planner |
 
-Both are rebuilt every night by [`feed.yml`](.github/workflows/feed.yml) from the configuration in
-[`gtfs.config.yaml`](gtfs.config.yaml), validated against a
+Both feeds are rebuilt every night by [`feed.yml`](.github/workflows/feed.yml) from the configuration
+in [`gtfs.config.yaml`](gtfs.config.yaml), validated against a
 [pinned baseline](.github/validator-baseline.json), and attached to a dated release. A build that
 fails validation is not published.
+
+`transfer-patterns.br` is not a feed but a companion to the first one: 34 million routes through the
+network, found in advance so a journey planner does not have to search for them. It is built from
+`gtfs.zip` after that release is published — see
+[`apps/transfer-patterns`](apps/transfer-patterns) for the format and how to read it — so a release
+that is missing it is a night the patterns did not finish, not a feed that is wrong.
 
 The feed makes decisions a consumer cannot infer from the GTFS specification — identifiers, splits
 and joins, service days, the columns it adds.

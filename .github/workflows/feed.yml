@@ -29,6 +29,10 @@ jobs:
     # Two builds and two validator runs, the second over a feed a third larger
     # than the first.
     timeout-minutes: 90
+    # The tag the patterns are attached to, so the jobs below add to the release
+    # this run made rather than looking up the newest one and racing a rerun.
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
     # The secrets are named for the feed, the variables for the protocol it
     # arrives over: dtd2mysql reads SFTP_*, so the names cannot be made to
     # match on either side and the mapping belongs here.
@@ -240,9 +244,11 @@ jobs:
       # The tag is the date, so the release list reads as a history of feeds and
       # stays distinguishable from the v6.6.x version tags npm publishes under.
       - name: Release
+        id: release
         if: github.event_name == 'schedule' || inputs.publish
         run: |
           tag="feed-$(date -u +%Y-%m-%d)"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
           gh release create "$tag" \
             --title "Feed $(date -u +%Y-%m-%d)" \
@@ -281,5 +287,117 @@ jobs:
       - name: Prune old feeds
         if: github.event_name == 'schedule' || inputs.publish
         run: node scripts/prune-releases.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # The transfer patterns a journey planner reads, built from the feed above.
+  #
+  # Deliberately after the release rather than before it. Scanning the whole
+  # network is the longest thing this repository does, and a feed nobody can
+  # download because the patterns were slow is a worse outcome than a release
+  # that is missing one file until tomorrow. Nothing here can reach the three
+  # zips: they are published by the time this starts.
+  #
+  # Sharded because a runner has four cores and the scan has a few hundred
+  # core-seconds of work per day planned. Six jobs of four workers get through
+  # it in the time one job of four would take on a sixth of it, and each stays
+  # far enough inside its timeout to survive a slow night.
+  patterns:
+    needs: build
+    if: github.event_name == 'schedule' || inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One shard failing means the merge cannot be complete, so there is
+      # nothing to be gained by letting the rest run on.
+      fail-fast: true
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: feed
+
+      # Four workers rather than the default of two fewer than the cores: that
+      # leaves headroom for everything else a desktop is doing, and a runner is
+      # doing nothing else. The main thread only hands out stations.
+      - name: Plan
+        run: |
+          yarn tsx apps/transfer-patterns/src/index.ts plan gtfs.zip \
+            --shard ${{ matrix.shard }}/6 \
+            --workers 4 \
+            --out shard-${{ matrix.shard }}.br
+
+      # A day, not fourteen. These are read once by the job below and are worth
+      # nothing afterwards.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: patterns-${{ matrix.shard }}
+          path: shard-${{ matrix.shard }}.br
+          retention-days: 1
+
+  # The one stage that cannot be split up: every pattern goes through it. It is
+  # a streaming merge of sorted shards rather than a sort, so it holds one
+  # pattern per shard and runs in the time it takes to read them.
+  patterns-merge:
+    needs: [build, patterns]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: patterns-*
+          merge-multiple: true
+
+      # The merge writes the meta file: it is the only thing that knows how many
+      # patterns there are without reading 34 million of them back, and
+      # feed-meta.json is written by the build job before any of this happened
+      # and so cannot honestly describe it.
+      - name: Merge
+        run: |
+          yarn tsx apps/transfer-patterns/src/index.ts merge shard-*.br \
+            --out transfer-patterns.br \
+            --meta transfer-patterns-meta.json
+          cat transfer-patterns-meta.json
+          ls -la transfer-patterns.br
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: transfer-patterns
+          path: |
+            transfer-patterns.br
+            transfer-patterns-meta.json
+          retention-days: 14
+
+      # --clobber so a rerun replaces the asset rather than failing on it.
+      - name: Attach to the release
+        run: |
+          gh release upload "${{ needs.build.outputs.tag }}" \
+            transfer-patterns.br transfer-patterns-meta.json --clobber
         env:
           GH_TOKEN: ${{ github.token }}
