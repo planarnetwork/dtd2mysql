@@ -130,13 +130,18 @@ The final merge is the one stage that cannot be split: every pattern goes throug
 shards arrive sorted and free of duplicates it is a streaming k-way merge rather than another sort,
 so it holds one pattern per shard rather than a bucket of them.
 
-Measured on a national feed of 3,014 stations, one date, six shards:
+Measured on a national feed of 3,014 stations, six shards:
 
-| | |
-|---|---|
-| Patterns | 34,557,853 |
-| File | 32.5MB |
-| Peak memory, final merge | 242MB |
+| | one date | four dates, as the nightly runs it |
+|---|---|---|
+| Patterns | 34,557,853 | 52,440,684 |
+| File | 32.5MB | 52.5MB |
+| A shard's file | 7.2 – 7.7MB | 11.6 – 12.2MB |
+| Final merge | 3m16s, 242MB | 4m55s, 250MB |
 
-which is the same count, to the pattern, that raptor's own unsharded CLI produces from the same
-feed.
+The one date figure is the same count, to the pattern, that raptor's own unsharded CLI produces
+from the same feed — which is what says the sharding and the merge lose nothing.
+
+Four dates rather than one is half as many patterns again, which is the argument for planning more
+than one day: a Saturday is not a thin Tuesday, it is a different railway. The final merge grows
+with the days planned and the shards do not, because it is the only stage that sees all of them.
