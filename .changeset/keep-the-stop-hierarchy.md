@@ -23,8 +23,10 @@ came from moving calls onto stations rather than from publishing stations.
 
 Two things follow:
 
-- **No walk transfer is generated between two stops under one station.** They are one place already
-  and `parent_station` says so.
+- **A walk transfer is generated between stations, not between platforms.** A platform's interchange
+  is its station's, because `parent_station` already says that reaching the station reaches every
+  platform under it. A stop with a station above it therefore takes no part in generation; without
+  that, one walk is written once per platform and offered as several journeys.
 - **Transfers are generated through a spatial grid.** `addNearbyStops` compared each stop against
   every stop already seen, which over 321,570 stops is 51.7 billion pairs and about four hours — the
   reason a national merge has been run with `--no-extra-transfers` until now. Cells one transfer

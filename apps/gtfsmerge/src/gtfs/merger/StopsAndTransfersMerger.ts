@@ -130,12 +130,14 @@ export class StopsAndTransfersMerger {
       const lat = Number(stop.stop_lat);
       const lon = Number(stop.stop_lon);
 
-      // A station is where its platforms are, so a walk to one of them is a walk
-      // to all of them: generating from the platforms alone is the same set of
-      // journeys without the duplicates.
-      const isStation = Number(stop.location_type) === 1;
+      // Only a stop that is a place in its own right: a station, or a stop with
+      // no station above it. A platform's interchange is its station's, because
+      // parent_station already says a rider reaching the station reaches every
+      // platform under it - so generating from the platforms as well would write
+      // one walk once per platform and offer it as several journeys.
+      const isChild = this.parents[stop.stop_id] !== undefined;
 
-      if (this.transferDistance && !isStation && !this.stopLocations[stop.stop_id]
+      if (this.transferDistance && !isChild && !this.stopLocations[stop.stop_id]
         && lon !== 0 && lat !== 0) {
         // [longitude, latitude], which is the order cheap-ruler takes and the
         // order GeoJSON puts them in. This used to pass [lat, lon], so every
@@ -155,7 +157,6 @@ export class StopsAndTransfersMerger {
     existingTransfers: ExistingTransfers
   ): Promise<void> {
     const [x, y] = this.cellOf(coords);
-    const parent = this.parents[stop.stop_id];
 
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = -1; dy <= 1; dy++) {
@@ -163,15 +164,11 @@ export class StopsAndTransfersMerger {
           const exists = existingTransfers[stop.stop_id]?.[stopId];
           const reverseExists = existingTransfers[stopId]?.[stop.stop_id];
 
-          // Two stops under one station are already one place: parent_station
-          // says so, and a walk between them is a row saying it again.
-          const together = parent !== undefined && parent === this.parents[stopId];
-
           // Both, not either. addTransfers writes the pair, so generating when
           // only one direction is missing writes a second copy of the one that
           // is not - and transfers.txt is the file the merge does not
           // deduplicate.
-          if (!exists && !reverseExists && !together) {
+          if (!exists && !reverseExists) {
             const distance = this.ruler.distance(coords, other);
 
             if (distance < this.transferDistance) {

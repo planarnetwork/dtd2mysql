@@ -274,14 +274,21 @@ describe("the merged feed", () => {
   });
 
   /**
-   * They are one place already, and parent_station is where that is written.
+   * A platform's interchange is its station's. Generating from the platforms too
+   * would write one walk once per platform and offer it as several journeys.
    */
-  it("generates no walk between two stops under one station", () => {
-    const walk = columns("transfers.txt").find(
-      t => t.from_stop_id === "9100ALPHA1" && t.to_stop_id === "9100ALPHABUS"
+  it("generates no walk to or from a platform", () => {
+    const platforms = new Set(
+      columns("stops.txt").filter(s => s.parent_station).map(s => s.stop_id)
     );
+    const generated = columns("transfers.txt").filter(t => t.min_transfer_time !== null);
 
-    expect(walk).to.equal(undefined);
+    for (const transfer of generated) {
+      expect(platforms.has(transfer.from_stop_id)).to.equal(false);
+      expect(platforms.has(transfer.to_stop_id)).to.equal(false);
+    }
+
+    expect(platforms.size).to.be.greaterThan(0);
   });
 
   it("collapses the three identical calendars onto one service", () => {
@@ -317,10 +324,11 @@ describe("the merged feed", () => {
     expect(trips.has(couplings[0].to_trip_id!)).to.equal(true);
   });
 
-  it("generates a walk transfer between the bus station and the rail platform", () => {
-    // About 200m apart. This is the reason to merge the two feeds at all.
+  it("generates a walk transfer between the bus station and the rail station", () => {
+    // About 200m apart. This is the reason to merge the two feeds at all, and it
+    // is between the stations: a walk to Alpha reaches every platform under it.
     const walk = columns("transfers.txt").find(
-      t => t.from_stop_id === "9100BUSSTOP" && t.to_stop_id === "9100ALPHA1"
+      t => t.from_stop_id === "9100BUSSTOP" && t.to_stop_id === "910GALPHA"
     );
 
     expect(walk).to.not.equal(undefined);

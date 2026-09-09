@@ -185,9 +185,12 @@ its trains call at, and feed `b`'s bus calls at `9100ALPHABUS`, a stand outside
 `910GALPHA` and grouped under it. So the merged feed has a rail platform and a bus
 stand under one station, which is the multi-modal case in miniature.
 
-**No walk is generated between two stops under one station.** They are one place
-already and `parent_station` is where that is written, so the row would say it
-twice. `9100ALPHA1` and `9100ALPHABUS` no longer get one.
+**A walk is generated between stations, not between platforms.** A platform's
+interchange is its station's - `parent_station` already says that reaching the
+station reaches every platform under it - so a stop with a station above it takes
+no part in generation. Otherwise one walk is written once per platform and
+offered as several journeys. In the fixtures that is the difference between six
+generated rows and twelve, and the walk from `9100BUSSTOP` is to `910GALPHA`.
 
 **Transfers are generated through a grid rather than against every stop.** The
 comparison was the whole cost of a merge at any real size: 321,570 stops is 51.7
