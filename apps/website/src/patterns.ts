@@ -7,14 +7,17 @@ import {REPO} from "./site.js";
  * A station somebody can fetch the patterns of.
  */
 export interface PatternStation {
-  /** The CRS code, which is what the file is named after. */
+  /** The CRS code, which is what the files are named after. */
   code: string;
-  /** Where the site serves its patterns from, extension and all. */
-  path: string;
   /** What to call it, where the feed says. */
   name?: string;
-  /** How large its file is. */
+  /** Where the site serves its gzip from, which is the one a browser can read. */
+  path: string;
+  /** How large that is. */
   bytes: number;
+  /** The same patterns as brotli, which is smaller and which a browser cannot read. */
+  brotliPath: string;
+  brotliBytes: number;
 }
 
 /**
@@ -27,6 +30,7 @@ export interface PatternStation {
 const PUBLIC = path.join(process.cwd(), "public");
 const DIRECTORY = path.join(PUBLIC, "transfer-patterns");
 const WHOLE = path.join(PUBLIC, "transfer-patterns.gz");
+const WHOLE_BROTLI = path.join(PUBLIC, "transfer-patterns.br");
 const FEED = path.join(PUBLIC, "gtfs.zip");
 
 /**
@@ -46,6 +50,9 @@ export const PATTERNS_PATH = `${BASE}/transfer-patterns`;
 /** The whole set, mirrored into the site beside the stations it was broken into. */
 export const WHOLE_PATH = `${BASE}/transfer-patterns.gz`;
 
+/** The same, as brotli: a third smaller, and unreadable in a browser. */
+export const WHOLE_BROTLI_PATH = `${BASE}/transfer-patterns.br`;
+
 /** The stations there are files for, for a reader that wants the list as data. */
 export const STATIONS_PATH = `${BASE}/transfer-patterns.json`;
 
@@ -57,6 +64,11 @@ export const STATIONS_PATH = `${BASE}/transfer-patterns.json`;
  */
 export function wholeBytes(): number | undefined {
   return fs.existsSync(WHOLE) ? fs.statSync(WHOLE).size : undefined;
+}
+
+/** How large the brotli of the whole set is, where the site is serving one. */
+export function wholeBrotliBytes(): number | undefined {
+  return fs.existsSync(WHOLE_BROTLI) ? fs.statSync(WHOLE_BROTLI).size : undefined;
 }
 
 /**
@@ -73,6 +85,11 @@ export async function patternStations(): Promise<PatternStation[]> {
   }
 
   const names = await stationNames();
+  const sizeOf = (file: string) => {
+    const at = path.join(DIRECTORY, file);
+
+    return fs.existsSync(at) ? fs.statSync(at).size : 0;
+  };
   const stations = fs.readdirSync(DIRECTORY)
     .filter(file => file.endsWith(".gz"))
     .map(file => {
@@ -80,9 +97,11 @@ export async function patternStations(): Promise<PatternStation[]> {
 
       return {
         code,
-        path: `${PATTERNS_PATH}/${file}`,
         name: names.get(code),
-        bytes: fs.statSync(path.join(DIRECTORY, file)).size
+        path: `${PATTERNS_PATH}/${file}`,
+        bytes: sizeOf(file),
+        brotliPath: `${PATTERNS_PATH}/${code}.br`,
+        brotliBytes: sizeOf(`${code}.br`)
       };
     });
 
