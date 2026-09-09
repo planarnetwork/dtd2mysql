@@ -16,11 +16,12 @@ const figures = feed.figures(meta);
 const style = feed.platform === 1 ? "btn--signal" : "btn--ink";
 ---
 <div class:list={["card", !published && "card--waiting"]}>
-  {(published ? feed.tag : "Coming soon") && (
+  {/* Only a feed that is not in the latest release says anything above its
+      name. A published one is named by its file, and a pill repeating that is a
+      label for the sake of having a label. */}
+  {!published && (
     <div class="card__top">
-      <span class:list={["tag", !published && "tag--quiet"]}>
-        {published ? feed.tag : "Coming soon"}
-      </span>
+      <span class="tag tag--quiet">Coming soon</span>
     </div>
   )}
 

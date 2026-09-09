@@ -68,12 +68,6 @@ export function sources(feed: FeedMeta | undefined): Source[] {
 export interface Feed {
   platform: number;
   file: string;
-  /**
-   * What the card says this feed is, above its name. Only the feed whose name
-   * does not already say it has one - a tag that restates the heading is a
-   * label for the sake of having a label.
-   */
-  tag?: string;
   summary: string;
   points: string[];
   /** What this feed holds, from the release, or nothing when it holds nothing yet. */
@@ -128,7 +122,6 @@ export const FEEDS: Feed[] = [
   {
     platform: 3,
     file: "gtfs-national-rail-only.zip",
-    tag: "National Rail only",
     summary: "The standard feed without the services National Rail does not hold authority over — " +
       "no tube, no Metro, no ferries, no scheduled buses, and no replacement buses TfL runs.",
     points: [
