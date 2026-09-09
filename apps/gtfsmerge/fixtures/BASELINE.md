@@ -158,3 +158,38 @@ every feed has been read and filtered once, against every feed's calls.
 
 `transfers.txt` decides the same question the same way and is left alone. It is
 older than this and its behaviour is the one the golden already records.
+
+## The stop hierarchy survives a merge
+
+`stops.txt`, `stop_times.txt` and `transfers.txt` all move, and the fixtures move with
+them, because the merge no longer flattens every stop onto the station above it.
+
+It used to publish only the parents, move every call onto them, and then clear
+`location_type` and `parent_station` — which it had to, because a station with
+calls at it and no children beneath it is rejected three ways by the validator.
+The result answered "which station" and could not answer "which platform", and it
+discarded the grouping a bus feed publishes for its own stops as well as the rail
+feed's. That grouping is the thing that says a stand outside a station and a
+platform inside it are one place to change at.
+
+Now a call stays where its feed put it, a platform keeps its `parent_station`, a
+station keeps `location_type` 1, and a stop is published if something calls at it
+**or** it is the station above one that does. The validator is happy: no errors,
+and the same twelve accepted notices as before.
+
+The fixtures were written for the old behaviour and had both feeds calling at
+`location_type` 1 stations, which no real feed does — checked against BODS London,
+Scotland and Wales, where not one of 28 million calls is at a station. They now
+model what those feeds actually contain: `910GBETA` gains the platform `9100BETA1`
+its trains call at, and feed `b`'s bus calls at `9100ALPHABUS`, a stand outside
+`910GALPHA` and grouped under it. So the merged feed has a rail platform and a bus
+stand under one station, which is the multi-modal case in miniature.
+
+**No walk is generated between two stops under one station.** They are one place
+already and `parent_station` is where that is written, so the row would say it
+twice. `9100ALPHA1` and `9100ALPHABUS` no longer get one.
+
+**Transfers are generated through a grid rather than against every stop.** The
+comparison was the whole cost of a merge at any real size: 321,570 stops is 51.7
+billion pairs, about four hours. Cells one transfer distance wide make it nine
+cell lookups per stop and seconds for the same answer.

@@ -78,16 +78,21 @@ export class FeedIndex {
   }
 
   /**
-   * A stop with a parent is not published; what is remembered is where its
-   * parent is, so a call at it becomes a call at the station.
+   * Both the platform and the station above it.
+   *
+   * A feed says where a vehicle actually stops - platform 3, or the stop on the
+   * near side of the road - and which of those are one place a rider changes at.
+   * The merge used to publish only the station and move every call onto it,
+   * which is the answer to "which station" and no answer at all to "which
+   * platform", and it threw away the grouping a bus feed publishes for its own
+   * stops as well as the rail feed's.
    */
   public stop(row: StopRow): void {
-    if (!row.parent_station) {
-      this.result.stops.push(row);
-    }
-    else {
+    if (row.parent_station) {
       this.result.parentStops[row.stop_id] = row.parent_station;
     }
+
+    this.result.stops.push(row);
   }
 
   public agency(row: AgencyRow): void {

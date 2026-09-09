@@ -53,7 +53,7 @@ export class GTFSOutput {
 
     this.feedInfo.write(gtfs.feedInfo);
 
-    const stopTimes = this.stopTimes.begin(tripIdMap, gtfs.parentStops);
+    const stopTimes = this.stopTimes.begin(tripIdMap);
     const shapes = this.shapes.begin(shapeIdMap);
     const flush = async () => {
       await stopTimes.flush();

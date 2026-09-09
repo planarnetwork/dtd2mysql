@@ -173,9 +173,10 @@ describe("a rail feed and a bus feed merged", () => {
 
   it("publishes no stop that nothing calls at", () => {
     const called = new Set(columns("stop_times.txt").map(s => s.stop_id));
+    const parents = new Set(columns("stops.txt").map(s => s.parent_station).filter(Boolean));
 
     for (const stop of columns("stops.txt")) {
-      expect(called.has(stop.stop_id)).to.equal(true);
+      expect(called.has(stop.stop_id) || parents.has(stop.stop_id)).to.equal(true);
     }
   });
 
@@ -184,10 +185,11 @@ describe("a rail feed and a bus feed merged", () => {
     // 0400AMSHM001 in the bus feed, a few metres apart. This
     // is the thing merging the two feeds is for, and it works because both
     // identify a stop by its ATCO code rather than by something each invented.
-    // The rail call is at 9100AMERSHM, the platform, which the merge moves onto
-    // the station it belongs to.
+    // The rail call is at 9100AMERSHM, the platform, and the walk is to the
+    // platform: the station above it is where a rider is told the two are one
+    // place, not somewhere a train stops.
     const walk = columns("transfers.txt").find(
-      t => t.from_stop_id === "0400AMSHM001" && t.to_stop_id === "910GAMERSHM"
+      t => t.from_stop_id === "0400AMSHM001" && t.to_stop_id === "9100AMERSHM"
     );
 
     expect(walk).to.not.equal(undefined);
@@ -196,7 +198,7 @@ describe("a rail feed and a bus feed merged", () => {
     expect(walk!.min_transfer_time).to.equal(60);
 
     const back = columns("transfers.txt").find(
-      t => t.from_stop_id === "910GAMERSHM" && t.to_stop_id === "0400AMSHM001"
+      t => t.from_stop_id === "9100AMERSHM" && t.to_stop_id === "0400AMSHM001"
     );
 
     expect(back).to.not.equal(undefined);

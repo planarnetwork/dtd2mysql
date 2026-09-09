@@ -120,16 +120,32 @@ describe("StopsAndTransfersMerger", () => {
     expect(transfers.rows).to.deep.equal([]);
   });
 
-  it("moves a transfer onto the station rather than the platform", async () => {
+  /**
+   * A transfer names whichever stop the feed named, and both the platform and
+   * the station above it are published, so neither has to be moved.
+   */
+  it("leaves a transfer naming the platform at the platform", async () => {
     const {transfers, merger: m} = merger(0);
     const transfer: TransferRow = {
       from_stop_id: "platform", to_stop_id: "other", transfer_type: TransferType.MinTime,
       min_transfer_time: 120
     };
 
-    await m.write([], [transfer], {platform: "station"}, {station: true, other: true}, {});
+    await m.write([], [transfer], {platform: "station"}, {platform: true, other: true}, {});
 
-    expect(transfers.rows[0].from_stop_id).to.equal("station");
+    expect(transfers.rows[0].from_stop_id).to.equal("platform");
+  });
+
+  it("drops a transfer naming a stop that is not published", async () => {
+    const {transfers, merger: m} = merger(0);
+    const transfer: TransferRow = {
+      from_stop_id: "nowhere", to_stop_id: "other", transfer_type: TransferType.MinTime,
+      min_transfer_time: 120
+    };
+
+    await m.write([], [transfer], {}, {other: true}, {});
+
+    expect(transfers.rows).to.deep.equal([]);
   });
 
 });

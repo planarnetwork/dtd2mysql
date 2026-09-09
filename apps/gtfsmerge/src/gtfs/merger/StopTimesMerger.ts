@@ -1,6 +1,5 @@
 import {RowWriter, StopID, StopTimeRow} from "@gb-transit/gtfs-schema";
 import {TripIDMap} from "./TripsMerger";
-import {ParentStops} from "./StopsAndTransfersMerger";
 import {close, push} from "./Push";
 
 export class StopTimesMerger {
@@ -17,8 +16,8 @@ export class StopTimesMerger {
    * 18GB of the 22GB a merge of it and the rail feed needed, and every one of
    * them is written once and never read again.
    */
-  public begin(tripIdMap: TripIDMap, parentStops: ParentStops): StopTimesPass {
-    return new StopTimesPass(this.stopTimes, tripIdMap, parentStops);
+  public begin(tripIdMap: TripIDMap): StopTimesPass {
+    return new StopTimesPass(this.stopTimes, tripIdMap);
   }
 
   public end(): Promise<void> {
@@ -42,8 +41,7 @@ export class StopTimesPass {
 
   constructor(
     private readonly stopTimes: RowWriter<StopTimeRow>,
-    private readonly tripIdMap: TripIDMap,
-    private readonly parentStops: ParentStops
+    private readonly tripIdMap: TripIDMap
   ) {}
 
   public row(row: StopTimeRow): void {
@@ -53,7 +51,9 @@ export class StopTimesPass {
       return;
     }
 
-    const stopId = this.parentStops[row.stop_id] || row.stop_id;
+    // Where the feed said the vehicle stops, which is the platform rather than
+    // the station it is under.
+    const stopId = row.stop_id;
 
     this.usedStops[stopId] = true;
 

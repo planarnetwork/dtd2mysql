@@ -246,19 +246,42 @@ describe("the merged feed", () => {
     }
   });
 
-  it("does not publish a stop nothing calls at", () => {
+  /**
+   * A stop is published if something calls at it, or if it is the station above
+   * one that does - a station nothing stops at is still where its platforms are.
+   */
+  it("publishes a stop something calls at, or the station above one", () => {
     const called = new Set(columns("stop_times.txt").map(s => s.stop_id));
+    const parents = new Set(columns("stops.txt").map(s => s.parent_station).filter(Boolean));
 
     for (const stop of columns("stops.txt")) {
-      expect(called.has(stop.stop_id)).to.equal(true);
+      expect(called.has(stop.stop_id) || parents.has(stop.stop_id)).to.equal(true);
     }
   });
 
-  it("calls at the station rather than the platform", () => {
-    const stops = new Set(columns("stops.txt").map(s => s.stop_id));
+  /**
+   * Which platform the train leaves from and which stand the bus goes from are
+   * what the feeds said, and the station is how a rider knows they are one place.
+   */
+  it("keeps the platform, the stand and the station above them both", () => {
+    const stops = new Map(columns("stops.txt").map(s => [s.stop_id, s]));
 
-    expect(stops.has("9100ALPHA1")).to.equal(false);
-    expect(stops.has("910GALPHA")).to.equal(true);
+    expect(stops.get("9100ALPHA1")?.parent_station).to.equal("910GALPHA");
+    expect(stops.get("9100ALPHABUS")?.parent_station).to.equal("910GALPHA");
+    expect(Number(stops.get("910GALPHA")?.location_type)).to.equal(1);
+    expect(new Set(columns("stop_times.txt").map(s => s.stop_id)).has("910GALPHA"))
+      .to.equal(false);
+  });
+
+  /**
+   * They are one place already, and parent_station is where that is written.
+   */
+  it("generates no walk between two stops under one station", () => {
+    const walk = columns("transfers.txt").find(
+      t => t.from_stop_id === "9100ALPHA1" && t.to_stop_id === "9100ALPHABUS"
+    );
+
+    expect(walk).to.equal(undefined);
   });
 
   it("collapses the three identical calendars onto one service", () => {
@@ -294,10 +317,10 @@ describe("the merged feed", () => {
     expect(trips.has(couplings[0].to_trip_id!)).to.equal(true);
   });
 
-  it("generates a walk transfer between the bus station and the rail station", () => {
+  it("generates a walk transfer between the bus station and the rail platform", () => {
     // About 200m apart. This is the reason to merge the two feeds at all.
     const walk = columns("transfers.txt").find(
-      t => t.from_stop_id === "9100BUSSTOP" && t.to_stop_id === "910GALPHA"
+      t => t.from_stop_id === "9100BUSSTOP" && t.to_stop_id === "9100ALPHA1"
     );
 
     expect(walk).to.not.equal(undefined);
