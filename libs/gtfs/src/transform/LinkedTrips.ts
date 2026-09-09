@@ -1,7 +1,7 @@
 
 import {Schedule} from "../model/Schedule";
 import {AssociationLink, AssociationType} from "../model/Association";
-import {CRS, TIPLOC, Transfer, TransferType} from "@gb-transit/gtfs-schema";
+import {CRS, StopTime, TIPLOC, Transfer, TransferType} from "@gb-transit/gtfs-schema";
 import {stopId} from "./Platforms";
 
 /**
@@ -110,26 +110,7 @@ export function linkedTrips(
       continue;
     }
 
-    rows.push({
-      from_stop_id: stopId(from, tiplocs),
-      to_stop_id: stopId(to, tiplocs),
-      from_trip_id: link.from,
-      to_trip_id: link.to,
-      transfer_type: TransferType.InSeat,
-      min_transfer_time: null,
-      mode: null,
-      start_time: null,
-      end_time: null,
-      start_date: null,
-      end_date: null,
-      monday: null,
-      tuesday: null,
-      wednesday: null,
-      thursday: null,
-      friday: null,
-      saturday: null,
-      sunday: null
-    });
+    rows.push(inSeatTransfer(from, to, tiplocs));
   }
 
   if (links.length > 0) {
@@ -140,4 +121,35 @@ export function linkedTrips(
   }
 
   return rows;
+}
+
+/**
+ * A transfer saying the passenger stays where they are: the call they arrive on and the call they
+ * leave on, which name their own trips.
+ *
+ * The transfer carries no time and no calendar. There is no waiting to describe - the vehicle is
+ * the same one - and the days it happens are the days both trips run, which each trip already says
+ * and a third calendar here could only contradict.
+ */
+export function inSeatTransfer(from: StopTime, to: StopTime, tiplocs: ReadonlyMap<CRS, TIPLOC>): Transfer {
+  return {
+    from_stop_id: stopId(from, tiplocs),
+    to_stop_id: stopId(to, tiplocs),
+    from_trip_id: from.trip_id,
+    to_trip_id: to.trip_id,
+    transfer_type: TransferType.InSeat,
+    min_transfer_time: null,
+    mode: null,
+    start_time: null,
+    end_time: null,
+    start_date: null,
+    end_date: null,
+    monday: null,
+    tuesday: null,
+    wednesday: null,
+    thursday: null,
+    friday: null,
+    saturday: null,
+    sunday: null
+  };
 }

@@ -43,6 +43,9 @@ export type {AssociatedSchedules, AssociationIndex, ScheduleIndex} from "./trans
 export {combinedHeadsigns, onwardHeadsigns} from "./transform/Headsigns";
 export {linkedTrips, resolveLinks} from "./transform/LinkedTrips";
 export type {TripLink} from "./transform/LinkedTrips";
+export {reversingTrips} from "./transform/ReversingTrips";
+export {reversalRules} from "./data/reversal";
+export type {ReversalRule} from "./data/reversal";
 export {applyOverlays} from "./transform/ApplyOverlays";
 export type {OverlayIndex} from "./transform/ApplyOverlays";
 export {createCalendar} from "./transform/CreateCalendar";
