@@ -39,8 +39,6 @@ export interface TripDetail {
   readonly route?: Row;
   readonly agency?: Row;
   readonly calls: readonly CallDetail[];
-  /** Absent where the calls have not been loaded, which is different from a trip with none. */
-  readonly callsLoaded: boolean;
   readonly calendar?: Row;
   /** The feed's window, expanded, with the exclusions marked. */
   readonly dates: readonly ServiceDate[];
@@ -94,7 +92,6 @@ export interface BoardDetail {
   readonly stopName?: string;
   readonly date: number;
   readonly departures: readonly Departure[];
-  readonly callsLoaded: boolean;
 }
 
 export interface Departure {

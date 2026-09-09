@@ -1,11 +1,11 @@
 import {describe, it, expect} from "vitest";
 import {SORT_LIMIT, matching, run} from "./Filter.js";
 import {callsTable, tableOf} from "./Table.js";
-import {openCalls, openFeed} from "../model/OpenFeed.js";
+import {openFeed} from "../model/OpenFeed.js";
 import {goldenFeed} from "../test/golden.js";
 
 const bytes = goldenFeed();
-const feed = await openCalls(await openFeed("golden.zip", bytes), bytes);
+const feed = await openFeed("golden.zip", bytes);
 
 const stops = tableOf(feed, "stops.txt")!;
 const calls = tableOf(feed, "stop_times.txt")!;

@@ -1,7 +1,7 @@
 import type {LoadProgress} from "@gb-transit/gtfs-loader";
 import type {FeedManifest} from "../model/FeedIndex.js";
 import type {Finding} from "../checks/Check.js";
-import type {OpenPhase, OpenSource, Request, Response, Slot} from "./protocol.js";
+import type {OpenSource, Request, Response, Slot} from "./protocol.js";
 
 /**
  * The page's half of the conversation.
@@ -22,10 +22,17 @@ type Asked = Extract<Request, {id: number}> extends infer R
   : never;
 
 export interface Listeners {
-  onProgress(phase: OpenPhase, progress: LoadProgress): void;
-  onOpened(manifest: FeedManifest, window?: {from: number, to: number}): void;
-  onCalls(rows: number, contiguous: boolean): void;
+  onProgress(progress: LoadProgress): void;
+  onOpened(feed: Opened): void;
   onFailed(message: string): void;
+}
+
+export interface Opened {
+  manifest: FeedManifest;
+  window?: {from: number, to: number};
+  calls: number;
+  /** Whether each trip's calls were one contiguous run, which is worth telling a reader when not. */
+  contiguous: boolean;
 }
 
 export class Explorer {
@@ -48,10 +55,6 @@ export class Explorer {
 
   public open(source: OpenSource, slot: Slot = "a"): void {
     this.worker.postMessage({type: "open", slot, source} satisfies Request);
-  }
-
-  public loadCalls(slot: Slot = "a"): void {
-    this.worker.postMessage({type: "calls", slot} satisfies Request);
   }
 
   /**
@@ -92,13 +95,10 @@ export class Explorer {
   private receive(message: Response): void {
     switch (message.type) {
       case "progress":
-        return this.listeners.onProgress(message.phase, message.progress);
+        return this.listeners.onProgress(message.progress);
 
       case "opened":
-        return this.listeners.onOpened(message.manifest, message.window);
-
-      case "calls":
-        return this.listeners.onCalls(message.rows, message.contiguous);
+        return this.listeners.onOpened(message);
 
       case "finding": {
         this.pending.get(message.id)?.findings.push(message.finding);

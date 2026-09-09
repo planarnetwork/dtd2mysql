@@ -82,6 +82,21 @@ grep '^910GCLPHMJC,' stops.txt`}</code></pre>
       </div>
     </section>
 
+    {/*
+      Opening one. A feed is 202 MB of text, most of it stop_times.txt, so this is a real wait and
+      it says what it is doing rather than spinning.
+    */}
+    <section id="explorer-loading" class="loading" hidden>
+      <div class="loading__box">
+        <p class="loading__what" id="explorer-loading-what">Opening the feed…</p>
+        <div class="loading__track" role="progressbar" aria-labelledby="explorer-loading-what"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="loading__bar" id="explorer-loading-bar"></div>
+        </div>
+        <p class="loading__detail" id="explorer-loading-detail"></p>
+      </div>
+    </section>
+
     {/* The app. Hidden until a feed is open, then it is the whole viewport. */}
     <div id="explorer-app" class="app__shell" hidden>
       <header class="bar">
@@ -94,7 +109,6 @@ grep '^910GCLPHMJC,' stops.txt`}</code></pre>
           <a href="#/validation" data-view="validation" hidden>Validation</a>
           <a href="#/provenance" data-view="provenance" hidden>Provenance</a>
         </nav>
-        <button id="explorer-load-calls" class="bar__load" type="button" hidden></button>
         <button id="explorer-close" class="bar__close" type="button" title="Close this feed">
           Close
         </button>
@@ -105,8 +119,7 @@ grep '^910GCLPHMJC,' stops.txt`}</code></pre>
         <div class="pane" id="explorer-view"></div>
       </div>
 
-      <div class="status" id="explorer-status" role="status" aria-live="polite" hidden></div>
-      <p class="status status--note" id="explorer-note" hidden></p>
+      <p class="status status--note" id="explorer-note" role="status" aria-live="polite" hidden></p>
     </div>
   </div>
 </Base>

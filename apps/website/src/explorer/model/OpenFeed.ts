@@ -26,12 +26,17 @@ export interface OpenOptions {
 }
 
 /**
- * Read everything but the calls.
+ * Read a feed.
  *
- * Half a second and 61 MB on the GB feed, which is enough for the overview, every file table and
- * every check that is not about a calling pattern. stop_times.txt is 190 MB of the 200 and is not
- * inflated at all here - readZip skips an entry whose sink is undefined, so the cost of leaving it
- * until asked is nothing.
+ * Every file in one pass, stop_times.txt included. It is 181 MB of the 202 and 2.9 million of the
+ * 3.3 million rows, so it dominates the wait - about two and a half seconds against half a second
+ * for everything else - but it is not a different kind of thing and it does not load like one. Half
+ * of what the explorer does needs it, and a feed that is open with some of its files missing is a
+ * state every view has to know about and get right.
+ *
+ * It is still *held* differently, in CallStore, because 2.9 million rows as objects cost 893 MB and
+ * as six typed arrays cost 55. That difference is what makes the feed something a browser can hold
+ * at all. It is invisible from out here.
  */
 export async function openFeed(
   name: string,
@@ -43,7 +48,8 @@ export async function openFeed(
   const other: string[] = [];
   const reporter = new ProgressReporter(options, sizeOf(source));
 
-  let calls: ZipEntry | undefined;
+  let calls: CallStore | undefined;
+  let callsEntry: ZipEntry | undefined;
 
   await readZip(toChunks(source), entry => {
     const file = nameOf(entry.name);
@@ -56,11 +62,14 @@ export async function openFeed(
 
       return undefined;
     }
-    if (file === CALLS) {
-      // Noted so the manifest can report it, and skipped so it is not inflated.
-      calls = entry;
 
-      return undefined;
+    if (file === CALLS) {
+      callsEntry = entry;
+
+      return callStoreSink(store => {
+        calls = store;
+        reporter.rows += store.rows;
+      }, entry.originalSize);
     }
 
     return columnStoreSink(store => {
@@ -79,71 +88,32 @@ export async function openFeed(
   // foreign feed's extra files are held and shown, but a zip of nothing but extra files is not a
   // feed. readFeed has no such guard - only loadGTFS does - so a zip of holiday photographs would
   // otherwise open as a feed with nothing in it and no explanation.
-  const recognised = calls !== undefined
+  const recognised = callsEntry !== undefined
     || [...files.keys()].some(file => file in GTFS_COLUMNS);
 
   if (!recognised) {
     throw new NotAFeedError();
   }
 
-  if (calls !== undefined) {
-    // Named in the manifest before it is read, with the row count the header cannot give yet, so the
-    // overview can offer the second phase rather than pretending the file is not there.
-    manifests.push(describe(CALLS, GTFS_COLUMNS["stop_times.txt"], -1, calls));
+  const store = calls as CallStore | undefined;
+
+  if (callsEntry !== undefined) {
+    manifests.push(describe(
+      CALLS,
+      store?.header ?? GTFS_COLUMNS["stop_times.txt"],
+      store?.rows ?? 0,
+      callsEntry
+    ));
   }
 
   return {
     manifest: {name, files: order(manifests), other},
-    files
-  };
-}
-
-/**
- * Read the calls, and index them by trip and by stop.
- *
- * The second pass over the same bytes. It costs a re-inflate of the files already read, which is
- * about half a second of the five, and buys not having to hold 190 MB of text in case somebody asks
- * for it later.
- */
-export async function openCalls(
-  feed: FeedIndex,
-  source: GTFSSource,
-  options: OpenOptions = {}
-): Promise<FeedIndex> {
-  const reporter = new ProgressReporter(options, sizeOf(source));
-
-  let store: CallStore | undefined;
-
-  await readZip(toChunks(source), entry => {
-    if (nameOf(entry.name) !== CALLS) {
-      return undefined;
-    }
-
-    return callStoreSink(built => store = built, entry.originalSize);
-  }, {
-    onBytes: bytes => reporter.onBytes(bytes),
-    onEntryBytes: (entry, bytes) => reporter.onEntryBytes(entry, bytes)
-  });
-
-  reporter.onBuilding();
-
-  if (store === undefined) {
-    return feed;
-  }
-
-  const calls = store;
-
-  feed.calls = calls;
-  feed.byTrip = new CallIndex(calls.tripIx, calls.trips.size, calls.rows);
-  feed.byStop = new CallIndex(calls.stopIx, calls.stops.size, calls.rows);
-
-  return {
-    ...feed,
-    manifest: {
-      ...feed.manifest,
-      files: feed.manifest.files.map(file =>
-        file.name === CALLS ? {...file, rows: calls.rows} : file)
-    }
+    files,
+    ...(store === undefined ? {} : {
+      calls: store,
+      byTrip: new CallIndex(store.tripIx, store.trips.size, store.rows),
+      byStop: new CallIndex(store.stopIx, store.stops.size, store.rows)
+    })
   };
 }
 

@@ -22,8 +22,6 @@ export type Slot = "a" | "b";
 
 export type Request =
   | {type: "open", slot: Slot, source: OpenSource}
-  /** The second phase: the 2.9 million calls, asked for rather than assumed. */
-  | {type: "calls", slot: Slot}
   | {type: "query", slot: Slot, id: number, query: Query}
   | {type: "stop", slot: Slot, id: number, stopId: string}
   | {type: "trip", slot: Slot, id: number, tripId: string}
@@ -36,17 +34,14 @@ export type Request =
 export type OpenSource = {url: string} | {file: File};
 
 export type Response =
-  | {type: "progress", slot: Slot, phase: OpenPhase, progress: LoadProgress}
-  | {type: "opened", slot: Slot, manifest: FeedManifest, window?: {from: number, to: number}}
-  | {type: "calls", slot: Slot, rows: number, contiguous: boolean}
+  | {type: "progress", slot: Slot, progress: LoadProgress}
+  | {type: "opened", slot: Slot, manifest: FeedManifest, window?: {from: number, to: number},
+      calls: number, contiguous: boolean}
   | {type: "result", id: number, value: unknown}
   /** Streamed one at a time, so a long check fills its list in rather than appearing at the end. */
   | {type: "finding", id: number, finding: Finding}
   | {type: "done", id: number}
   | {type: "failed", id: number | null, message: string};
-
-/** Which of the two loads the progress belongs to, so the page can label the bar. */
-export type OpenPhase = "feed" | "calls";
 
 /** Typed results, so a view is not handed `unknown` and left to hope. */
 export interface Results {

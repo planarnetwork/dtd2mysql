@@ -135,7 +135,6 @@ body.is-app main {
 .bar__nav a:hover { color: var(--on-dark); background: rgb(255 255 255 / 0.08); }
 .bar__nav a.on { color: var(--board); background: var(--amber); font-weight: 600; }
 
-.bar__load,
 .bar__close {
   font: inherit;
   font-size: 12px;
@@ -148,9 +147,55 @@ body.is-app main {
   white-space: nowrap;
 }
 
-.bar__load { border-color: var(--amber-dim); color: var(--amber); }
-.bar__load:hover { background: var(--amber); color: var(--board); }
 .bar__close:hover { border-color: var(--on-dark); color: var(--on-dark); }
+
+/* Opening one ----------------------------------------------------------------------------------- */
+
+.loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gutter);
+}
+
+.loading__box { width: min(440px, 100%); text-align: center; }
+
+.loading__what {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 14px;
+  color: var(--ink-body);
+  margin: 0 0 12px;
+}
+
+.loading__track {
+  height: 6px;
+  border-radius: var(--pill);
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.loading__bar {
+  height: 100%;
+  width: 0;
+  background: var(--signal);
+  border-radius: var(--pill);
+  transition: width 120ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading__bar { transition: none; }
+}
+
+.loading__detail {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 10px 0 0;
+  min-height: 1.2em;
+}
 
 /* The rail --------------------------------------------------------------------------------------
  *

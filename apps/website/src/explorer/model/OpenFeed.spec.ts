@@ -1,6 +1,6 @@
 import {describe, it, expect} from "vitest";
 import {zipSync} from "fflate";
-import {NotAFeedError, openCalls, openFeed} from "./OpenFeed.js";
+import {NotAFeedError, openFeed} from "./OpenFeed.js";
 import {callsAtStop, callsOnTrip} from "./FeedIndex.js";
 import {goldenFeed} from "../test/golden.js";
 
@@ -8,7 +8,7 @@ const feed = goldenFeed();
 
 describe("openFeed", () => {
 
-  it("reads every file but the calls", async () => {
+  it("reads every file, calls included, in one pass", async () => {
     const index = await openFeed("golden.zip", feed);
 
     expect([...index.files.keys()].sort()).to.deep.equal([
@@ -18,16 +18,14 @@ describe("openFeed", () => {
     expect(index.files.get("stops.txt")?.rows).to.equal(345);
     expect(index.files.get("trips.txt")?.rows).to.equal(128);
     expect(index.files.get("transfers.txt")?.rows).to.equal(293);
-    expect(index.calls).to.equal(undefined);
+    expect(index.calls?.rows).to.equal(1326);
   });
 
-  it("names stop_times.txt in the manifest without reading it", async () => {
-    // Otherwise the overview would have to pretend the file is not there until somebody asks for it.
+  it("names stop_times.txt in the manifest, counted like every other file", async () => {
     const index = await openFeed("golden.zip", feed);
     const calls = index.manifest.files.find(file => file.name === "stop_times.txt");
 
-    expect(calls).to.not.equal(undefined);
-    expect(calls?.rows).to.equal(-1);
+    expect(calls?.rows).to.equal(1326);
     expect(calls?.notHeld).to.deep.equal(["stop_headsign", "shape_dist_traveled"]);
   });
 
@@ -83,23 +81,17 @@ describe("openFeed", () => {
 
 });
 
-describe("openCalls", () => {
+describe("the calls", () => {
 
   it("reads the calls and indexes them by trip and by stop", async () => {
-    const index = await openCalls(await openFeed("golden.zip", feed), feed);
+    const index = await openFeed("golden.zip", feed);
 
     expect(index.calls?.rows).to.equal(1326);
     expect(index.byTrip?.contiguous).to.equal(true);
   });
 
-  it("puts the row count on the manifest once it knows it", async () => {
-    const index = await openCalls(await openFeed("golden.zip", feed), feed);
-
-    expect(index.manifest.files.find(file => file.name === "stop_times.txt")?.rows).to.equal(1326);
-  });
-
   it("gives a trip its calls in calling order", async () => {
-    const index = await openCalls(await openFeed("golden.zip", feed), feed);
+    const index = await openFeed("golden.zip", feed);
     const calls = callsOnTrip(index, "C00049_20260517_20261206");
     const sequences = [...calls].map(row => (index.calls as NonNullable<typeof index.calls>).sequence[row]);
 
@@ -109,14 +101,14 @@ describe("openCalls", () => {
   });
 
   it("gives a stop its calls", async () => {
-    const index = await openCalls(await openFeed("golden.zip", feed), feed);
+    const index = await openFeed("golden.zip", feed);
 
     expect(callsAtStop(index, "9100HTRWTM54").length).to.be.greaterThan(0);
     expect(callsAtStop(index, "nothing calls here").length).to.equal(0);
   });
 
   it("reads the times past midnight the fixture carries", async () => {
-    const index = await openCalls(await openFeed("golden.zip", feed), feed);
+    const index = await openFeed("golden.zip", feed);
     const calls = index.calls as NonNullable<typeof index.calls>;
 
     let past = 0;

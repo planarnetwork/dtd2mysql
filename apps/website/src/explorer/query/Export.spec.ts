@@ -5,11 +5,11 @@ import {toCSV, toJSON} from "./Export.js";
 import {run} from "./Filter.js";
 import type {Page} from "./Filter.js";
 import {tableOf} from "./Table.js";
-import {openCalls, openFeed} from "../model/OpenFeed.js";
+import {openFeed} from "../model/OpenFeed.js";
 import {goldenFeed} from "../test/golden.js";
 
 const bytes = goldenFeed();
-const feed = await openCalls(await openFeed("golden.zip", bytes), bytes);
+const feed = await openFeed("golden.zip", bytes);
 
 function page(rows: {index: number, values: Row}[], header: string[]): Page {
   return {file: "test.txt", header, notHeld: [], rows, matched: rows.length, total: rows.length, offset: 0};

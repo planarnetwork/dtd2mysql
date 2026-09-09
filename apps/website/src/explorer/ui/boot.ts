@@ -9,7 +9,8 @@ import type {
   BoardDetail, RouteDetail, ServiceDetail, StopDetail, TripDetail
 } from "../worker/Detail.js";
 import {Explorer, startWorker, workersSupported} from "../worker/client.js";
-import type {OpenPhase, OpenSource} from "../worker/protocol.js";
+import type {Opened} from "../worker/client.js";
+import type {OpenSource} from "../worker/protocol.js";
 import {element, escape, focusHeading} from "./dom.js";
 import {showMap} from "./Tiles.js";
 import {PAGE_SIZE, fileTable} from "./views/FileTable.js";
@@ -45,8 +46,6 @@ interface Assets {
 interface State {
   manifest?: FeedManifest;
   window?: {from: number, to: number};
-  callsLoaded: boolean;
-  callRows?: number;
   /**
    * The two sidecars, fetched beside a feed served from this origin. Undefined for a feed somebody
    * dropped in, which has none, and the views say so rather than rendering empty.
@@ -57,7 +56,7 @@ interface State {
   rendering: number;
 }
 
-const state: State = {callsLoaded: false, rendering: 0};
+const state: State = {rendering: 0};
 
 let explorer: Explorer | undefined;
 let base = "";
@@ -76,24 +75,6 @@ export function boot(): void {
   explorer = new Explorer(startWorker(), {
     onProgress: showProgress,
     onOpened: opened,
-    onCalls: (rows, contiguous) => {
-      state.callsLoaded = true;
-      state.callRows = rows;
-
-      // The one that was missing: without it the bar reads "Reading the calls…" for the rest of the
-      // session and the load looks like it never finished.
-      hideStatus();
-      element("explorer-load-calls").hidden = true;
-      element("explorer-calls").textContent = `${number(rows)} calls`;
-
-      if (!contiguous) {
-        note("This feed does not keep each trip's calls together in stop_times.txt. That is legal, "
-          + "and unusual — it was indexed the general way instead.");
-      }
-
-      rail();
-      render();
-    },
     onFailed: fail
   });
 
@@ -141,22 +122,20 @@ function start(assets: Assets): void {
 
 function openFeed(source: OpenSource): void {
   element("explorer-open").hidden = true;
-  element("explorer-app").hidden = false;
+  element("explorer-app").hidden = true;
+  element("explorer-loading").hidden = false;
   element("explorer-view").innerHTML = "";
-  element("explorer-calls").textContent = "";
   state.manifest = undefined;
-  state.callsLoaded = false;
-  showStatus("Opening…");
+  progress("Opening the feed…", undefined);
   explorer?.open(source);
 }
 
 /** Back to the landing state, so a second feed can be opened over the first. */
 function closeFeed(): void {
   element("explorer-app").hidden = true;
+  element("explorer-loading").hidden = true;
   element("explorer-open").hidden = false;
   state.manifest = undefined;
-  state.callsLoaded = false;
-  hideStatus();
   location.hash = "";
 }
 
@@ -203,24 +182,20 @@ function markAvailable(): void {
   nav.querySelector<HTMLElement>("[data-view=provenance]")!.hidden = state.provenance === undefined;
 }
 
-function opened(manifest: FeedManifest, window?: {from: number, to: number}): void {
-  state.manifest = manifest;
-  state.window = window;
+function opened(feed: Opened): void {
+  state.manifest = feed.manifest;
+  state.window = feed.window;
 
-  hideStatus();
-  element("explorer-name").textContent = manifest.name;
+  element("explorer-loading").hidden = true;
+  element("explorer-app").hidden = false;
+  element("explorer-name").textContent = feed.manifest.name;
+  element("explorer-calls").textContent = feed.calls === 0
+    ? ""
+    : `${number(feed.calls)} calls`;
 
-  const calls = manifest.files.find(file => file.name === "stop_times.txt");
-  const button = element("explorer-load-calls");
-
-  // The second phase is offered with its cost on the button rather than started quietly. On the
-  // published feed it is 2.9 million rows, a few seconds of work and a few hundred megabytes.
-  button.hidden = calls === undefined;
-
-  if (calls !== undefined) {
-    button.textContent = `Load ${bytes(calls.originalSize ?? 0)} of stop times`;
-    button.title = "The trip view, the departure board and half the checks need these. "
-      + "It takes a few seconds and a few hundred megabytes of memory.";
+  if (!feed.contiguous) {
+    note("This feed does not keep each trip's calls together in stop_times.txt. That is legal, and "
+      + "unusual — it was indexed the general way instead.");
   }
 
   rail();
@@ -250,9 +225,7 @@ function rail(): void {
       <a href="${format({view: "file", file: file.name, page: 0, filters: {}})}"
          class="${file.name === here ? "on" : ""}">
         <span>${escape(file.name.replace(/\.txt$/, ""))}</span>
-        <span class="rail__count">${file.rows === -1
-          ? "<span class=\"rail__none\">—</span>"
-          : number(file.rows)}</span>
+        <span class="rail__count">${number(file.rows)}</span>
       </a>`).join("")}
     ${manifest.other.length === 0 ? "" : `
       <p class="rail__group">Also in the zip</p>
@@ -306,7 +279,7 @@ async function html_(route: Route, id: number): Promise<string> {
 
   switch (route.view) {
     case "overview":
-      return overview(state.manifest as FeedManifest, state.callsLoaded);
+      return overview(state.manifest as FeedManifest);
 
     case "file": {
       const {value} = await ask.ask<Page>({
@@ -385,7 +358,7 @@ async function html_(route: Route, id: number): Promise<string> {
       return provenanceView(state.provenance);
 
     default:
-      return overview(state.manifest as FeedManifest, state.callsLoaded);
+      return overview(state.manifest as FeedManifest);
   }
 }
 
@@ -397,16 +370,6 @@ async function html_(route: Route, id: number): Promise<string> {
  */
 function wire(): void {
   addEventListener("hashchange", () => render());
-
-  element("explorer-load-calls").addEventListener("click", () => {
-    if (state.manifest === undefined) {
-      return; // nothing is open; the button should not be here at all
-    }
-
-    element("explorer-load-calls").hidden = true;
-    showStatus("Reading the calls…");
-    explorer?.loadCalls();
-  });
 
   element("explorer-close").addEventListener("click", closeFeed);
 
@@ -496,8 +459,6 @@ async function save(format_: "csv" | "json"): Promise<void> {
     return;
   }
 
-  showStatus("Building the export…");
-
   const {value} = await explorer.ask<{filename: string, text: string}>({
     type: "export",
     slot: "a",
@@ -512,8 +473,6 @@ async function save(format_: "csv" | "json"): Promise<void> {
     format: format_
   });
 
-  hideStatus();
-
   const url = URL.createObjectURL(new Blob([value.text],
     {type: format_ === "csv" ? "text/csv" : "application/json"}));
   const link = document.createElement("a");
@@ -524,25 +483,35 @@ async function save(format_: "csv" | "json"): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-function showProgress(phase: OpenPhase, progress: LoadProgress): void {
-  const done = progress.bytesTotal === undefined
+/**
+ * The loading screen.
+ *
+ * A feed is 202 MB of text and most of it is stop_times.txt, so opening one is a wait worth showing
+ * rather than hiding. What is being read and how far through it we are, because "loading" on its own
+ * for three seconds is indistinguishable from nothing happening.
+ */
+function showProgress(loading: LoadProgress): void {
+  const done = loading.bytesTotal === undefined
     ? undefined
-    : Math.round((progress.bytesRead / progress.bytesTotal) * 100);
+    : Math.min(100, Math.round((loading.bytesRead / loading.bytesTotal) * 100));
 
-  showStatus(phase === "calls"
-    ? `Reading the calls… ${number(progress.rows)} rows`
-    : `Reading ${progress.entry ?? "the feed"}…${done === undefined ? "" : ` ${done}%`}`);
+  progress(
+    loading.phase === "building"
+      ? "Indexing…"
+      : `Reading ${(loading.entry ?? "the feed").replace(/^.*\//, "")}`,
+    done,
+    loading.rows === 0 ? "" : `${number(loading.rows)} rows`
+  );
 }
 
-function showStatus(text: string): void {
-  const status = element("explorer-status");
+function progress(what: string, percent: number | undefined, detail = ""): void {
+  element("explorer-loading-what").textContent = what;
+  element("explorer-loading-detail").textContent = detail;
 
-  status.hidden = false;
-  status.textContent = text;
-}
+  const bar = element("explorer-loading-bar");
 
-function hideStatus(): void {
-  element("explorer-status").hidden = true;
+  bar.style.width = percent === undefined ? "0%" : `${percent}%`;
+  bar.parentElement?.setAttribute("aria-valuenow", String(percent ?? 0));
 }
 
 function markNav(route: Route): void {
@@ -566,7 +535,7 @@ function scrollToRow(): void {
 }
 
 function fail(text: string): void {
-  hideStatus();
+  element("explorer-loading").hidden = true;
   element("explorer-app").hidden = false;
   element("explorer-open").hidden = true;
   element("explorer-view").innerHTML =

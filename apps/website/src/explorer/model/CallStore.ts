@@ -51,7 +51,7 @@ export class CallStore {
   private capacity: number;
   private readonly times = new TimeParser();
 
-  constructor(header: readonly string[], capacity = 1024) {
+  constructor(public readonly header: readonly string[], capacity = 1024) {
     this.capacity = Math.max(capacity, 1);
     this.declared = {
       pickup: header.includes("pickup_type"),

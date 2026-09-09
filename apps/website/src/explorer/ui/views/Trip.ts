@@ -42,10 +42,6 @@ export function tripView(detail: TripDetail): string {
 }
 
 function calls(detail: TripDetail): string {
-  if (!detail.callsLoaded) {
-    return `<p class="warn">The calls have not been loaded, so this trip has no calling pattern
-      here yet. Load them from the overview.</p>`;
-  }
   if (detail.calls.length === 0) {
     return "<p class=\"empty\">This trip has no calls at all, which the checks would report.</p>";
   }

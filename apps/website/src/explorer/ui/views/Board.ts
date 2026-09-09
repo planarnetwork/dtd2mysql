@@ -31,11 +31,6 @@ export function boardView(detail: BoardDetail): string {
         date: addDays(detail.date, 1)})}">the day after &rarr;</a>
     </nav>`;
 
-  if (!detail.callsLoaded) {
-    return `${heading}<p class="warn">The calls have not been loaded, so there is no board to
-      show yet. Load them from the overview.</p>`;
-  }
-
   if (detail.departures.length === 0) {
     return `${heading}<p class="empty">Nothing departs here on this day. That may be right — the
       date may be outside the feed's window — or it may be the thing you came to find out.</p>`;

@@ -9,18 +9,14 @@ import {escape} from "../dom.js";
  * before they have gone looking for anything. Every file's real header is compared with the one the
  * standard describes, so a feed that carries an extra column says so rather than hiding it.
  */
-export function overview(manifest: FeedManifest, callsLoaded: boolean): string {
-  const rows = manifest.files.map(file => {
-    const unread = file.rows === -1;
-
-    return `<tr>
+export function overview(manifest: FeedManifest): string {
+  const rows = manifest.files.map(file => `<tr>
       <th scope="row"><a href="#/file/${encodeURIComponent(file.name)}">${escape(file.name)}</a></th>
-      <td class="num">${unread ? "<span class=\"absent\">not read yet</span>" : number(file.rows)}</td>
+      <td class="num">${number(file.rows)}</td>
       <td class="num">${file.originalSize === undefined ? "" : bytes(file.originalSize)}</td>
       <td class="num">${file.compressedSize === undefined ? "" : bytes(file.compressedSize)}</td>
       <td>${columns(file.header.length, file.unknown, file.missing, file.notHeld)}</td>
-    </tr>`;
-  }).join("");
+    </tr>`).join("");
 
   const other = manifest.other.length === 0 ? "" : `
     <p class="note">The zip also holds ${manifest.other.map(name =>
@@ -31,9 +27,7 @@ export function overview(manifest: FeedManifest, callsLoaded: boolean): string {
     <h2 class="h h1" tabindex="-1" data-heading>What is in ${escape(manifest.name)}</h2>
     <p class="lede">
       Every file the zip holds, the shape it actually has, and how it compares with what the
-      standard describes. ${callsLoaded
-        ? "The calls are loaded, so every view and every check can run."
-        : "The calls are not loaded yet, so the trip view, the board and half the checks are waiting on them."}
+      standard describes.
     </p>
     <div class="scroll">
       <table class="list">

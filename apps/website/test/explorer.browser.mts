@@ -93,33 +93,30 @@ const at = `http://localhost:${PORT}${BASE}/feeds/explorer/`;
 
 await page.goto(at, {waitUntil: "networkidle"});
 
-// Before a feed is open, nothing that acts on one may be reachable. This is the bug that shipped.
+// Before a feed is open, none of the app is reachable.
 check("the app is hidden until a feed is open", !await page.locator("#explorer-app").isVisible());
-check("the load button is not reachable yet", !await page.locator("#explorer-load-calls").isVisible());
 check("the landing offers the feed", await page.locator("[data-open-latest]").isVisible());
 
 await page.click("[data-open-latest]");
-await page.waitForSelector("#explorer-rail a", {timeout: 180000});
+
+// A loading screen while it reads, because 202 MB of text is a real wait and a page that looks
+// frozen for three seconds is indistinguishable from one that has died.
+await page.waitForSelector("#explorer-loading:not([hidden])", {timeout: 10000});
+check("it says what it is doing while it opens",
+  (await page.locator("#explorer-loading-what").textContent())?.trim() !== "");
+
+await page.waitForSelector("#explorer-rail a", {timeout: 300000});
 
 check("the feed opens", (await page.locator("#explorer-name").textContent())?.includes("gtfs.zip") === true);
 check("the rail lists the files", await page.locator("#explorer-rail a").count() > 5);
-check("the opening status clears", !await page.locator("#explorer-status").isVisible());
-check("the load button is offered", await page.locator("#explorer-load-calls").isVisible(),
-  (await page.locator("#explorer-load-calls").textContent())?.trim());
+check("the loading screen goes away", !await page.locator("#explorer-loading").isVisible());
 
-// The whole point of this file: the calls load, and the page says so afterwards.
-await page.click("#explorer-load-calls");
-await page.waitForFunction(
-  () => (document.getElementById("explorer-calls")?.textContent ?? "").includes("calls"),
-  null,
-  {timeout: 300000}
-);
-
+// The whole point of this file: the stop times are there, without anybody having asked for them.
 const loaded = await page.locator("#explorer-calls").textContent();
 
-check("the calls load", (loaded ?? "").includes("calls"), loaded?.trim());
-check("the loading status clears", !await page.locator("#explorer-status").isVisible());
-check("the load button goes away", !await page.locator("#explorer-load-calls").isVisible());
+check("the stop times are loaded, unasked", (loaded ?? "").includes("calls"), loaded?.trim());
+check("the rail counts them like any other file",
+  !(await page.locator("#explorer-rail").textContent() ?? "").includes("—"));
 
 // The views, now that there is something behind all of them.
 await page.goto(`${at}#/file/stop_times.txt`);
@@ -150,6 +147,10 @@ check("filtering works", (await page.locator(".table__count").textContent())?.in
 
 await page.goto(`${at}#/stop/910GCLPHMJC`);
 await page.waitForSelector("[data-heading]", {timeout: 60000});
+// Nothing may tell the reader to go and load something. There is nothing to load.
+check("no view asks for the stop times to be loaded",
+  !(await page.locator("#explorer-view").textContent() ?? "").includes("have not been loaded"));
+
 check("a station opens", (await page.locator("[data-heading]").textContent())?.includes("Clapham") === true);
 check("its boarding points are listed", await page.locator(".list tbody tr").count() > 0);
 check("its provenance is shown", await page.locator("text=Where this came from").count() > 0);

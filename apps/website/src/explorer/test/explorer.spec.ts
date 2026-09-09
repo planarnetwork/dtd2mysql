@@ -1,5 +1,5 @@
 import {describe, it, expect} from "vitest";
-import {openCalls, openFeed} from "../model/OpenFeed.js";
+import {openFeed} from "../model/OpenFeed.js";
 import {Calendars} from "../model/Calendar.js";
 import {Links} from "../model/Links.js";
 import {CHECKS, checkOf} from "../checks/checks.js";
@@ -19,7 +19,7 @@ import {brokenFeed, goldenFeed} from "./golden.js";
  */
 
 async function open(bytes: Uint8Array): Promise<CheckContext> {
-  const feed = await openCalls(await openFeed("golden.zip", bytes), bytes);
+  const feed = await openFeed("golden.zip", bytes);
 
   return {
     feed,
@@ -224,7 +224,6 @@ describe("the entity views", () => {
   it("gives a trip its calling pattern in calling order", () => {
     const detail = tripDetail(loaded, "C00049_20260517_20261206");
 
-    expect(detail.callsLoaded).to.equal(true);
     expect(detail.calls.length).to.be.greaterThan(1);
     expect(detail.calls.map(call => call.sequence))
       .to.deep.equal(detail.calls.map((_, index) => index + 1));
@@ -274,8 +273,6 @@ describe("the departure board", () => {
 
   it("shows what leaves a station on a day, in clock order", () => {
     const board = boardAt(loaded, "910GABRDEEN", date);
-
-    expect(board.callsLoaded).to.equal(true);
 
     const seconds = board.departures.map(departure => departure.seconds % 86400);
 

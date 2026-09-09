@@ -1,8 +1,7 @@
-import type {GTFSSource} from "@gb-transit/gtfs-loader";
 import {Calendars, feedWindow} from "../model/Calendar.js";
 import type {FeedIndex} from "../model/FeedIndex.js";
 import {Links} from "../model/Links.js";
-import {openCalls, openFeed} from "../model/OpenFeed.js";
+import {openFeed} from "../model/OpenFeed.js";
 import {run} from "../query/Filter.js";
 import {tableOf} from "../query/Table.js";
 import {toCSV, toJSON} from "../query/Export.js";
@@ -19,8 +18,8 @@ import type {Request, Response, Slot} from "./protocol.js";
  * main thread that is a frozen page and a browser offering to kill the tab, so none of it happens
  * there - the page sends messages and renders what comes back.
  *
- * The zip's bytes are kept for the life of the session, which is what lets the calls be loaded later
- * without downloading it again, and lets a column that is not held be fetched by rescanning.
+ * The zip's bytes are kept for the life of the session, so a column the stores do not hold can be
+ * fetched by rescanning rather than by downloading the feed again.
  */
 
 // The repository's tsconfig has lib dom, which a worker is not, and adding lib webworker conflicts
@@ -52,10 +51,6 @@ async function handle(request: Request): Promise<void> {
   if (request.type === "open") {
     return open(request.slot, request.source);
   }
-  if (request.type === "calls") {
-    return calls(request.slot);
-  }
-
   const loaded = slots.get(request.slot);
 
   if (loaded === undefined) {
@@ -67,9 +62,7 @@ async function handle(request: Request): Promise<void> {
       const table = tableOf(loaded.feed, request.query.file);
 
       if (table === undefined) {
-        throw new Error(request.query.file === "stop_times.txt"
-          ? "The calls have not been loaded yet."
-          : `The feed has no ${request.query.file}.`);
+        throw new Error(`The feed has no ${request.query.file}.`);
       }
 
       return result(request.id, run(table, request.query));
@@ -133,7 +126,7 @@ async function open(slot: Slot, source: {url: string} | {file: File}): Promise<v
     : await download(source.url);
 
   const feed = await openFeed(name(source), bytes, {
-    onProgress: progress => self.postMessage({type: "progress", slot, phase: "feed", progress})
+    onProgress: progress => self.postMessage({type: "progress", slot, progress})
   });
 
   slots.set(slot, {
@@ -144,34 +137,22 @@ async function open(slot: Slot, source: {url: string} | {file: File}): Promise<v
     provenance: "url" in source ? await provenanceBeside(source.url) : undefined
   });
 
-  self.postMessage({type: "opened", slot, manifest: feed.manifest, window: feedWindow(feed)});
-}
-
-async function calls(slot: Slot): Promise<void> {
-  const loaded = slots.get(slot);
-
-  if (loaded === undefined) {
-    throw new Error("No feed is open.");
-  }
-
-  loaded.feed = await openCalls(loaded.feed, loaded.bytes as GTFSSource, {
-    onProgress: progress => self.postMessage({type: "progress", slot, phase: "calls", progress})
-  });
-
   self.postMessage({
-    type: "calls",
+    type: "opened",
     slot,
-    rows: loaded.feed.calls?.rows ?? 0,
-    contiguous: loaded.feed.byTrip?.contiguous ?? true
+    manifest: feed.manifest,
+    window: feedWindow(feed),
+    calls: feed.calls?.rows ?? 0,
+    contiguous: feed.byTrip?.contiguous ?? true
   });
 }
+
 
 /**
  * The bytes of the feed, held whole.
  *
- * Read into memory rather than streamed straight into the parser because they are needed twice: once
- * now, and again when the calls are asked for. Downloading 21 MB a second time to save holding it is
- * the wrong way round.
+ * Read into memory rather than streamed straight into the parser, so that a column the stores do not
+ * hold can be fetched later by reading these bytes again rather than by downloading 21 MB twice.
  */
 async function download(url: string): Promise<Uint8Array> {
   const response = await fetch(url);

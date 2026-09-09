@@ -100,7 +100,6 @@ export function tripDetail(loaded: Loaded, tripId: string): TripDetail {
     route,
     agency: agencyIndex === undefined ? undefined : agencies?.row(agencyIndex),
     calls: callDetails(feed, tripId),
-    callsLoaded: feed.calls !== undefined,
     calendar: calendarIndex === undefined ? undefined : calendar?.row(calendarIndex),
     dates,
     runs: dates.length === 0 ? undefined : dates.filter(date => date.runs).length,
@@ -181,8 +180,7 @@ export function boardAt(loaded: Loaded, stopId: string, date: number): BoardDeta
       stopId,
       stopName: index === undefined ? undefined : stops?.value("stop_name", index),
       date,
-      departures: [],
-      callsLoaded: feed.calls !== undefined
+      departures: []
     };
   }
 
@@ -246,8 +244,7 @@ export function boardAt(loaded: Loaded, stopId: string, date: number): BoardDeta
     stopId,
     stopName: index === undefined ? undefined : stops?.value("stop_name", index),
     date,
-    departures,
-    callsLoaded: true
+    departures
   };
 }
 

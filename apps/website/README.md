@@ -55,10 +55,22 @@ builds HTML, and each view there is a function from a value to a string. That bo
 stands in for a framework.
 
 The parse runs in a Web Worker because on the published feed it is a few seconds of solid CPU, which
-on the main thread is a frozen page. Two consequences worth knowing: the explorer is bundled twice,
-so a type imported without the word `type` breaks the worker build rather than the type check —
-which is why this workspace sets `verbatimModuleSyntax`; and a feed's 2.9 million calls are a second,
-explicit phase, offered with its cost on the button rather than loaded on arrival.
+on the main thread is a frozen page. One consequence worth knowing: the explorer is bundled twice, so
+a type imported without the word `type` breaks the worker build rather than the type check — which is
+why this workspace sets `verbatimModuleSyntax`.
+
+A feed opens in one pass, `stop_times.txt` included, behind a loading screen that says which file it
+is reading and how far through it is. That file is 181 MB of the 202 and 2.9 million of the 3.3
+million rows, so it dominates the wait — but it is not a different kind of thing and it does not load
+like one. It was a second, opt-in phase once, on the grounds that it costs a few seconds and a few
+hundred megabytes. That was wrong twice over: half of what the explorer does needs those rows, so the
+tool did not work until you had found a button and understood why it was there; and "some of the feed
+is open" was a state every view had to know about, which is where two of the three shipped bugs came
+from.
+
+It is still *held* differently — see `model/CallStore.ts`, where 2.9 million rows are six typed
+arrays at 55 MB rather than row objects at 893 MB. That difference is what makes the feed something a
+browser can hold at all, and it is invisible from outside the model.
 
 ### What the explorer reads
 
