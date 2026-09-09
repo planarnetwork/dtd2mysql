@@ -27,6 +27,7 @@ import {buildReport} from "./BuildReport";
 import {Attribution} from "../enrich/Enricher";
 import {mergeTransfers} from "../transform/MergeTransfers";
 import {linkedTrips, resolveLinks, TripLink} from "../transform/LinkedTrips";
+import {reversingTrips} from "../transform/ReversingTrips";
 import {combinedHeadsigns, onwardHeadsigns} from "../transform/Headsigns";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
@@ -125,6 +126,7 @@ export class BuildFeed {
     // Everything a station decides is decided here, once it is final: what a
     // train is named after, and the boarding points that carry its position.
     const stopNames = map(stations, stop => stop.stop_name);
+    const tiplocs = map(stations, stop => stop.tiploc);
     // Named after the stops are settled, because which stop a train divides at decides where the
     // answer changes, and dropUnknownStops can move it.
     const called = combinedHeadsigns(serving, links, stopNames);
@@ -180,10 +182,13 @@ export class BuildFeed {
     const stopsP = this.copy(stops.map(toStopRow), STOPS, s => [s.stop_id]);
     // The couplings are appended rather than merged in: the primary key includes the trip ids, so a
     // link at a station that already has an interchange row is a different row, not a duplicate.
+    // The two kinds of coupling cannot collide with each other either - `reversingTrips` is told
+    // which pairs of trips an association already names and stays out of them.
     const transfersP = this.copy(
       [
         ...mergeTransfers(await transfersQ, fixedLinks, map(stations, stop => stop.stop_id)),
-        ...linkedTrips(links, called, map(stations, stop => stop.tiploc))
+        ...linkedTrips(links, called, tiplocs),
+        ...reversingTrips(called, links, tiplocs)
       ],
       TRANSFERS,
       t => [t.from_stop_id, t.to_stop_id, t.from_trip_id, t.to_trip_id, t.transfer_type]
@@ -199,7 +204,7 @@ export class BuildFeed {
       f => [f.feed_publisher_name]
     );
     const tripsP = this.copyTrips(
-      called, serviceIds, stopNames, map(stations, stop => stop.tiploc), onwardHeadsigns(links, called, stopNames)
+      called, serviceIds, stopNames, tiplocs, onwardHeadsigns(links, called, stopNames)
     );
 
     // Every file has to be opened before the output can be asked whether it has

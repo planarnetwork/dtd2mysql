@@ -49,6 +49,12 @@ the pipe separated mode of a transfer. Additions only. The types already exporte
 `GTFSFeed` has `routes`, `agencies` and `areas`, `Trip` has `routeId`, `shortName` and `headsign`,
 `Transfer` has `mode` — which the surface records by name and so does not show.
 
+**Coupling the two halves of a Sutton loop working (#161).** `@gb-transit/gtfs` gains
+`reversingTrips`, `reversalRules` and `ReversalRule` — the transform that writes an in-seat transfer
+between a train that terminates and the one it turns back as, the table of the places that happens,
+and the shape of an entry in it. The table is a parameter of the transform so that a caller can pass
+its own; it is exported for the same reason. Additions only.
+
 ## The validator baselines
 
 **A baseline for the National Rail only feed (#176).**
