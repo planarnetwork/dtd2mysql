@@ -41,9 +41,17 @@ data/probe*
 # tracked - it holds the redirect that keeps the pre-redesign URL working.
 apps/website/public/gtfs.zip
 
+# What the nightly publishes about the feed, mirrored beside it for the explorer
+# to read from this origin rather than from the release.
+apps/website/public/feed-meta.json
+apps/website/public/validation.json
+apps/website/public/provenance.json
+apps/website/public/enrichment-report.json
+
 # The patterns, mirrored into the site by the same workflow and broken up a
 # station at a time beside themselves: 2,797 files and 163MB, rebuilt from the
 # release every time the site is.
+apps/website/public/transfer-patterns.gz
 apps/website/public/transfer-patterns.br
 apps/website/public/transfer-patterns/
 

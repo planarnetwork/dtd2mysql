@@ -2,9 +2,9 @@ export function showHelp(): void {
   console.log(`
 transfer-patterns - build the transfer pattern file a journey planner reads
 
-  transfer-patterns plan <gtfs.zip> --out <shard.br> [options]
-  transfer-patterns merge <shard.br>... --out <transfer-patterns.br>
-  transfer-patterns split <transfer-patterns.br> --out <dir>
+  transfer-patterns plan <gtfs.zip> --out <shard.gz> [options]
+  transfer-patterns merge <shard.gz>... --out <transfer-patterns.gz>
+  transfer-patterns split <transfer-patterns.gz> --out <dir>
 
 plan finds every transfer pattern in a feed and writes them sorted, de-duplicated
 and brotli compressed. merge folds the shards of a run into one such file.
@@ -21,6 +21,15 @@ plan options:
 split writes one file per station, named for it, so a planner can read the
 patterns for a journey without reading the rest of the network.
 
+split options:
+  --out <dir>        Where the per station files go. Required.
+  --extension <ext>  What each file is called after its code, and so what it is
+                     compressed with: .gz is gzip, anything else brotli.
+                     Defaults to .gz, which is what a browser can read.
+
+A file ending .gz is gzip and anything else is brotli. Brotli is smaller; gzip
+is the one a browser can decompress.
+
 merge options:
   --out <file>       Where to write the patterns. Required.
   --shards <n>       How many shards to expect. A merge short of one is missing
@@ -31,8 +40,8 @@ A pattern names the stations a journey calls at, three characters each, so the
 feed has to give every station a three character stop_code - a CRS code, which
 is what the GB rail feeds use.
 
-  transfer-patterns plan gtfs.zip --out patterns.br
-  transfer-patterns plan gtfs.zip --shard 2/6 --workers 4 --out shard-2.br
-  transfer-patterns merge shard-*.br --out transfer-patterns.br
+  transfer-patterns plan gtfs.zip --out patterns.gz
+  transfer-patterns plan gtfs.zip --shard 2/6 --workers 4 --out shard-2.gz
+  transfer-patterns merge shard-*.gz --out transfer-patterns.gz
 `);
 }

@@ -286,7 +286,7 @@ because those are built from the calls.
 
 ## The transfer patterns
 
-`transfer-patterns.br` is not a feed. It is a companion to `gtfs.zip`: every sequence of stations a
+`transfer-patterns.gz` is not a feed. It is a companion to `gtfs.zip`: every sequence of stations a
 journey can be made of, found in advance, so a
 [transfer pattern journey planner](https://ad.informatik.uni-freiburg.de/files/transferpatterns.pdf)
 can plan a journey by pricing the handful of routes that exist between two places rather than
@@ -303,8 +303,8 @@ LSTCBGELYNRW      changing at Cambridge and Ely
 The two ends are written in alphabetical order, so a pattern appears once for both directions of
 travel: a journey from Norwich to Liverpool Street is found under `LST` and read the other way.
 Sorting puts patterns beginning the same way together, so a line records only how many leading
-stations it takes from the line above and what follows it, and the whole thing is brotli
-compressed. It needs no marker for a pattern that a longer one runs through, because every line is
+stations it takes from the line above and what follows it, and the whole thing is gzip compressed —
+which is what a browser can decompress, where brotli is not. It needs no marker for a pattern that a longer one runs through, because every line is
 exactly one pattern.
 
 The station codes are the `stop_code` of `gtfs.zip` — CRS codes — so the two files have to be read

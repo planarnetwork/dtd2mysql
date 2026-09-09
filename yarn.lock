@@ -906,7 +906,7 @@ __metadata:
     "@gb-transit/gtfs-loader": "workspace:^"
     fflate: "npm:^0.8.3"
     raptor-journey-planner: "npm:^5.0.1"
-    transfer-pattern-planner: "npm:^3.1.0"
+    transfer-pattern-planner: "npm:^3.2.0"
     typescript: "npm:7.0.2"
   bin:
     transfer-patterns: bin/transfer-patterns.sh
@@ -921,6 +921,8 @@ __metadata:
     "@astrojs/mdx": "npm:^8.0.0"
     "@gb-transit/gtfs-loader": "workspace:^"
     astro: "npm:^7.3.1"
+    fflate: "npm:^0.8.3"
+    playwright: "npm:^1.63.0"
   languageName: unknown
   linkType: soft
 
@@ -3848,6 +3850,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"playwright-core@npm:1.63.0":
+  version: 1.63.0
+  resolution: "playwright-core@npm:1.63.0"
+  bin:
+    playwright-core: cli.js
+  checksum: 10c0/39c1ebae4029ca2e9371e00a5588d962038e24b6e0bdb7d0d27374dde04838f349b83ae0c8b3b648653d0935cba7fb9011f1201adaab9dd0db7801ad6c75e9aa
+  languageName: node
+  linkType: hard
+
+"playwright@npm:^1.63.0":
+  version: 1.63.0
+  resolution: "playwright@npm:1.63.0"
+  dependencies:
+    playwright-core: "npm:1.63.0"
+  bin:
+    playwright: cli.js
+  checksum: 10c0/d1fd048a89be27c9aba6757dc4f70eff4a5163b49f439ad691767be8b2a482327d0dd1928b4f73c8fe0d8b33aab2c9dc2670424ab60f112d9e98e91b94e3b090
+  languageName: node
+  linkType: hard
+
 "postcss@npm:^8.5.26":
   version: 8.5.28
   resolution: "postcss@npm:8.5.28"
@@ -4523,13 +4545,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"transfer-pattern-planner@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "transfer-pattern-planner@npm:3.1.0"
+"transfer-pattern-planner@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "transfer-pattern-planner@npm:3.2.0"
   dependencies:
     "@gb-transit/gtfs-loader": "npm:^1.1.0"
     raptor-journey-planner: "npm:^5.0.1"
-  checksum: 10c0/d4d0c9ba85b07d31e7471018752c876a01305ec1b1321496a7bca6d8c638a6a34bdcc0d0d824fda4f748c5abfcb294b9f2c084ac583b173013a8f2072f4d289b
+  checksum: 10c0/1e44de6307d538e5397aed473219aacf10d8048351308c28136cef8b9f16b7d900866852b3b2fb9f7a129e1df349f9d1aafa19b811d300b94ffac5de9694d2df
   languageName: node
   linkType: hard
 

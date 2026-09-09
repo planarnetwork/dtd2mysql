@@ -344,7 +344,7 @@ jobs:
                 '',
                 // Written before the scan has run, so it says what is coming
                 // rather than what arrived.
-                '\`transfer-patterns.br\` is attached separately, once the scan that builds it ' +
+                '\`transfer-patterns.gz\` is attached separately, once the scan that builds it ' +
                   'finishes. It holds the routes through the network that a transfer pattern ' +
                   'journey planner reads, and belongs with \`gtfs.zip\` above.'
               ].join('\n')
@@ -426,7 +426,7 @@ jobs:
           yarn tsx apps/transfer-patterns/src/index.ts plan gtfs.zip \
             --shard ${{ matrix.shard }}/6 \
             --workers 4 \
-            --out shard-${{ matrix.shard }}.br
+            --out shard-${{ matrix.shard }}.gz
 
       # A day, not fourteen. These are read once by the job below and are worth
       # nothing afterwards. The .json beside each shard is how the merge tells
@@ -435,8 +435,8 @@ jobs:
         with:
           name: patterns-${{ matrix.shard }}
           path: |
-            shard-${{ matrix.shard }}.br
-            shard-${{ matrix.shard }}.br.json
+            shard-${{ matrix.shard }}.gz
+            shard-${{ matrix.shard }}.gz.json
           retention-days: 1
 
   # The one stage that cannot be split up: every pattern goes through it. It is
@@ -473,19 +473,19 @@ jobs:
       # well formed, readable and quietly missing a sixth of the network.
       - name: Merge
         run: |
-          yarn tsx apps/transfer-patterns/src/index.ts merge shard-*.br \
+          yarn tsx apps/transfer-patterns/src/index.ts merge shard-*.gz \
             --shards 6 \
-            --out transfer-patterns.br \
+            --out transfer-patterns.gz \
             --meta transfer-patterns-meta.json
           cat transfer-patterns-meta.json
-          ls -la transfer-patterns.br
+          ls -la transfer-patterns.gz
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: transfer-patterns
           path: |
-            transfer-patterns.br
+            transfer-patterns.gz
             transfer-patterns-meta.json
           retention-days: 14
 
@@ -496,6 +496,6 @@ jobs:
         if: needs.build.outputs.tag != ''
         run: |
           gh release upload "${{ needs.build.outputs.tag }}" \
-            transfer-patterns.br transfer-patterns-meta.json --clobber
+            transfer-patterns.gz transfer-patterns-meta.json --clobber
         env:
           GH_TOKEN: ${{ github.token }}

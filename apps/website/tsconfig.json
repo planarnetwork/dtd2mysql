@@ -1,5 +1,12 @@
 {
   "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    // The explorer is bundled twice - once for the page and once for the worker - and the worker's
+    // bundler resolves imports without a type checker to tell it which names are only types. An
+    // import that does not say so is looked for in the built JavaScript and is not there. This makes
+    // leaving the word off a compile error rather than a build failure with no line number.
+    "verbatimModuleSyntax": true
+  },
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"]
 }

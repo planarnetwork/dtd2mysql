@@ -79,7 +79,7 @@ async function mergeShards(argv: string[], output: string): Promise<void> {
   const inputs = positionalArgs(argv);
 
   if (inputs.length === 0) {
-    throw new Error("Which shards? transfer-patterns merge <shard.br>... --out <file>");
+    throw new Error("Which shards? transfer-patterns merge <shard.gz>... --out <file>");
   }
 
   const shards = option(argv, "shards");
@@ -103,13 +103,13 @@ async function splitByStation(argv: string[], output: string): Promise<void> {
   const [input] = positionalArgs(argv);
 
   if (input === undefined) {
-    throw new Error("Which file? transfer-patterns split <transfer-patterns.br> --out <dir>");
+    throw new Error("Which file? transfer-patterns split <transfer-patterns.gz> --out <dir>");
   }
 
   console.log(`Splitting ${input} into ${output}`);
 
   const started = Date.now();
-  const {stations, bytes} = await split({input, output});
+  const {stations, bytes} = await split({input, output, extension: option(argv, "extension")});
 
   console.log(
     `${stations.toLocaleString()} stations, ${megabytes(bytes)} in ${output}, ${elapsed(started)}`
@@ -135,7 +135,7 @@ function expectedShards(text: string): number {
  */
 function positionalArgs(argv: string[]): string[] {
   const takesValue = new Set([
-    "--out", "--dates", "--shard", "--shards", "--workers", "--tmp", "--meta"
+    "--out", "--dates", "--shard", "--shards", "--workers", "--tmp", "--meta", "--extension"
   ]);
   const found: string[] = [];
 

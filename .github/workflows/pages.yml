@@ -42,12 +42,33 @@ jobs:
 
       # Before the build, because everything in `public/` is copied into the
       # site as it stands.
-      - name: Publish the feed alongside the site
+      #
+      # The feed, and what the nightly publishes about it. The explorer reads
+      # all of them from this origin, the way it reads the feed - so what the
+      # validator made of the build, and what each source wrote and overruled,
+      # are things a reader can look at rather than assets nobody opens.
+      #
+      # Each is fetched on its own and none is fatal. A release published before
+      # one of these existed, or a night whose build did not write it, is a site
+      # with less to say rather than a deploy that does not happen.
+      - name: Publish the feed and what describes it alongside the site
         run: |
-          curl -fsSL --retry 3 --retry-delay 5 \
-            https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip \
-            -o apps/website/public/gtfs.zip
-          ls -lh apps/website/public/gtfs.zip
+          for asset in gtfs.zip feed-meta.json validation.json provenance.json \
+            enrichment-report.json; do
+            if curl -fsSL --retry 3 --retry-delay 5 \
+              "https://github.com/planarnetwork/gb-transit/releases/latest/download/$asset" \
+              -o "apps/website/public/.$asset.part"
+            then
+              mv "apps/website/public/.$asset.part" "apps/website/public/$asset"
+            else
+              # curl -f can still leave a partial file behind, and a truncated
+              # validation.json is worse than an absent one: the page handles
+              # absent, and reports what it has rather than what it half has.
+              rm -f "apps/website/public/.$asset.part" "apps/website/public/$asset"
+              echo "The latest release has no $asset, so the site goes up without it."
+            fi
+          done
+          ls -lh apps/website/public/
 
       # The site is built by astro rather than by the repository's `tsc -b`, so
       # nothing here has needed the workspaces compiled until now. Splitting the
@@ -64,17 +85,32 @@ jobs:
       # feed without patterns, and the site should still go up.
       - name: Publish the transfer patterns, whole and a station at a time
         run: |
+          site=apps/website/public
+          patterns=apps/transfer-patterns/src/index.ts
+
           if curl -fsSL --retry 3 --retry-delay 5 \
-            https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.br \
-            -o apps/website/public/transfer-patterns.br
+            https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.gz \
+            -o $site/transfer-patterns.gz
           then
-            yarn tsx apps/transfer-patterns/src/index.ts split \
-              apps/website/public/transfer-patterns.br \
-              --out apps/website/public/transfer-patterns
-            du -sh apps/website/public/transfer-patterns.br apps/website/public/transfer-patterns
+            # Both compressions, of the whole file and of every station. Gzip is
+            # what a browser can decompress and brotli is a third smaller, so
+            # which is wanted depends on who is reading, and the site is not the
+            # place to decide that for them.
+            #
+            # The brotli is made here rather than carried by the release,
+            # because compressing it is minutes the merge job would have to find
+            # inside its timeout and this job has no such pressure.
+            yarn tsx $patterns merge $site/transfer-patterns.gz --out $site/transfer-patterns.br
+
+            for extension in .gz .br; do
+              yarn tsx $patterns split $site/transfer-patterns.gz \
+                --out $site/transfer-patterns --extension $extension
+            done
+
+            du -sh $site/transfer-patterns.gz $site/transfer-patterns.br $site/transfer-patterns
           else
-            rm -f apps/website/public/transfer-patterns.br
-            echo "The latest release has no transfer-patterns.br, so the site goes up without them."
+            rm -f $site/transfer-patterns.gz
+            echo "The latest release has no transfer-patterns.gz, so the site goes up without them."
           fi
 
       # The site is its own build now rather than part of the repository's

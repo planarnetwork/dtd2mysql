@@ -872,6 +872,36 @@ main:has(> .ticker:last-child) + .footer {
 
 .prose tbody tr:last-child td { border-bottom: none; }
 
+/* The same table, for a page laid out with Base rather than Doc - the prose
+ * rules above are scoped to a rendered markdown document, and a table built in
+ * a component would otherwise get the browser's defaults: no padding, no rules,
+ * and a centred header over left aligned columns. */
+.data-table {
+  border-collapse: collapse;
+  font-size: 14.5px;
+  width: 100%;
+  min-width: 30rem;
+}
+
+.data-table th, .data-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.data-table thead th {
+  font-family: var(--font-mono), monospace;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  background: var(--paper-sunken);
+}
+
+.data-table tbody tr:last-child td { border-bottom: none; }
+
 /* The heading anchor, revealed on hover and always reachable by keyboard. */
 .prose .anchor::after { content: "#"; }
 

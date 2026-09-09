@@ -7,9 +7,17 @@ import "../styles/global.css";
 interface Props {
   title: string;
   description: string;
+  /**
+   * A page that is a tool rather than a document.
+   *
+   * Every other page here is read top to bottom and ends. The explorer is worked in: it wants the
+   * whole viewport, it scrolls its own panes rather than the window, and a footer below it would be
+   * something you can never reach. The class is the hook for that; the rules are the page's own.
+   */
+  app?: boolean;
 }
 
-const {title, description} = Astro.props;
+const {title, description, app = false} = Astro.props;
 
 // The title is the page's, then the site's. A tab strip full of "GB transit"
 // tells its reader nothing about which of them they left open.
@@ -36,12 +44,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <Font cssVariable="--font-body" preload />
   <Font cssVariable="--font-mono" />
 </head>
-<body>
+<body class={app ? "is-app" : undefined}>
   <a class="skip" href="#main">Skip to content</a>
   <Header />
   <main id="main">
     <slot />
   </main>
-  <Footer />
+  {app ? null : <Footer />}
 </body>
 </html>
