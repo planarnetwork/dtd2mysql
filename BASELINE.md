@@ -12,6 +12,13 @@ entry here does not excuse a golden feed moving, and an entry there does not exc
 
 ## The type surface
 
+**Reading the lines back.** `@gb-transit/gtfs-loader` gains `ShapeID`, `ShapeIndex` and
+`ShapePoint` — the id of a line, the lines of a feed indexed by it, and one point on one. Additions
+only. `GTFSFeed` gains a required `shapes` and `Trip` an optional `shapeId`, which the surface
+records by name and so does not show; `shapes` being required rather than optional is deliberate,
+because a feed with no `shapes.txt` has no lines rather than an unknown number of them, and `{}`
+says that without every caller writing `?? {}`.
+
 **Drawing the trips as lines through the passing points.** `@gb-transit/gtfs` gains `shapes` and
 `FeedShapes` — the transform that turns each schedule's path into a `shapes.txt` polyline, and what
 it returns. Additions only.

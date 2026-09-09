@@ -9,8 +9,8 @@ const FEED = {
     "service_id,start_date,end_date,monday,tuesday,wednesday,thursday,friday,saturday,sunday\n"
     + "s1,20250101,20251231,1,1,1,1,1,1,1\n",
   "trips.txt":
-    "route_id,service_id,trip_id,trip_headsign,trip_short_name\n"
-    + "r1,s1,t1,Beeton,X100\n",
+    "route_id,service_id,trip_id,trip_headsign,trip_short_name,shape_id\n"
+    + "r1,s1,t1,Beeton,X100,sh1\n",
   "stop_times.txt":
     "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type\n"
     + "t1,10:00:00,10:00:00,A,1,0,0\n"
@@ -20,7 +20,13 @@ const FEED = {
   "routes.txt": "route_id,agency_id,route_short_name,route_type\nr1,=a1,X,2\n",
   "agency.txt": "agency_id,agency_name\n=a1,Anytown Buses\n",
   "areas.txt": "area_id,area_name\nz1,Anytown Central\n",
-  "stop_areas.txt": "area_id,stop_id\nz1,A\nz1,B\n"
+  "stop_areas.txt": "area_id,stop_id\nz1,A\nz1,B\n",
+  // Deliberately out of sequence order, because GTFS does not require it to be in one
+  "shapes.txt":
+    "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled\n"
+    + "sh1,3,4,3,\n"
+    + "sh1,1,2,1,\n"
+    + "sh1,2,3,2,\n"
 };
 
 function feedZip(files: Record<string, string> = FEED): Uint8Array<ArrayBuffer> {
@@ -109,6 +115,32 @@ describe("loadGTFS", () => {
     expect(feed.routes[trip.routeId as string].shortName).to.equal("X");
     expect(feed.agencies[feed.routes[trip.routeId as string].agencyId as string].name)
       .to.equal("Anytown Buses");
+  });
+
+  it("reads the line a trip runs over, in sequence order", async () => {
+    const feed = await loadGTFS(feedZip());
+
+    expect(feed.trips[0].shapeId).to.equal("sh1");
+    expect(feed.shapes["sh1"]).to.deep.equal([
+      {latitude: 1, longitude: 2},
+      {latitude: 2, longitude: 3},
+      {latitude: 3, longitude: 4}
+    ]);
+  });
+
+  it("gives a trip no shape when trips.txt names none", async () => {
+    const feed = await loadGTFS(feedZip({
+      ...FEED,
+      "trips.txt": "route_id,service_id,trip_id,shape_id\nr1,s1,t1,\n"
+    }));
+
+    expect(feed.trips[0].shapeId).to.equal(undefined);
+  });
+
+  it("loads a feed with no shapes.txt as one with no shapes", async () => {
+    const feed = await loadGTFS(feedZip(without("shapes.txt")));
+
+    expect(feed.shapes).to.deep.equal({});
   });
 
   it("reads the areas as one index", async () => {

@@ -40,6 +40,7 @@ function feed(stops: Stop[], overrides: Partial<GTFSFeed> = {}): GTFSFeed {
     routes: {},
     agencies: {},
     areas: {},
+    shapes: {},
     ...overrides
   };
 }

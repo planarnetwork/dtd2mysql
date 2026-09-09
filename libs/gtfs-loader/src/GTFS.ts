@@ -67,6 +67,8 @@ export interface Trip {
   routeId?: RouteID;
   shortName?: string;
   headsign?: string;
+  /** The line this trip runs over, into the feed's shapes. Absent where it names none. */
+  shapeId?: ShapeID;
 }
 
 /**
@@ -202,6 +204,31 @@ export interface Area {
  * Areas indexed by ID
  */
 export type AreaIndex = Record<AreaID, Area>;
+
+/**
+ * GTFS shape_id
+ */
+export type ShapeID = string;
+
+/**
+ * A point on the line a trip runs over.
+ *
+ * A pair rather than an object per point: a national feed is millions of these, and the two
+ * numbers are the whole of what a caller drawing the line needs. `shape_dist_traveled` is not
+ * read - see COLUMNS in EntityType.
+ */
+export interface ShapePoint {
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * The lines the feed's trips run over, indexed by id and each in sequence order.
+ *
+ * Ordered here rather than left to the file, because GTFS does not require shapes.txt to be
+ * sorted and a caller drawing an unsorted one gets a scribble.
+ */
+export type ShapeIndex = Record<ShapeID, ShapePoint[]>;
 
 /**
  * Minimum time needed to change vehicles at each stop

@@ -1,4 +1,4 @@
-import type { AgencyIndex, Area, AreaIndex, CalendarIndex, DateIndex, DayOfWeek, Interchange, RouteIndex, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
+import type { AgencyIndex, Area, AreaIndex, CalendarIndex, DateIndex, DayOfWeek, Interchange, RouteIndex, ShapeIndex, ShapePoint, StopIndex, TransfersByOrigin, Trip, TripLink } from "./GTFS.js";
 import type { EntityType } from "./EntityType.js";
 import type { Row } from "./CSVParser.js";
 import type { FeedInfo, GTFSFeed } from "./GTFSLoader.js";
@@ -30,6 +30,10 @@ export class FeedBuilder {
   private readonly routes: RouteIndex = {};
   private readonly agencies: AgencyIndex = {};
   private readonly areas: AreaIndex = {};
+  // Points as they arrive, with the sequence kept alongside so build() can order them. GTFS does
+  // not require shapes.txt to be sorted, and a rail feed's is only sorted because the producer
+  // chose to.
+  private readonly shapePoints = new Map<string, {sequence: number, point: ShapePoint}[]>();
   /**
    * Keyed by trip rather than stored on the trip, because stop_times.txt may arrive before
    * trips.txt. A Map rather than an object: a feed has hundreds of thousands of trips, and an
@@ -55,6 +59,7 @@ export class FeedBuilder {
       case "route": this.addRoute(row); break;
       case "agency": this.addAgency(row); break;
       case "area": this.addArea(row); break;
+      case "shape": this.addShapePoint(row); break;
       case "stop_area": this.addStopArea(row); break;
     }
   }
@@ -91,8 +96,24 @@ export class FeedBuilder {
       routes: this.routes,
       agencies: this.agencies,
       areas: this.areas,
+      shapes: this.shapes(),
       feedInfo: this.feedInfo
     };
+  }
+
+  /**
+   * Each line in sequence order, with the sequence numbers dropped once they have done their job.
+   */
+  private shapes(): ShapeIndex {
+    const shapes: ShapeIndex = {};
+
+    for (const [id, points] of this.shapePoints) {
+      shapes[id] = points
+        .sort((a, b) => a.sequence - b.sequence)
+        .map(({point}) => point);
+    }
+
+    return shapes;
   }
 
   /**
@@ -225,8 +246,27 @@ export class FeedBuilder {
       service: {} as Service,
       routeId: row.route_id === undefined ? undefined : this.intern(row.route_id),
       shortName: row.trip_short_name === undefined ? undefined : this.intern(row.trip_short_name),
-      headsign: row.trip_headsign === undefined ? undefined : this.intern(row.trip_headsign)
+      headsign: row.trip_headsign === undefined ? undefined : this.intern(row.trip_headsign),
+      // Interned like the other ids: a few thousand shapes name themselves across every trip in
+      // the feed, and a rail feed has one id for every eighteen trips.
+      shapeId: row.shape_id === undefined || row.shape_id === "" ? undefined : this.intern(row.shape_id)
     });
+  }
+
+  private addShapePoint(row: Row): void {
+    const id = this.intern(row.shape_id as string);
+    const entry = {
+      sequence: +(row.shape_pt_sequence as string),
+      point: {latitude: +(row.shape_pt_lat as string), longitude: +(row.shape_pt_lon as string)}
+    };
+    const points = this.shapePoints.get(id);
+
+    if (points === undefined) {
+      this.shapePoints.set(id, [entry]);
+    }
+    else {
+      points.push(entry);
+    }
   }
 
   private addStopTime(row: Row): void {

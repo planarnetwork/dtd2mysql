@@ -12,7 +12,8 @@ export type EntityType =
   | "route"
   | "agency"
   | "area"
-  | "stop_area";
+  | "stop_area"
+  | "shape";
 
 /**
  * The file each entity comes from.
@@ -28,7 +29,8 @@ const FILES: Record<string, EntityType> = {
   "routes.txt": "route",
   "agency.txt": "agency",
   "areas.txt": "area",
-  "stop_areas.txt": "stop_area"
+  "stop_areas.txt": "stop_area",
+  "shapes.txt": "shape"
 };
 
 /**
@@ -44,7 +46,7 @@ export const COLUMNS: Record<EntityType, readonly string[]> = {
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
   ],
   calendar_date: ["service_id", "date", "exception_type"],
-  trip: ["trip_id", "service_id", "route_id", "trip_short_name", "trip_headsign"],
+  trip: ["trip_id", "service_id", "route_id", "trip_short_name", "trip_headsign", "shape_id"],
   stop_time: ["trip_id", "arrival_time", "departure_time", "stop_id", "pickup_type", "drop_off_type"],
   transfer: [
     "from_stop_id", "to_stop_id", "from_trip_id", "to_trip_id",
@@ -64,7 +66,11 @@ export const COLUMNS: Record<EntityType, readonly string[]> = {
     "agency_fare_url"
   ],
   area: ["area_id", "area_name"],
-  stop_area: ["area_id", "stop_id"]
+  stop_area: ["area_id", "stop_id"],
+  // No shape_dist_traveled. Nothing drawing a line needs it, and a producer that
+  // does carry one keeps it through `loadGTFS(source, {raw: true})`, which reads
+  // every column a file has - which is the path a merge takes.
+  shape: ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
 };
 
 /**
