@@ -126,3 +126,23 @@ with a trip that did not survive.
 
 `frequencies.txt` was not a file `@gb-transit/gtfs-schema` or
 `@gb-transit/gtfs-loader` knew about. Both now do.
+
+## The merged feed's validator baseline
+
+Carrying `feed_info.txt` and `attributions.txt` through a merge moved three notices onto the merged
+feed. All three are the rail feed's own, accepted in
+[`apps/cif2gtfs/fixtures/mini/validator-baseline.json`](../../cif2gtfs/fixtures/mini/validator-baseline.json)
+for the same reasons, and they appear here now only because the files they come from are no longer
+dropped on the way through:
+
+- `missing_feed_contact_email_and_url` — the rail feed has no contact address to publish.
+- `service_window_outside_feed_period`, 24 of them — the rail feed's calendars run wider than the
+  three month window it declares. The merged feed declares the window its inputs declared rather
+  than widening it to cover their services, so it inherits the mismatch rather than papering over
+  it with a window no publisher claimed.
+- `unknown_column` — `attribution_licence`, the producer extension the spec permits and the
+  validator does not know. It is the one column that says the terms, which is the whole point of the
+  file.
+
+`missing_recommended_file` is removed: it was `feed_info.txt`, and its reason said that neither
+input had one the merge could carry. The rail feed did, and now it is carried.

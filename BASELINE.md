@@ -49,6 +49,13 @@ the pipe separated mode of a transfer. Additions only. The types already exporte
 `GTFSFeed` has `routes`, `agencies` and `areas`, `Trip` has `routeId`, `shortName` and `headsign`,
 `Transfer` has `mode` — which the surface records by name and so does not show.
 
+**Reading a frequency-based trip.** `@gb-transit/gtfs-schema` gains `Frequency` and `FrequencyRow`,
+and `frequencies.txt` joins the files it declares columns for; `@gb-transit/gtfs-loader` reads it.
+It is a standard GTFS file that nothing here modelled, and a merge that dropped it lost the only
+thing saying a bus comes every twelve minutes rather than at written down times. Additions only:
+the file was previously unknown to both packages, so nothing that read a feed before reads one
+differently now, beyond `readFeedRows` with no argument returning one more key.
+
 ## The validator baselines
 
 **A baseline for the National Rail only feed (#176).**

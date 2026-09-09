@@ -14,25 +14,29 @@
   "reasons": {
     "big_gap_in_service": "inherited from the rail feed, which is a slice of a refresh and so has sparse services",
     "missing_bike_allowance": "inherited: bikes_allowed is 0, meaning no information, in both inputs",
-    "missing_recommended_file": "feed_info.txt. Neither input has one the merge could carry, and a merged feed has no single publisher to name",
+    "missing_feed_contact_email_and_url": "inherited with feed_info.txt, which the merge now carries rather than drops: the rail feed has no contact address to publish yet",
     "mixed_case_recommended_field": "inherited from the rail feed, whose MSN station names are upper case",
     "same_name_and_description_for_route": "inherited from the bus feed",
     "service_extends_far_in_the_future": "inherited: a calendar running to 2099 in the DTD source",
+    "service_window_outside_feed_period": "inherited with feed_info.txt: the rail feed's calendars run wider than the three month window it declares, and the merged feed declares the window its inputs declared rather than widening it to cover them",
     "transfer_distance_above_2_km": "inherited: the rail feed's fixed links really are that long",
     "transfer_distance_too_large": "same",
     "transfer_with_suspicious_mid_trip_in_seat": "inherited: a DTD join or split anchors a coupling part way along a trip on purpose",
-    "unexpected_enum_value": "route_type 714, rail replacement bus, from the extended route types the validator does not know"
+    "unexpected_enum_value": "route_type 714, rail replacement bus, from the extended route types the validator does not know",
+    "unknown_column": "attribution_licence in attributions.txt, which the merge now carries. A producer extension the spec permits and the validator does not know - the file has nowhere else to say the terms"
   },
   "accepted": [
     "big_gap_in_service",
     "missing_bike_allowance",
-    "missing_recommended_file",
+    "missing_feed_contact_email_and_url",
     "mixed_case_recommended_field",
     "same_name_and_description_for_route",
     "service_extends_far_in_the_future",
+    "service_window_outside_feed_period",
     "transfer_distance_above_2_km",
     "transfer_distance_too_large",
     "transfer_with_suspicious_mid_trip_in_seat",
-    "unexpected_enum_value"
+    "unexpected_enum_value",
+    "unknown_column"
   ]
 }
