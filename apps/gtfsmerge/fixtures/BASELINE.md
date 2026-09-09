@@ -196,3 +196,10 @@ generated rows and twelve, and the walk from `9100BUSSTOP` is to `910GALPHA`.
 comparison was the whole cost of a merge at any real size: 321,570 stops is 51.7
 billion pairs, about four hours. Cells one transfer distance wide make it nine
 cell lookups per stop and seconds for the same answer.
+
+**A membership is checked against what the feed contains, not what it calls at.**
+With the calls at platforms, a fare area naming a station named something no
+longer in `usedStops`, so every membership in a rail-and-bus merge was dropped
+and `stop_areas.txt` came out as a header. The published set - what something
+calls at, plus the stations above those - is worked out once and used by the
+areas and the transfers alike.

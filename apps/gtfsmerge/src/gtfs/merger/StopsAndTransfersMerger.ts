@@ -42,29 +42,18 @@ export class StopsAndTransfersMerger {
    * Write the transfers, then the stops that are published, adding a transfer
    * between any two stops close enough to walk between.
    *
-   * A stop is published if something calls at it, or if it is the station above
-   * one that is: a station nothing stops at is still where the platforms under
-   * it are, and dropping it would leave every one of them pointing at a row that
-   * is not in the feed.
+   * `published` is every stop the merged feed will contain - what something
+   * calls at, and the stations above those - worked out by the caller, because
+   * the areas have to ask the same question and get the same answer.
    */
   public async write(
     stops: StopRow[],
     transfers: TransferRow[],
     parentStops: ParentStops,
-    usedStops: UsedStops,
+    published: UsedStops,
     tripIdMap: TripIDMap
   ): Promise<void> {
     Object.assign(this.parents, parentStops);
-
-    const published: UsedStops = {...usedStops};
-
-    for (const stop of Object.keys(usedStops)) {
-      const parent = parentStops[stop];
-
-      if (parent !== undefined) {
-        published[parent] = true;
-      }
-    }
 
     const existingTransfers = await this.writeTransfers(transfers, tripIdMap, published);
 
