@@ -17,6 +17,7 @@
     "astro": "^7.3.1"
   },
   "devDependencies": {
-    "fflate": "^0.8.3"
+    "fflate": "^0.8.3",
+    "playwright": "^1.63.0"
   }
 }

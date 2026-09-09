@@ -16,8 +16,8 @@ import {plot} from "../Plot.js";
 export function stopView(detail: StopDetail, date: number | undefined): string {
   if (detail.row === undefined) {
     return `
-      <h2 class="h2 h2--sm" tabindex="-1" data-heading>${escape(detail.id)}</h2>
-      <p class="x-empty">stops.txt has no such stop. Something naming it is naming a stop that
+      <h2 class="h h1" tabindex="-1" data-heading>${escape(detail.id)}</h2>
+      <p class="empty">stops.txt has no such stop. Something naming it is naming a stop that
         does not exist, which the integrity checks would report.</p>`;
   }
 
@@ -26,8 +26,8 @@ export function stopView(detail: StopDetail, date: number | undefined): string {
   const isStation = row.location_type === "1";
 
   return `
-    <h2 class="h2 h2--sm" tabindex="-1" data-heading>${escape(name)}</h2>
-    <p class="x-lede">
+    <h2 class="h h1" tabindex="-1" data-heading>${escape(name)}</h2>
+    <p class="lede">
       ${escape(detail.id)}${row.stop_code === undefined ? "" : ` &middot; ${escape(row.stop_code)}`}
       &middot; ${locationOf(row.location_type)}
       ${detail.calls === undefined
@@ -35,11 +35,11 @@ export function stopView(detail: StopDetail, date: number | undefined): string {
         : ` &middot; ${number(detail.calls + (detail.childCalls ?? 0))} calls`}
     </p>
 
-    <div class="x-split">
+    <div class="split">
       <div>
         ${fields(detail)}
-        ${date === undefined || !isStation ? "" : `<p class="x-tools">
-          <a class="x-btn x-btn--go" href="${format({view: "board", id: detail.id, date})}">
+        ${date === undefined || !isStation ? "" : `<p class="tools">
+          <a class="btn2 btn2--go" href="${format({view: "board", id: detail.id, date})}">
             See what departs here &rarr;</a></p>`}
       </div>
       ${plot(detail)}
@@ -68,10 +68,10 @@ function fields(detail: StopDetail): string {
       ? `<a href="${format({view: "stop", id: value})}">${escape(value)}</a>`
       : cell(value);
 
-    return `<div class="x-field"><dt>${escape(column)}</dt><dd>${rendered}</dd></div>`;
+    return `<div class="field"><dt>${escape(column)}</dt><dd>${rendered}</dd></div>`;
   };
 
-  return `<dl class="x-fields">${[...shown, ...rest].map(line).join("")}</dl>`;
+  return `<dl class="fields">${[...shown, ...rest].map(line).join("")}</dl>`;
 }
 
 /**
@@ -91,22 +91,22 @@ function children(detail: StopDetail): string {
         ${escape(child.row.stop_id)}</a></th>
       <td>${cell(child.row.stop_name)}</td>
       <td>${cell(child.row.platform_code)}</td>
-      <td class="x-num">${cell(child.row.stop_lat)}, ${cell(child.row.stop_lon)}</td>
-      <td class="x-num">${child.metresFromParent === undefined
+      <td class="num">${cell(child.row.stop_lat)}, ${cell(child.row.stop_lon)}</td>
+      <td class="num">${child.metresFromParent === undefined
         ? ""
-        : `<span${child.metresFromParent > 100 ? " class=\"x-warn-inline\"" : ""}>`
+        : `<span${child.metresFromParent > 100 ? " class=\"warn-inline\"" : ""}>`
           + `${number(child.metresFromParent)} m</span>`}</td>
     </tr>`).join("");
 
   return `
-    <h3 class="x-h3">Boarding points here</h3>
-    <p class="x-note">Every call in this feed is at one of these, not at the station itself.</p>
-    <div class="x-scroll">
-      <table class="x-table">
+    <h3 class="h h2">Boarding points here</h3>
+    <p class="note">Every call in this feed is at one of these, not at the station itself.</p>
+    <div class="scroll">
+      <table class="list">
         <thead><tr>
           <th scope="col">stop_id</th><th scope="col">name</th><th scope="col">platform</th>
-          <th scope="col" class="x-num">position</th>
-          <th scope="col" class="x-num">from the station</th>
+          <th scope="col" class="num">position</th>
+          <th scope="col" class="num">from the station</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -130,20 +130,20 @@ function provenance(fields: readonly FieldHistory[]): string {
       <td>${escape(String(field.value))}</td>
       <td>${escape(field.by)}</td>
       <td>${field.overruled.length === 0
-        ? "<span class=\"x-absent\">nobody disagreed</span>"
+        ? "<span class=\"absent\">nobody disagreed</span>"
         : field.overruled.map(write =>
           `${escape(write.enricher)} said ${escape(String(write.value))} `
-          + `<span class="x-note">(priority ${write.priority})</span>`).join("<br>")}</td>
+          + `<span class="note">(priority ${write.priority})</span>`).join("<br>")}</td>
     </tr>`).join("");
 
   return `
-    <h3 class="x-h3">Where this came from</h3>
-    <p class="x-note">
+    <h3 class="h h2">Where this came from</h3>
+    <p class="note">
       What the sources wrote here, and what they overruled. This is the answer to
       &ldquo;why does the feed say that&rdquo;.
     </p>
-    <div class="x-scroll">
-      <table class="x-table">
+    <div class="scroll">
+      <table class="list">
         <thead><tr>
           <th scope="col">field</th><th scope="col">value</th>
           <th scope="col">written by</th><th scope="col">overruled</th>
@@ -164,17 +164,17 @@ function transfers(detail: StopDetail): string {
       <td><a href="${format({view: "stop", id: row.to_stop_id as string})}">
         ${escape(row.to_stop_id)}</a></td>
       <td>${transferOf(row.transfer_type)}</td>
-      <td class="x-num">${cell(row.min_transfer_time)}</td>
+      <td class="num">${cell(row.min_transfer_time)}</td>
       <td>${cell(row.mode)}</td>
     </tr>`).join("");
 
   return `
-    <h3 class="x-h3">Getting to and from here</h3>
-    <div class="x-scroll">
-      <table class="x-table">
+    <h3 class="h h2">Getting to and from here</h3>
+    <div class="scroll">
+      <table class="list">
         <thead><tr>
           <th scope="col">from</th><th scope="col">to</th><th scope="col">kind</th>
-          <th scope="col" class="x-num">seconds</th><th scope="col">by</th>
+          <th scope="col" class="num">seconds</th><th scope="col">by</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>

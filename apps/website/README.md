@@ -105,11 +105,32 @@ plugin runs before Astro's own and so cannot read the id Astro is about to assig
 ## Tests
 
 `src/feed.spec.ts` covers the data layer — which feeds a release describes, which figures it
-carries, and the source list that must never be empty. Run with the rest of the repository:
+carries, and the source list that must never be empty. `src/explorer/**` covers the explorer's model,
+queries and checks against the golden feed cif2gtfs is held to. Run with the rest of the repository:
 
 ```
 yarn vitest run --project @gb-transit/website
 ```
+
+### The explorer also has a browser check
+
+Three faults reached the published page that none of the above could have caught: a button that was
+live before there was a feed to press it against, a progress bar that was never cleared, and a set of
+findings that were dropped on the way back from the worker so every check reported finding nothing.
+All three are only visible to something that opens the page and clicks.
+
+[`test/explorer.browser.mts`](test/explorer.browser.mts) does that. It is not part of
+`yarn vitest run` — it needs a built site, the feed beside it, and a browser, none of which CI has —
+so it is named `.browser.mts` rather than `.spec.mts` and run by hand before publishing:
+
+```
+cp data/gtfs.zip apps/website/public/            # the Pages workflow does this from the release
+yarn workspace @gb-transit/website run build
+node --experimental-strip-types apps/website/test/explorer.browser.mts
+```
+
+It drives the Chrome already on the machine rather than downloading another, and it asserts what the
+checks *find* rather than only that they finish — the third fault passed a test that did the latter.
 
 ## Contributing
 

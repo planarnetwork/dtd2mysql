@@ -26,8 +26,8 @@ export function plot(detail: StopDetail): string {
   const points = pointsOf(detail);
 
   if (points.length === 0) {
-    return `<div class="x-plot x-plot--none">
-      <p class="x-empty">This stop has no coordinate, so there is nothing to draw.</p>
+    return `<div class="plot plot--none">
+      <p class="empty">This stop has no coordinate, so there is nothing to draw.</p>
     </div>`;
   }
 
@@ -45,12 +45,12 @@ export function plot(detail: StopDetail): string {
 
     if (point.kind === "overruled") {
       // A hollow ring, joined to where the value that won put it, with the distance on the line.
-      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" class="x-plot__overruled">
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" class="plot__overruled">
         <title>${escape(point.label)}</title></circle>`;
     }
 
     return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${point.kind === "station" ? 7 : 4}"
-      class="x-plot__${point.kind}"><title>${escape(point.label)}</title></circle>`;
+      class="plot__${point.kind}"><title>${escape(point.label)}</title></circle>`;
   }).join("");
 
   const station = points.find(point => point.kind === "station");
@@ -61,26 +61,26 @@ export function plot(detail: StopDetail): string {
       const to = place(point);
 
       return `<line x1="${from.x.toFixed(1)}" y1="${from.y.toFixed(1)}"
-        x2="${to.x.toFixed(1)}" y2="${to.y.toFixed(1)}" class="x-plot__link"></line>`;
+        x2="${to.x.toFixed(1)}" y2="${to.y.toFixed(1)}" class="plot__link"></line>`;
     }).join("");
 
-  return `<div class="x-plot">
+  return `<div class="plot">
     <svg viewBox="0 0 ${size} ${size}" role="img"
-      aria-labelledby="plot-title plot-desc" class="x-plot__svg">
+      aria-labelledby="plot-title plot-desc" class="plot__svg">
       <title id="plot-title">${escape(detail.row?.stop_name ?? detail.id)} and its boarding points</title>
       <desc id="plot-desc">${escape(described(detail, points))}</desc>
       ${scaleBar(bounds, size, pad)}
       ${lines}
       ${marks}
     </svg>
-    <p class="x-plot__key">
-      <span class="x-key x-key--station"></span> the station
-      ${detail.children.length > 0 ? "<span class=\"x-key x-key--child\"></span> boarding points" : ""}
+    <p class="plot__key">
+      <span class="key key--station"></span> the station
+      ${detail.children.length > 0 ? "<span class=\"key key--child\"></span> boarding points" : ""}
       ${points.some(point => point.kind === "overruled")
-        ? "<span class=\"x-key x-key--overruled\"></span> a value that was overruled"
+        ? "<span class=\"key key--overruled\"></span> a value that was overruled"
         : ""}
     </p>
-    <p class="x-plot__alt">${escape(described(detail, points))}</p>
+    <p class="plot__alt">${escape(described(detail, points))}</p>
     ${mapButton(detail)}
   </div>`;
 }
@@ -100,11 +100,11 @@ function mapButton(detail: StopDetail): string {
     return "";
   }
 
-  return `<p class="x-plot__map">
-    <button class="x-btn" data-map="${lat},${lon}">
+  return `<p class="plot__map">
+    <button class="btn2" data-map="${lat},${lon}">
       Show a map &mdash; loads tiles from openstreetmap.org
     </button>
-    <a class="x-note" href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}"
+    <a class="note" href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}"
       rel="noreferrer">or open it there &nearr;</a>
   </p>`;
 }
@@ -266,7 +266,7 @@ function scaleBar(
   const metres = Math.max(magnitude, Math.round(target / magnitude) * magnitude);
   const width = (metres / across) * (size - pad * 2);
 
-  return `<g class="x-plot__scale">
+  return `<g class="plot__scale">
     <line x1="${pad}" y1="${size - 10}" x2="${(pad + width).toFixed(1)}" y2="${size - 10}"></line>
     <text x="${pad}" y="${size - 15}">${number(metres)} m</text>
   </g>`;

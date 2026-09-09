@@ -14,30 +14,30 @@ import {cell, escape} from "../dom.js";
 
 export function routeView(detail: RouteDetail): string {
   if (detail.row === undefined) {
-    return `<h2 class="h2 h2--sm" tabindex="-1" data-heading>${escape(detail.id)}</h2>
-      <p class="x-empty">routes.txt has no such route.</p>`;
+    return `<h2 class="h h1" tabindex="-1" data-heading>${escape(detail.id)}</h2>
+      <p class="empty">routes.txt has no such route.</p>`;
   }
 
   const row = detail.row;
 
   return `
-    <h2 class="h2 h2--sm" tabindex="-1" data-heading>
+    <h2 class="h h1" tabindex="-1" data-heading>
       ${escape(row.route_long_name ?? row.route_short_name ?? detail.id)}
     </h2>
-    <p class="x-lede">
+    <p class="lede">
       ${escape(detail.id)} &middot; ${routeTypeOf(row.route_type)}
       ${detail.agency === undefined ? "" : ` &middot; ${escape(detail.agency.agency_name)}`}
       &middot; ${number(detail.totalTrips)} trips
     </p>
-    <dl class="x-fields">
+    <dl class="fields">
       ${Object.entries(row).map(([column, value]) =>
-        `<div class="x-field"><dt>${escape(column)}</dt><dd>${cell(value)}</dd></div>`).join("")}
+        `<div class="field"><dt>${escape(column)}</dt><dd>${cell(value)}</dd></div>`).join("")}
     </dl>
-    <h3 class="x-h3">Trips on this route</h3>
+    <h3 class="h h2">Trips on this route</h3>
     ${list(detail.trips.map(trip => `
       <li><a href="${format({view: "trip", id: trip.id})}">${escape(trip.shortName ?? trip.id)}</a>
         ${trip.headsign === undefined ? "" : `to ${escape(trip.headsign)}`}
-        ${trip.serviceId === undefined ? "" : `<a class="x-note" href="${format({view: "service",
+        ${trip.serviceId === undefined ? "" : `<a class="note" href="${format({view: "service",
           id: trip.serviceId})}">service ${escape(trip.serviceId)}</a>`}</li>`),
       detail.totalTrips, detail.trips.length, "route_id", detail.id)}`;
 }
@@ -46,8 +46,8 @@ export function serviceView(detail: ServiceDetail): string {
   const row = detail.row;
 
   return `
-    <h2 class="h2 h2--sm" tabindex="-1" data-heading>Service ${escape(detail.id)}</h2>
-    <p class="x-lede">
+    <h2 class="h h1" tabindex="-1" data-heading>Service ${escape(detail.id)}</h2>
+    <p class="lede">
       ${row === undefined
         ? "Described only by its exceptions — calendar.txt has no row for it."
         : `${escape(pattern(row))}`}
@@ -55,26 +55,26 @@ export function serviceView(detail: ServiceDetail): string {
       ${detail.dates.length === 0 ? "" : ` &middot; runs on ${number(
         detail.dates.filter(date => date.runs).length)} days of the feed's window`}
     </p>
-    ${row === undefined ? "" : `<dl class="x-fields">
+    ${row === undefined ? "" : `<dl class="fields">
       ${Object.entries(row).map(([column, value]) =>
-        `<div class="x-field"><dt>${escape(column)}</dt><dd>${cell(value)}</dd></div>`).join("")}
+        `<div class="field"><dt>${escape(column)}</dt><dd>${cell(value)}</dd></div>`).join("")}
     </dl>`}
     ${detail.dates.length === 0 ? "" : `
-      <h3 class="x-h3">The days it runs</h3>
-      <ol class="x-cal">${detail.dates.map(day).join("")}</ol>`}
+      <h3 class="h h2">The days it runs</h3>
+      <ol class="cal">${detail.dates.map(day).join("")}</ol>`}
     ${detail.exceptions.length === 0 ? "" : `
-      <h3 class="x-h3">Its exceptions</h3>
-      <p class="x-note">${number(detail.exceptions.length)} rows of calendar_dates.txt name this
+      <h3 class="h h2">Its exceptions</h3>
+      <p class="note">${number(detail.exceptions.length)} rows of calendar_dates.txt name this
         service. In this feed an exclusion usually means a replacement schedule runs instead,
         published as a separate trip that nothing links to this one.</p>
-      <div class="x-scroll"><table class="x-table">
+      <div class="scroll"><table class="list">
         <thead><tr><th scope="col">date</th><th scope="col">what it does</th></tr></thead>
         <tbody>${detail.exceptions.map(exception => `<tr>
           <td>${formatDate(exception.date ?? "")}</td>
           <td>${exception.exception_type === "1" ? "adds the date" : "removes the date"}</td>
         </tr>`).join("")}</tbody>
       </table></div>`}
-    <h3 class="x-h3">Trips on this service</h3>
+    <h3 class="h h2">Trips on this service</h3>
     ${list(detail.trips.map(trip => `
       <li><a href="${format({view: "trip", id: trip.id})}">${escape(trip.id)}</a>
         ${trip.headsign === undefined ? "" : `to ${escape(trip.headsign)}`}</li>`),
@@ -92,21 +92,21 @@ function list(
   items: readonly string[], total: number, shown: number, column: string, id: string
 ): string {
   if (items.length === 0) {
-    return "<p class=\"x-empty\">Nothing.</p>";
+    return "<p class=\"empty\">Nothing.</p>";
   }
 
-  return `<ul class="x-links">${items.join("")}</ul>
-    ${total > shown ? `<p class="x-note">Showing ${number(shown)} of ${number(total)}.
+  return `<ul class="links">${items.join("")}</ul>
+    ${total > shown ? `<p class="note">Showing ${number(shown)} of ${number(total)}.
       <a href="${format({view: "file", file: "trips.txt", page: 0, filters: {[column]: id}})}">
         See all of them in trips.txt &rarr;</a></p>` : ""}`;
 }
 
 function day(date: ServiceDate): string {
   const kind = date.exception === 2
-    ? " x-cal__cell--removed"
-    : date.exception === 1 ? " x-cal__cell--added" : date.runs ? " x-cal__cell--runs" : "";
+    ? " cal__cell--removed"
+    : date.exception === 1 ? " cal__cell--added" : date.runs ? " cal__cell--runs" : "";
 
-  return `<li class="x-cal__cell${kind}"><span class="x-cal__label">
+  return `<li class="cal__cell${kind}"><span class="cal__label">
     ${weekdayOf(date.date)} ${formatDate(date.date)}</span></li>`;
 }
 

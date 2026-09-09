@@ -24,8 +24,8 @@ export function validationView(
 ): string {
   if (groups === undefined) {
     return `
-      <h2 class="h2 h2--sm" tabindex="-1" data-heading>Validation</h2>
-      <p class="x-empty">
+      <h2 class="h h1" tabindex="-1" data-heading>Validation</h2>
+      <p class="empty">
         This feed has no validator report beside it. The nightly publishes one for the feeds it
         builds; a feed you opened from your own machine has none.
       </p>`;
@@ -35,8 +35,8 @@ export function validationView(
   const total = counts(groups);
 
   return `
-    <h2 class="h2 h2--sm" tabindex="-1" data-heading>Validation</h2>
-    <p class="x-lede">
+    <h2 class="h h1" tabindex="-1" data-heading>Validation</h2>
+    <p class="lede">
       ${total.errors === 0
         ? "No unaccepted errors."
         : `${number(total.errors)} error${total.errors === 1 ? "" : "s"}.`}
@@ -45,32 +45,32 @@ export function validationView(
         ? ""
         : `${number(total.accepted)} accepted, each for a reason the build states.`}
     </p>
-    <p class="x-note">
+    <p class="note">
       From the MobilityData validator, run against the feed when it was built. An accepted error is
       not a fault that was ignored — it is the feed reporting its source rather than correcting it,
       or a deliberate choice made so that something would flag it.
     </p>
-    ${code === undefined ? "" : `<p class="x-tools">
-      <a class="x-btn" href="${format({view: "validation"})}">&larr; all the notices</a></p>`}
-    <ul class="x-checks">${shown.map(group).join("")}</ul>`;
+    ${code === undefined ? "" : `<p class="tools">
+      <a class="btn2" href="${format({view: "validation"})}">&larr; all the notices</a></p>`}
+    <ul class="checks">${shown.map(group).join("")}</ul>`;
 }
 
 function group(group: Group): string {
-  return `<li class="x-check">
-    <div class="x-check__head">
-      <a class="x-check__title" href="${format({view: "validation", code: group.code})}">
+  return `<li class="check">
+    <div class="check__head">
+      <a class="check__title" href="${format({view: "validation", code: group.code})}">
         <code>${escape(group.code)}</code></a>
-      <span class="x-pill x-pill--${group.accepted !== undefined
+      <span class="pill pill--${group.accepted !== undefined
         ? "clear" : group.severity === "ERROR" ? "error" : group.severity === "WARNING" ? "warning" : ""}">
         ${number(group.total)} ${escape(group.severity.toLowerCase())}${group.total === 1 ? "" : "s"}
       </span>
     </div>
     ${group.accepted === undefined
       ? ""
-      : `<p class="x-note x-accepted">
+      : `<p class="note accepted">
           Accepted, up to ${number(group.accepted.max)}. ${escape(group.accepted.why)}</p>`}
     ${group.shown < group.total
-      ? `<p class="x-note">The report holds ${number(group.shown)} of the
+      ? `<p class="note">The report holds ${number(group.shown)} of the
         ${number(group.total)}.</p>`
       : ""}
     ${group.samples.length === 0 ? "" : samples(group.samples)}
@@ -78,7 +78,7 @@ function group(group: Group): string {
 }
 
 function samples(samples: readonly Sample[]): string {
-  return `<ul class="x-findings">${samples.slice(0, 12).map(sample => `<li class="x-finding">
+  return `<ul class="findings">${samples.slice(0, 12).map(sample => `<li class="finding">
     <code>${escape(describe(sample.fields))}</code>
     ${sample.refs.map(ref => `<a href="${link(ref)}">${label(ref)}&nearr;</a>`).join(" ")}
   </li>`).join("")}</ul>`;

@@ -30,9 +30,9 @@ import type {ProvenanceFile} from "../provenance.js";
  * The page.
  *
  * Everything above this file is pure and tested; this is the part that touches the DOM, and it is
- * kept thin on purpose. Each view is a function from state to a string, the container's innerHTML is
- * replaced on navigation, and there is one delegated click listener and one delegated input
- * listener. Nothing here needs reconciling, which is why there is no framework under it.
+ * kept thin on purpose. Each view is a function from state to a string, one pane's innerHTML is
+ * replaced on navigation, and there is one delegated listener per kind of event. Nothing here needs
+ * reconciling, which is why there is no framework under it.
  */
 
 interface Assets {
@@ -80,11 +80,18 @@ export function boot(): void {
       state.callsLoaded = true;
       state.callRows = rows;
 
+      // The one that was missing: without it the bar reads "Reading the calls…" for the rest of the
+      // session and the load looks like it never finished.
+      hideStatus();
+      element("explorer-load-calls").hidden = true;
+      element("explorer-calls").textContent = `${number(rows)} calls`;
+
       if (!contiguous) {
         note("This feed does not keep each trip's calls together in stop_times.txt. That is legal, "
           + "and unusual — it was indexed the general way instead.");
       }
 
+      rail();
       render();
     },
     onFailed: fail
@@ -98,11 +105,9 @@ export function boot(): void {
 function start(assets: Assets): void {
   const open = element("explorer-open");
 
-  if (assets.feed !== undefined) {
-    open.querySelector("[data-open-latest]")?.addEventListener("click", () => {
-      openFeed({url: `${base}${assets.feed!.path}`});
-    });
-  }
+  open.querySelector("[data-open-latest]")?.addEventListener("click", () => {
+    openFeed({url: `${base}${assets.feed?.path ?? "/gtfs.zip"}`});
+  });
 
   const input = open.querySelector<HTMLInputElement>("[data-file]");
 
@@ -119,12 +124,12 @@ function start(assets: Assets): void {
 
   drop.addEventListener("dragover", event => {
     event.preventDefault();
-    drop.classList.add("x-dropping");
+    drop.classList.add("is-dropping");
   });
-  drop.addEventListener("dragleave", () => drop.classList.remove("x-dropping"));
+  drop.addEventListener("dragleave", () => drop.classList.remove("is-dropping"));
   drop.addEventListener("drop", event => {
     event.preventDefault();
-    drop.classList.remove("x-dropping");
+    drop.classList.remove("is-dropping");
 
     const file = event.dataTransfer?.files?.[0];
 
@@ -136,13 +141,23 @@ function start(assets: Assets): void {
 
 function openFeed(source: OpenSource): void {
   element("explorer-open").hidden = true;
-  element("explorer-status").hidden = false;
+  element("explorer-app").hidden = false;
   element("explorer-view").innerHTML = "";
+  element("explorer-calls").textContent = "";
   state.manifest = undefined;
   state.callsLoaded = false;
-  state.validation = undefined;
-  state.provenance = undefined;
+  showStatus("Opening…");
   explorer?.open(source);
+}
+
+/** Back to the landing state, so a second feed can be opened over the first. */
+function closeFeed(): void {
+  element("explorer-app").hidden = true;
+  element("explorer-open").hidden = false;
+  state.manifest = undefined;
+  state.callsLoaded = false;
+  hideStatus();
+  location.hash = "";
 }
 
 /**
@@ -192,27 +207,57 @@ function opened(manifest: FeedManifest, window?: {from: number, to: number}): vo
   state.manifest = manifest;
   state.window = window;
 
-  element("explorer-status").hidden = true;
-  element("explorer-nav").hidden = false;
+  hideStatus();
   element("explorer-name").textContent = manifest.name;
 
   const calls = manifest.files.find(file => file.name === "stop_times.txt");
-
-  // The second phase is offered with its cost on the button rather than started quietly. On the
-  // published feed it is 2.9 million rows, a few seconds of work and a few hundred megabytes of
-  // peak memory, and a phone may not have it to give.
   const button = element("explorer-load-calls");
 
-  if (calls === undefined) {
-    button.hidden = true;
-  }
-  else {
-    button.hidden = false;
-    button.textContent = `Load the calls — about ${bytes(calls.originalSize ?? 0)} of `
-      + "stop_times.txt. Needed for the trip view, the board and half the checks.";
+  // The second phase is offered with its cost on the button rather than started quietly. On the
+  // published feed it is 2.9 million rows, a few seconds of work and a few hundred megabytes.
+  button.hidden = calls === undefined;
+
+  if (calls !== undefined) {
+    button.textContent = `Load ${bytes(calls.originalSize ?? 0)} of stop times`;
+    button.title = "The trip view, the departure board and half the checks need these. "
+      + "It takes a few seconds and a few hundred megabytes of memory.";
   }
 
+  rail();
   render();
+}
+
+/**
+ * The files, down the side.
+ *
+ * Always there, because moving between files is most of what this is for. A file whose rows are not
+ * counted yet says so rather than showing nothing, which is the state stop_times.txt is in until
+ * somebody asks for it.
+ */
+function rail(): void {
+  const manifest = state.manifest;
+
+  if (manifest === undefined) {
+    return;
+  }
+
+  const route = parse(location.hash);
+  const here = route.view === "file" ? route.file : undefined;
+
+  element("explorer-rail").innerHTML = `
+    <p class="rail__group">Files</p>
+    ${manifest.files.map(file => `
+      <a href="${format({view: "file", file: file.name, page: 0, filters: {}})}"
+         class="${file.name === here ? "on" : ""}">
+        <span>${escape(file.name.replace(/\.txt$/, ""))}</span>
+        <span class="rail__count">${file.rows === -1
+          ? "<span class=\"rail__none\">—</span>"
+          : number(file.rows)}</span>
+      </a>`).join("")}
+    ${manifest.other.length === 0 ? "" : `
+      <p class="rail__group">Also in the zip</p>
+      ${manifest.other.map(name =>
+        `<a href="#/" aria-disabled="true"><span>${escape(name)}</span></a>`).join("")}`}`;
 }
 
 /**
@@ -231,6 +276,7 @@ async function render(): Promise<void> {
   const view = element("explorer-view");
 
   markNav(route);
+  rail();
 
   try {
     const html = await html_(route, id);
@@ -239,13 +285,18 @@ async function render(): Promise<void> {
       return; // something newer is already on its way
     }
 
-    view.innerHTML = html;
+    // The file table takes the pane whole and does its own scrolling; everything else is a document
+    // and gets a measure and some air around it.
+    view.innerHTML = route.view === "file"
+      ? html
+      : `<div class="doc${route.view === "provenance" ? " doc--wide" : ""}">${html}</div>`;
     focusHeading(view);
     scrollToRow();
   }
   catch (error) {
     if (id === state.rendering) {
-      view.innerHTML = `<p class="x-warn" role="alert">${escape(message(error))}</p>`;
+      view.innerHTML = `<div class="doc"><p class="warn" role="alert">`
+        + `${escape(message(error))}</p></div>`;
     }
   }
 }
@@ -311,7 +362,7 @@ async function html_(route: Route, id: number): Promise<string> {
       // than a spinner and then everything at once.
       const found: Finding[] = [];
 
-      element("explorer-view").innerHTML = checksView([], [], true);
+      element("explorer-view").innerHTML = `<div class="doc">${checksView([], [], true)}</div>`;
 
       const {value, findings} = await ask.ask<CheckResult[]>(
         {type: "checks", slot: "a", ...(route.id === undefined ? {} : {only: route.id})},
@@ -319,7 +370,7 @@ async function html_(route: Route, id: number): Promise<string> {
           found.push(finding);
 
           if (id === state.rendering && found.length % 50 === 0) {
-            element("explorer-view").innerHTML = checksView([], found, true);
+            element("explorer-view").innerHTML = `<div class="doc">${checksView([], found, true)}</div>`;
           }
         }
       );
@@ -339,7 +390,7 @@ async function html_(route: Route, id: number): Promise<string> {
 }
 
 /**
- * One click listener and one input listener for the whole page.
+ * One listener per kind of event, for the whole app.
  *
  * Every link is a real href to a hash, so navigation needs no code at all - the hashchange handler
  * is the router. What is left is the handful of things that are genuinely not navigation.
@@ -348,10 +399,16 @@ function wire(): void {
   addEventListener("hashchange", () => render());
 
   element("explorer-load-calls").addEventListener("click", () => {
+    if (state.manifest === undefined) {
+      return; // nothing is open; the button should not be here at all
+    }
+
     element("explorer-load-calls").hidden = true;
-    element("explorer-status").hidden = false;
+    showStatus("Reading the calls…");
     explorer?.loadCalls();
   });
+
+  element("explorer-close").addEventListener("click", closeFeed);
 
   const view = element("explorer-view");
 
@@ -380,7 +437,7 @@ function wire(): void {
   let typing: ReturnType<typeof setTimeout> | undefined;
 
   view.addEventListener("input", event => {
-    const input = (event.target as HTMLElement).closest<HTMLInputElement>(".x-filter");
+    const input = (event.target as HTMLElement).closest<HTMLInputElement>(".grid__filter");
 
     if (input === null) {
       return;
@@ -409,7 +466,7 @@ function wire(): void {
       // Replacing the table takes the focused input with it, so it is put back where it was.
       queueMicrotask(() => {
         const again = document.querySelector<HTMLInputElement>(
-          `.x-filter[name="${CSS.escape(input.name)}"]`);
+          `.grid__filter[name="${CSS.escape(input.name)}"]`);
 
         again?.focus();
         again?.setSelectionRange(cursor, cursor);
@@ -439,6 +496,8 @@ async function save(format_: "csv" | "json"): Promise<void> {
     return;
   }
 
+  showStatus("Building the export…");
+
   const {value} = await explorer.ask<{filename: string, text: string}>({
     type: "export",
     slot: "a",
@@ -453,6 +512,8 @@ async function save(format_: "csv" | "json"): Promise<void> {
     format: format_
   });
 
+  hideStatus();
+
   const url = URL.createObjectURL(new Blob([value.text],
     {type: format_ === "csv" ? "text/csv" : "application/json"}));
   const link = document.createElement("a");
@@ -464,24 +525,33 @@ async function save(format_: "csv" | "json"): Promise<void> {
 }
 
 function showProgress(phase: OpenPhase, progress: LoadProgress): void {
-  const status = element("explorer-status");
   const done = progress.bytesTotal === undefined
     ? undefined
     : Math.round((progress.bytesRead / progress.bytesTotal) * 100);
 
-  status.hidden = false;
-  status.textContent = phase === "calls"
+  showStatus(phase === "calls"
     ? `Reading the calls… ${number(progress.rows)} rows`
-    : `Reading ${progress.entry ?? "the feed"}…${done === undefined ? "" : ` ${done}%`}`;
+    : `Reading ${progress.entry ?? "the feed"}…${done === undefined ? "" : ` ${done}%`}`);
+}
+
+function showStatus(text: string): void {
+  const status = element("explorer-status");
+
+  status.hidden = false;
+  status.textContent = text;
+}
+
+function hideStatus(): void {
+  element("explorer-status").hidden = true;
 }
 
 function markNav(route: Route): void {
   for (const link of document.querySelectorAll<HTMLAnchorElement>("#explorer-nav a[data-view]")) {
-    link.classList.toggle("x-on", link.dataset.view === route.view);
+    link.classList.toggle("on", link.dataset.view === route.view);
   }
 }
 
-/** A row linked to by number is highlighted, because a table of 200 rows is not a needle. */
+/** A row linked to by number is highlighted, because a page of 200 rows is not a needle. */
 function scrollToRow(): void {
   const at = location.hash.match(/#row-(\d+)$/);
 
@@ -491,13 +561,16 @@ function scrollToRow(): void {
 
   const row = element("explorer-view").querySelectorAll("tbody tr")[Number(at[1]) - 2];
 
-  row?.classList.add("x-row--found");
+  row?.classList.add("found");
   row?.scrollIntoView({block: "center", behavior: "auto"});
 }
 
 function fail(text: string): void {
-  element("explorer-status").hidden = true;
-  element("explorer-view").innerHTML = `<p class="x-warn" role="alert">${escape(text)}</p>`;
+  hideStatus();
+  element("explorer-app").hidden = false;
+  element("explorer-open").hidden = true;
+  element("explorer-view").innerHTML =
+    `<div class="doc"><p class="warn" role="alert">${escape(text)}</p></div>`;
 }
 
 function note(text: string): void {
@@ -505,6 +578,7 @@ function note(text: string): void {
 
   status.hidden = false;
   status.textContent = text;
+  setTimeout(() => status.hidden = true, 12000);
 }
 
 function message(error: unknown): string {

@@ -68,10 +68,15 @@ export class Explorer {
     const id = this.next++;
 
     return new Promise((resolve, reject) => {
+      // The findings are handed to resolve rather than looked up when it runs. Reading them back off
+      // this map was a bug: the entry is deleted before the promise settles, so every answer arrived
+      // with an empty list and the checks all reported finding nothing.
+      const findings: Finding[] = [];
+
       this.pending.set(id, {
-        resolve: value => resolve({value: value as T, findings: this.pending.get(id)?.findings ?? []}),
+        resolve: value => resolve({value: value as T, findings}),
         reject,
-        findings: []
+        findings
       });
 
       if (onFinding !== undefined) {

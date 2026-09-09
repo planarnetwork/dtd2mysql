@@ -16,18 +16,18 @@ import {cell, escape} from "../dom.js";
 export function tripView(detail: TripDetail): string {
   if (detail.row === undefined) {
     return `
-      <h2 class="h2 h2--sm" tabindex="-1" data-heading>${escape(detail.id)}</h2>
-      <p class="x-empty">trips.txt has no such trip.</p>`;
+      <h2 class="h h1" tabindex="-1" data-heading>${escape(detail.id)}</h2>
+      <p class="empty">trips.txt has no such trip.</p>`;
   }
 
   const row = detail.row;
 
   return `
-    <h2 class="h2 h2--sm" tabindex="-1" data-heading>
+    <h2 class="h h1" tabindex="-1" data-heading>
       ${escape(row.trip_short_name ?? detail.id)}
-      ${row.trip_headsign === undefined ? "" : `<span class="x-sub">to ${escape(row.trip_headsign)}</span>`}
+      ${row.trip_headsign === undefined ? "" : `<span class="sub">to ${escape(row.trip_headsign)}</span>`}
     </h2>
-    <p class="x-lede">
+    <p class="lede">
       ${escape(detail.id)}
       ${detail.route === undefined ? "" : ` &middot; <a href="${format({view: "route",
         id: detail.route.route_id as string})}">${escape(detail.route.route_long_name
@@ -43,11 +43,11 @@ export function tripView(detail: TripDetail): string {
 
 function calls(detail: TripDetail): string {
   if (!detail.callsLoaded) {
-    return `<p class="x-warn">The calls have not been loaded, so this trip has no calling pattern
+    return `<p class="warn">The calls have not been loaded, so this trip has no calling pattern
       here yet. Load them from the overview.</p>`;
   }
   if (detail.calls.length === 0) {
-    return "<p class=\"x-empty\">This trip has no calls at all, which the checks would report.</p>";
+    return "<p class=\"empty\">This trip has no calls at all, which the checks would report.</p>";
   }
 
   const rows = detail.calls.map(call => {
@@ -55,29 +55,29 @@ function calls(detail: TripDetail): string {
     // board is an operational stop, and it looks like a missing service until it is said in words.
     const operational = call.pickup === 1 && call.dropOff === 1;
 
-    return `<tr${operational ? " class=\"x-row--quiet\"" : ""}>
-      <td class="x-num">${call.sequence}</td>
+    return `<tr${operational ? " class=\"row--quiet\"" : ""}>
+      <td class="num">${call.sequence}</td>
       <td>${call.stopId === undefined
         ? ""
         : `<a href="${format({view: "stop", id: call.parentId !== undefined && call.parentId !== ""
           ? call.parentId : call.stopId})}">${escape(call.stopName ?? call.stopId)}</a>`}
-        ${call.platform === undefined ? "" : `<span class="x-plat">${escape(call.platform)}</span>`}</td>
-      <td class="x-num">${call.arrival ?? "<span class=\"x-absent\">—</span>"}</td>
-      <td class="x-num">${call.departure ?? "<span class=\"x-absent\">—</span>"}</td>
+        ${call.platform === undefined ? "" : `<span class="plat">${escape(call.platform)}</span>`}</td>
+      <td class="num">${call.arrival ?? "<span class=\"absent\">—</span>"}</td>
+      <td class="num">${call.departure ?? "<span class=\"absent\">—</span>"}</td>
       <td>${call.pickup === 0 && call.dropOff === 0
-        ? "<span class=\"x-absent\">a normal call</span>"
+        ? "<span class=\"absent\">a normal call</span>"
         : `${escape(pickupOf(call.pickup))}, ${escape(dropOffOf(call.dropOff))}`}</td>
       <td>${call.timepoint === false ? "approximate" : ""}</td>
     </tr>`;
   }).join("");
 
   return `
-    <h3 class="x-h3">Where it calls</h3>
-    <div class="x-scroll">
-      <table class="x-table">
+    <h3 class="h h2">Where it calls</h3>
+    <div class="scroll">
+      <table class="list">
         <thead><tr>
-          <th scope="col" class="x-num">#</th><th scope="col">stop</th>
-          <th scope="col" class="x-num">arrives</th><th scope="col" class="x-num">leaves</th>
+          <th scope="col" class="num">#</th><th scope="col">stop</th>
+          <th scope="col" class="num">arrives</th><th scope="col" class="num">leaves</th>
           <th scope="col">boarding</th><th scope="col">timing</th>
         </tr></thead>
         <tbody>${rows}</tbody>
@@ -94,7 +94,7 @@ function calls(detail: TripDetail): string {
  */
 function calendar(detail: TripDetail): string {
   if (detail.dates.length === 0) {
-    return `<p class="x-warn">This trip's service is in no calendar, so it never runs. The
+    return `<p class="warn">This trip's service is in no calendar, so it never runs. The
       integrity checks report this.</p>`;
   }
 
@@ -103,33 +103,33 @@ function calendar(detail: TripDetail): string {
   const added = detail.dates.filter(date => date.exception === 1).length;
 
   return `
-    <h3 class="x-h3">The days it runs</h3>
-    <p class="x-note">
+    <h3 class="h h2">The days it runs</h3>
+    <p class="note">
       ${escape(pattern(detail))}
       ${removed > 0 ? ` ${number(removed)} date${removed === 1 ? " is" : "s are"} excluded.` : ""}
       ${added > 0 ? ` ${number(added)} date${added === 1 ? " is" : "s are"} added.` : ""}
       ${removed > 0 ? " An excluded date is usually a replacement schedule running instead, "
         + "which this feed publishes as a separate trip with nothing linking the two." : ""}
     </p>
-    <ol class="x-cal">${days}</ol>
-    <p class="x-cal__key">
-      <span class="x-cal__cell x-cal__cell--runs"></span> runs
-      <span class="x-cal__cell"></span> does not
-      <span class="x-cal__cell x-cal__cell--removed"></span> excluded by calendar_dates.txt
-      <span class="x-cal__cell x-cal__cell--added"></span> added by it
+    <ol class="cal">${days}</ol>
+    <p class="cal__key">
+      <span class="cal__cell cal__cell--runs"></span> runs
+      <span class="cal__cell"></span> does not
+      <span class="cal__cell cal__cell--removed"></span> excluded by calendar_dates.txt
+      <span class="cal__cell cal__cell--added"></span> added by it
     </p>`;
 }
 
 function day(date: ServiceDate): string {
   const kind = date.exception === 2
-    ? " x-cal__cell--removed"
-    : date.exception === 1 ? " x-cal__cell--added" : date.runs ? " x-cal__cell--runs" : "";
+    ? " cal__cell--removed"
+    : date.exception === 1 ? " cal__cell--added" : date.runs ? " cal__cell--runs" : "";
   const why = date.exception === 2
     ? "excluded by calendar_dates.txt"
     : date.exception === 1 ? "added by calendar_dates.txt" : date.runs ? "runs" : "does not run";
 
-  return `<li class="x-cal__cell${kind}">
-    <span class="x-cal__label">${weekdayOf(date.date)} ${formatDate(date.date)}: ${why}</span>
+  return `<li class="cal__cell${kind}">
+    <span class="cal__label">${weekdayOf(date.date)} ${formatDate(date.date)}: ${why}</span>
   </li>`;
 }
 
@@ -167,13 +167,13 @@ function couplings(detail: TripDetail): string {
     ${direction} <a href="${format({view: "trip", id: link.tripId})}">${escape(link.tripId)}</a>
     ${link.headsign === undefined ? "" : `to ${escape(link.headsign)}`}
     ${link.stopName === undefined ? "" : `at ${escape(link.stopName)}`}
-    <a class="x-note" href="${format({view: "file", file: "transfers.txt", page: 0,
+    <a class="note" href="${format({view: "file", file: "transfers.txt", page: 0,
       filters: {from_trip_id: link.tripId}})}">the row&nearr;</a>
   </li>`;
 
   return `
-    <h3 class="x-h3">What it couples to</h3>
-    <ul class="x-links">
+    <h3 class="h h2">What it couples to</h3>
+    <ul class="links">
       ${detail.prior.map(link => item(link, "carries on from")).join("")}
       ${detail.onward.map(link => item(link, "carries on as")).join("")}
     </ul>`;
