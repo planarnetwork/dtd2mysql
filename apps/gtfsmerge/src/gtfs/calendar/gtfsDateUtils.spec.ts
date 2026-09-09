@@ -1,5 +1,5 @@
 import {describe, it, expect} from "vitest";
-import { toGTFSDate, getDateFromGTFSString } from "./gtfsDateUtils";
+import {toGTFSDate} from "./gtfsDateUtils";
 
 describe("toGTFSDate", () => {
   it("returns a GTFS date string", () => {
@@ -8,27 +8,18 @@ describe("toGTFSDate", () => {
 
     expect(result).to.equal("20190604");
   });
-});
 
-describe("getDateFromGTFSString", () => {
-  it("returns a JS Date from GTFS string", () => {
-    const result = getDateFromGTFSString("20190604");
-    const dateDiff = result.getTime() - new Date(2019, 5, 4, 0, 0, 0).getTime();
-    expect(dateDiff).to.equal(0);
+  it("pads a single digit month and day", () => {
+    expect(toGTFSDate(new Date("2020-01-01T00:00:00"))).to.equal("20200101");
   });
-});
 
-describe("GTFS date roundtrip", () => {
-  it("Preserves GTFS dates when converting to/from JS dates", () => {
-    function validateGtfsDateRoundtrip(gtfsDate: string) {
-      const date = getDateFromGTFSString(gtfsDate);
-      const result = toGTFSDate(date);
-      expect(result).to.equal(gtfsDate);
-    }
+  /**
+   * The caller's day, not Greenwich's: a merge run at half past midnight in
+   * British Summer Time is being run on the day the caller thinks it is.
+   */
+  it("is the local date, not the UTC one", () => {
+    const date = new Date(2019, 5, 4, 0, 30, 0);
 
-    validateGtfsDateRoundtrip("20190601");
-    validateGtfsDateRoundtrip("20190604");
-    validateGtfsDateRoundtrip("20191231");
-    validateGtfsDateRoundtrip("20200101");
+    expect(toGTFSDate(date)).to.equal("20190604");
   });
 });

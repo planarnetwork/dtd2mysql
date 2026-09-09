@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import {deliverFeed} from "@gb-transit/gtfs-output";
-import {readMergeInput, stopTimesOf} from "./FeedIndex";
+import {readMergeInput, streamOf} from "./FeedIndex";
 import {GTFSOutputFactory} from "./GTFSOutputFactory";
 
 /**
@@ -19,17 +19,16 @@ export class MergeCommand {
   public async run(
     inputs: string[],
     outputFile: string,
-    stopPrefix: string,
     filterDatesBefore?: string
   ): Promise<void> {
     const output = this.outputFactory.create();
 
     for (const input of inputs) {
       console.log("Loading " + input);
-      const gtfs = await readMergeInput(input, stopPrefix, filterDatesBefore);
+      const gtfs = await readMergeInput(input, filterDatesBefore);
 
       console.log("Processing " + input);
-      await output.write(gtfs, stopTimesOf(input, stopPrefix));
+      await output.write(gtfs, streamOf(input));
     }
 
     await output.end();

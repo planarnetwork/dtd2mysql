@@ -1,0 +1,3 @@
+area_id,stop_id
+1072,910GALPHA
+1072,910GBETA

@@ -5,6 +5,14 @@
  * acknowledgement a condition of use, so a feed carrying DfT survey coordinates
  * without this row is a feed being used outside its licence.
  *
+ * **The scope is not read.** The specification lets an attribution name an
+ * `agency_id`, a `route_id` or a `trip_id`, so that a statement can be about part
+ * of a feed rather than all of it. None of those are fields here, so an
+ * attribution read from another feed arrives as a statement about the whole of
+ * it. That is wider than what was published, and it is the only shape a merge
+ * could carry: routes and trips are renumbered as they are merged, so an id in
+ * an attribution would point at whatever now holds that number.
+ *
  * **The licence is a producer extension.** The spec has `organization_name` and
  * a URL and no field for the terms, which is the one thing an attribution
  * statement has to say. The spec lets a producer add fields it does not define

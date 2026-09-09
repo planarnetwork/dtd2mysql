@@ -1,4 +1,4 @@
-route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,wheelchair_accessible,bikes_allowed
-RA1,SA1,TA1,"Inverness, Aberdeen and Fort William",1A01,0,0,0
-RA1,SA2,TA2,Leeds,1A02,0,0,0
-RA2,SA3,TA3,Replacement Bus,1A03,0,0,0
+route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed
+RA1,SA1,TA1,"Inverness, Aberdeen and Fort William",1A01,0,1,,0,0
+RA1,SA2,TA2,Leeds,1A02,0,1,,0,0
+RA2,SA3,TA3,Replacement Bus,1A03,0,,,0,0

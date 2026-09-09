@@ -16,6 +16,17 @@ feeds does not reach. Each row is here for a reason:
 | `b/calendar.txt` `SB2` | A calendar entirely in the past, dropped by the date filter. |
 | `b/stops.txt` `910GALPHA` | A stop both feeds describe. The merged feed has one row for it - the reason a GB rail feed and a GB bus feed can be merged without a stop prefix. |
 | `b/stops.txt` `9100BUSSTOP` | About 200m from `910GALPHA` at 54N, so a walk transfer is generated between them. |
+| `a/attributions.txt` and `b/attributions.txt` | Both name the DfT for NaPTAN under the same licence, so the merged feed says it once, and each names one other body, so both of those survive. |
+| `a/areas.txt` `9999` | An area whose only member is a stop nothing calls at. The membership goes; the area stays. |
+| `a/stop_areas.txt` `1072,9100ALPHA1` | A membership naming a platform. It is written as the station above it, as a transfer to a platform is. |
+| `a/stop_areas.txt` `9999,910GNOTCALLED` | A membership naming a stop nothing calls at, which would be a reference to a row that is not in the feed. |
+| `a/trips.txt` and `b/trips.txt` block `1` | The same block id in both feeds, meaning two different vehicles. They must not become one. |
+| `b/trips.txt` `SHP1` | A shape a surviving trip is drawn along, whose points are renumbered with it. |
+| `b/shapes.txt` `SHP2` | A shape whose only trip the date filter drops, so the shape goes too. |
+| `b/shapes.txt` `SHP3` | A shape no trip names at all. |
+| `b/frequencies.txt` `TB1` | A frequency naming a trip that survives, so it is renumbered with it. |
+| `b/frequencies.txt` `TB2` | A frequency naming a trip the date filter drops. |
+| `a/feed_info.txt` and `b/feed_info.txt` | Two publishers, two windows and two versions. The merged feed takes the first publisher, the widest window and both versions. |
 
 The feeds are written by hand rather than built, because every one of these is an
 edge a builder would have to be coaxed into producing.

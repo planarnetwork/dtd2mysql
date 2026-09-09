@@ -1,0 +1,4 @@
+organization_name,is_producer,is_operator,is_authority,attribution_url,attribution_licence
+Department for Transport,0,0,1,https://naptan.dft.gov.uk,Open Government Licence v3.0
+Rail Delivery Group,0,0,1,https://raildata.org.uk/,Rail Settlement Plan data licence
+Bus Open Data Service,0,0,1,https://www.bus-data.dft.gov.uk/,Open Government Licence v3.0

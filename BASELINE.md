@@ -55,6 +55,13 @@ between a train that terminates and the one it turns back as, the table of the p
 and the shape of an entry in it. The table is a parameter of the transform so that a caller can pass
 its own; it is exported for the same reason. Additions only.
 
+**Reading a frequency-based trip.** `@gb-transit/gtfs-schema` gains `Frequency` and `FrequencyRow`,
+and `frequencies.txt` joins the files it declares columns for; `@gb-transit/gtfs-loader` reads it.
+It is a standard GTFS file that nothing here modelled, and a merge that dropped it lost the only
+thing saying a bus comes every twelve minutes rather than at written down times. Additions only:
+the file was previously unknown to both packages, so nothing that read a feed before reads one
+differently now, beyond `readFeedRows` with no argument returning one more key.
+
 ## The validator baselines
 
 **A baseline for the National Rail only feed (#176).**
