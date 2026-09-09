@@ -74,7 +74,11 @@ export class GTFSOutputFactory {
     // something else under another, and both statements are true.
     const attributions = new DedupingWriter(
       output.open(at(ATTRIBUTIONS.filename), ATTRIBUTIONS.columns),
-      row => ATTRIBUTIONS.columns.map(column => String(row[column])).join()
+      // Stringified rather than joined: String(null) and String(undefined) are
+      // "null" and "undefined", so two rows saying the same thing in different
+      // ways survived as two, and a comma inside a licence could run two
+      // different rows together.
+      row => JSON.stringify(ATTRIBUTIONS.columns.map(column => row[column] ?? null))
     );
 
     const calendarDates = output.open(at(CALENDAR_DATES.filename), CALENDAR_DATES.columns);

@@ -146,3 +146,15 @@ dropped on the way through:
 
 `missing_recommended_file` is removed: it was `feed_info.txt`, and its reason said that neither
 input had one the merge could carry. The rail feed did, and now it is carried.
+
+## A membership is checked against the whole merged feed
+
+`stop_areas.txt` gains `1072,9100BUSSTOP`. A membership naming a stop nothing calls
+at is still dropped, but "nothing calls at it" was being decided against the feed
+being written rather than against the merged feed: the rail feed naming a stop
+only the bus feed serves lost the membership while the stop itself was published,
+so the group came out quietly short of a member. The memberships are held until
+every feed has been read and filtered once, against every feed's calls.
+
+`transfers.txt` decides the same question the same way and is left alone. It is
+older than this and its behaviour is the one the golden already records.

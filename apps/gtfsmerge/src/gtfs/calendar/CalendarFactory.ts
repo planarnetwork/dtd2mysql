@@ -2,7 +2,9 @@ import {CalendarDateRow as CalendarDate, CalendarRow as Calendar} from "@gb-tran
 import {addDays, getDayOfWeek} from "@gb-transit/gtfs-loader";
 
 /** Sunday first, as JavaScript numbers the days and as getDayOfWeek returns them. */
-const DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+const DAYS = [
+  "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
+] as const;
 
 /**
  * Creates calendars based on a set of calendar dates.
@@ -34,7 +36,7 @@ export class CalendarFactory {
     // the trips are indexed against - and CalendarMerger drops a service that
     // runs on nothing, along with those trips.
     if (runs.size === 0) {
-      return [this.neverRuns(serviceId, calendarDates), []];
+      return [this.neverRuns(serviceId), []];
     }
 
     const dates = [...runs].sort();
@@ -42,8 +44,11 @@ export class CalendarFactory {
       serviceId, runs, dates[0], dates[dates.length - 1]
     );
 
+    const start = dates[0];
+    const end = dates[dates.length - 1];
+
     return [
-      this.createCalendar(serviceId, dates[0], dates[dates.length - 1], daysRunning, daysNotRunning),
+      this.createCalendar(serviceId, start, end, daysRunning, daysNotRunning),
       this.getCalendarDates(daysRunning, daysNotRunning)
     ];
   }
@@ -102,16 +107,12 @@ export class CalendarFactory {
   /**
    * A service whose every listed date is one it does not run on.
    *
-   * The range is the dates it was told about, so the row says where in time the
-   * service was meant to be even though it never operates.
+   * A calendar of no days over no range. It exists because the trips are indexed
+   * against a service id until CalendarMerger reads this and drops the service,
+   * which is the only thing that ever looks at it.
    */
-  private neverRuns(serviceId: string, calendarDates: CalendarDate[]): Calendar {
-    const dates = calendarDates.map(date => String(date.date)).sort();
-    const calendar = {
-      service_id: serviceId,
-      start_date: dates[0],
-      end_date: dates[dates.length - 1]
-    } as Calendar;
+  private neverRuns(serviceId: string): Calendar {
+    const calendar = {service_id: serviceId, start_date: "", end_date: ""} as Calendar;
 
     for (const day of DAYS) {
       calendar[day] = 0;

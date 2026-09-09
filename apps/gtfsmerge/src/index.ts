@@ -14,6 +14,12 @@ async function main(argv: string[]): Promise<void> {
 
   const positional = positionalArgs(argv);
 
+  // Feeds and somewhere to put them. Without the check the output is undefined
+  // and the failure comes from whatever tries to open it.
+  if (positional.length < 2) {
+    return showHelp();
+  }
+
   await merge({
     inputs: positional.slice(0, -1),
     output: positional[positional.length - 1],
@@ -39,17 +45,33 @@ function positionalArgs(argv: string[]): string[] {
   const takesValue = new Set([
     "--transfer-distance", "--remove-route-types", "--ruler-latitude", "--tmp", "--date-filter"
   ]);
+  const flags = new Set([
+    "--help", "--no-extra-transfers", "--no-date-filter", "--no-shapes"
+  ]);
   const found: string[] = [];
 
   for (let i = 2; i < argv.length; i++) {
-    if (argv[i].startsWith("--")) {
-      // `--name value` consumes the next argument; `--name=value` does not.
-      if (takesValue.has(argv[i])) {
+    const arg = argv[i];
+
+    if (!arg.startsWith("--")) {
+      found.push(arg);
+
+      continue;
+    }
+
+    // `--name value` consumes the next argument; `--name=value` does not.
+    const [name] = arg.split("=");
+
+    if (takesValue.has(name)) {
+      if (!arg.includes("=")) {
         i++;
       }
     }
-    else {
-      found.push(argv[i]);
+    else if (!flags.has(name)) {
+      // An option nobody knows is a mistake, and taken as a flag it makes its
+      // value a positional: `--stop-prefix x_ a.zip out.zip` merged a feed
+      // called `x_` and failed on a missing file rather than on the option.
+      throw new Error(`Unknown option ${name}. Run with --help for the ones there are.`);
     }
   }
 

@@ -180,6 +180,18 @@ describe("the merged feed", () => {
     expect(columns("frequencies.txt").map(f => f.trip_id)).to.deep.equal([trip?.trip_id]);
   });
 
+  /**
+   * A stop is published if anything in the merged feed calls at it, which is not
+   * known until every feed has been read.
+   */
+  it("keeps a membership naming a stop only the other feed calls at", () => {
+    const published = new Set(columns("stops.txt").map(s => s.stop_id));
+    const members = columns("stop_areas.txt").filter(a => a.area_id === "1072");
+
+    expect(published.has("9100BUSSTOP")).to.equal(true);
+    expect(members.map(a => a.stop_id)).to.include("9100BUSSTOP");
+  });
+
   it("keeps both agencies", () => {
     expect(columns("agency.txt").map(a => a.agency_id).sort()).to.deep.equal(["BUS", "RAIL"]);
   });

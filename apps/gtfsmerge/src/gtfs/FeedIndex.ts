@@ -6,7 +6,6 @@ import {
 import {readFeed} from "@gb-transit/gtfs-loader";
 import * as fs from "fs";
 
-
 /**
  * One input feed, in memory, in the shape the mergers consume.
  */
@@ -99,10 +98,6 @@ export class FeedIndex {
     this.result.areas.push(row);
   }
 
-  /**
-   * A membership names a stop, so it moves with the stops: pointed at the station
-   * rather than the platform when it is written.
-   */
   public stopArea(row: StopAreaRow): void {
     this.result.stopAreas.push(row);
   }
