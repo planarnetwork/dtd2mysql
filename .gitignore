@@ -57,3 +57,11 @@ apps/website/public/transfer-patterns/
 
 # Downloaded by the validate job and by hand; 40MB and versioned by the workflow.
 gtfs-validator.jar
+
+# Claude Code's working directory. `worktrees/` beneath it holds a full checkout
+# per branch in progress - 3.2GB of them here - and none of it is the repository
+# describing itself. Untracked was not enough: `git add -A` in the main checkout
+# stages every worktree, and the transcript directory that pairs with it is
+# keyed on the working directory, so a session run from a worktree files itself
+# somewhere else again.
+.claude/
