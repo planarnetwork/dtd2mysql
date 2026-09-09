@@ -71,12 +71,25 @@ CREATE TABLE routes (
 
 DROP TABLE IF EXISTS shapes;
 CREATE TABLE shapes (
-  shape_id smallint(12) unsigned NOT NULL,
+  -- Twelve hex characters of a digest of the stations the line runs through, so
+  -- the same line is the same id in every build. See Shapes.ts.
+  shape_id char(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  -- Six decimal places, which is what the feed writes. Two integer digits for a
+  -- latitude and three for a longitude, because those are the ranges: +-90 and
+  -- +-180.
+  --
+  -- decimal rather than the double stops.txt uses sixty lines below, and the two
+  -- are answering different questions. A stop's coordinate is whatever its
+  -- source surveyed and this stores it as given; a shape point is written to a
+  -- fixed six places by the producer, so an exact type stores exactly that and a
+  -- double would read 51.126 back as 51.126000000000005.
   shape_pt_lat decimal(8,6) NOT NULL,
-  shape_pt_lon decimal(8,6) NOT NULL,
-  shape_pt_sequence tinyint(3) NOT NULL,
+  shape_pt_lon decimal(9,6) NOT NULL,
+  -- smallint, not tinyint: the longest line in a national feed is over 200
+  -- points and a tinyint stops counting at 127.
+  shape_pt_sequence smallint(5) unsigned NOT NULL,
   shape_dist_traveled varchar(50) DEFAULT NULL,
-  PRIMARY KEY (shape_id)
+  PRIMARY KEY (shape_id, shape_pt_sequence)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS stop_times;
@@ -167,6 +180,9 @@ CREATE TABLE trips (
   direction_id tinyint(1) unsigned DEFAULT NULL,
   wheelchair_accessible tinyint(1) unsigned DEFAULT NULL,
   bikes_allowed tinyint(1) unsigned DEFAULT NULL,
+  -- Nullable: a trip every station of which the feed cannot place has no line
+  -- to point at. See Shapes.ts.
+  shape_id char(12) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   PRIMARY KEY (trip_id),
   KEY service_id (service_id),
   KEY trip (trip_headsign)

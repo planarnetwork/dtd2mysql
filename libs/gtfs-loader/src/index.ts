@@ -15,8 +15,9 @@ export type { LoadOptions, LoadProgress } from "./Progress.js";
 // feed is read into. Same words, opposite directions - see the README.
 export type {
   Agency, AgencyID, AgencyIndex, Area, AreaID, AreaIndex, Calendar, CalendarIndex, DateIndex,
-  DateNumber, DayOfWeek, Duration, Interchange, Route, RouteID, RouteIndex, ServiceID, Stop, StopID,
-  StopIndex, StopTime, Time, Transfer, TransfersByOrigin, Trip, TripID, TripLink
+  DateNumber, DayOfWeek, Duration, Interchange, Route, RouteID, RouteIndex, ServiceID, ShapeID,
+  ShapeIndex, ShapePoint, Stop, StopID, StopIndex, StopTime, Time, Transfer, TransfersByOrigin,
+  Trip, TripID, TripLink
 } from "./GTFS.js";
 export { transferModes } from "./TransferMode.js";
 export { LinkedService, Service } from "./Service.js";

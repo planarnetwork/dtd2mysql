@@ -54,7 +54,14 @@ console.log(feed.trips.length, Object.keys(feed.stops).length);
 // the feed as a planner wants it: stops resolved to stations, unboardable trips dropped,
 // couplings turned into through trips
 const timetable = normalise(feed);
+
+// the line a trip runs over, in sequence order, for drawing it on a map
+const line = feed.shapes[feed.trips[0].shapeId!];
 ```
+
+`shapes` is empty for a feed with no `shapes.txt`, and `shapeId` is undefined on a trip that names
+none, so a caller drawing lines has to handle both. The points carry latitude and longitude only —
+a caller needing `shape_dist_traveled` wants `{raw: true}`, which reads every column a file has.
 
 `loadGTFSFromUrl` fetches and parses in one pass. In a browser the feed has to be readable by the
 page, which means same origin or an `Access-Control-Allow-Origin` header — most GTFS publishers send

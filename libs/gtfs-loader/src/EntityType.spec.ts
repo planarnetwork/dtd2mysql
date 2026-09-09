@@ -24,8 +24,11 @@ describe("entityTypeOf", () => {
 
   it("ignores the files the loader does not read", () => {
     expect(entityTypeOf("links.txt")).to.equal(undefined);
-    expect(entityTypeOf("shapes.txt")).to.equal(undefined);
     expect(entityTypeOf("attributions.txt")).to.equal(undefined);
+  });
+
+  it("reads the lines the trips run over", () => {
+    expect(entityTypeOf("shapes.txt")).to.equal("shape");
   });
 
   it("ignores directory entries", () => {

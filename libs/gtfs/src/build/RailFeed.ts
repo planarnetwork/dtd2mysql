@@ -1,6 +1,6 @@
 import {
   AgencyRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, FixedLinkRow, GTFS_COLUMNS,
-  RouteRow, StopRow, StopTimeRow, TransferRow, TripRow, fileSchema
+  RouteRow, ShapeRow, StopRow, StopTimeRow, TransferRow, TripRow, fileSchema
 } from "@gb-transit/gtfs-schema";
 
 /**
@@ -17,11 +17,14 @@ import {
  * spelled out below is what this producer decided, and that is the point of
  * being able to read it.
  *
- * Two absences are those decisions. trips.txt does not declare `block_id` or
- * `shape_id` - a rail trip has neither, and a bus feed writing them from the
- * same TripRow does not put empty columns here. transfers.txt does declare all
- * eighteen, including the twelve producer extensions carrying what the DTD says
- * about a fixed link, which a bus feed's four-column transfers.txt does not.
+ * Two of those decisions are what trips.txt leaves out and what shapes.txt
+ * leaves out. trips.txt does not declare `block_id` - a rail trip has no
+ * vehicle block, because the DTD expresses the same idea as an association and
+ * this feed writes that as a transfer. shapes.txt does not declare a
+ * `shape_dist_traveled` worth reading, for the reason in `Shapes.ts`.
+ * transfers.txt does declare all eighteen, including the twelve producer
+ * extensions carrying what the DTD says about a fixed link, which a bus feed's
+ * four-column transfers.txt does not.
  */
 export const AGENCY = fileSchema<AgencyRow>("agency.txt", GTFS_COLUMNS["agency.txt"]);
 
@@ -57,8 +60,14 @@ export const TRANSFERS = fileSchema<TransferRow>("transfers.txt", [
   "thursday", "friday", "saturday", "sunday"
 ]);
 
-// Its own: no block_id and no shape_id, because a train has neither.
+export const SHAPES = fileSchema<ShapeRow>("shapes.txt", GTFS_COLUMNS["shapes.txt"]);
+
+// Its own: no block_id, because a train has none.
+//
+// shape_id goes last, and the nightly counts the trips with no line by looking
+// at the last field of each row. Moving it would leave that gate passing every
+// build - see `Compare with the last release` in feed.yml.
 export const TRIPS = fileSchema<TripRow>("trips.txt", [
   "route_id", "service_id", "trip_id", "trip_headsign", "trip_short_name", "direction_id",
-  "wheelchair_accessible", "bikes_allowed"
+  "wheelchair_accessible", "bikes_allowed", "shape_id"
 ]);

@@ -1,4 +1,4 @@
-import type {LinkDetail, TripDetail} from "../../worker/Detail.js";
+import type {LinkDetail, ShapeDetail, TripDetail} from "../../worker/Detail.js";
 import type {ServiceDate} from "../../model/Calendar.js";
 import {format} from "../../route.js";
 import {dropOffOf, formatDate, number, pickupOf, weekdayOf} from "../../format.js";
@@ -37,8 +37,71 @@ export function tripView(detail: TripDetail): string {
     </p>
 
     ${couplings(detail)}
+    ${line(detail)}
     ${calls(detail)}
     ${calendar(detail)}`;
+}
+
+/**
+ * Where the train goes, as opposed to where it stops.
+ *
+ * The calls below answer where you can get on. This answers what the train runs over, which for a
+ * fast service is not the same question - the line goes through every station it passes and the
+ * table does not.
+ *
+ * The picture is a drawing, so everything the drawing says is also written underneath it. That is
+ * the same rule the station map follows: a finding locked inside an image is out of reach of
+ * anybody reading with a screen reader.
+ */
+function line(detail: TripDetail): string {
+  const shape = detail.shape;
+
+  if (shape === undefined) {
+    return detail.row?.shape_id === undefined || detail.row.shape_id === ""
+      ? ""
+      : `<h3 class="h h2">The line it runs over</h3>
+        <p class="warn">This trip names shape <code>${escape(detail.row.shape_id)}</code>, which
+        shapes.txt does not have. The integrity checks report this.</p>`;
+  }
+
+  if (shape.undrawable) {
+    return `<h3 class="h h2">The line it runs over</h3>
+      <p class="warn">Shape <code>${escape(shape.id)}</code> has
+      ${shape.points.length === 1 ? "one point" : "no points"} that can be plotted, so there is no
+      line to draw.</p>`;
+  }
+
+  return `
+    <h3 class="h h2">The line it runs over</h3>
+    <div class="plot__map" data-line="${escape(JSON.stringify(shape.points))}"></div>
+    ${described(shape)}
+    <p class="note">
+      <a href="${format({view: "file", file: "shapes.txt", page: 0,
+        filters: {shape_id: shape.id}})}">The rows&nearr;</a>
+    </p>`;
+}
+
+/**
+ * The drawing, in words.
+ *
+ * The count of trips is the part worth saying out loud. A shape belongs to the ground rather than
+ * to the train, so one line carries every stopping pattern that runs over it, and a reader who
+ * expects a shape per trip will otherwise wonder what they are looking at.
+ */
+function described(shape: ShapeDetail): string {
+  const others = shape.trips - 1;
+
+  return `<p class="note plot__there">
+    Shape <code>${escape(shape.id)}</code>: ${number(shape.points.length)} points over
+    ${shape.length < 10 ? shape.length.toFixed(1) : number(Math.round(shape.length))} km.
+    ${others > 0
+      ? `${number(others)} other trip${others === 1 ? "" : "s"} run${others === 1 ? "s" : ""} over
+         the same line &mdash; a line belongs to the ground rather than to a train, so a fast
+         service and a stopper share one.`
+      : "No other trip runs over it."}
+    The line between two stations is straight, because the feed has no coordinate for the junctions
+    between them.
+  </p>`;
 }
 
 function calls(detail: TripDetail): string {

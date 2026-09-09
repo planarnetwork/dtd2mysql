@@ -18,7 +18,7 @@ import {TripRow} from "../entity/Trip.js";
  *
  * A producer declares this; the writer does not infer it from a row. Two
  * producers write the same file with different columns - a rail feed's trip has
- * no shape_id and a bus feed's transfer has no mode - and a header taken from
+ * no block_id and a bus feed's transfer has no mode - and a header taken from
  * whichever row happened to arrive first cannot express that. It is also the
  * only way a file with no rows can have a header at all.
  *

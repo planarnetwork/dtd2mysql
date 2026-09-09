@@ -39,6 +39,11 @@ export class MySqlTimetableSource implements TimetableSource {
     /**
      * Whether to drop the locations a service runs through without stopping.
      * See BuildContext: on unless the build asked for them.
+     *
+     * Handed to ScheduleBuilder rather than written into the query. The stop
+     * times a service runs through are selected either way, because the shapes
+     * are drawn through them - which is why the passenger query returns 3.8
+     * million rows now rather than 2.9 million.
      */
     private readonly removePassingPoints: boolean = true
   ) {}
@@ -145,7 +150,7 @@ export class MySqlTimetableSource implements TimetableSource {
    */
   public async getSchedules(): Promise<ScheduleResults> {
     const {dropped} = await this.stations();
-    const scheduleBuilder = new ScheduleBuilder(dropped);
+    const scheduleBuilder = new ScheduleBuilder(dropped, this.removePassingPoints);
     const [[lastSchedule]] = await this.db.query<{id: number}>("SELECT id FROM schedule ORDER BY id desc LIMIT 1");
 
     if (!lastSchedule) {
@@ -155,11 +160,6 @@ export class MySqlTimetableSource implements TimetableSource {
       );
     }
     const window = [this.range.to.toString(), this.range.from.toString()];
-    // Where a service runs through without stopping. Half the CIF's intermediate
-    // records are these, so the clause is the difference between a 2.9 million
-    // and a 3.8 million row feed. No ZTR published so far carries a pass time,
-    // but the z-train query says the same thing so the option means one thing.
-    const stopsHere = this.removePassingPoints ? "AND scheduled_pass_time is null" : "";
 
     await Promise.all([
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -182,7 +182,6 @@ export class MySqlTimetableSource implements TimetableSource {
         )
         AND runs_from < ?
         AND runs_to >= ?
-        ${stopsHere}
         ORDER BY stp_indicator DESC, id, stop_id
       `, window)),
       scheduleBuilder.loadSchedules(this.stream.query(`
@@ -198,7 +197,6 @@ export class MySqlTimetableSource implements TimetableSource {
         JOIN z_stop_time ON z_schedule.id = z_stop_time.z_schedule
         WHERE runs_from < ?
         AND runs_to >= ?
-        ${stopsHere}
         ORDER BY stop_id
       `, window))
     ]);

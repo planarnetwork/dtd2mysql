@@ -222,6 +222,71 @@ check("it fits inside the plot panel",
   (box?.width ?? 0) <= ((await page.locator(".plot").boundingBox())?.width ?? 0) + 1);
 check("the tiles come from OpenStreetMap", tiles.length > 0, `${tiles.length} tiles`);
 
+// A trip draws the line it runs over, which is the same tile grid zoomed to an extent rather than
+// to a point. The failure this catches is a zoom one level too far in: the line still draws, and
+// what is left of it inside the box looks like a shorter line rather than like a bug.
+// The id is read out of the table by column name rather than by position. Taking it positionally
+// picked the row number column's neighbour and navigated to a trip that does not exist - and the
+// checks below still passed, because the "no such trip" view has a heading too.
+await page.goto(`${at}#/file/trips.txt`);
+await page.waitForSelector(".table__scroll td", {timeout: 60000});
+
+const tripId = await page.evaluate(() => {
+  const headers = [...document.querySelectorAll(".table__scroll thead th")]
+    .map(cell => cell.textContent?.trim());
+  const column = headers.indexOf("trip_id");
+  const first = document.querySelector(".table__scroll tbody tr");
+
+  return column < 0 || first === null
+    ? null
+    : first.querySelectorAll("td")[column]?.textContent?.trim() ?? null;
+});
+
+check("a trip id can be read out of the table", tripId !== null && tripId !== "", tripId ?? "none");
+
+await page.goto(`${at}#/trip/${tripId}`);
+await page.waitForSelector("[data-heading]", {timeout: 60000});
+// Not the count of headings: the "no such trip" view renders one of those too, which is how the
+// wrong id passed this check for a whole run.
+check("a trip opens",
+  !(await page.locator("#explorer-view").textContent() ?? "").includes("has no such trip"),
+  tripId ?? "");
+check("the trip says where it calls",
+  await page.getByRole("heading", {name: "Where it calls"}).count() === 1);
+check("the trip draws the line it runs over",
+  await page.getByRole("heading", {name: "The line it runs over"}).count() === 1);
+
+await page.waitForSelector(".map__line polyline", {timeout: 30000});
+
+const drawn = await page.evaluate(() => {
+  const svg = document.querySelector(".map__line");
+  const line = document.querySelector<SVGPolylineElement>(".map__line polyline");
+  const map = svg?.closest(".map");
+
+  if (svg === null || line === null || map === null || map === undefined) {
+    return null;
+  }
+
+  const points = [...line.getAttribute("points")!.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)]
+    .map(([, x, y]) => [Number(x), Number(y)]);
+  const box = map.getBoundingClientRect();
+
+  return {
+    count: points.length,
+    inside: points.filter(([x, y]) => x >= 0 && y >= 0 && x <= box.width && y <= box.height).length,
+    ends: document.querySelectorAll(".map__end").length,
+    stroke: getComputedStyle(line).stroke
+  };
+});
+
+check("the line has the points the shape has", (drawn?.count ?? 0) > 1, `${drawn?.count} points`);
+// The whole of it, not the middle of it. This is the zoom being right.
+check("every point of it is inside the box", drawn !== null && drawn.inside === drawn.count,
+  `${drawn?.inside} of ${drawn?.count} inside`);
+check("its ends are marked", drawn?.ends === 2, `${drawn?.ends} ends`);
+check("it is drawn in something other than black",
+  drawn !== null && drawn.stroke !== "" && drawn.stroke !== "rgb(0, 0, 0)", drawn?.stroke);
+
 await page.goto(`${at}#/checks`);
 await page.waitForFunction(
   () => !(document.querySelector(".lede")?.textContent ?? "").includes("Running"),

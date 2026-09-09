@@ -42,7 +42,24 @@ LOAD DATA LOCAL INFILE 'calendar.txt' INTO TABLE calendar FIELDS TERMINATED BY '
 TRUNCATE calendar_dates;
 LOAD DATA LOCAL INFILE 'calendar_dates.txt' INTO TABLE calendar_dates FIELDS TERMINATED BY ',' IGNORE 1 LINES;
 TRUNCATE trips;
-LOAD DATA LOCAL INFILE 'trips.txt' INTO TABLE trips FIELDS TERMINATED BY ',' IGNORE 1 LINES;
+-- A column list, unlike the loads above it, because shape_id is empty for a trip
+-- the feed cannot draw and LOAD DATA puts an empty string in a nullable column
+-- rather than a NULL.
+LOAD DATA LOCAL INFILE 'trips.txt' INTO TABLE trips
+FIELDS TERMINATED BY ','
+IGNORE 1 LINES
+(route_id, service_id, trip_id, trip_headsign, trip_short_name, direction_id,
+ wheelchair_accessible, bikes_allowed, @shape_id)
+SET shape_id = NULLIF(@shape_id, '');
+
+TRUNCATE shapes;
+-- shape_dist_traveled is the whole column and it is empty: the feed writes no
+-- distance along a shape, for the reason in Shapes.ts.
+LOAD DATA LOCAL INFILE 'shapes.txt' INTO TABLE shapes
+FIELDS TERMINATED BY ','
+IGNORE 1 LINES
+(shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, @shape_dist_traveled)
+SET shape_dist_traveled = NULLIF(@shape_dist_traveled, '');
 TRUNCATE feed_info;
 LOAD DATA LOCAL INFILE 'feed_info.txt' INTO TABLE feed_info FIELDS TERMINATED BY ',' IGNORE 1 LINES;
 TRUNCATE attributions;

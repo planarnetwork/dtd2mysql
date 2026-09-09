@@ -13,6 +13,34 @@ before committing it** - that is the whole value of the file being text.
 
 ---
 
+## Every trip is drawn as a line
+
+`golden/shapes.txt` is new and `golden/trips.txt` gains a `shape_id` column. Both come from
+`Schedule.path`, which the builder now carries alongside the calls: every station a train touches,
+whether it stops there or runs through.
+
+Three things to check in the diff.
+
+**trips.txt moved in one column and nothing else.** Every other field of every row is unchanged.
+The passing points now reach `ScheduleBuilder` in every build rather than being filtered out at the
+source, so this is the file that would show it if keeping them had changed which calls are
+published. It does not, because the builder drops them from the stop times exactly where the
+source used to.
+
+**stop_times.txt did not move at all.** It is the same 1,326 rows. That is the load-bearing
+assertion of the whole change: the standard feed still holds only the calls.
+
+**25 shapes for 128 trips, and 111 of those trips are drawn through more stations than they call
+at** — one has 19 calls and 51 points. A shape is shared by every stopping pattern that runs over
+the same ground, which is why there are fewer shapes than trips, and it follows the passing points,
+which is why it has more points than the trip has calls. `build.spec.mts` asserts both, so a build
+that quietly went back to drawing through the calls would fail rather than produce a smaller golden.
+
+The ids are twelve hex characters of a digest of the stations the line runs through, so they are
+stable across builds and a regenerated golden that changes one is saying the path changed.
+
+---
+
 ## The type surface gains gtfs-schema and gtfs-loader
 
 Two added keys in `type-surface.json`, and **the `gtfs` key is byte identical**. That was the point

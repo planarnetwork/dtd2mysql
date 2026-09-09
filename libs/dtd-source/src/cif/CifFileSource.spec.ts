@@ -243,6 +243,19 @@ describe("CifFileSource", () => {
     expect(bus.operator).to.equal("ZZ");
   });
 
+  /**
+   * `offsetId` rebuilds every z-train to move its id clear of the passenger schedules, and it did
+   * that by listing nine of a schedule's ten fields - so the path went. Nothing caught it: the
+   * argument is optional, and a z-train with no path draws its shape from its calls, which is the
+   * same list until a ZTR carries a pass time.
+   */
+  it("keeps the z-train's path when it moves its id", async () => {
+    const {schedules} = await source(refresh()).getSchedules();
+    const [bus] = schedules.filter(s => s.tuid === "Z00001");
+
+    expect(bus.path).to.deep.equal(["TON", "SEV"]);
+  });
+
   it("keeps the z-train ids clear of the passenger schedule ids", async () => {
     const {schedules} = await source(refresh()).getSchedules();
     const ids = new Set(schedules.map(s => s.id));

@@ -124,6 +124,76 @@ export const CALENDARS_HAVE_TRIPS: Check = {
   }
 };
 
+export const TRIPS_NAME_A_SHAPE: Check = {
+  id: "trips-name-a-shape",
+  title: "Every line a trip names exists",
+  question: "Does any trip name a shape_id that is not in shapes.txt?",
+  files: ["trips.txt", "shapes.txt"],
+  needsCalls: false,
+  run({feed}, report) {
+    const trips = feed.files.get("trips.txt")!;
+
+    if (!trips.header.includes("shape_id")) {
+      return;
+    }
+
+    const shapes = feed.files.get("shapes.txt");
+    const known = shapes === undefined ? new Set<string>() : ids(shapes, "shape_id");
+    const reported = new Set<string>();
+
+    for (let row = 0; row < trips.rows; row++) {
+      const shapeId = trips.value("shape_id", row);
+
+      // Empty is not a dangling reference. A trip the feed cannot draw says so by naming no shape,
+      // which is a truer answer than a line through nowhere.
+      if (shapeId === undefined || shapeId === "" || known.has(shapeId) || reported.has(shapeId)) {
+        continue;
+      }
+
+      reported.add(shapeId);
+      report({
+        severity: "error",
+        message: shapes === undefined
+          ? `Trips name shape ${shapeId}, and the feed has no shapes.txt at all.`
+          : `A trip runs over shape ${shapeId}, which shapes.txt does not have.`,
+        ref: {kind: "row", file: "trips.txt", row}
+      });
+    }
+  }
+};
+
+/**
+ * A line of one point is not a line.
+ *
+ * Legal GTFS - the specification sets no minimum - and useless to everything that reads it: nothing
+ * can be drawn, and a consumer measuring distance along it divides by zero.
+ */
+export const SHAPES_ARE_LINES: Check = {
+  id: "shapes-are-lines",
+  title: "Every line has two ends",
+  question: "Does any shape have fewer than two points?",
+  files: ["shapes.txt"],
+  needsCalls: false,
+  run({feed}, report) {
+    const shapes = feed.files.get("shapes.txt");
+
+    if (shapes === undefined || !shapes.header.includes("shape_id")) {
+      return;
+    }
+
+    for (const [shapeId, rows] of shapes.index("shape_id")) {
+      if (rows.length < 2) {
+        report({
+          severity: "warning",
+          message: `Shape ${shapeId} has ${rows.length === 1 ? "one point" : "no points"}, `
+            + `so there is no line to draw.`,
+          ref: {kind: "row", file: "shapes.txt", row: rows[0] ?? 0}
+        });
+      }
+    }
+  }
+};
+
 export const IDS_ARE_UNIQUE: Check = {
   id: "ids-are-unique",
   title: "Identifiers are unique",
@@ -290,6 +360,8 @@ export const INTEGRITY_CHECKS = [
   CALLS_NAME_A_STOP,
   TRIPS_HAVE_A_CALENDAR,
   CALENDARS_HAVE_TRIPS,
+  TRIPS_NAME_A_SHAPE,
+  SHAPES_ARE_LINES,
   IDS_ARE_UNIQUE,
   BOARDING_POINTS_HAVE_A_STATION,
   TRANSFERS_NAME_REAL_THINGS

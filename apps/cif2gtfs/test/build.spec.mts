@@ -74,7 +74,8 @@ describe("the mini fixture", () => {
 
   const files = [
     "agency.txt", "stops.txt", "transfers.txt", "feed_info.txt",
-    "routes.txt", "trips.txt", "stop_times.txt", "calendar.txt", "calendar_dates.txt"
+    "routes.txt", "trips.txt", "stop_times.txt", "calendar.txt", "calendar_dates.txt",
+    "shapes.txt"
   ];
 
   it.each(files)("produces the golden %s", file => {
@@ -146,6 +147,74 @@ describe("the feed the mini fixture produces", () => {
     const ids = columns("trips.txt").map(t => t.trip_id);
 
     expect(ids.length).to.equal(new Set(ids).size);
+  });
+
+  it("references only shapes it declares, and declares no shape nothing runs over", () => {
+    const declared = new Set(columns("shapes.txt").map(s => s.shape_id));
+    const run = new Set(columns("trips.txt").map(t => t.shape_id).filter(Boolean));
+
+    expect([...run].filter(shape => !declared.has(shape as string))).to.deep.equal([]);
+    expect([...declared].filter(shape => !run.has(shape))).to.deep.equal([]);
+  });
+
+  it("numbers every shape from one, without a gap", () => {
+    const bySequence = new Map<string, number[]>();
+
+    for (const point of columns("shapes.txt")) {
+      bySequence.set(point.shape_id, [...bySequence.get(point.shape_id) ?? [], Number(point.shape_pt_sequence)]);
+    }
+
+    const wrong = [...bySequence].filter(([, sequence]) =>
+      sequence.some((n, i) => n !== i + 1)
+    );
+
+    expect(wrong.map(([id]) => id)).to.deep.equal([]);
+  });
+
+  it("gives every shape at least two points", () => {
+    const points = new Map<string, number>();
+
+    for (const point of columns("shapes.txt")) {
+      points.set(point.shape_id, (points.get(point.shape_id) ?? 0) + 1);
+    }
+
+    expect([...points].filter(([, count]) => count < 2)).to.deep.equal([]);
+  });
+
+  /**
+   * The whole reason shapes.txt is here. 111 of the fixture's 128 trips are
+   * drawn through more stations than they call at - one has 19 calls and 51
+   * points - because the line follows the passing points and the calls do not.
+   * A build that quietly stopped reading `Schedule.path` would still produce a
+   * valid feed, and every assertion above it would still pass.
+   */
+  it("draws a line through more than the calls", () => {
+    const calls = new Map<string, number>();
+    const points = new Map<string, number>();
+
+    for (const stop of columns("stop_times.txt")) {
+      calls.set(stop.trip_id, (calls.get(stop.trip_id) ?? 0) + 1);
+    }
+
+    for (const point of columns("shapes.txt")) {
+      points.set(point.shape_id, (points.get(point.shape_id) ?? 0) + 1);
+    }
+
+    const drawn = columns("trips.txt")
+      .filter(trip => (points.get(trip.shape_id as string) ?? 0) > (calls.get(trip.trip_id) ?? 0));
+
+    expect(drawn.length).to.be.greaterThan(columns("trips.txt").length / 2);
+  });
+
+  /**
+   * A line on the ground carries every stopping pattern that runs over it, so
+   * there are fewer shapes than trips - 25 against 128 here, and 13,722 against
+   * 278,794 nationally.
+   */
+  it("shares a line between the trips that run over it", () => {
+    const shapes = new Set(columns("trips.txt").map(t => t.shape_id));
+
+    expect(shapes.size).to.be.lessThan(columns("trips.txt").length);
   });
 
   it("does not read the MSN header as a station", () => {

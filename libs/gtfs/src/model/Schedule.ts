@@ -1,4 +1,4 @@
-import {AgencyID, CRS, RSID, Route, RouteType, StopTime, TUID, Trip, toYYYYMMDD} from "@gb-transit/gtfs-schema";
+import {AgencyID, CRS, RSID, Route, RouteType, ShapeID, StopTime, TUID, Trip, toYYYYMMDD} from "@gb-transit/gtfs-schema";
 import {ScheduleCalendar} from "./ScheduleCalendar";
 import {OverlayRecord, STP} from "./OverlayRecord";
 import {agencyIndex} from "../data/agency";
@@ -30,7 +30,21 @@ export class Schedule implements OverlayRecord {
     public readonly operator: AgencyID,
     public readonly stp: STP,
     public readonly firstClassAvailable: boolean,
-    public readonly reservationPossible: boolean
+    public readonly reservationPossible: boolean,
+    /**
+     * Every station the train touches, calling or running through, in order.
+     *
+     * The calls are in here too, so this is the whole line on the ground and
+     * `stopTimes` is the part of it a passenger can use. It is what `shapes`
+     * draws, which is the only thing that reads it: nothing about a route, a
+     * headsign or a coupling may depend on a station the train does not stop
+     * at.
+     *
+     * Empty where the source does not say - a z-train, or a build whose source
+     * was not asked for the passing points. A shape then falls back to the
+     * calls, which is the same list minus whatever it never learned.
+     */
+    public readonly path: readonly CRS[] = []
   ) {}
 
   public get tripId(): string {
@@ -54,6 +68,11 @@ export class Schedule implements OverlayRecord {
    * failing. A caller that means to keep it says so.
    *
    * The stop times are copied because callers shift the times of a clone in place.
+   *
+   * The path is not copied and not replaced. A clone is the same train on other
+   * days, and it runs over the same ground however its calendar is cut - so
+   * even a caller handing over a shorter set of calls is describing the same
+   * line.
    */
   public clone(calendar: ScheduleCalendar, scheduleId: number, stopTimes: StopTime[] = this.stopTimes): Schedule {
     return new Schedule(
@@ -66,7 +85,8 @@ export class Schedule implements OverlayRecord {
       this.operator,
       this.stp,
       this.firstClassAvailable,
-      this.reservationPossible
+      this.reservationPossible,
+      this.path
     );
   }
 
@@ -80,8 +100,13 @@ export class Schedule implements OverlayRecord {
    * `wheelchair_accessible` and `bikes_allowed` are both 0, which in GTFS means
    * "no information". Nothing in the DTD feed says otherwise, and claiming
    * either way would be inventing an answer.
+   *
+   * The shape is the caller's because it is shared: one line on the ground
+   * carries every stopping pattern that runs over it, so the ids are handed out
+   * once for the whole feed rather than worked out a trip at a time. Undefined
+   * where the build writes no shapes.txt, which leaves the column empty.
    */
-  public toTrip(serviceId: number, destination: string): Trip {
+  public toTrip(serviceId: number, destination: string, shapeId?: ShapeID): Trip {
     return {
       route_id: this.routeId,
       service_id: serviceId,
@@ -90,7 +115,8 @@ export class Schedule implements OverlayRecord {
       trip_short_name: this.rsid,
       direction_id: 0,
       wheelchair_accessible: 0,
-      bikes_allowed: 0
+      bikes_allowed: 0,
+      shape_id: shapeId ?? null
     };
   }
 

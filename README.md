@@ -20,8 +20,8 @@ with the coverage window, what the current feed was built from, and a page for e
 
 | | |
 |---|---|
-| [`gtfs.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip) | where a service calls |
-| [`gtfs-passing-points.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-passing-points.zip) | and where it runs through without stopping |
+| [`gtfs.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs.zip) | where a service calls, and the line it runs over |
+| [`gtfs-passing-points.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-passing-points.zip) | and the time it runs through without stopping |
 | [`gtfs-national-rail-only.zip`](https://github.com/planarnetwork/gb-transit/releases/latest/download/gtfs-national-rail-only.zip) | without the services National Rail does not run — the tube, the Metro, the ferries, the buses and TfL's replacement buses |
 | [`transfer-patterns.br`](https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.br) | the stations a journey can change at, for a transfer pattern journey planner |
 
@@ -39,6 +39,11 @@ network, found in advance so a journey planner does not have to search for them.
 `gtfs.zip` after that release is published — see
 [`apps/transfer-patterns`](apps/transfer-patterns) for the format and how to read it — so a release
 that is missing it is a night the patterns did not finish, not a feed that is wrong.
+
+Both of the first two carry the same `shapes.txt`: a line through every station a train touches,
+calling or passing. It is a station-to-station sketch of the route rather than the track, because
+the DTD gives no coordinate for the junctions in between — see
+[shapes](https://planarnetwork.github.io/gb-transit/feeds/using-this-data/#shapes).
 
 The feed makes decisions a consumer cannot infer from the GTFS specification — identifiers, splits
 and joins, service days, the columns it adds.

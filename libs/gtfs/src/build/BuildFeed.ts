@@ -12,8 +12,8 @@ import {ScheduleResults} from "./ScheduleBuilder";
 import {FileSchema, GTFSOutput, RowWriter} from "@gb-transit/gtfs-schema";
 import {CRS, FeedRow, FixedLink, Route, Stop, TIPLOC} from "@gb-transit/gtfs-schema";
 import {
-  AGENCY, ATTRIBUTIONS, CALENDAR, CALENDAR_DATES, FEED_INFO, LINKS, ROUTES, STOPS, STOP_TIMES,
-  TRANSFERS, TRIPS
+  AGENCY, ATTRIBUTIONS, CALENDAR, CALENDAR_DATES, FEED_INFO, LINKS, ROUTES, SHAPES, STOPS,
+  STOP_TIMES, TRANSFERS, TRIPS
 } from "./RailFeed";
 import {locate, toStopRow} from "../source/Located";
 import {createFeedInfo} from "../transform/CreateFeedInfo";
@@ -32,6 +32,7 @@ import {combinedHeadsigns, onwardHeadsigns} from "../transform/Headsigns";
 import {dropUnknownStops} from "../transform/DropUnknownStops";
 import {toAgencyRow, toRouteRow} from "../transform/Noc";
 import {toStopTimeRow, withStopPoints} from "../transform/Platforms";
+import {shapes} from "../transform/Shapes";
 import * as fs from "fs";
 import {shiftLateNightServices} from "../transform/ShiftLateNightServices";
 
@@ -204,7 +205,7 @@ export class BuildFeed {
       f => [f.feed_publisher_name]
     );
     const tripsP = this.copyTrips(
-      called, serviceIds, stopNames, tiplocs, onwardHeadsigns(links, called, stopNames)
+      called, serviceIds, stopNames, tiplocs, onwardHeadsigns(links, called, stopNames), stations
     );
 
     // Every file has to be opened before the output can be asked whether it has
@@ -294,8 +295,10 @@ export class BuildFeed {
     serviceIds: ServiceIdIndex,
     stopNames: ReadonlyMap<CRS, string>,
     tiplocs: ReadonlyMap<CRS, TIPLOC>,
-    onward: ReadonlyMap<string, string>
+    onward: ReadonlyMap<string, string>,
+    stations: ReadonlyMap<CRS, Stop>
   ): Promise<any> {
+    // shapes.txt is not named here: it goes through copy(), which announces the file it opens.
     console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/${TRIPS.filename}`, TRIPS.columns);
     const stopTimes = this.output.open(`${this.baseDir}/${STOP_TIMES.filename}`, STOP_TIMES.columns);
@@ -316,6 +319,13 @@ export class BuildFeed {
       .filter(schedule => schedule.stopTimes.length > 1)
       .sort((a, b) => a.tripId < b.tripId ? -1 : a.tripId > b.tripId ? 1 : 0);
 
+    // Drawn from `written` rather than from every schedule, so shapes.txt holds
+    // no line that no trip runs over. Written through copy() because it is
+    // small enough to sort - 196,730 rows against 2.9 million stop times - and
+    // then its order is its key rather than the order the trips came in.
+    const {shapes: lines, byTrip} = shapes(written, stations);
+    const shapesP = this.copy(lines, SHAPES, s => [s.shape_id, s.shape_pt_sequence]);
+
     const unknown = new Map<string, number>();
 
     for (const schedule of written) {
@@ -327,7 +337,8 @@ export class BuildFeed {
 
       this.write(trips, schedule.toTrip(
         serviceIds[schedule.calendar.id],
-        onward.get(schedule.stopTimes[0].trip_id) ?? name ?? schedule.destination
+        onward.get(schedule.stopTimes[0].trip_id) ?? name ?? schedule.destination,
+        byTrip.get(schedule.stopTimes[0].trip_id)
       ));
       schedule.stopTimes.forEach(r => this.write(stopTimes, toStopTimeRow(r, tiplocs)));
     }
@@ -342,6 +353,7 @@ export class BuildFeed {
       trips.finished(),
       stopTimes.finished(),
       routeFile.finished(),
+      shapesP,
     ]);
   }
 
