@@ -6,7 +6,6 @@ import {
 import {readFeed} from "@gb-transit/gtfs-loader";
 import * as fs from "fs";
 
-
 /**
  * One input feed, in memory, in the shape the mergers consume.
  */
@@ -99,10 +98,6 @@ export class FeedIndex {
     this.result.areas.push(row);
   }
 
-  /**
-   * A membership names a stop, so it moves with the stops: pointed at the station
-   * rather than the platform when it is written.
-   */
   public stopArea(row: StopAreaRow): void {
     this.result.stopAreas.push(row);
   }
@@ -233,8 +228,11 @@ export async function readMergeInput(
  *
  * A call with only one of its times is not a call anything can plan through, so
  * it never leaves here.
+ *
+ * A merge carrying no shapes asks for no shapes, so a national bus feed's 2.5GB
+ * of them is read past rather than inflated and parsed.
  */
-export function streamOf(file: string): FeedStream {
+export function streamOf(file: string, shapes = true): FeedStream {
   return async (rows, betweenChunks) => {
     await readFeed(pausing(file, betweenChunks), {
       "stop_times.txt": row => {
@@ -242,7 +240,7 @@ export function streamOf(file: string): FeedStream {
           rows.stopTime(row);
         }
       },
-      "shapes.txt": row => rows.shape(row)
+      ...(shapes ? {"shapes.txt": (row: ShapeRow) => rows.shape(row)} : {})
     });
   };
 }

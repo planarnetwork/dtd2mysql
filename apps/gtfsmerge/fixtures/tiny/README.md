@@ -19,6 +19,7 @@ feeds does not reach. Each row is here for a reason:
 | `a/attributions.txt` and `b/attributions.txt` | Both name the DfT for NaPTAN under the same licence, so the merged feed says it once, and each names one other body, so both of those survive. |
 | `a/areas.txt` `9999` | An area whose only member is a stop nothing calls at. The membership goes; the area stays. |
 | `a/stop_areas.txt` `1072,9100ALPHA1` | A membership naming a platform. It is written as the station above it, as a transfer to a platform is. |
+| `a/stop_areas.txt` `1072,9100BUSSTOP` | A membership in one feed naming a stop only the other feed calls at. The stop is published, so the membership has to survive. |
 | `a/stop_areas.txt` `9999,910GNOTCALLED` | A membership naming a stop nothing calls at, which would be a reference to a row that is not in the feed. |
 | `a/trips.txt` and `b/trips.txt` block `1` | The same block id in both feeds, meaning two different vehicles. They must not become one. |
 | `b/trips.txt` `SHP1` | A shape a surviving trip is drawn along, whose points are renumbered with it. |

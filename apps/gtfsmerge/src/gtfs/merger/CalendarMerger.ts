@@ -5,7 +5,9 @@ import {MemoizedSequence} from "../../sequence/MemoizedSequence";
 import {close, push} from "./Push";
 
 /** Sunday first, as getDayOfWeek numbers the days. */
-const DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+const DAYS = [
+  "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
+] as const;
 
 export class CalendarMerger {
 
@@ -36,7 +38,8 @@ export class CalendarMerger {
     // collapse, so one is synthesised to cover them.
     for (const serviceId of Object.keys(dateIndex)) {
       if (serviceIdMap[serviceId] === undefined) {
-        const [calendar, calendarDates] = this.calendarFactory.create(serviceId, dateIndex[serviceId]);
+        const dates = dateIndex[serviceId];
+        const [calendar, calendarDates] = this.calendarFactory.create(serviceId, dates);
 
         await this.writeCalendar(calendar, calendarDates, serviceIdMap);
       }
@@ -92,6 +95,13 @@ export class CalendarMerger {
       }
 
       removed.add(String(date.date));
+    }
+
+    // Before the walk rather than during it: a calendar naming no day runs on
+    // none of them, and the synthesised calendar of a service that is nothing
+    // but removals is exactly that, over whatever range those removals span.
+    if (!DAYS.some(day => calendar[day])) {
+      return false;
     }
 
     const start = Number(calendar.start_date);

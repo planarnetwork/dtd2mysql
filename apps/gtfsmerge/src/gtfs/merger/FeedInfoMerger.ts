@@ -39,12 +39,14 @@ export class FeedInfoMerger {
     for (const row of rows) {
       this.publisher ??= row;
 
-      if (row.feed_start_date && (this.startDate === undefined || row.feed_start_date < this.startDate)) {
-        this.startDate = row.feed_start_date;
+      const {feed_start_date: start, feed_end_date: end} = row;
+
+      if (start && (this.startDate === undefined || start < this.startDate)) {
+        this.startDate = start;
       }
 
-      if (row.feed_end_date && (this.endDate === undefined || row.feed_end_date > this.endDate)) {
-        this.endDate = row.feed_end_date;
+      if (end && (this.endDate === undefined || end > this.endDate)) {
+        this.endDate = end;
       }
 
       if (row.feed_version) {

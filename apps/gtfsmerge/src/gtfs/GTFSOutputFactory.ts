@@ -9,7 +9,7 @@ import {FrequenciesMerger} from "./merger/FrequenciesMerger";
 import {DedupingWriter} from "./DedupingWriter";
 import {
   AGENCY, AREAS, ATTRIBUTIONS, CALENDAR, CALENDAR_DATES, FEED_INFO, FREQUENCIES, ROUTES, SHAPES,
-  STOPS, STOP_AREAS, STOP_TIMES, TRANSFERS, TRIPS
+  STOPS, STOP_AREAS, STOP_TIMES, TRANSFERS, trips as tripsFile
 } from "./MergeFeed";
 import {CalendarMerger} from "./merger/CalendarMerger";
 import {MemoizedSequence} from "../sequence/MemoizedSequence";
@@ -28,6 +28,7 @@ export class GTFSOutputFactory {
     private readonly calendarFactory: CalendarFactory,
     private readonly directory: string,
     private readonly ruler: CheapRuler,
+    private readonly shapes: boolean,
     private readonly transferDistance: number,
     private readonly removeRouteTypes: RouteTypeIndex
   ) {}
@@ -73,15 +74,24 @@ export class GTFSOutputFactory {
     // something else under another, and both statements are true.
     const attributions = new DedupingWriter(
       output.open(at(ATTRIBUTIONS.filename), ATTRIBUTIONS.columns),
-      row => ATTRIBUTIONS.columns.map(column => String(row[column])).join()
+      // Stringified rather than joined: String(null) and String(undefined) are
+      // "null" and "undefined", so two rows saying the same thing in different
+      // ways survived as two, and a comma inside a licence could run two
+      // different rows together.
+      row => JSON.stringify(ATTRIBUTIONS.columns.map(column => row[column] ?? null))
     );
 
     const calendarDates = output.open(at(CALENDAR_DATES.filename), CALENDAR_DATES.columns);
-    const trips = output.open(at(TRIPS.filename), TRIPS.columns);
+    const tripsSchema = tripsFile(this.shapes);
+    const trips = output.open(at(tripsSchema.filename), tripsSchema.columns);
     const stopTimes = output.open(at(STOP_TIMES.filename), STOP_TIMES.columns);
     const transfers = output.open(at(TRANSFERS.filename), TRANSFERS.columns);
-    const shapes = output.open(at(SHAPES.filename), SHAPES.columns);
     const frequencies = output.open(at(FREQUENCIES.filename), FREQUENCIES.columns);
+    // Not opened at all when the merge carries no shapes, so the feed has no
+    // empty shapes.txt to explain.
+    const shapes = this.shapes
+      ? output.open(at(SHAPES.filename), SHAPES.columns)
+      : undefined;
 
     return new GTFSOutput(
       new CalendarMerger(calendar, calendarDates, this.calendarFactory, new MemoizedSequence()),

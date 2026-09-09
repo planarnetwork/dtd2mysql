@@ -23,6 +23,8 @@ const golden = path.join(fixtures, "golden");
 const TODAY = "20260601";
 
 let built: string;
+/** The two fixtures as zips, kept so a second merge does not rebuild them into the output. */
+let inputs: string[];
 let rows: Awaited<ReturnType<typeof loadGTFS<FeedFileName>>>;
 
 const columns = <F extends FeedFileName>(file: F) => rows[file] ?? [];
@@ -49,8 +51,10 @@ beforeAll(async () => {
 
   const output = path.join(built, "merged");
 
+  inputs = [zipOf(path.join(fixtures, "a")), zipOf(path.join(fixtures, "b"))];
+
   await merge({
-    inputs: [zipOf(path.join(fixtures, "a")), zipOf(path.join(fixtures, "b"))],
+    inputs,
     output,
     filterDatesBefore: TODAY,
     tmp: path.join(built, "work")
@@ -75,6 +79,57 @@ beforeAll(async () => {
 
   rows = await loadGTFS(zipSync(entries), {raw: true});
 }, 60_000);
+
+describe("without shapes", () => {
+
+  let withoutShapes: string;
+  let rows: Awaited<ReturnType<typeof loadGTFS<FeedFileName>>>;
+
+  beforeAll(async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gtfsmerge-noshapes"));
+
+    withoutShapes = path.join(dir, "merged");
+
+    await merge({
+      inputs,
+      output: withoutShapes,
+      filterDatesBefore: TODAY,
+      shapes: false,
+      tmp: path.join(dir, "work")
+    });
+
+    const entries: Record<string, Uint8Array> = {};
+
+    for (const file of fs.readdirSync(withoutShapes).filter(f => f.endsWith(".txt"))) {
+      entries[file] = strToU8(fs.readFileSync(path.join(withoutShapes, file), "utf8"));
+    }
+
+    rows = await loadGTFS(zipSync(entries), {raw: true});
+  }, 60_000);
+
+  it("writes no shapes.txt at all, rather than an empty one", () => {
+    expect(fs.existsSync(path.join(withoutShapes, "shapes.txt"))).to.equal(false);
+  });
+
+  /**
+   * The column would name a shape that is not in the feed, which is a dangling
+   * reference rather than a missing extra.
+   */
+  it("writes no shape_id column", () => {
+    const header = fs.readFileSync(path.join(withoutShapes, "trips.txt"), "utf8").split("\n")[0];
+
+    expect(header).to.not.include("shape_id");
+    expect(header).to.include("block_id");
+  });
+
+  it("carries everything else", () => {
+    expect(fs.readdirSync(withoutShapes).sort()).to.deep.equal(
+      fs.readdirSync(golden).filter(f => f !== "shapes.txt").sort()
+    );
+    expect((rows["trips.txt"] ?? []).length).to.be.greaterThan(0);
+  });
+
+});
 
 describe("the tiny fixtures", () => {
 
@@ -123,6 +178,18 @@ describe("the merged feed", () => {
     const trip = columns("trips.txt").find(t => t.trip_headsign === "Town Centre");
 
     expect(columns("frequencies.txt").map(f => f.trip_id)).to.deep.equal([trip?.trip_id]);
+  });
+
+  /**
+   * A stop is published if anything in the merged feed calls at it, which is not
+   * known until every feed has been read.
+   */
+  it("keeps a membership naming a stop only the other feed calls at", () => {
+    const published = new Set(columns("stops.txt").map(s => s.stop_id));
+    const members = columns("stop_areas.txt").filter(a => a.area_id === "1072");
+
+    expect(published.has("9100BUSSTOP")).to.equal(true);
+    expect(members.map(a => a.stop_id)).to.include("9100BUSSTOP");
   });
 
   it("keeps both agencies", () => {

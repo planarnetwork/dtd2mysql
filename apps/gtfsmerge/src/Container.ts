@@ -22,7 +22,8 @@ export class Container {
     tempFolder: string,
     transferDistance: number,
     removeRoutes: string[],
-    latitude: number = DEFAULT_LATITUDE
+    latitude: number = DEFAULT_LATITUDE,
+    shapes = true
   ): MergeCommand {
     const removeRouteIndex = removeRoutes.reduce((index, routeType) => {
       index[Number(routeType) as RouteType] = true;
@@ -35,10 +36,12 @@ export class Container {
         new CalendarFactory(),
         tempFolder,
         new CheapRuler(latitude),
+        shapes,
         transferDistance,
         removeRouteIndex
       ),
-      tempFolder
+      tempFolder,
+      shapes
     );
   }
 

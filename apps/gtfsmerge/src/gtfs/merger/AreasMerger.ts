@@ -33,6 +33,21 @@ export class AreasMerger {
   /** What each area was called by the first feed to name it. */
   private readonly names: Record<string, string> = {};
 
+  /** Ids two feeds disagreed about, counted rather than printed one by one. */
+  private readonly disputed = new Set<string>();
+
+  /**
+   * Memberships are held until every feed has been read.
+   *
+   * A stop is published if anything in the merged feed calls at it, and the
+   * merged feed is not finished until the last input has been. Checked against
+   * one feed's calls, a membership in the rail feed naming a stop only the bus
+   * feed serves was dropped while the stop itself was published - a group
+   * quietly missing a member rather than a dangling reference.
+   */
+  private readonly memberships: StopAreaRow[] = [];
+  private readonly called: UsedStops = {};
+
   constructor(
     private readonly areas: RowWriter<AreaRow>,
     private readonly stopAreas: RowWriter<StopAreaRow>
@@ -46,33 +61,52 @@ export class AreasMerger {
   ): Promise<void> {
     for (const area of areas) {
       const id = String(area.area_id);
-      const seen = this.names[id];
 
-      if (seen !== undefined && seen !== area.area_name) {
-        console.warn(
-          `Two feeds call area ${id} different things - "${seen}" and "${area.area_name}". `
-          + `The merged feed keeps "${seen}", and the stops of both are in it.`
-        );
+      // `in`, not a nullish check: an area named with an empty string has been
+      // seen, and treating it as unseen made every later feed disagree with it.
+      if (!(id in this.names)) {
+        this.names[id] = area.area_name;
       }
-
-      this.names[id] ??= area.area_name;
+      else if (this.names[id] !== area.area_name) {
+        this.disputed.add(id);
+      }
 
       await push(this.areas, area);
     }
 
-    for (const stopArea of stopAreas) {
-      // The same two moves transfers.txt makes: a call at a platform is a call
-      // at the station above it, and a stop nothing calls at is not published,
-      // so a membership naming one would point at a row that is not there.
-      const stopId = parentStops[stopArea.stop_id] || stopArea.stop_id;
+    Object.assign(this.called, usedStops);
 
-      if (usedStops[stopId]) {
-        await push(this.stopAreas, {...stopArea, stop_id: stopId});
-      }
+    for (const stopArea of stopAreas) {
+      // A call at a platform is a call at the station above it, so a membership
+      // naming the platform names the station. Resolved here, against the feed
+      // the membership came from, and filtered once every feed has been read.
+      this.memberships.push({
+        ...stopArea,
+        stop_id: parentStops[stopArea.stop_id] || stopArea.stop_id
+      });
     }
   }
 
   public async end(): Promise<void> {
+    // A stop nothing calls at is not published, so a membership naming one would
+    // point at a row that is not in the feed.
+    for (const membership of this.memberships) {
+      if (this.called[membership.stop_id]) {
+        await push(this.stopAreas, membership);
+      }
+    }
+
+    // Once, with a count. A bus feed publishing Fares v2 over this repository's
+    // four digit NLCs would otherwise print a line per row.
+    if (this.disputed.size > 0) {
+      console.warn(
+        `${this.disputed.size} areas are called different things by different feeds - `
+        + `${[...this.disputed].slice(0, 5).join(", ")}`
+        + `${this.disputed.size > 5 ? " and more" : ""}. `
+        + "The merged feed keeps the first name, and the stops of both are in the area."
+      );
+    }
+
     await Promise.all([close(this.areas), close(this.stopAreas)]);
   }
 

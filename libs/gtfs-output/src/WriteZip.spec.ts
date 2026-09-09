@@ -109,8 +109,53 @@ describe("writeZip", () => {
   });
 
   /**
-   * fflate writes the size into four bytes without checking it fits, so an entry
-   * over 4GB produces an archive that is wrong rather than one that fails.
+   * The whole reason this writer exists. A header that leaves its sizes out
+   * forces a reader going forwards to scan the compressed bytes for the next
+   * signature, and compressed bytes eventually contain one - which truncated a
+   * merged national feed at 2.25GB of 2.96GB.
+   */
+  it("declares each entry's sizes in its own header", async () => {
+    // agency.txt sorts first, so it is the entry the first header describes.
+    const agency = "agency_id\nOP1\n";
+    const dir = feed({"agency.txt": agency, "stops.txt": "stop_id\n1\n"});
+    const output = path.join(scratch(), "feed.zip");
+
+    await writeZip(dir, output);
+
+    const bytes = fs.readFileSync(output);
+    const flag = bytes.readUInt16LE(6);
+
+    // Bit 3 is the one that says "the sizes are in a descriptor after the data".
+    expect(flag & 8).to.equal(0);
+    expect(bytes.readUInt32LE(18)).to.be.greaterThan(0);   // compressed
+    expect(bytes.readUInt32LE(22)).to.equal(agency.length);  // uncompressed
+    expect(bytes.readUInt32LE(14)).to.not.equal(0);        // crc32
+  });
+
+  /**
+   * A reader that trusts the header reads exactly the bytes the header promised,
+   * so the promise has to be true for data that is not one small chunk.
+   */
+  it("declares the sizes correctly for an entry of many chunks", async () => {
+    const contents = "x".repeat(96 * 1024 * 1024);
+    const dir = feed({"stop_times.txt": contents});
+    const output = path.join(scratch(), "feed.zip");
+
+    await writeZip(dir, output);
+
+    const bytes = fs.readFileSync(output);
+    const name = bytes.readUInt16LE(26);
+    const compressed = bytes.readUInt32LE(18);
+    const from = 30 + name;
+
+    expect(bytes.readUInt32LE(22)).to.equal(contents.length);
+    // The next thing in the file is the central directory, not a descriptor.
+    expect(bytes.readUInt32LE(from + compressed)).to.equal(0x02014b50);
+  });
+
+  /**
+   * A zip records a size in four bytes, so an entry over 4GB produces an archive
+   * that is wrong rather than one that fails.
    *
    * The fixture is a sparse file: four gigabytes of size, no blocks, made in the
    * time it takes to call ftruncate. The guard reads the size and never the

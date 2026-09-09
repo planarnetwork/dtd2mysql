@@ -10,7 +10,8 @@ export class MergeCommand {
 
   constructor(
     private readonly outputFactory: GTFSOutputFactory,
-    private readonly directory: string
+    private readonly directory: string,
+    private readonly shapes = true
   ) {}
 
   /**
@@ -28,7 +29,7 @@ export class MergeCommand {
       const gtfs = await readMergeInput(input, filterDatesBefore);
 
       console.log("Processing " + input);
-      await output.write(gtfs, streamOf(input));
+      await output.write(gtfs, streamOf(input, this.shapes));
     }
 
     await output.end();
