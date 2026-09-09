@@ -25,8 +25,13 @@ export class ShapesMerger {
 
   private readonly passes: ShapesPass[] = [];
 
+  /**
+   * No writer means the merge is carrying no shapes: the file is not opened, the
+   * reader is never asked for it, and trips.txt has no shape_id column to
+   * dangle. Everything here then does nothing.
+   */
   constructor(
-    private readonly shapes: RowWriter<ShapeRow>
+    private readonly shapes?: RowWriter<ShapeRow>
   ) {}
 
   /**
@@ -45,6 +50,10 @@ export class ShapesMerger {
   }
 
   public end(): Promise<void> {
+    if (this.shapes === undefined) {
+      return Promise.resolve();
+    }
+
     const missing = this.passes.reduce((total, pass) => total + pass.missing(), 0);
 
     if (missing > 0) {
@@ -67,7 +76,7 @@ export class ShapesPass {
   private readonly drawn = new Set<string>();
 
   constructor(
-    private readonly shapes: RowWriter<ShapeRow>,
+    private readonly shapes: RowWriter<ShapeRow> | undefined,
     private readonly shapeIdMap: ShapeIDMap
   ) {}
 
@@ -84,8 +93,10 @@ export class ShapesPass {
   }
 
   public async flush(): Promise<void> {
-    for (const row of this.batch) {
-      await push(this.shapes, row);
+    if (this.shapes !== undefined) {
+      for (const row of this.batch) {
+        await push(this.shapes, row);
+      }
     }
 
     this.batch.length = 0;

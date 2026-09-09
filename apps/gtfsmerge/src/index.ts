@@ -24,6 +24,7 @@ async function main(argv: string[]): Promise<void> {
       ? undefined
       : option(argv, "date-filter") ?? toGTFSDate(new Date()),
     removeRouteTypes: (option(argv, "remove-route-types") ?? "").split(",").filter(t => t !== ""),
+    shapes: !argv.includes("--no-shapes"),
     rulerLatitude: option(argv, "ruler-latitude") === undefined
       ? undefined
       : Number(option(argv, "ruler-latitude")),

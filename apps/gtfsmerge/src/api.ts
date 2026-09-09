@@ -13,6 +13,15 @@ export interface MergeOptions {
   readonly filterDatesBefore?: string;
   /** GTFS route types to drop, as numbers. */
   readonly removeRouteTypes?: readonly string[];
+  /**
+   * Whether to carry shapes.txt and the shape_id naming it. Default true.
+   *
+   * A shape is the line a vehicle is drawn along on a map, and nothing else: no
+   * journey planner reads one. It is also the largest file a bus feed has - the
+   * national one's is 2.5GB against 3GB of calls - so a consumer that draws no
+   * maps is carrying half a feed for nothing.
+   */
+  readonly shapes?: boolean;
   /** The latitude the distance approximation is calibrated at. */
   readonly rulerLatitude?: number;
   /**
@@ -35,6 +44,7 @@ export async function merge(options: MergeOptions): Promise<void> {
     transferDistance = 1.6,
     filterDatesBefore,
     removeRouteTypes = [],
+    shapes = true,
     rulerLatitude = DEFAULT_LATITUDE,
     tmp = workingDirectory(output)
   } = options;
@@ -44,7 +54,7 @@ export async function merge(options: MergeOptions): Promise<void> {
   }
 
   await new Container()
-    .getMergeCommand(tmp, transferDistance, [...removeRouteTypes], rulerLatitude)
+    .getMergeCommand(tmp, transferDistance, [...removeRouteTypes], rulerLatitude, shapes)
     .run([...inputs], output, filterDatesBefore);
 }
 
