@@ -51,6 +51,8 @@ export class GTFSOutput {
 
     const [tripIdMap, shapeIdMap] = await this.trips.write(gtfs.trips, serviceIdMap, routeIdMap);
 
+    this.feedInfo.write(gtfs.feedInfo);
+
     const stopTimes = this.stopTimes.begin(tripIdMap, gtfs.parentStops);
     const shapes = this.shapes.begin(shapeIdMap);
     const flush = async () => {
@@ -65,8 +67,6 @@ export class GTFSOutput {
     await flush();
 
     const usedStops = stopTimes.usedStops;
-
-    this.feedInfo.write(gtfs.feedInfo);
 
     await this.frequencies.write(gtfs.frequencies, tripIdMap);
 

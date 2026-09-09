@@ -60,6 +60,27 @@ describe("CalendarMerger", () => {
   });
 
   /**
+   * A calendar parsed from calendar.txt is built in the order of its columns and
+   * a synthesised one in the order CalendarFactory writes it, so a hash taken
+   * from the row's own field order made the same service two.
+   */
+  it("collapses a synthesised calendar onto an identical parsed one", async () => {
+    const {calendars, merger: m} = merger();
+    // Mondays for three weeks, published as a calendar by one feed and as the
+    // three dates it runs on by the other.
+    const map = await m.write([calendar("a", "20260105", "20260119")], {
+      b: [
+        {service_id: "b", date: "20260105", exception_type: 1},
+        {service_id: "b", date: "20260112", exception_type: 1},
+        {service_id: "b", date: "20260119", exception_type: 1}
+      ]
+    });
+
+    expect(calendars.rows.length).to.equal(1);
+    expect(map).to.deep.equal({a: 1, b: 1});
+  });
+
+  /**
    * A service that never operates is trips nothing can be planned onto, and
    * a feed says it in more than one way.
    */

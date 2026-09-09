@@ -13,9 +13,25 @@ import {close, push} from "./Push";
  * did not.
  *
  * The areas themselves are deduplicated by id, on the same assumption the stops
- * and the agencies are: two feeds naming the same id mean the same thing.
+ * and the agencies are - two feeds naming the same id mean the same thing - and
+ * that assumption is weaker here than it is there. A stop id is an ATCO code and
+ * an agency id a NOC, both national; an area id is unique within one areas.txt
+ * and nowhere else, which is the reason a block and a shape are renumbered
+ * rather than deduplicated. This repository's rail areas are four digit NLCs, so
+ * a bus feed publishing Fares v2 with numeric ids could collide - and because
+ * stop_areas.txt names them, a collision would put one feed's stops into the
+ * other's group.
+ *
+ * Deduplicating instead on the id and the name would write two rows with the
+ * same area_id, which is not a file any consumer can read. Renumbering would
+ * make two rail feeds' "London Terminals" into two groups. So it stays as it is,
+ * and says so out loud when it is provably wrong: the same id with a different
+ * name is the one case where these are certainly not the same area.
  */
 export class AreasMerger {
+
+  /** What each area was called by the first feed to name it. */
+  private readonly names: Record<string, string> = {};
 
   constructor(
     private readonly areas: RowWriter<AreaRow>,
@@ -29,6 +45,18 @@ export class AreasMerger {
     usedStops: UsedStops
   ): Promise<void> {
     for (const area of areas) {
+      const id = String(area.area_id);
+      const seen = this.names[id];
+
+      if (seen !== undefined && seen !== area.area_name) {
+        console.warn(
+          `Two feeds call area ${id} different things - "${seen}" and "${area.area_name}". `
+          + `The merged feed keeps "${seen}", and the stops of both are in it.`
+        );
+      }
+
+      this.names[id] ??= area.area_name;
+
       await push(this.areas, area);
     }
 

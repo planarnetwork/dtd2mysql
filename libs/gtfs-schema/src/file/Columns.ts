@@ -84,12 +84,12 @@ export const GTFS_COLUMNS = {
     "feed_version"
   ] satisfies Columns<FeedInfoRow>,
 
-  // This repository's own file, not a GTFS one: a fixed link the rail feed
-  // publishes alongside transfers.txt.
   "frequencies.txt": [
     "trip_id", "start_time", "end_time", "headway_secs", "exact_times"
   ] satisfies Columns<FrequencyRow>,
 
+  // This repository's own file, not a GTFS one: a fixed link the rail feed
+  // publishes alongside transfers.txt.
   "links.txt": [
     "from_stop_id", "to_stop_id", "mode", "duration", "start_time", "end_time", "start_date",
     "end_date", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"

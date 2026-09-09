@@ -120,16 +120,23 @@ export class CalendarMerger {
    * The exceptions are sorted first: they are the same set of exceptions whatever
    * order the feed happened to list them in, and comparing them as listed left
    * two identical services in the merged feed as two.
+   *
+   * The fields are named rather than taken from the row, which is the same bug a
+   * step further back. `Object.values` follows the order the object was built in:
+   * a calendar parsed from calendar.txt is built in the order of its columns, and
+   * one from CalendarFactory in the order that method writes it, so the same
+   * service published as a row by one feed and described only by its dates in
+   * another hashed two ways and stayed two services.
    */
   private getCalendarHash(calendar: CalendarRow, calendarDates: CalendarDateRow[]): string {
-    const {service_id, ...rest} = calendar;
     const days = calendarDates
       .map(d => d.date + "_" + d.exception_type)
       .sort()
       .join(":");
-    const fields = Object.values({days, ...rest});
 
-    return fields.join();
+    return [
+      days, ...DAYS.map(day => calendar[day]), calendar.start_date, calendar.end_date
+    ].join();
   }
 
   public async end(): Promise<void> {

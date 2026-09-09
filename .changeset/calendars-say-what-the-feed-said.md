@@ -33,7 +33,12 @@ Four fixes, all in the calendar:
   this in more than one way — a calendar naming no day, a range whose every running day is excluded,
   nothing but removals — and none of them can be planned onto. The Wales merge carried 78 such trips.
 - `getCalendarHash` compared the exception dates in the order the feed listed them, so two identical
-  services written down in a different order stayed two services. They are sorted first.
+  services written down in a different order stayed two services. They are sorted first. The fields
+  around them were taken from the row with `Object.values`, which follows the order the object was
+  built in — a parsed calendar in the order of its columns, a synthesised one in the order
+  `CalendarFactory` writes it — so a service published as a row by one feed and described only by
+  its dates in another hashed two ways. They are named instead. Merging the rail feed with BODS
+  Wales, 15 services were being written twice.
 
 `CalendarFactory` now steps between dates with `addDays` from `@gb-transit/gtfs-loader`, which works
 in UTC so that a clock change cannot move a date onto the day either side of it, rather than with a
