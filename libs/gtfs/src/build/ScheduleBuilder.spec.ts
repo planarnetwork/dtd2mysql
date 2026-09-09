@@ -248,11 +248,15 @@ describe("ScheduleBuilder ordering contract", () => {
 });
 
 /**
- * A row only reaches the builder with a pass time when the build asked to keep
- * the locations a service runs through. The source decides whether to send one;
- * what one becomes is decided here.
+ * What a location the service runs through becomes, in a build that keeps them.
+ *
+ * The source hands one over either way - the path is drawn through it whatever
+ * the feed does with its stop times - so every builder here is told to keep
+ * them. `a build that removes the passing points` is the other half.
  */
 describe("a passing point", () => {
+
+  const keeping = () => new ScheduleBuilder(new Set(), false);
 
   // What the CIF gives for one: a pass time, no arrival and no departure of
   // either kind, a blank activity and the running line it takes through.
@@ -267,7 +271,7 @@ describe("a passing point", () => {
   });
 
   it("takes the pass time as both its arrival and its departure", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([row({stop_id: 10, crs_code: "TBW"}), passing({stop_id: 11, crs_code: "TON"})]);
 
@@ -278,7 +282,7 @@ describe("a passing point", () => {
   });
 
   it("is a call nobody boards or alights at", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([row({stop_id: 10, crs_code: "TBW"}), passing({stop_id: 11, crs_code: "TON"})]);
 
@@ -294,7 +298,7 @@ describe("a passing point", () => {
    * carries - which is what anything promoting one to a real stop needs.
    */
   it("names the platform it runs through, like any other call", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([row({stop_id: 10, crs_code: "TBW"}), passing({stop_id: 11, crs_code: "TON", platform: "4"})]);
 
@@ -304,7 +308,7 @@ describe("a passing point", () => {
   });
 
   it("falls back to the station where the pass record names no platform", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([row({stop_id: 10, crs_code: "TBW"}), passing({stop_id: 11, crs_code: "TON", platform: null})]);
 
@@ -314,7 +318,7 @@ describe("a passing point", () => {
   });
 
   it("rolls over midnight the same way a call does", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([
       row({stop_id: 10, crs_code: "TBW", public_arrival_time: "23:00:00", public_departure_time: "23:01:00"}),
@@ -330,7 +334,7 @@ describe("a passing point", () => {
    * in the feed.
    */
   it("gives way to a call at the same station", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([
       row({stop_id: 10, crs_code: "TBW"}),
@@ -351,7 +355,7 @@ describe("a passing point", () => {
    * service passes on the way in.
    */
   it("gives way to a request stop at the same station", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([
       row({stop_id: 10, crs_code: "TBW"}),
@@ -368,7 +372,7 @@ describe("a passing point", () => {
   });
 
   it("does not take a station back off a call it already gave way to", () => {
-    const builder = new ScheduleBuilder();
+    const builder = keeping();
 
     builder.load([
       row({stop_id: 10, crs_code: "TBW"}),
@@ -381,6 +385,153 @@ describe("a passing point", () => {
 
     expect(stops.map(s => s.stop_id)).to.deep.equal(["TBW", "TON"]);
     expect(stops[1].arrival_time).to.equal("10:06:00");
+  });
+
+});
+
+/**
+ * The default, and what the published feed is built with.
+ *
+ * The source sends the locations a service runs through whatever this says, so
+ * these are the rows the `a passing point` block uses, put through a builder
+ * told to leave them out of the stop times.
+ */
+describe("a build that removes the passing points", () => {
+
+  const passing = (overrides: object = {}) => row({
+    public_arrival_time: null,
+    public_departure_time: null,
+    scheduled_arrival_time: null,
+    scheduled_departure_time: null,
+    scheduled_pass_time: "10:05:00",
+    activity: "  ",
+    ...overrides
+  });
+
+  it("leaves a location the service runs through out of the stop times", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({stop_id: 10, crs_code: "TBW"}),
+      passing({stop_id: 11, crs_code: "TON"}),
+      row({stop_id: 12, crs_code: "HGR", public_arrival_time: "10:10:00", public_departure_time: "10:11:00"})
+    ]);
+
+    expect(builder.results.schedules[0].stopTimes.map(s => s.stop_id)).to.deep.equal(["TBW", "HGR"]);
+  });
+
+  it("numbers the calls as though the passing point had never been there", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({stop_id: 10, crs_code: "TBW"}),
+      passing({stop_id: 11, crs_code: "TON"}),
+      row({stop_id: 12, crs_code: "HGR", public_arrival_time: "10:10:00", public_departure_time: "10:11:00"})
+    ]);
+
+    expect(builder.results.schedules[0].stopTimes.map(s => s.stop_sequence)).to.deep.equal([1, 2]);
+  });
+
+  /**
+   * The reason `Cursor` remembers the CRS of the last stop rather than reading
+   * it off the previous row. A passing point that is dropped leaves the row
+   * before this one and the stop before this one at different stations, and a
+   * builder comparing against the row would overwrite Tonbridge with Hildenborough.
+   */
+  it("does not let a dropped passing point make the next call collide with the last", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({stop_id: 10, crs_code: "TBW"}),
+      row({stop_id: 11, crs_code: "TON", public_arrival_time: "10:06:00", public_departure_time: "10:07:00"}),
+      passing({stop_id: 12, crs_code: "HGR"}),
+      row({stop_id: 13, crs_code: "HGR", public_arrival_time: "10:10:00", public_departure_time: "10:11:00"})
+    ]);
+
+    const stops = builder.results.schedules[0].stopTimes;
+
+    expect(stops.map(s => s.stop_id)).to.deep.equal(["TBW", "TON", "HGR"]);
+    expect(stops[1].arrival_time).to.equal("10:06:00");
+    expect(stops[2].arrival_time).to.equal("10:10:00");
+  });
+
+});
+
+/**
+ * `Schedule.path` - every station the train touches, which is what the shapes
+ * are drawn through. It is the same list whichever way the build treats the
+ * passing points, which is the point of keeping it separate from the calls.
+ */
+describe("the path", () => {
+
+  const passing = (overrides: object = {}) => row({
+    public_arrival_time: null,
+    public_departure_time: null,
+    scheduled_arrival_time: null,
+    scheduled_departure_time: null,
+    scheduled_pass_time: "10:05:00",
+    activity: "  ",
+    ...overrides
+  });
+
+  const rows = [
+    row({stop_id: 10, crs_code: "TBW"}),
+    passing({stop_id: 11, crs_code: "TON"}),
+    row({stop_id: 12, crs_code: "HGR", public_arrival_time: "10:10:00", public_departure_time: "10:11:00"})
+  ];
+
+  it("holds the stations the service runs through as well as the ones it calls at", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load(rows);
+
+    expect(builder.results.schedules[0].path).to.deep.equal(["TBW", "TON", "HGR"]);
+  });
+
+  it("is the same whether or not the passing points reach the stop times", () => {
+    const removing = new ScheduleBuilder();
+    const keeping = new ScheduleBuilder(new Set(), false);
+
+    removing.load(rows);
+    keeping.load(rows);
+
+    expect(removing.results.schedules[0].path).to.deep.equal(keeping.results.schedules[0].path);
+  });
+
+  /**
+   * A station and the junction on its approach are two timing points and one
+   * place, so the line is drawn through it once.
+   */
+  it("names a station once where two timing points share it", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([
+      row({stop_id: 10, crs_code: "TBW"}),
+      passing({stop_id: 11, crs_code: "TON"}),
+      row({stop_id: 12, crs_code: "TON", public_arrival_time: "10:06:00", public_departure_time: "10:07:00"})
+    ]);
+
+    expect(builder.results.schedules[0].path).to.deep.equal(["TBW", "TON"]);
+  });
+
+  it("leaves out a station that is not a place", () => {
+    const builder = new ScheduleBuilder(new Set(["TON"]));
+
+    builder.load([
+      row({stop_id: 10, crs_code: "TBW"}),
+      passing({stop_id: 11, crs_code: "TON"}),
+      row({stop_id: 12, crs_code: "HGR", public_arrival_time: "10:10:00", public_departure_time: "10:11:00"})
+    ]);
+
+    expect(builder.results.schedules[0].path).to.deep.equal(["TBW", "HGR"]);
+  });
+
+  it("is empty for a cancellation, which goes nowhere", () => {
+    const builder = new ScheduleBuilder();
+
+    builder.load([row({stop_id: 10, crs_code: "TBW", stp_indicator: "C"})]);
+
+    expect(builder.results.schedules[0].path).to.deep.equal([]);
   });
 
 });

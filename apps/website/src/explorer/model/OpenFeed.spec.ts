@@ -13,7 +13,7 @@ describe("openFeed", () => {
 
     expect([...index.files.keys()].sort()).to.deep.equal([
       "agency.txt", "attributions.txt", "calendar.txt", "calendar_dates.txt", "feed_info.txt",
-      "routes.txt", "stops.txt", "transfers.txt", "trips.txt"
+      "routes.txt", "shapes.txt", "stops.txt", "transfers.txt", "trips.txt"
     ]);
     expect(index.files.get("stops.txt")?.rows).to.equal(345);
     expect(index.files.get("trips.txt")?.rows).to.equal(128);

@@ -71,12 +71,19 @@ CREATE TABLE routes (
 
 DROP TABLE IF EXISTS shapes;
 CREATE TABLE shapes (
-  shape_id smallint(12) unsigned NOT NULL,
+  -- Twelve hex characters of a digest of the stations the line runs through, so
+  -- the same line is the same id in every build. See Shapes.ts.
+  shape_id char(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  -- Six decimal places is what the feed writes, and decimal(8,6) is as much
+  -- latitude as Great Britain needs. Not a float: a coordinate read back as
+  -- 51.126000000000005 is a coordinate this did not store.
   shape_pt_lat decimal(8,6) NOT NULL,
-  shape_pt_lon decimal(8,6) NOT NULL,
-  shape_pt_sequence tinyint(3) NOT NULL,
+  shape_pt_lon decimal(9,6) NOT NULL,
+  -- smallint, not tinyint: the longest line in a national feed is over 200
+  -- points and a tinyint stops counting at 127.
+  shape_pt_sequence smallint(5) unsigned NOT NULL,
   shape_dist_traveled varchar(50) DEFAULT NULL,
-  PRIMARY KEY (shape_id)
+  PRIMARY KEY (shape_id, shape_pt_sequence)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS stop_times;
@@ -167,6 +174,9 @@ CREATE TABLE trips (
   direction_id tinyint(1) unsigned DEFAULT NULL,
   wheelchair_accessible tinyint(1) unsigned DEFAULT NULL,
   bikes_allowed tinyint(1) unsigned DEFAULT NULL,
+  -- Nullable: a trip every station of which the feed cannot place has no line
+  -- to point at. See Shapes.ts.
+  shape_id char(12) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   PRIMARY KEY (trip_id),
   KEY service_id (service_id),
   KEY trip (trip_headsign)

@@ -182,6 +182,25 @@ jobs:
             exit 1
           fi
 
+          # A shape is drawn through every timing point, which is the same list
+          # in both feeds - so the files have to be identical byte for byte. If
+          # they are not, the shapes are being taken from the calls in one of
+          # them, which is the bug this whole thing exists to avoid.
+          if ! cmp -s feed/shapes.txt feed-passing-points/shapes.txt; then
+            echo "The two feeds draw different lines, so one of them is drawing through the calls."
+            exit 1
+          fi
+
+          # A feed whose trips point at no shape is a feed that built shapes.txt
+          # and then failed to reference it - valid GTFS, and useless.
+          undrawn=$(awk -F, 'NR > 1 && $NF == ""' feed/trips.txt | wc -l)
+          echo "Trips with no shape: $undrawn"
+
+          if [ "$undrawn" -gt "$(( trips / 100 ))" ]; then
+            echo "More than 1% of trips have no shape, so something has stopped placing stations."
+            exit 1
+          fi
+
           echo "trips=$trips" >> "$GITHUB_OUTPUT"
           echo "This build: $trips trips"
 
@@ -265,6 +284,11 @@ jobs:
               stop_times: rows('feed/stop_times.txt'),
               stop_times_with_passing_points: rows('feed-passing-points/stop_times.txt'),
               stop_times_national_rail_only: rows('feed-national-rail-only/stop_times.txt'),
+              shape_points: rows('feed/shapes.txt'),
+              shapes: new Set(
+                fs.readFileSync('feed/shapes.txt', 'utf8').trimEnd().split('\n').slice(1)
+                  .map(line => line.slice(0, line.indexOf(',')))
+              ).size,
               feed_version: feed.feed_version,
               feed_start_date: feed.feed_start_date,
               feed_end_date: feed.feed_end_date,
@@ -327,11 +351,15 @@ jobs:
                 '| Source | ' + m.feed_version + ' |',
                 '| Built from | ' + m.commit.slice(0, 7) + ' |',
                 '',
-                'Three feeds. The first two hold the same trips.',
+                'Three feeds. The first two hold the same trips, and the same shapes: a ' +
+                  'shape is drawn through every timing point whether or not the passing ones ' +
+                  'are published as calls. The line between two stations is straight, because ' +
+                  'the DTD gives no coordinate for the junctions between them.',
                 '',
-                '- \`gtfs.zip\` - where a service calls. ' +
+                '- \`gtfs.zip\` - where a service calls, and the line it runs over. ' +
                   m.trips.toLocaleString() + ' trips, ' +
-                  m.stop_times.toLocaleString() + ' stop times.',
+                  m.stop_times.toLocaleString() + ' stop times, ' +
+                  m.shapes.toLocaleString() + ' shapes.',
                 '- \`gtfs-passing-points.zip\` - and where it runs through without stopping, ' +
                   'as calls with \`pickup_type\` and \`drop_off_type\` 1. ' +
                   m.trips.toLocaleString() + ' trips, ' +

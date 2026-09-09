@@ -61,6 +61,8 @@ export {excludeServices, MODES, NO_EXCLUSIONS} from "./transform/ExcludeServices
 export type {ServiceExclusions} from "./transform/ExcludeServices";
 export {interchange, mergeTransfers} from "./transform/MergeTransfers";
 export {stopId, toStopTimeRow, withStopPoints} from "./transform/Platforms";
+export {shapes} from "./transform/Shapes";
+export type {FeedShapes} from "./transform/Shapes";
 export {stationId, stopPointId} from "./transform/Atco";
 export {agencyId, toAgencyRow, toRouteRow} from "./transform/Noc";
 

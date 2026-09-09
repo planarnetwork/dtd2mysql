@@ -67,8 +67,11 @@ export class CifFileSource implements TimetableSource {
     private readonly range: DateRange,
     /**
      * Whether to drop the locations a service runs through without stopping.
-     * `AND scheduled_pass_time is null` in the passenger query, which is where
-     * the same setting lives in MySqlTimetableSource.
+     *
+     * Passed to ScheduleBuilder rather than applied here, because a location a
+     * train runs through is still somewhere it goes: the builder keeps it on
+     * `Schedule.path` for the shapes whatever this says, and this decides only
+     * whether it also becomes a stop time.
      */
     private readonly removePassingPoints: boolean = true
   ) {}
@@ -435,7 +438,7 @@ class ScheduleLoader {
       return;
     }
 
-    const builder = new ScheduleBuilder(this.exclude);
+    const builder = new ScheduleBuilder(this.exclude, this.removePassingPoints);
     builder.load(pending.zTrain ? this.zTrainRows(pending) : this.scheduleRows(pending));
     this.droppedStops += builder.dropped;
 
@@ -448,9 +451,8 @@ class ScheduleLoader {
 
   /**
    * The passenger query: stop times joined to physical_station on the TIPLOC, so
-   * a location that is not a station drops out, and passing times excluded
-   * unless the build asked for them. A schedule with no stop time records at all
-   * survives as a single row of nulls.
+   * a location that is not a station drops out. A schedule with no stop time
+   * records at all survives as a single row of nulls.
    */
   private scheduleRows(pending: Pending): ScheduleStopTimeRow[] {
     const {values, extra, stops} = pending;
@@ -479,7 +481,7 @@ class ScheduleLoader {
     for (const stop of stops) {
       const crs = this.crsByTiploc.get(stop.location as string);
 
-      if (crs === undefined || (this.removePassingPoints && stop.scheduled_pass_time !== null)) {
+      if (crs === undefined) {
         continue;
       }
 
@@ -497,10 +499,10 @@ class ScheduleLoader {
    * with no stops does not appear at all, and the location is already a CRS
    * code rather than a TIPLOC.
    *
-   * The pass filter applies here too, though no ZTR yet published carries a
-   * pass time - RJTTF918 has 10,165 intermediate records and not one of them.
-   * It is here so the option means one thing rather than two, and so a ZTR that
-   * starts carrying them does not put them in the feed that asked for none.
+   * Passing times reach the builder here too, though no ZTR yet published
+   * carries one - RJTTF918 has 10,165 intermediate records and not one of them.
+   * The row is handed over the same way so a ZTR that starts carrying them gets
+   * the same treatment a train does rather than a second rule of its own.
    */
   private zTrainRows(pending: Pending): ScheduleStopTimeRow[] {
     const {values, extra, stops} = pending;
@@ -521,11 +523,9 @@ class ScheduleLoader {
       reservations: null
     };
 
-    return stops
-      .filter(stop => !this.removePassingPoints || stop.scheduled_pass_time === null)
-      .map((stop, index) =>
-        ({...common, ...stopColumns(stop, stop.location as string, index + 1, null)}) as ScheduleStopTimeRow
-      );
+    return stops.map((stop, index) =>
+      ({...common, ...stopColumns(stop, stop.location as string, index + 1, null)}) as ScheduleStopTimeRow
+    );
   }
 
   /**

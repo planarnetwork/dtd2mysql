@@ -18,6 +18,9 @@ export interface FeedMeta {
   /** The standard feed and the passing points feed differ by these two. */
   stop_times?: number;
   stop_times_with_passing_points?: number;
+  /** The lines the trips run over, which both of those feeds carry identically. */
+  shapes?: number;
+  shape_points?: number;
   /**
    * The National Rail only feed. Absent until the build that produces it
    * reaches master, which is the whole reason platform three renders as a
@@ -94,11 +97,13 @@ export const FEEDS: Feed[] = [
     points: [
       "Drops straight into OpenTripPlanner",
       "Smaller, faster to load",
-      "Splits and joins resolved"
+      "Splits and joins resolved",
+      "Every trip drawn as a line"
     ],
     figures: feed => rows([
       ["Trips", feed && number(feed.trips)],
-      ["Stop times", feed?.stop_times !== undefined && number(feed.stop_times)]
+      ["Stop times", feed?.stop_times !== undefined && number(feed.stop_times)],
+      ["Shapes", feed?.shapes !== undefined && number(feed.shapes)]
     ]),
     published: feed => feed !== undefined
   },
@@ -115,7 +120,8 @@ export const FEEDS: Feed[] = [
     figures: feed => rows([
       ["Trips", feed && number(feed.trips)],
       ["Stop times", feed?.stop_times_with_passing_points !== undefined
-        && number(feed.stop_times_with_passing_points)]
+        && number(feed.stop_times_with_passing_points)],
+      ["Shapes", feed?.shapes !== undefined && number(feed.shapes)]
     ]),
     published: feed => feed?.stop_times_with_passing_points !== undefined
   },

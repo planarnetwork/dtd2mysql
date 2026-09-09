@@ -71,9 +71,7 @@ describe("the GTFS import", () => {
     const tables = [...schema.matchAll(/CREATE TABLE (\w+) \(/g)].map(([, table]) => table);
     const loaded = new Set([...loads().keys()].map(file => file.replace(".txt", "")));
 
-    // shapes has no file: GTFS defines it and this feed has no geometry to put
-    // in it, so it is created empty rather than left out of the schema.
-    expect(tables.filter(table => !loaded.has(table))).to.deep.equal(["shapes"]);
+    expect(tables.filter(table => !loaded.has(table))).to.deep.equal([]);
   });
 
 });

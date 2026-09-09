@@ -12,6 +12,16 @@ entry here does not excuse a golden feed moving, and an entry there does not exc
 
 ## The type surface
 
+**Drawing the trips as lines through the passing points.** `@gb-transit/gtfs` gains `shapes` and
+`FeedShapes` — the transform that turns each schedule's path into a `shapes.txt` polyline, and what
+it returns. Additions only.
+
+`Schedule` gains a `path` constructor parameter and property, and `Schedule.toTrip` gains a third
+argument, neither of which this snapshot records: it pins the names a library exports and not their
+shapes. Both are optional, so existing callers still compile — a `Schedule` built without a path
+gets its shape from its calls, which is the same line minus whatever the caller never had.
+`ScheduleBuilder`'s constructor gains a second optional argument for the same reason.
+
 **Leaving the non-National Rail services out (#176).** `@gb-transit/gtfs` gains `excludeServices`,
 `ServiceExclusions`, `NO_EXCLUSIONS` and `MODES` — the transform that drops the metro, bus and ship
 services a config asks it to, the rules it reads, and the mode names those rules are written in.

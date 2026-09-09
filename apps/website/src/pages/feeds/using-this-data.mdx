@@ -24,7 +24,8 @@ Three feeds, from the same build:
 
 A journey planner wants the first. Anything tracing where a train actually goes — what uses which
 line, where a delay was picked up, why two services conflict — wants the second, which holds the
-same trips. See [the passing points feed](#the-passing-points-feed).
+same trips. See [the passing points feed](#the-passing-points-feed). Drawing a train on a map needs
+neither: both feeds carry the same [shapes](#shapes).
 
 A feed being merged with the tube and bus timetables wants the third, which has fewer trips than the
 other two. See [the National Rail only feed](#the-national-rail-only-feed).
@@ -235,10 +236,42 @@ above 24 hours appear on any overnight service, not only these.
 Bank holiday running is in the source and is not modelled. A schedule that does not run on bank
 holidays is published as running on them.
 
+## Shapes
+
+Every trip carries a `shape_id`, and `shapes.txt` is the line it runs over: a polyline through the
+stations the train touches, whether it calls there or runs through. **Both** feeds carry it, and
+they carry the identical file — the line is drawn from every timing point regardless of which of
+them the feed publishes as a call, which is what the nightly checks before releasing.
+
+The passing points are the whole reason the line is worth drawing. Without them a King's Cross to
+Newcastle service is a single 395 km straight line; with them it is twenty-odd hops that trace the
+East Coast Main Line. Across the feed they cut the number of straight-line hops longer than 50 km
+from 4,751 to 404.
+
+**It is not the track.** 2,170,472 of the CIF's 3,062,488 passing points are junctions, loops and
+signal boxes — `WATRLWC`, `LEEDSWJ`, `HTRWAJN` — and the DTD gives no coordinate for any of them.
+What is left is a station-to-station sketch: enough to tell a Bristol train from a Birmingham one on
+a map, not enough to draw the railway. The median hop is a 4.8 km straight line over ground the
+rails curve across.
+
+Two consequences worth knowing:
+
+- **A shape is shared.** One line on the ground carries every stopping pattern that runs over it, so
+  the fast and the stopper have the same `shape_id` — 13,722 shapes for 278,794 trips. The id is a
+  digest of the stations the line runs through, so it is the same id in every build and can be
+  referred to from outside the feed.
+- **There is no `shape_dist_traveled`.** GTFS only reads one where `stop_times.txt` carries it too,
+  and putting a distance on all 2.9 million calls to disambiguate the 2.5% of trips that pass one
+  station twice is not worth the largest file in the feed growing for it.
+
+A trip whose every station the feed cannot place has an empty `shape_id` rather than a line drawn
+through Null Island.
+
 ## The passing points feed
 
 Half of CIF's intermediate location records are places a service runs through without stopping.
-The standard feed drops them. `gtfs-passing-points.zip` keeps them, as calls with `pickup_type` and
+The standard feed drops them from `stop_times.txt` — though not from the shapes, which are drawn
+through them in both feeds. `gtfs-passing-points.zip` keeps them as calls, with `pickup_type` and
 `drop_off_type` of `1` and the pass time as both arrival and departure — the only time the record
 has.
 
@@ -254,8 +287,9 @@ feed already publishes because something stops there — so a consumer promoting
 real stop has nothing to translate. A pass whose record names no platform gets the station's
 boarding point.
 
-Everything else is identical. The two feeds hold the same trips, routes and calendars, and the
-nightly stops rather than publishing if the two disagree about how many trips there are.
+Everything else is identical. The two feeds hold the same trips, routes, calendars and shapes, and
+the nightly stops rather than publishing if the two disagree about how many trips there are or draw
+different lines.
 
 **One caveat.** A call publishes its public time and a passing point has only its working time, and
 the two do not agree. A small number of passes therefore read as later than the call after them.

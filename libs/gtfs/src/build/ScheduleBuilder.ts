@@ -1,7 +1,7 @@
 import {Temporal} from "temporal-polyfill";
 import {IdGenerator, STP} from "../model/OverlayRecord";
 import {Schedule, tripId} from "../model/Schedule";
-import {PickupDropOffType, RouteType, StopTime} from "@gb-transit/gtfs-schema";
+import {CRS, PickupDropOffType, RouteType, StopTime} from "@gb-transit/gtfs-schema";
 import {NO_DAYS, ScheduleCalendar} from "../model/ScheduleCalendar";
 import {ScheduleStopTimeRow} from "../source/TimetableSource";
 
@@ -20,6 +20,11 @@ const notAdvertisedActivity = "N ";
  */
 interface Cursor {
   stops: StopTime[];
+  /**
+   * Every station the run has touched, calling or passing, in order - what
+   * `Schedule.path` is built from.
+   */
+  path: CRS[];
   prevRow?: ScheduleStopTimeRow;
   departureHour: number;
   /**
@@ -30,6 +35,15 @@ interface Cursor {
    * the same station.
    */
   lastIsPassing: boolean;
+  /**
+   * The CRS of the last stop in `stops`, which is what a row arriving at the
+   * same station has to collide with to displace it.
+   *
+   * Not `prevRow.crs_code`: a passing row that the build is dropping never
+   * becomes a stop, so the row before this one and the stop before this one are
+   * no longer the same place.
+   */
+  lastStopCrs?: CRS;
 }
 
 /**
@@ -51,8 +65,16 @@ export class ScheduleBuilder {
    * Placeholder. Their stop times are dropped here rather than at the source
    * because the z-train query takes its stop id straight from the ZTR location
    * and never meets physical_station, and every affected trip is a z-train.
+   *
+   * `removePassingPoints` decides whether a location the service runs through
+   * becomes a stop time. It does not decide whether the source hands one over:
+   * the path is built from every row either way, because a feed without passing
+   * points in `stop_times.txt` still draws its shapes through them.
    */
-  constructor(private readonly exclude: ReadonlySet<string> = new Set()) {}
+  constructor(
+    private readonly exclude: ReadonlySet<string> = new Set(),
+    private readonly removePassingPoints: boolean = true
+  ) {}
 
   /**
    * How many stop times were dropped for calling at a station that is not a
@@ -123,9 +145,11 @@ export class ScheduleBuilder {
     const startsSchedule = !cursor.prevRow || cursor.prevRow.id !== row.id;
 
     if (cursor.prevRow && startsSchedule) {
-      this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
+      this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops, cursor.path));
       cursor.stops = [];
+      cursor.path = [];
       cursor.lastIsPassing = false;
+      cursor.lastStopCrs = undefined;
     }
 
     // The origin's departure hour decides whether a later stop has rolled over
@@ -145,42 +169,63 @@ export class ScheduleBuilder {
       this.droppedStops++;
     }
     else if (row.stp_indicator !== STP.Cancellation && row.stop_id !== null) {
-      const stop = this.createStop(row, cursor.stops.length + 1, cursor.departureHour);
       const passing = !!row.scheduled_pass_time;
 
-      if (cursor.prevRow && cursor.prevRow.id === row.id && row.crs_code === cursor.prevRow.crs_code) {
-        // Two timing points of one service can share a CRS - a station and the
-        // junction on its approach - and only one of them belongs in the feed.
-        // The one that boards or alights wins, and anything the service
-        // actually calls at beats one it only runs through: without that second
-        // clause a passing point displaced 28 request stops, which board on
-        // request and so have no Scheduled to win with.
-        if (stop.pickup_type === PickupDropOffType.Scheduled
-          || stop.drop_off_type === PickupDropOffType.Scheduled
-          || (cursor.lastIsPassing && !passing)) {
-          cursor.stops[cursor.stops.length - 1] = Object.assign(stop, { stop_sequence: cursor.stops.length });
-          cursor.lastIsPassing = passing;
-        }
+      // The same CRS twice running is one place on the ground, whichever of the
+      // two timing points the feed goes on to keep, so the line is drawn
+      // through it once.
+      if (cursor.path[cursor.path.length - 1] !== row.crs_code) {
+        cursor.path.push(row.crs_code);
       }
-      else {
-        cursor.stops.push(stop);
-        cursor.lastIsPassing = passing;
+
+      // A location the service runs through is on the path and nowhere else,
+      // unless the build asked for it. The path is the whole of what a feed
+      // without passing points wants from one.
+      if (!passing || !this.removePassingPoints) {
+        this.addStop(cursor, row, passing);
       }
     }
 
     cursor.prevRow = row;
   }
 
+  private addStop(cursor: Cursor, row: ScheduleStopTimeRow, passing: boolean): void {
+    if (cursor.stops.length > 0 && row.crs_code === cursor.lastStopCrs) {
+      const stop = this.createStop(row, cursor.stops.length, cursor.departureHour);
+
+      // Two timing points of one service can share a CRS - a station and the
+      // junction on its approach - and only one of them belongs in the feed.
+      // The one that boards or alights wins, and anything the service actually
+      // calls at beats one it only runs through: without that second clause a
+      // passing point displaced 28 request stops, which board on request and so
+      // have no Scheduled to win with.
+      if (stop.pickup_type === PickupDropOffType.Scheduled
+        || stop.drop_off_type === PickupDropOffType.Scheduled
+        || (cursor.lastIsPassing && !passing)) {
+        cursor.stops[cursor.stops.length - 1] = stop;
+        cursor.lastIsPassing = passing;
+      }
+
+      return;
+    }
+
+    cursor.stops.push(this.createStop(row, cursor.stops.length + 1, cursor.departureHour));
+    cursor.lastIsPassing = passing;
+    cursor.lastStopCrs = row.crs_code;
+  }
+
   private flush(cursor: Cursor): void {
     if (cursor.prevRow) {
-      this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops));
+      this.schedules.push(this.createSchedule(cursor.prevRow, cursor.stops, cursor.path));
       cursor.prevRow = undefined;
       cursor.stops = [];
+      cursor.path = [];
       cursor.lastIsPassing = false;
+      cursor.lastStopCrs = undefined;
     }
   }
 
-  private createSchedule(row: ScheduleStopTimeRow, stops: StopTime[]): Schedule {
+  private createSchedule(row: ScheduleStopTimeRow, stops: StopTime[], path: CRS[]): Schedule {
     this.maxId = Math.max(this.maxId, row.id);
 
     const mode = routeTypeIndex.hasOwnProperty(row.train_category) ? routeTypeIndex[row.train_category] : RouteType.Rail;
@@ -207,7 +252,8 @@ export class ScheduleBuilder {
       row.atoc_code ?? "ZZ",
       row.stp_indicator,
       mode === RouteType.Rail && row.train_class !== "S",
-      row.reservations !== null
+      row.reservations !== null,
+      path
     );
   }
 
@@ -333,7 +379,7 @@ const routeTypeIndex: { [trainCategory: string]: RouteType } = {
 };
 
 function newCursor(): Cursor {
-  return {stops: [], departureHour: 4, lastIsPassing: false};
+  return {stops: [], path: [], departureHour: 4, lastIsPassing: false};
 }
 
 function hasActivity(activity: string, code: string): boolean {

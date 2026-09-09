@@ -80,6 +80,7 @@ function withTripId(schedule: Schedule, tripId: string): Schedule {
     schedule.operator,
     schedule.stp,
     schedule.firstClassAvailable,
-    schedule.reservationPossible
+    schedule.reservationPossible,
+    schedule.path
   );
 }
