@@ -3,7 +3,8 @@ import Base from "../../layouts/Base.astro";
 import Terminal from "../../components/Terminal.astro";
 import {latest} from "../../feed.js";
 import {
-  PATTERNS_PATH, STATIONS_PATH, WHOLE_PATH, byLetter, kilobytes, patternStations, wholeBytes
+  PATTERNS_PATH, STATIONS_PATH, WHOLE_BROTLI_PATH, WHOLE_PATH, byLetter, kilobytes,
+  patternStations, wholeBrotliBytes, wholeBytes
 } from "../../patterns.js";
 import {RELEASE, npm, source} from "../../site.js";
 
@@ -13,6 +14,7 @@ const stations = await patternStations();
 const letters = byLetter(stations);
 const total = stations.reduce((bytes, station) => bytes + station.bytes, 0);
 const whole = wholeBytes();
+const wholeBrotli = wholeBrotliBytes();
 ---
 <Base
   title="Transfer patterns"
@@ -43,6 +45,12 @@ const whole = wholeBytes();
           <a class="btn btn--signal" href={whole === undefined ? `${RELEASE}/transfer-patterns.gz` : WHOLE_PATH}>
             transfer-patterns.gz &rarr;
           </a>
+          {wholeBrotli !== undefined && (
+            <p style="margin: 12px 0 0; font-size: 15px; color: var(--ink-quiet);">
+              Or <a href={WHOLE_BROTLI_PATH}><code>transfer-patterns.br</code></a>, a third smaller,
+              for anything that is not a browser.
+            </p>
+          )}
         </div>
       </div>
       <div class="card">
@@ -171,13 +179,9 @@ const whole = wholeBytes();
         <div style="margin-bottom: 26px;" id={`letter-${letter}`}>
           <h3 class="h3" style="margin: 0 0 10px;">{letter}</h3>
           <div class="table-scroll">
-            <table>
+            <table class="data-table">
               <thead>
-                <tr>
-                  <th style="text-align: left;">station</th>
-                  <th style="text-align: left;">code</th>
-                  <th style="text-align: left;">patterns</th>
-                </tr>
+                <tr><th>station</th><th>gzip</th><th>brotli</th></tr>
               </thead>
               <tbody>
                 {group.map(station => (
@@ -185,8 +189,16 @@ const whole = wholeBytes();
                     <td>{station.name ?? <span style="color: var(--ink-quiet);">&mdash;</span>}</td>
                     <td>
                       <a href={station.path}><code>{station.code}.gz</code></a>
+                      <span style="color: var(--ink-quiet);"> {kilobytes(station.bytes)}</span>
                     </td>
-                    <td>{kilobytes(station.bytes)}</td>
+                    <td>
+                      {station.brotliBytes > 0 && (
+                        <>
+                          <a href={station.brotliPath}><code>{station.code}.br</code></a>
+                          <span style="color: var(--ink-quiet);"> {kilobytes(station.brotliBytes)}</span>
+                        </>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -52,6 +52,7 @@ apps/website/public/enrichment-report.json
 # station at a time beside themselves: 2,797 files and 163MB, rebuilt from the
 # release every time the site is.
 apps/website/public/transfer-patterns.gz
+apps/website/public/transfer-patterns.br
 apps/website/public/transfer-patterns/
 
 # Downloaded by the validate job and by hand; 40MB and versioned by the workflow.
