@@ -30,10 +30,10 @@
   },
   "dependencies": {
     "@gb-transit/gtfs": "workspace:^",
-    "@gb-transit/gtfs-schema": "workspace:^",
-    "fflate": "^0.8.3"
+    "@gb-transit/gtfs-schema": "workspace:^"
   },
   "devDependencies": {
+    "fflate": "^0.8.3",
     "typescript": "7.0.2"
   }
 }
