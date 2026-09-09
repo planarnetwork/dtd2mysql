@@ -19,6 +19,28 @@ describe("Schedule", () => {
     expect(original.stopTimes[0].departure_time).to.equal("00:30");
   });
 
+  /**
+   * The line a train runs over does not depend on which days it runs, so every way of rebuilding a
+   * schedule has to carry it. `offsetId` did not, and nothing caught it: `path` is an optional
+   * trailing argument, so a constructor call that omits it compiles.
+   */
+  it("keeps the path through a clone", () => {
+    const original = schedule(1, "A", "2017-01-01", "2017-01-31", STP.Permanent, ALL_DAYS,
+      [stop("AAA", "00:30")], "LN", ["AAA", "BBB", "CCC"]);
+
+    expect(original.clone(original.calendar.shiftBackward(), 2).path)
+      .to.deep.equal(["AAA", "BBB", "CCC"]);
+  });
+
+  it("keeps the path through a clone that cuts the calls down", () => {
+    const original = schedule(1, "A", "2017-01-01", "2017-01-31", STP.Permanent, ALL_DAYS,
+      [stop("AAA", "00:30"), stop("CCC", "01:30")], "LN", ["AAA", "BBB", "CCC"]);
+
+    // dropUnknownStops clones with fewer calls. The train still ran over the same ground.
+    expect(original.clone(original.calendar, 2, [stop("AAA", "00:30")]).path)
+      .to.deep.equal(["AAA", "BBB", "CCC"]);
+  });
+
   it("identifies a trip by TUID, STP indicator and date range", () => {
     const permanent = schedule(1, "A", "2017-01-01", "2017-01-31", STP.Permanent);
     const overlay = schedule(2, "A", "2017-01-01", "2017-01-31", STP.Overlay);

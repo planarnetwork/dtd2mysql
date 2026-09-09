@@ -10,7 +10,8 @@ import type {Links} from "../model/Links.js";
 import type {Provenance} from "../provenance.js";
 import {formatClock, formatTime, metresBetween} from "../format.js";
 import type {
-  BoardDetail, CallDetail, Departure, LinkDetail, RouteDetail, ServiceDetail, StopDetail, TripDetail
+  BoardDetail, CallDetail, Departure, LinkDetail, RouteDetail, ServiceDetail, ShapeDetail, StopDetail,
+  TripDetail
 } from "./Detail.js";
 
 /**
@@ -104,8 +105,73 @@ export function tripDetail(loaded: Loaded, tripId: string): TripDetail {
     dates,
     runs: dates.length === 0 ? undefined : dates.filter(date => date.runs).length,
     onward: links.onwardOf(tripId).map(link => linkDetail(feed, link.toTripId, link.toStopId, link.row)),
-    prior: links.priorTo(tripId).map(link => linkDetail(feed, link.fromTripId, link.fromStopId, link.row))
+    prior: links.priorTo(tripId).map(link => linkDetail(feed, link.fromTripId, link.fromStopId, link.row)),
+    shape: shapeDetail(feed, row?.shape_id)
   };
+}
+
+/**
+ * The line a trip runs over.
+ *
+ * Sorted by shape_pt_sequence rather than taken in file order, because GTFS does not require
+ * shapes.txt to be sorted and a caller drawing an unsorted one gets a scribble.
+ *
+ * A point whose coordinate does not parse is dropped rather than the shape abandoned: one bad row
+ * in a feed somebody else built should cost that point and not the picture.
+ */
+function shapeDetail(feed: FeedIndex, shapeId: string | undefined): ShapeDetail | undefined {
+  const shapes = feed.files.get("shapes.txt");
+
+  if (shapeId === undefined || shapeId === "" || shapes === undefined) {
+    return undefined;
+  }
+
+  const rows = shapes.index("shape_id").get(shapeId);
+
+  if (rows === undefined || rows.length === 0) {
+    return undefined;
+  }
+
+  const points = rows
+    .map(row => ({
+      sequence: Number(shapes.value("shape_pt_sequence", row)),
+      lat: Number(shapes.value("shape_pt_lat", row)),
+      lon: Number(shapes.value("shape_pt_lon", row))
+    }))
+    .filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lon))
+    .sort((a, b) => a.sequence - b.sequence)
+    .map(point => [point.lat, point.lon] as const);
+
+  const trips = feed.files.get("trips.txt")?.index("shape_id").get(shapeId)?.length ?? 0;
+
+  return {
+    id: shapeId,
+    points,
+    trips,
+    length: lengthOf(points),
+    undrawable: points.length < 2 ? true : undefined
+  };
+}
+
+/**
+ * How far it is along the line, in kilometres.
+ *
+ * Equirectangular rather than haversine. Over the few kilometres between one point and the next the
+ * two agree to well under the accuracy of the line itself, which is a straight hop between stations
+ * across ground the rails curve over.
+ */
+function lengthOf(points: readonly (readonly [number, number])[]): number {
+  let total = 0;
+
+  for (let i = 1; i < points.length; i++) {
+    const [lat, lon] = points[i];
+    const [previousLat, previousLon] = points[i - 1];
+    const x = (lon - previousLon) * Math.cos((lat + previousLat) / 2 * Math.PI / 180);
+
+    total += Math.hypot(x, lat - previousLat) * 111.32;
+  }
+
+  return total;
 }
 
 export function routeDetail(loaded: Loaded, routeId: string): RouteDetail {

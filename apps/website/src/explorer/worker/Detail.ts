@@ -46,6 +46,31 @@ export interface TripDetail {
   /** The trips this one's vehicle carries on as, and the ones that carried on as it. */
   readonly onward: readonly LinkDetail[];
   readonly prior: readonly LinkDetail[];
+  /** The line it runs over, where trips.txt names one and shapes.txt has it. */
+  readonly shape?: ShapeDetail;
+}
+
+/**
+ * The line a trip runs over.
+ *
+ * The points are latitude and longitude pairs rather than rows, because this crosses a worker
+ * boundary and a couple of hundred `{shape_pt_lat: "51.5"}` objects is a lot of string to post for
+ * two numbers each.
+ */
+export interface ShapeDetail {
+  readonly id: string;
+  readonly points: readonly (readonly [number, number])[];
+  /**
+   * How many trips run over this same line.
+   *
+   * Worth saying because it is usually not one: a line carries every stopping pattern that runs
+   * over it, so the fast and the stopper share a shape.
+   */
+  readonly trips: number;
+  /** Kilometres end to end along the line, which is not the distance between its ends. */
+  readonly length: number;
+  /** Set where shapes.txt names the shape but has fewer than two points the map could use. */
+  readonly undrawable?: boolean;
 }
 
 export interface CallDetail {

@@ -64,23 +64,19 @@ function content(schedule: Schedule): string {
 
 /**
  * Point the schedule's stop times at the given trip ID so that stop_times.txt joins to trips.txt
+ *
+ * Through `clone` rather than a constructor call of its own. A schedule has ten fields and this
+ * changes one of them, so listing the other nine here is nine chances to forget one - which is
+ * exactly what happened to `path` when it was added.
  */
 function withTripId(schedule: Schedule, tripId: string): Schedule {
   if (schedule.stopTimes.length === 0 || schedule.stopTimes[0].trip_id === tripId) {
     return schedule;
   }
 
-  return new Schedule(
-    schedule.id,
-    schedule.stopTimes.map(st => Object.assign({}, st, { trip_id: tripId })),
-    schedule.tuid,
-    schedule.rsid,
+  return schedule.clone(
     schedule.calendar,
-    schedule.mode,
-    schedule.operator,
-    schedule.stp,
-    schedule.firstClassAvailable,
-    schedule.reservationPossible,
-    schedule.path
+    schedule.id,
+    schedule.stopTimes.map(st => Object.assign({}, st, { trip_id: tripId }))
   );
 }

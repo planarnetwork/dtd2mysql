@@ -182,6 +182,22 @@ jobs:
             exit 1
           fi
 
+          # The passing points feed has to actually have them. This is the gate
+          # the other three cannot be: they all compare the two feeds against
+          # each other, and a regression that stopped the passing points
+          # reaching either one - the source clause this feed's shapes depend on
+          # - leaves the two agreeing perfectly about a timetable that has lost
+          # them. Only the count against the standard feed can tell.
+          standard=$(wc -l < feed/stop_times.txt)
+          with_passing=$(wc -l < feed-passing-points/stop_times.txt)
+          echo "Stop times: $standard standard, $with_passing with passing points"
+
+          if [ "$with_passing" -le "$standard" ]; then
+            echo "The passing points feed has no more calls than the standard one, so the passing"
+            echo "points are not reaching it and its shapes are drawn through the calls."
+            exit 1
+          fi
+
           # A shape is drawn through every timing point, which is the same list
           # in both feeds - so the files have to be identical byte for byte. If
           # they are not, the shapes are being taken from the calls in one of

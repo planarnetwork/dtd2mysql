@@ -31,6 +31,13 @@ route, a headsign or a coupling can start depending on a station the train does 
 survives `clone` unchanged, because a schedule cut to other days is the same train over the same
 ground.
 
+The two places that rebuilt a schedule field by field - `mergeSchedules`'s `withTripId` and
+`CifFileSource`'s `offsetId` - now go through `clone` instead. Both were listing nine of a
+schedule's ten fields to change one, which is nine chances to forget the tenth, and `offsetId`
+duly forgot `path` the day it was added. Nothing caught it: the argument is optional, so the call
+compiled, and a z-train with no path draws its shape from its calls - the same list, until a ZTR
+carries a pass time.
+
 `removePassingPoints` moves from the sources to `ScheduleBuilder`. The passenger query and the CIF
 read now hand over every location either way — 3.8 million rows rather than 2.9 million — and the
 builder decides which of them become stop times. That is what makes **both** published feeds carry

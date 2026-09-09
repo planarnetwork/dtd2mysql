@@ -213,9 +213,10 @@ export type ShapeID = string;
 /**
  * A point on the line a trip runs over.
  *
- * A pair rather than an object per point: a national feed is millions of these, and the two
- * numbers are the whole of what a caller drawing the line needs. `shape_dist_traveled` is not
- * read - see COLUMNS in EntityType.
+ * Two numbers and nothing else, which is the whole of what a caller drawing the line needs. A
+ * national feed is millions of these, so what is left out matters: `shape_dist_traveled` is not
+ * read, and neither is the sequence, which has done its job by the time `build` has sorted on it.
+ * See COLUMNS in EntityType.
  */
 export interface ShapePoint {
   latitude: number;

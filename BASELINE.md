@@ -19,6 +19,10 @@ records by name and so does not show; `shapes` being required rather than option
 because a feed with no `shapes.txt` has no lines rather than an unknown number of them, and `{}`
 says that without every caller writing `?? {}`.
 
+**Drawing the line in the explorer.** No surface change: `@gb-transit/website` is private and is
+not in the snapshot. `Tiles.ts` gains exported `unit` and `zoomFor` so the projection and the zoom
+can be unit tested, which is the only part of `ui/` that is testable without a browser.
+
 **Drawing the trips as lines through the passing points.** `@gb-transit/gtfs` gains `shapes` and
 `FeedShapes` — the transform that turns each schedule's path into a `shapes.txt` polyline, and what
 it returns. Additions only.

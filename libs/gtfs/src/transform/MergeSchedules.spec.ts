@@ -4,7 +4,7 @@ import {STP} from "../model/OverlayRecord";
 import {mergeSchedules} from "../transform/MergeSchedules";
 import {applyOverlays} from "../transform/ApplyOverlays";
 import {Days, ScheduleCalendar} from "../model/ScheduleCalendar";
-import {AgencyID, PickupDropOffType, RouteType, StopTime, TUID} from "@gb-transit/gtfs-schema";
+import {AgencyID, CRS, PickupDropOffType, RouteType, StopTime, TUID} from "@gb-transit/gtfs-schema";
 import {Schedule} from "../model/Schedule";
 
 describe("MergeSchedules", () => {
@@ -94,7 +94,8 @@ export function schedule(id: number,
                          stp: STP = STP.Overlay,
                          days: Days = ALL_DAYS,
                          stops: StopTime[] = [],
-                         operator: AgencyID = "LN"): Schedule {
+                         operator: AgencyID = "LN",
+                         path: CRS[] = []): Schedule {
 
   return new Schedule(
     id,
@@ -111,7 +112,8 @@ export function schedule(id: number,
     operator,
     stp,
     true,
-    true
+    true,
+    path
   );
 }
 

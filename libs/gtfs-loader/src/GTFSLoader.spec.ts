@@ -128,6 +128,42 @@ describe("loadGTFS", () => {
     ]);
   });
 
+  it("drops a point with no sequence rather than letting it scramble the line", async () => {
+    // +undefined is NaN, and a comparator returning NaN leaves the sort unspecified - so a row with
+    // no sequence takes the whole line down with it rather than itself.
+    const feed = await loadGTFS(feedZip({
+      ...FEED,
+      "shapes.txt":
+        "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled\n"
+        + "sh1,3,4,3,\n"
+        + "sh1,9,9,,\n"
+        + "sh1,1,2,1,\n"
+        + "sh1,2,3,2,\n"
+    }));
+
+    expect(feed.shapes["sh1"]).to.deep.equal([
+      {latitude: 1, longitude: 2},
+      {latitude: 2, longitude: 3},
+      {latitude: 3, longitude: 4}
+    ]);
+  });
+
+  it("drops a point whose coordinate is not a number", async () => {
+    const feed = await loadGTFS(feedZip({
+      ...FEED,
+      "shapes.txt":
+        "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled\n"
+        + "sh1,1,2,1,\n"
+        + "sh1,nowhere,2,2,\n"
+        + "sh1,3,4,3,\n"
+    }));
+
+    expect(feed.shapes["sh1"]).to.deep.equal([
+      {latitude: 1, longitude: 2},
+      {latitude: 3, longitude: 4}
+    ]);
+  });
+
   it("gives a trip no shape when trips.txt names none", async () => {
     const feed = await loadGTFS(feedZip({
       ...FEED,

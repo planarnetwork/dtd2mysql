@@ -253,12 +253,27 @@ export class FeedBuilder {
     });
   }
 
+  /**
+   * One point of one line.
+   *
+   * Every field is checked, unlike the rows above, because all four of them are load bearing and
+   * none of them is recoverable. A missing sequence is the worst: `+undefined` is NaN, NaN compares
+   * false against everything, and a comparator that returns NaN leaves the sort unspecified - so
+   * the line comes out as the scribble the sort exists to prevent, with nothing said. Dropping the
+   * point loses one corner; keeping it loses the shape.
+   */
   private addShapePoint(row: Row): void {
-    const id = this.intern(row.shape_id as string);
-    const entry = {
-      sequence: +(row.shape_pt_sequence as string),
-      point: {latitude: +(row.shape_pt_lat as string), longitude: +(row.shape_pt_lon as string)}
-    };
+    const sequence = Number(row.shape_pt_sequence);
+    const latitude = Number(row.shape_pt_lat);
+    const longitude = Number(row.shape_pt_lon);
+
+    if (row.shape_id === undefined || row.shape_id === ""
+      || !Number.isFinite(sequence) || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return;
+    }
+
+    const id = this.intern(row.shape_id);
+    const entry = {sequence, point: {latitude, longitude}};
     const points = this.shapePoints.get(id);
 
     if (points === undefined) {

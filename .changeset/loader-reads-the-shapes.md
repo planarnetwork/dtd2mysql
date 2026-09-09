@@ -21,5 +21,11 @@ it, this is the file a national feed has millions of rows of, and a caller that 
 `shapes` is `{}` for a feed with no `shapes.txt` and `shapeId` is undefined on a trip that names
 none, so nothing changes for a feed without geometry beyond one more empty index.
 
+Every field of a point is checked before it is kept, which the rows around it are not. All four are
+load bearing and none is recoverable: `Number(undefined)` is NaN, NaN compares false against
+everything, and a comparator that returns NaN leaves the sort unspecified - so a single row with no
+`shape_pt_sequence` produces the scribble the sort exists to prevent, silently. A bad point is
+dropped; a bad line is not.
+
 Reading the published rail feed back: 241,669 trips, every one of them resolving to one of 12,077
 shapes over 176,403 points, and no trip pointing at a shape that is not there.

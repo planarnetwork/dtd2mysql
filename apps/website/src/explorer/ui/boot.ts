@@ -12,7 +12,8 @@ import {Explorer, startWorker, workersSupported} from "../worker/client.js";
 import type {Opened} from "../worker/client.js";
 import type {OpenSource} from "../worker/protocol.js";
 import {element, escape, focusHeading} from "./dom.js";
-import {showMap} from "./Tiles.js";
+import {showLine, showMap} from "./Tiles.js";
+import type {LinePoint} from "./Tiles.js";
 import {PAGE_SIZE, fileTable} from "./views/FileTable.js";
 import {overview} from "./views/Overview.js";
 import {stopView} from "./views/Stop.js";
@@ -524,18 +525,43 @@ function progress(what: string, percent: number | undefined, detail = ""): void 
  *
  * After the view is in the document, because the tiles are built to cover the box and the box has no
  * width until it is laid out.
+ *
+ * Two kinds: a station is one point at a fixed zoom, and a trip is a line the zoom is worked out
+ * from. A view has one or the other and never both.
  */
 function drawMap(view: HTMLElement): void {
-  const panel = view.querySelector<HTMLElement>("[data-map]");
+  const point = view.querySelector<HTMLElement>("[data-map]");
 
-  if (panel === null) {
-    return;
+  if (point !== null) {
+    const [lat, lon] = (point.dataset.map ?? "").split(",").map(Number);
+
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      showMap(point, lat, lon);
+    }
   }
 
-  const [lat, lon] = (panel.dataset.map ?? "").split(",").map(Number);
+  const line = view.querySelector<HTMLElement>("[data-line]");
 
-  if (Number.isFinite(lat) && Number.isFinite(lon)) {
-    showMap(panel, lat, lon);
+  if (line !== null) {
+    drawLine(line);
+  }
+}
+
+/**
+ * A line, from the points the view carried in its markup.
+ *
+ * Parsed in a try: the attribute is written by this application from numbers it already parsed, so
+ * a failure here is a bug rather than bad input - but a bug that throws from the render path leaves
+ * the reader with an error instead of the trip, and the map is the least of what the page says.
+ */
+function drawLine(panel: HTMLElement): void {
+  try {
+    const points = JSON.parse(panel.dataset.line ?? "[]") as LinePoint[];
+
+    showLine(panel, points);
+  }
+  catch {
+    panel.remove();
   }
 }
 

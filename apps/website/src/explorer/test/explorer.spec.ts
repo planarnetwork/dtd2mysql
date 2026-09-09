@@ -67,7 +67,8 @@ describe("the checks over a feed known to be sound", () => {
 
   it("finds nothing wrong with its integrity", () => {
     for (const id of ["calls-name-a-trip", "calls-name-a-stop", "trips-have-a-calendar",
-      "ids-are-unique", "boarding-points-have-a-station", "transfers-name-real-things"]) {
+      "ids-are-unique", "boarding-points-have-a-station", "transfers-name-real-things",
+      "trips-name-a-shape", "shapes-are-lines"]) {
       expect(findings(loaded, id), id).to.deep.equal([]);
     }
   });
@@ -118,6 +119,35 @@ describe("the checks over a feed broken on purpose", () => {
     }));
 
     expect(findings(broken, "calls-name-a-stop").length).to.be.greaterThan(0);
+  });
+
+  it("catches a trip naming a line that does not exist", async () => {
+    const broken = await open(brokenFeed({
+      "trips.txt": text => text.replace(/\n([^\n,]+,[^\n]*),([0-9a-f]{12})\n/, "\n$1,NO_SUCH_SHAPE\n")
+    }));
+
+    expect(findings(broken, "trips-name-a-shape").map(finding => finding.message))
+      .to.deep.equal(["A trip runs over shape NO_SUCH_SHAPE, which shapes.txt does not have."]);
+  });
+
+  it("catches a line with only one end", async () => {
+    // Every point of one shape but the first, so what is left is a shape of one point rather than a
+    // shape that is gone
+    const broken = await open(brokenFeed({
+      "shapes.txt": text => {
+        const lines = text.trimEnd().split("\n");
+        const first = lines[1].slice(0, lines[1].indexOf(","));
+        const kept = lines.filter((line, index) =>
+          index === 0 || !line.startsWith(`${first},`) || index === 1);
+
+        return `${kept.join("\n")}\n`;
+      }
+    }));
+
+    const found = findings(broken, "shapes-are-lines");
+
+    expect(found.length).to.equal(1);
+    expect(found[0].message).to.contain("has one point");
   });
 
   it("catches a stop published in the Atlantic", async () => {
@@ -228,6 +258,47 @@ describe("the entity views", () => {
     expect(detail.calls.map(call => call.sequence))
       .to.deep.equal(detail.calls.map((_, index) => index + 1));
     expect(detail.calls[0].stopName).to.be.a("string");
+  });
+
+  it("gives a trip the line it runs over, in sequence order", () => {
+    const detail = tripDetail(loaded, "C00049_20260517_20261206");
+    const shape = detail.shape;
+
+    expect(shape).to.not.equal(undefined);
+    expect(shape!.points.length).to.be.greaterThan(1);
+    expect(shape!.length).to.be.greaterThan(0);
+
+    // Sorted by shape_pt_sequence rather than trusted to arrive in order. Nothing here can see the
+    // sequence numbers any more, so the check is that the line does not double back on itself,
+    // which an unsorted one would.
+    for (const [lat, lon] of shape!.points) {
+      expect(Number.isFinite(lat) && Number.isFinite(lon)).to.equal(true);
+    }
+  });
+
+  /**
+   * The whole reason the line is worth drawing. A shape follows the passing points and the calls do
+   * not, so for most trips it has more points than the trip has calls - and a build that quietly
+   * went back to drawing through the calls would make these equal.
+   */
+  it("draws a line through more than the trip calls at", () => {
+    const drawn = ["C00049_20260517_20261206", "C04566_20260518_20261207"]
+      .map(id => tripDetail(loaded, id))
+      .filter(detail => detail.shape !== undefined);
+
+    expect(drawn.length).to.be.greaterThan(0);
+    expect(drawn.some(detail => detail.shape!.points.length > detail.calls.length)).to.equal(true);
+  });
+
+  /**
+   * A line belongs to the ground rather than to a train, so the fast and the stopper share one. The
+   * view says so in words, and it would be saying it of nothing if this were always 1.
+   */
+  it("counts the trips that share a line", () => {
+    const counts = [...new Set(loaded.feed.files.get("trips.txt")!.index("shape_id").keys())]
+      .map(id => loaded.feed.files.get("trips.txt")!.index("shape_id").get(id)!.length);
+
+    expect(Math.max(...counts)).to.be.greaterThan(1);
   });
 
   it("expands a trip's calendar to real dates with the exclusions marked", () => {

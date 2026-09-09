@@ -298,7 +298,8 @@ export class BuildFeed {
     onward: ReadonlyMap<string, string>,
     stations: ReadonlyMap<CRS, Stop>
   ): Promise<any> {
-    console.log("Writing trips.txt, stop_times.txt, routes.txt and shapes.txt");
+    // shapes.txt is not named here: it goes through copy(), which announces the file it opens.
+    console.log("Writing trips.txt, stop_times.txt and routes.txt");
     const trips = this.output.open(`${this.baseDir}/${TRIPS.filename}`, TRIPS.columns);
     const stopTimes = this.output.open(`${this.baseDir}/${STOP_TIMES.filename}`, STOP_TIMES.columns);
     const routeFile = this.output.open(`${this.baseDir}/${ROUTES.filename}`, ROUTES.columns);

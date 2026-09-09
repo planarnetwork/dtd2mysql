@@ -74,9 +74,15 @@ CREATE TABLE shapes (
   -- Twelve hex characters of a digest of the stations the line runs through, so
   -- the same line is the same id in every build. See Shapes.ts.
   shape_id char(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  -- Six decimal places is what the feed writes, and decimal(8,6) is as much
-  -- latitude as Great Britain needs. Not a float: a coordinate read back as
-  -- 51.126000000000005 is a coordinate this did not store.
+  -- Six decimal places, which is what the feed writes. Two integer digits for a
+  -- latitude and three for a longitude, because those are the ranges: +-90 and
+  -- +-180.
+  --
+  -- decimal rather than the double stops.txt uses sixty lines below, and the two
+  -- are answering different questions. A stop's coordinate is whatever its
+  -- source surveyed and this stores it as given; a shape point is written to a
+  -- fixed six places by the producer, so an exact type stores exactly that and a
+  -- double would read 51.126 back as 51.126000000000005.
   shape_pt_lat decimal(8,6) NOT NULL,
   shape_pt_lon decimal(9,6) NOT NULL,
   -- smallint, not tinyint: the longest line in a national feed is over 200

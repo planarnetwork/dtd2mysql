@@ -23,8 +23,11 @@ export interface Trip {
    */
   block_id?: string | null;
   /**
-   * The shape this trip follows, into shapes.txt. Optional for the same reason:
-   * a rail feed writes no shapes.
+   * The line this trip runs over, into shapes.txt.
+   *
+   * Optional because a feed need not draw one, and null on a trip whose stations
+   * the feed cannot place - the rail feed writes shapes for every trip it can
+   * and leaves this empty for the rest.
    */
   shape_id?: string | null;
 }

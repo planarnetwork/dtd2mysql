@@ -54,9 +54,14 @@ export interface StopTimeRow {
   pickup_type: PickupDropOffType;
   drop_off_type: PickupDropOffType;
   /**
-   * Distance along the trip's shape at this call. Null for a producer that
-   * writes no shapes.txt; text where the source's precision matters, as in
-   * Shape.
+   * Distance along the trip's shape at this call. Text where the source's
+   * precision matters, as in Shape.
+   *
+   * Null for a producer that writes no shapes.txt - and null for the rail feed,
+   * which does write one. GTFS only reads a distance here where shapes.txt
+   * carries one too, and putting one on every call of the largest file in the
+   * feed buys too little to be worth its size. See Shapes.ts in
+   * `@gb-transit/gtfs`.
    */
   shape_dist_traveled: number | string | null;
   timepoint: 0 | 1;

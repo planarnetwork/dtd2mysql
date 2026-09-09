@@ -522,6 +522,20 @@ body.is-app main {
 
 .map__credit { font-size: 11px; color: var(--ink-faint); margin: 5px 0 0; }
 
+/* The line a trip runs over, over the tiles. Casing under stroke, so it reads on any tile. */
+.map__line { position: absolute; inset: 0; pointer-events: none; }
+.map__line polyline {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  paint-order: stroke;
+  vector-effect: non-scaling-stroke;
+}
+.map__end { fill: var(--on-dark); stroke: var(--signal); stroke-width: 3; }
+.map__end--end { fill: var(--signal); }
+
 /* The calendar grid --------------------------------------------------------------------------------- */
 
 .cal { display: flex; flex-wrap: wrap; gap: 2px; list-style: none; margin: 10px 0; padding: 0; }

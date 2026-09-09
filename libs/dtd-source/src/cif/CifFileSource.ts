@@ -689,20 +689,15 @@ function dedupe<T>(rows: T[], keyOf: (row: T) => string): T[] {
 /**
  * The z-train query offsets the ids past the passenger schedules so the two sets
  * cannot collide.
+ *
+ * Through `clone` rather than a constructor call of its own. This listed nine of
+ * a schedule's ten fields and so dropped `path` the day one was added, which
+ * nothing caught: `path` is an optional trailing argument, so leaving it out
+ * compiles, and a z-train with no path draws its shape from its calls - the
+ * same list, until a ZTR carries a pass time.
  */
 function offsetId(schedule: Schedule, offset: number): Schedule {
-  return new Schedule(
-    schedule.id + offset,
-    schedule.stopTimes,
-    schedule.tuid,
-    schedule.rsid,
-    schedule.calendar,
-    schedule.mode,
-    schedule.operator,
-    schedule.stp,
-    schedule.firstClassAvailable,
-    schedule.reservationPossible
-  );
+  return schedule.clone(schedule.calendar, schedule.id + offset);
 }
 
 /**
