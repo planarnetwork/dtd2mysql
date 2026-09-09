@@ -53,20 +53,29 @@ class MemoryOutput implements GTFSOutput {
 
 }
 
-const stopTime = (stop: string, tripId: string, sequence: number): StopTime => ({
-  trip_id: tripId,
-  arrival_time: "10:00:00",
-  departure_time: "10:01:00",
-  stop_id: stop,
-  stop_sequence: sequence,
-  stop_headsign: null,
-  pickup_type: PickupDropOffType.Scheduled,
-  drop_off_type: PickupDropOffType.Scheduled,
-  shape_dist_traveled: null,
-  timepoint: 1,
-    platform: null,
+/** A call: the station on its own, or the station with the time and platform a test cares about. */
+type Call = string | {crs: string, time?: string, platform?: string | null};
+
+const stopTime = (call: Call, tripId: string, sequence: number): StopTime => {
+  const {crs, time, platform} = typeof call === "string"
+    ? {crs: call, time: undefined, platform: null}
+    : {time: undefined, platform: null, ...call};
+
+  return {
+    trip_id: tripId,
+    arrival_time: time ?? "10:00:00",
+    departure_time: time ?? "10:01:00",
+    stop_id: crs,
+    stop_sequence: sequence,
+    stop_headsign: null,
+    pickup_type: PickupDropOffType.Scheduled,
+    drop_off_type: PickupDropOffType.Scheduled,
+    shape_dist_traveled: null,
+    timepoint: 1,
+    platform,
     tiploc: null
-});
+  };
+};
 
 function schedule(
   id: number,
@@ -74,7 +83,7 @@ function schedule(
   from: string,
   to: string,
   operator: string,
-  stops: string[],
+  stops: Call[],
   mode: RouteType = RouteType.Rail,
   stp: STP = STP.Permanent
 ): Schedule {
@@ -484,6 +493,40 @@ describe("BuildFeed with an association", () => {
     for (const row of rest) {
       expect(Object.keys(row)).to.deep.equal(Object.keys(first));
     }
+  });
+
+});
+
+/**
+ * The turnback that no association names, which is `reversingTrips`' business. The rules themselves
+ * are ReversingTrips.spec's; this is that the build asks, with the trips as it publishes them.
+ */
+describe("BuildFeed with a train turning back", () => {
+
+  const arrives = schedule(
+    1, "T1", "2024-01-08", "2024-03-04", "TL", ["WIM", {crs: "SUO", time: "10:00:00", platform: "4"}]
+  );
+  const departs = schedule(
+    2, "T2", "2024-01-08", "2024-03-04", "TL", [{crs: "SUO", time: "10:02:00", platform: "4"}, "HCB"]
+  );
+
+  it("couples the two halves at the platform they share", async () => {
+    const {files} = await build(new FakeSource([arrives, departs]));
+    const [link] = files["transfers.txt"].filter(t => t.transfer_type === 4);
+
+    expect(link.from_trip_id).to.equal("T1_20240108_20240304");
+    expect(link.to_trip_id).to.equal("T2_20240108_20240304");
+    expect(link.from_stop_id).to.equal("9100SUO4");
+    expect(link.to_stop_id).to.equal("9100SUO4");
+  });
+
+  it("leaves both trips whole, because each is still boarded on its own", async () => {
+    const {files} = await build(new FakeSource([arrives, departs]));
+
+    expect(files["trips.txt"].map(t => t.trip_id))
+      .to.deep.equal(["T1_20240108_20240304", "T2_20240108_20240304"]);
+    expect(files["stop_times.txt"].map(s => s.stop_id))
+      .to.deep.equal(["9100WIM", "9100SUO4", "9100SUO4", "9100HCB"]);
   });
 
 });

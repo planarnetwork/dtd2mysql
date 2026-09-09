@@ -157,7 +157,7 @@ export function stopId(stopTime: StopTime, tiplocs: ReadonlyMap<CRS, TIPLOC>): s
  * The platform a call names, or null where it names none and where what it names
  * is not a platform.
  */
-function platformOf(stopTime: StopTime): Platform | null {
+export function platformOf(stopTime: StopTime): Platform | null {
   return stopTime.platform !== null && PLATFORM.test(stopTime.platform) ? stopTime.platform : null;
 }
 
