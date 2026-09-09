@@ -31,10 +31,9 @@
   "dependencies": {
     "@gb-transit/gtfs": "workspace:^",
     "@gb-transit/gtfs-schema": "workspace:^",
-    "adm-zip": "0.6.0"
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
-    "@types/adm-zip": "0.5.8",
     "typescript": "7.0.2"
   }
 }

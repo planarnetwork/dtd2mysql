@@ -863,8 +863,7 @@ __metadata:
   dependencies:
     "@gb-transit/gtfs": "workspace:^"
     "@gb-transit/gtfs-schema": "workspace:^"
-    "@types/adm-zip": "npm:0.5.8"
-    adm-zip: "npm:0.6.0"
+    fflate: "npm:^0.8.3"
     typescript: "npm:7.0.2"
   languageName: unknown
   linkType: soft

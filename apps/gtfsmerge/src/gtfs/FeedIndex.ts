@@ -1,9 +1,10 @@
 import {
-  AgencyRow, CalendarDateRow, CalendarRow, FixedLinkRow, RouteRow, StopID, StopRow, StopTimeRow,
+  AgencyRow, CalendarDateRow, CalendarRow, FixedLinkRow, RouteRow, StopID, StopRow,
   TransferRow, TransferType, TripRow
 } from "@gb-transit/gtfs-schema";
 import {readFeed} from "@gb-transit/gtfs-loader";
 import * as fs from "fs";
+import {StopTimeReader} from "./merger/StopTimesMerger";
 
 /**
  * One input feed, in memory, in the shape the mergers consume.
@@ -13,7 +14,6 @@ export interface GTFSZip {
   transfers: TransferRow[];
   calendars: CalendarRow[];
   calendarDates: Record<string, CalendarDateRow[]>;
-  stopTimes: StopTimeRow[];
   routes: RouteRow[];
   agencies: AgencyRow[];
   stops: StopRow[];
@@ -32,7 +32,7 @@ export class FeedIndex {
 
   private readonly transfers: Record<string, TransferRow> = {};
   private readonly result: GTFSZip = {
-    trips: [], transfers: [], calendars: [], calendarDates: {}, stopTimes: [], routes: [],
+    trips: [], transfers: [], calendars: [], calendarDates: {}, routes: [],
     agencies: [], stops: [], parentStops: {}
   };
 
@@ -43,16 +43,6 @@ export class FeedIndex {
 
   public trip(row: TripRow): void {
     this.result.trips.push(row);
-  }
-
-  /**
-   * A call with only one of its times is not a call anything can plan through.
-   */
-  public stopTime(row: StopTimeRow): void {
-    if (row.departure_time && row.arrival_time) {
-      row.stop_id = this.stopPrefix + row.stop_id;
-      this.result.stopTimes.push(row);
-    }
   }
 
   public route(row: RouteRow): void {
@@ -145,11 +135,16 @@ export class FeedIndex {
 }
 
 /**
- * Read one input feed.
+ * Read one input feed, apart from its stop times.
  *
  * The rows are copied out because the reader hands back the same object every
  * time - it is reading a file that may be three million rows and does not
  * allocate one per row.
+ *
+ * The stop times are left for `stopTimesOf` and a second pass over the file.
+ * Everything here is needed before a single call can be written - a call is
+ * indexed against its trip, and a trip against its route and its calendar - and
+ * everything here put together is a fortieth of what the calls cost to hold.
  */
 export async function readMergeInput(
   file: string,
@@ -160,7 +155,6 @@ export async function readMergeInput(
 
   await readFeed(fs.createReadStream(file), {
     "trips.txt": row => index.trip({...row}),
-    "stop_times.txt": row => index.stopTime({...row}),
     "routes.txt": row => index.route({...row}),
     "stops.txt": row => index.stop({...row}),
     "agency.txt": row => index.agency({...row}),
@@ -171,4 +165,47 @@ export async function readMergeInput(
   });
 
   return index.results();
+}
+
+/**
+ * The stop times of one feed, in a pass of their own.
+ *
+ * Nothing is kept: each call is handed straight to whoever asked for it, and the
+ * merger writes it and lets it go. A second read of the file is what that costs,
+ * and the file is read rather than held.
+ *
+ * A call with only one of its times is not a call anything can plan through, so
+ * it never leaves here.
+ */
+export function stopTimesOf(file: string, stopPrefix = ""): StopTimeReader {
+  return async (onRow, betweenChunks) => {
+    await readFeed(pausing(file, betweenChunks), {
+      "stop_times.txt": row => {
+        if (row.departure_time && row.arrival_time) {
+          row.stop_id = stopPrefix + row.stop_id;
+
+          onRow(row);
+        }
+      }
+    });
+  };
+}
+
+/**
+ * The file, a chunk at a time, giving the reader's consumer a turn between one
+ * chunk and the next.
+ *
+ * The rows of a chunk arrive from a synchronous parser, which cannot be made to
+ * wait for a writer partway through. Here it can: the reader asks for the next
+ * chunk, and does not get one until the calls from the last chunk are written.
+ */
+async function* pausing(
+  file: string,
+  betweenChunks: () => Promise<void>
+): AsyncIterable<Uint8Array> {
+  for await (const chunk of fs.createReadStream(file)) {
+    yield chunk;
+
+    await betweenChunks();
+  }
 }
