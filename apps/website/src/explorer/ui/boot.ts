@@ -61,6 +61,16 @@ const state: State = {rendering: 0};
 let explorer: Explorer | undefined;
 let base = "";
 
+/**
+ * The filter being typed into, if any.
+ *
+ * Rendering replaces the whole table, and the input being typed into goes with it. Putting focus
+ * back has to happen after the new table is in the document - and rendering is asynchronous, because
+ * the answer comes from the worker, so "after" is not the next microtask. Restoring it there was the
+ * bug: focus went back to an input that was about to be thrown away.
+ */
+let typed: {name: string, value: string, at: number} | undefined;
+
 export function boot(): void {
   const assets = JSON.parse(element("explorer-assets").textContent ?? "{}") as Assets;
 
@@ -263,7 +273,13 @@ async function render(): Promise<void> {
     view.innerHTML = route.view === "file"
       ? html
       : `<div class="doc${route.view === "provenance" ? " doc--wide" : ""}">${html}</div>`;
-    focusHeading(view);
+
+    // Moving focus to the heading is right when you have navigated somewhere, and wrong when you are
+    // in the middle of typing into a filter - which is a navigation too, as far as the hash knows.
+    if (!restoreTyping(route)) {
+      focusHeading(view);
+    }
+
     scrollToRow();
   }
   catch (error) {
@@ -406,6 +422,14 @@ function wire(): void {
       return;
     }
 
+    // Remembered on every keystroke rather than when the query is sent, so that what is put back
+    // afterwards is what has been typed by then and not what had been typed 150ms ago.
+    typed = {
+      name: input.name,
+      value: input.value,
+      at: input.selectionStart ?? input.value.length
+    };
+
     clearTimeout(typing);
     typing = setTimeout(() => {
       const route = parse(location.hash);
@@ -423,17 +447,7 @@ function wire(): void {
         filters[input.name] = input.value;
       }
 
-      const cursor = input.selectionStart;
-
       location.hash = format({...route, filters, page: 0});
-      // Replacing the table takes the focused input with it, so it is put back where it was.
-      queueMicrotask(() => {
-        const again = document.querySelector<HTMLInputElement>(
-          `.grid__filter[name="${CSS.escape(input.name)}"]`);
-
-        again?.focus();
-        again?.setSelectionRange(cursor, cursor);
-      });
     }, 150);
   });
 
@@ -512,6 +526,43 @@ function progress(what: string, percent: number | undefined, detail = ""): void 
 
   bar.style.width = percent === undefined ? "0%" : `${percent}%`;
   bar.parentElement?.setAttribute("aria-valuenow", String(percent ?? 0));
+}
+
+/**
+ * Put the reader back in the filter they were typing into.
+ *
+ * The value is the one they have typed by now rather than the one the URL was built from: a keystroke
+ * landing while the query was in flight would otherwise vanish from the box for a moment, even though
+ * the next query would have picked it up.
+ */
+function restoreTyping(route: Route): boolean {
+  // Leaving the file ends it. Not focusout: removing a focused input fires that, so the state the
+  // restore needs would be cleared by the very render it is there to survive.
+  if (route.view !== "file") {
+    typed = undefined;
+  }
+
+  if (typed === undefined) {
+    return false;
+  }
+
+  const input = document.querySelector<HTMLInputElement>(
+    `.grid__filter[name="${CSS.escape(typed.name)}"]`);
+
+  if (input === null) {
+    typed = undefined;
+
+    return false;
+  }
+
+  if (input.value !== typed.value) {
+    input.value = typed.value;
+  }
+
+  input.focus();
+  input.setSelectionRange(typed.at, typed.at);
+
+  return true;
 }
 
 function markNav(route: Route): void {

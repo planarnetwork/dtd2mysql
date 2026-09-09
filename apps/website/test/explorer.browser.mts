@@ -145,6 +145,38 @@ await page.waitForFunction(
 check("filtering works", (await page.locator(".table__count").textContent())?.includes("of") === true,
   (await page.locator(".table__count").textContent())?.trim());
 
+// Typing into a filter replaces the table under the cursor. Focus has to survive that, or the next
+// character goes nowhere and the reader has to click back into the box for every letter.
+await page.goto(`${at}#/file/trips.txt`);
+await page.waitForSelector(".grid tbody tr", {timeout: 60000});
+await page.click(".grid__filter[name=trip_headsign]");
+await page.keyboard.type("Lon", {delay: 90});
+await page.waitForFunction(
+  () => (document.querySelector(".table__count")?.textContent ?? "").includes(" of "),
+  null,
+  {timeout: 30000}
+);
+await page.waitForTimeout(400);
+
+const held = await page.evaluate(() => {
+  const active = document.activeElement as HTMLInputElement | null;
+
+  return {name: active?.getAttribute("name") ?? "", value: active?.value ?? "",
+    at: active?.selectionStart ?? -1};
+});
+
+check("the filter keeps focus while the results update", held.name === "trip_headsign",
+  `focus was on ${held.name || "nothing"}`);
+check("it keeps what was typed, and the caret after it",
+  held.value === "Lon" && held.at === 3, `value ${JSON.stringify(held.value)} caret ${held.at}`);
+
+// And every keystroke after the re-render lands in the same box.
+await page.keyboard.type("don", {delay: 90});
+await page.waitForTimeout(500);
+check("typing carries on after the table has been replaced",
+  await page.evaluate(() => (document.activeElement as HTMLInputElement | null)?.value) === "London",
+  await page.evaluate(() => (document.activeElement as HTMLInputElement | null)?.value ?? ""));
+
 await page.goto(`${at}#/stop/910GCLPHMJC`);
 await page.waitForSelector("[data-heading]", {timeout: 60000});
 // Nothing may tell the reader to go and load something. There is nothing to load.
