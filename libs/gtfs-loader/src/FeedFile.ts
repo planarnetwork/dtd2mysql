@@ -1,6 +1,7 @@
 import {
   AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, FixedLinkRow,
-  GTFS_COLUMNS, RouteRow, ShapeRow, StopAreaRow, StopRow, StopTimeRow, TransferRow, TripRow
+  FrequencyRow, GTFS_COLUMNS, RouteRow, ShapeRow, StopAreaRow, StopRow, StopTimeRow, TransferRow,
+  TripRow
 } from "@gb-transit/gtfs-schema";
 import {Row} from "./CSVParser.js";
 
@@ -17,6 +18,7 @@ export interface FeedRowTypes {
   "calendar.txt": CalendarRow;
   "calendar_dates.txt": CalendarDateRow;
   "feed_info.txt": FeedInfoRow;
+  "frequencies.txt": FrequencyRow;
   "links.txt": FixedLinkRow;
   "routes.txt": RouteRow;
   "shapes.txt": ShapeRow;
@@ -31,8 +33,8 @@ export type FeedFileName = keyof FeedRowTypes;
 
 export const FEED_FILES: readonly FeedFileName[] = [
   "agency.txt", "areas.txt", "attributions.txt", "calendar.txt", "calendar_dates.txt",
-  "feed_info.txt", "links.txt", "routes.txt", "shapes.txt", "stop_areas.txt", "stops.txt",
-  "stop_times.txt", "transfers.txt", "trips.txt"
+  "feed_info.txt", "frequencies.txt", "links.txt", "routes.txt", "shapes.txt", "stop_areas.txt",
+  "stops.txt", "stop_times.txt", "transfers.txt", "trips.txt"
 ];
 
 /**
@@ -64,6 +66,7 @@ export const READ_COLUMNS: Record<FeedFileName, readonly string[]> = {
   "calendar.txt": GTFS_COLUMNS["calendar.txt"],
   "calendar_dates.txt": GTFS_COLUMNS["calendar_dates.txt"],
   "feed_info.txt": GTFS_COLUMNS["feed_info.txt"],
+  "frequencies.txt": GTFS_COLUMNS["frequencies.txt"],
   "links.txt": GTFS_COLUMNS["links.txt"],
   "routes.txt": GTFS_COLUMNS["routes.txt"],
   "shapes.txt": GTFS_COLUMNS["shapes.txt"],
@@ -91,6 +94,7 @@ const NUMERIC: Record<FeedFileName, readonly string[]> = {
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
   ],
   "calendar_dates.txt": ["exception_type"],
+  "frequencies.txt": ["headway_secs", "exact_times"],
   "feed_info.txt": [],
   "links.txt": [
     "duration", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"

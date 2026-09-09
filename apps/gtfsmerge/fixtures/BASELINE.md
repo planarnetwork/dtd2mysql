@@ -105,3 +105,24 @@ than take what falls out here.
 **The golden's file list is now the test.** It read from a list spelled out in
 the spec, so the four files above could have gone missing again without any test
 noticing. It reads the golden directory instead.
+
+## Blocks, shapes and frequencies
+
+**`trips.txt` gains `block_id` and `shape_id`.** They were dropped as something
+"a merge has nothing to put in", which was true of two rail feeds and is not true
+of a bus feed, where both are populated. Both are renumbered rather than carried
+across: a block is one vehicle working through a day and a shape is one line on
+the ground, each named by the feed that published it and by nobody else, so two
+feeds numbering a block `1` do not mean the same vehicle. The fixtures do exactly
+that, and the merged feed gives them `1` and `2`.
+
+**`shapes.txt` and `frequencies.txt` are written.** A shape is read in the same
+pass as the calls — it needs the same thing to have happened first, the trips
+renumbered — and streamed for the same reason: a national bus feed's shapes.txt
+is 2.5GB. A shape no surviving trip is drawn along is dropped, which is what
+happens to the fixture's `SHP2`, whose trip the date filter removes, and `SHP3`,
+which no trip names. A frequency is renumbered onto its trip's new id and dropped
+with a trip that did not survive.
+
+`frequencies.txt` was not a file `@gb-transit/gtfs-schema` or
+`@gb-transit/gtfs-loader` knew about. Both now do.

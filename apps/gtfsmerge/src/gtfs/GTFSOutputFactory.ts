@@ -4,10 +4,12 @@ import * as path from "node:path";
 import {GTFSOutput} from "./GTFSOutput";
 import {AreasMerger} from "./merger/AreasMerger";
 import {FeedInfoMerger} from "./merger/FeedInfoMerger";
+import {ShapesMerger} from "./merger/ShapesMerger";
+import {FrequenciesMerger} from "./merger/FrequenciesMerger";
 import {DedupingWriter} from "./DedupingWriter";
 import {
-  AGENCY, AREAS, ATTRIBUTIONS, CALENDAR, CALENDAR_DATES, FEED_INFO, ROUTES, STOPS, STOP_AREAS,
-  STOP_TIMES, TRANSFERS, TRIPS
+  AGENCY, AREAS, ATTRIBUTIONS, CALENDAR, CALENDAR_DATES, FEED_INFO, FREQUENCIES, ROUTES, SHAPES,
+  STOPS, STOP_AREAS, STOP_TIMES, TRANSFERS, TRIPS
 } from "./MergeFeed";
 import {CalendarMerger} from "./merger/CalendarMerger";
 import {MemoizedSequence} from "../sequence/MemoizedSequence";
@@ -78,17 +80,21 @@ export class GTFSOutputFactory {
     const trips = output.open(at(TRIPS.filename), TRIPS.columns);
     const stopTimes = output.open(at(STOP_TIMES.filename), STOP_TIMES.columns);
     const transfers = output.open(at(TRANSFERS.filename), TRANSFERS.columns);
+    const shapes = output.open(at(SHAPES.filename), SHAPES.columns);
+    const frequencies = output.open(at(FREQUENCIES.filename), FREQUENCIES.columns);
 
     return new GTFSOutput(
       new CalendarMerger(calendar, calendarDates, this.calendarFactory, new MemoizedSequence()),
       new StopsAndTransfersMerger(stops, transfers, this.ruler, this.transferDistance),
       new StopTimesMerger(stopTimes),
-      new TripsMerger(trips, new Sequence()),
+      new TripsMerger(trips, new Sequence(), new Sequence(), new Sequence()),
       new GenericMerger(agency),
       new RouteMerger(routes, new Sequence(), this.removeRouteTypes),
       new GenericMerger(attributions),
       new AreasMerger(areas, stopAreas),
-      new FeedInfoMerger(output.open(at(FEED_INFO.filename), FEED_INFO.columns))
+      new FeedInfoMerger(output.open(at(FEED_INFO.filename), FEED_INFO.columns)),
+      new ShapesMerger(shapes),
+      new FrequenciesMerger(frequencies)
     );
   }
 }

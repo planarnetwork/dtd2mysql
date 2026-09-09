@@ -5,6 +5,7 @@ import {CalendarRow} from "../entity/Calendar.js";
 import {CalendarDateRow} from "../entity/CalendarDate.js";
 import {FeedInfoRow} from "../entity/FeedInfo.js";
 import {FixedLinkRow} from "../entity/FixedLink.js";
+import {FrequencyRow} from "../entity/Frequency.js";
 import {RouteRow} from "../entity/Route.js";
 import {ShapeRow} from "../entity/Shape.js";
 import {StopRow} from "../entity/Stop.js";
@@ -85,6 +86,10 @@ export const GTFS_COLUMNS = {
 
   // This repository's own file, not a GTFS one: a fixed link the rail feed
   // publishes alongside transfers.txt.
+  "frequencies.txt": [
+    "trip_id", "start_time", "end_time", "headway_secs", "exact_times"
+  ] satisfies Columns<FrequencyRow>,
+
   "links.txt": [
     "from_stop_id", "to_stop_id", "mode", "duration", "start_time", "end_time", "start_date",
     "end_date", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"

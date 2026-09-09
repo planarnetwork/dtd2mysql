@@ -1,10 +1,11 @@
 import {
   AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, FixedLinkRow,
-  RouteRow, StopAreaRow, StopID, StopRow, TransferRow, TransferType, TripRow
+  FrequencyRow, RouteRow, ShapeRow, StopAreaRow, StopID, StopRow, StopTimeRow, TransferRow,
+  TransferType, TripRow
 } from "@gb-transit/gtfs-schema";
 import {readFeed} from "@gb-transit/gtfs-loader";
 import * as fs from "fs";
-import {StopTimeReader} from "./merger/StopTimesMerger";
+
 
 /**
  * One input feed, in memory, in the shape the mergers consume.
@@ -22,7 +23,31 @@ export interface GTFSZip {
   stopAreas: StopAreaRow[];
   attributions: AttributionRow[];
   feedInfo: FeedInfoRow[];
+  frequencies: FrequencyRow[];
 }
+
+/**
+ * What a feed's streamed files are handed to as they are read.
+ *
+ * The two biggest files in a feed are its calls and its shapes, and neither is
+ * held: each row is written and let go. They are read together because both need
+ * the same thing to have happened first - the trips renumbered - and reading
+ * them together is one pass over the zip rather than two.
+ */
+export interface StreamedRows {
+  stopTime(row: StopTimeRow): void;
+  shape(row: ShapeRow): void;
+}
+
+/**
+ * `betweenChunks` is awaited each time the reader reaches the end of a chunk of
+ * the zip, which is the only place a caller can wait: the rows themselves arrive
+ * from a synchronous parser.
+ */
+export type FeedStream = (
+  rows: StreamedRows,
+  betweenChunks: () => Promise<void>
+) => Promise<void>;
 
 /**
  * Accumulates a feed as its rows arrive, applying the filters a merge wants
@@ -38,7 +63,7 @@ export class FeedIndex {
   private readonly result: GTFSZip = {
     trips: [], transfers: [], calendars: [], calendarDates: {}, routes: [],
     agencies: [], stops: [], parentStops: {}, areas: [], stopAreas: [], attributions: [],
-    feedInfo: []
+    feedInfo: [], frequencies: []
   };
 
   constructor(
@@ -91,6 +116,14 @@ export class FeedIndex {
 
   public feedInfo(row: FeedInfoRow): void {
     this.result.feedInfo.push(row);
+  }
+
+  /**
+   * Held rather than streamed, unlike the calls and the shapes: the whole
+   * national bus feed has 81 of these rows.
+   */
+  public frequency(row: FrequencyRow): void {
+    this.result.frequencies.push(row);
   }
 
   /**
@@ -186,6 +219,7 @@ export async function readMergeInput(
     "stop_areas.txt": row => index.stopArea({...row}),
     "attributions.txt": row => index.attribution({...row}),
     "feed_info.txt": row => index.feedInfo({...row}),
+    "frequencies.txt": row => index.frequency({...row}),
     "stops.txt": row => index.stop({...row}),
     "agency.txt": row => index.agency({...row}),
     "calendar.txt": row => index.calendar({...row}),
@@ -198,25 +232,26 @@ export async function readMergeInput(
 }
 
 /**
- * The stop times of one feed, in a pass of their own.
+ * The calls and the shapes of one feed, in a pass of their own.
  *
- * Nothing is kept: each call is handed straight to whoever asked for it, and the
- * merger writes it and lets it go. A second read of the file is what that costs,
- * and the file is read rather than held.
+ * Nothing is kept: each row is handed straight to whoever asked for it, written
+ * and let go. A second read of the file is what that costs, and the file is read
+ * rather than held.
  *
  * A call with only one of its times is not a call anything can plan through, so
  * it never leaves here.
  */
-export function stopTimesOf(file: string, stopPrefix = ""): StopTimeReader {
-  return async (onRow, betweenChunks) => {
+export function streamOf(file: string, stopPrefix = ""): FeedStream {
+  return async (rows, betweenChunks) => {
     await readFeed(pausing(file, betweenChunks), {
       "stop_times.txt": row => {
         if (row.departure_time && row.arrival_time) {
           row.stop_id = stopPrefix + row.stop_id;
 
-          onRow(row);
+          rows.stopTime(row);
         }
-      }
+      },
+      "shapes.txt": row => rows.shape(row)
     });
   };
 }

@@ -7,6 +7,7 @@ export type {CalendarDate, CalendarDateRow} from "./entity/CalendarDate.js";
 export type {FixedLink, FixedLinkRow} from "./entity/FixedLink.js";
 export {RouteType} from "./entity/Route.js";
 export type {Route, RouteID, RouteRow} from "./entity/Route.js";
+export type {Frequency, FrequencyRow} from "./entity/Frequency.js";
 export type {Shape, ShapeID, ShapeRow} from "./entity/Shape.js";
 export type {Stop, StopRow, CRS, TIPLOC} from "./entity/Stop.js";
 export {PickupDropOffType} from "./entity/StopTime.js";

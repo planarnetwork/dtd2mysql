@@ -97,6 +97,34 @@ describe("the tiny fixtures", () => {
 
 describe("the merged feed", () => {
 
+  /**
+   * A block is one vehicle working through a day and both feeds call theirs `1`,
+   * which is two vehicles rather than one continuing from a train to a bus.
+   */
+  it("keeps two feeds' blocks apart", () => {
+    const blocks = columns("trips.txt").map(t => t.block_id).filter(Boolean);
+
+    expect(new Set(blocks).size).to.equal(2);
+  });
+
+  it("draws a trip along the shape its points were renumbered onto", () => {
+    const trip = columns("trips.txt").find(t => t.trip_headsign === "Town Centre");
+    const points = columns("shapes.txt").filter(s => s.shape_id === trip?.shape_id);
+
+    expect(points.length).to.equal(2);
+  });
+
+  it("drops a shape no surviving trip is drawn along", () => {
+    // SHP2 belongs to a trip the date filter dropped and SHP3 to no trip at all.
+    expect(new Set(columns("shapes.txt").map(s => s.shape_id)).size).to.equal(1);
+  });
+
+  it("points a frequency at its trip's new id", () => {
+    const trip = columns("trips.txt").find(t => t.trip_headsign === "Town Centre");
+
+    expect(columns("frequencies.txt").map(f => f.trip_id)).to.deep.equal([trip?.trip_id]);
+  });
+
   it("keeps both agencies", () => {
     expect(columns("agency.txt").map(a => a.agency_id).sort()).to.deep.equal(["BUS", "RAIL"]);
   });

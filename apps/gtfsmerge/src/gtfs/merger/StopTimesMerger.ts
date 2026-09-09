@@ -3,24 +3,6 @@ import {TripIDMap} from "./TripsMerger";
 import {ParentStops} from "./StopsAndTransfersMerger";
 import {close, push} from "./Push";
 
-/**
- * The stop times of one feed, read on demand.
- *
- * A function rather than a list, because the list is the largest thing a merge
- * holds: the national bus feed's 59 million calls cost 18GB of the 22GB a merge
- * of it and the rail feed needed, and every one of them is written once and
- * never read again.
- *
- * `onRow` is handed a row the reader reuses, so it is copied or forgotten before
- * the next one arrives. `betweenChunks` is awaited each time the reader reaches
- * the end of a chunk of the zip, which is the only place a caller can wait: the
- * rows themselves arrive from a synchronous parser.
- */
-export type StopTimeReader = (
-  onRow: (row: StopTimeRow) => void,
-  betweenChunks: () => Promise<void>
-) => Promise<void>;
-
 export class StopTimesMerger {
 
   constructor(
@@ -28,56 +10,64 @@ export class StopTimesMerger {
   ) {}
 
   /**
-   * Write the stop times of the trips that survived, remapping each call onto the
-   * station its stop belongs to, and return the stops that were actually called
-   * at - which is what decides which stops are published.
+   * Start writing the calls of one feed.
+   *
+   * The calls arrive from a reader rather than as a list, because the list is the
+   * largest thing a merge held: the national bus feed's 59 million calls cost
+   * 18GB of the 22GB a merge of it and the rail feed needed, and every one of
+   * them is written once and never read again.
    */
-  public async write(
-    stopTimes: StopTimeReader,
-    tripIdMap: TripIDMap,
-    parentStops: ParentStops
-  ): Promise<UsedStops> {
-    const usedStops: UsedStops = {};
-
-    // One chunk's worth of calls, held only until the reader next pauses. The
-    // writer is where the backpressure is, and it cannot be waited on from
-    // inside the parser's callback.
-    const batch: StopTimeRow[] = [];
-
-    const flush = async () => {
-      for (const stopTime of batch) {
-        await push(this.stopTimes, stopTime);
-      }
-
-      batch.length = 0;
-    };
-
-    await stopTimes(
-      row => {
-        const tripId = tripIdMap[row.trip_id];
-
-        if (tripId === undefined) {
-          return;
-        }
-
-        const stopId = parentStops[row.stop_id] || row.stop_id;
-
-        usedStops[stopId] = true;
-
-        batch.push({...row, trip_id: tripId, stop_id: stopId});
-      },
-      flush
-    );
-
-    // The reader's last rows arrive after its last chunk, as the inflater and
-    // the parser give up what they were holding.
-    await flush();
-
-    return usedStops;
+  public begin(tripIdMap: TripIDMap, parentStops: ParentStops): StopTimesPass {
+    return new StopTimesPass(this.stopTimes, tripIdMap, parentStops);
   }
 
   public end(): Promise<void> {
     return close(this.stopTimes);
+  }
+
+}
+
+/**
+ * The calls of one feed, remapped onto the station each stop belongs to and
+ * written as they arrive.
+ *
+ * What it collects is the stops that were called at, which is what decides which
+ * stops are published.
+ */
+export class StopTimesPass {
+
+  public readonly usedStops: UsedStops = {};
+
+  private readonly batch: StopTimeRow[] = [];
+
+  constructor(
+    private readonly stopTimes: RowWriter<StopTimeRow>,
+    private readonly tripIdMap: TripIDMap,
+    private readonly parentStops: ParentStops
+  ) {}
+
+  public row(row: StopTimeRow): void {
+    const tripId = this.tripIdMap[row.trip_id];
+
+    if (tripId === undefined) {
+      return;
+    }
+
+    const stopId = this.parentStops[row.stop_id] || row.stop_id;
+
+    this.usedStops[stopId] = true;
+
+    // Copied because the reader hands back the same object every time, and this
+    // one is not written until the chunk it arrived in has been read.
+    this.batch.push({...row, trip_id: tripId, stop_id: stopId});
+  }
+
+  public async flush(): Promise<void> {
+    for (const row of this.batch) {
+      await push(this.stopTimes, row);
+    }
+
+    this.batch.length = 0;
   }
 
 }

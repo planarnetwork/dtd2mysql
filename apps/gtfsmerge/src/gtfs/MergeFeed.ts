@@ -1,6 +1,7 @@
 import {
-  AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, GTFS_COLUMNS,
-  RouteRow, StopAreaRow, StopRow, StopTimeRow, TransferRow, TripRow, fileSchema
+  AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, FrequencyRow,
+  GTFS_COLUMNS, RouteRow, ShapeRow, StopAreaRow, StopRow, StopTimeRow, TransferRow, TripRow,
+  fileSchema
 } from "@gb-transit/gtfs-schema";
 
 /**
@@ -30,6 +31,11 @@ export const FEED_INFO = fileSchema<FeedInfoRow>("feed_info.txt", GTFS_COLUMNS["
 
 export const STOP_AREAS = fileSchema<StopAreaRow>("stop_areas.txt", GTFS_COLUMNS["stop_areas.txt"]);
 
+export const SHAPES = fileSchema<ShapeRow>("shapes.txt", GTFS_COLUMNS["shapes.txt"]);
+
+export const FREQUENCIES =
+  fileSchema<FrequencyRow>("frequencies.txt", GTFS_COLUMNS["frequencies.txt"]);
+
 export const CALENDAR = fileSchema<CalendarRow>("calendar.txt", GTFS_COLUMNS["calendar.txt"]);
 
 export const CALENDAR_DATES =
@@ -53,8 +59,11 @@ export const TRANSFERS = fileSchema<TransferRow>("transfers.txt", [
   "from_stop_id", "to_stop_id", "from_trip_id", "to_trip_id", "transfer_type", "min_transfer_time"
 ]);
 
-// Its own: no block_id and no shape_id, which a merge has nothing to put in.
+// Its own: block_id and shape_id are renumbered rather than dropped. A block is
+// one vehicle working through a day and a shape is one line on the ground, both
+// named by the feed that published them - so two feeds numbering a block `1` do
+// not mean the same vehicle, and TripsMerger gives each feed's its own ids.
 export const TRIPS = fileSchema<TripRow>("trips.txt", [
   "route_id", "service_id", "trip_id", "trip_headsign", "trip_short_name", "direction_id",
-  "wheelchair_accessible", "bikes_allowed"
+  "block_id", "shape_id", "wheelchair_accessible", "bikes_allowed"
 ]);

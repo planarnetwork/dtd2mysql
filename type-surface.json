@@ -344,6 +344,8 @@
     "FileSchema",
     "FixedLink",
     "FixedLinkRow",
+    "Frequency",
+    "FrequencyRow",
     "GTFSColumn",
     "GTFSFileName",
     "GTFSOutput",

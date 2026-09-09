@@ -5,6 +5,7 @@ import {CalendarRow} from "./Calendar.js";
 import {CalendarDateRow} from "./CalendarDate.js";
 import {FeedInfoRow} from "./FeedInfo.js";
 import {FixedLinkRow} from "./FixedLink.js";
+import {FrequencyRow} from "./Frequency.js";
 import {RouteRow} from "./Route.js";
 import {ShapeRow} from "./Shape.js";
 import {StopRow} from "./Stop.js";
@@ -34,6 +35,7 @@ export type FeedRow =
   | CalendarDateRow
   | FeedInfoRow
   | FixedLinkRow
+  | FrequencyRow
   | RouteRow
   | ShapeRow
   | StopRow
