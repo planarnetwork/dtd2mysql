@@ -256,7 +256,10 @@ body.is-app main {
 .doc--wide { max-width: none; }
 
 .h { font-family: var(--font-display), system-ui, sans-serif; letter-spacing: -0.02em; }
-.h1 { font-size: 21px; margin: 0 0 4px; }
+/* Inline-block so the focus ring hugs the words. Focus lands here on every navigation - it is how a
+ * keyboard reader is told the pane has been replaced - and a ring the width of the page reads as
+ * something having gone wrong rather than as where you are. */
+.h1 { font-size: 21px; margin: 0 0 4px; display: inline-block; }
 .h2 { font-size: 15px; margin: 26px 0 8px; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--ink-quiet); }
 .lede { font-size: 14.5px; color: var(--ink-body); margin: 0 0 16px; }
@@ -489,14 +492,22 @@ body.is-app main {
 
 .plot__key { font-size: 11.5px; color: var(--ink-quiet); margin: 7px 0 0; }
 .plot__alt { font-size: 12.5px; color: var(--ink-body); margin: 7px 0 0; }
-.plot__map { margin: 10px 0 0; display: grid; gap: 5px; }
+.plot__map { margin: 10px 0 0; }
+.plot__there { margin: 6px 0 0; }
 
 .key { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 3px 0 9px; }
 .key--station { background: var(--signal); }
 .key--child { background: var(--sea); }
 .key--overruled { border: 1.5px dashed var(--ink-faint); }
 
-.map { position: relative; overflow: hidden; border-radius: 8px; background: var(--paper-sunken); }
+/* Clips the tiles, which are absolutely positioned to cover it and overhang it at every edge. */
+.map {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+}
 .map__tile { position: absolute; }
 
 .map__marker {

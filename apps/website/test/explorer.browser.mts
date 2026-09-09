@@ -69,6 +69,7 @@ const browser = await chromium.launch({channel: "chrome"});
 const page = await browser.newPage({viewport: {width: 1440, height: 900}});
 const errors: string[] = [];
 const offsite: string[] = [];
+const tiles: string[] = [];
 
 page.on("pageerror", error => errors.push(error.message));
 page.on("console", message => {
@@ -84,9 +85,15 @@ page.on("requestfailed", request => {
   }
 });
 page.on("request", request => {
-  if (!request.url().startsWith(`http://localhost:${PORT}`)) {
-    offsite.push(request.url());
+  const url = request.url();
+
+  if (url.startsWith(`http://localhost:${PORT}`)) {
+    return;
   }
+
+  // The map tiles on a station are the one thing here that comes from anywhere else. Everything
+  // else asking to leave this origin is a fault, so it is named rather than tolerated.
+  (url.startsWith("https://tile.openstreetmap.org/") ? tiles : offsite).push(url);
 });
 
 const at = `http://localhost:${PORT}${BASE}/feeds/explorer/`;
@@ -188,6 +195,33 @@ check("its boarding points are listed", await page.locator(".list tbody tr").cou
 check("its provenance is shown", await page.locator("text=Where this came from").count() > 0);
 check("the plot is drawn", await page.locator(".plot__svg").count() === 1);
 
+// The map draws itself, and stays inside its box. It was laying out as a column of unpositioned
+// images running down the page, because the class names here and in the stylesheet had drifted.
+await page.waitForSelector(".map__tile", {timeout: 30000});
+
+const box = await page.locator(".map").boundingBox();
+const laidOut = await page.evaluate(() => {
+  const map = document.querySelector(".map");
+  const tile = document.querySelector(".map__tile");
+
+  return {
+    clipped: map === null ? "" : getComputedStyle(map).overflow,
+    positioned: tile === null ? "" : getComputedStyle(tile).position
+  };
+});
+
+check("the map draws itself", (box?.height ?? 0) > 100 && (box?.width ?? 0) > 100,
+  `${Math.round(box?.width ?? 0)}x${Math.round(box?.height ?? 0)}`);
+
+// The tiles overhang the box on every side and are clipped by it. What went wrong was that they were
+// not positioned at all, so they stacked and ran down the page over everything below.
+check("its tiles are positioned rather than stacked", laidOut.positioned === "absolute",
+  `position: ${laidOut.positioned || "no tile"}`);
+check("the box clips them", laidOut.clipped === "hidden", `overflow: ${laidOut.clipped}`);
+check("it fits inside the plot panel",
+  (box?.width ?? 0) <= ((await page.locator(".plot").boundingBox())?.width ?? 0) + 1);
+check("the tiles come from OpenStreetMap", tiles.length > 0, `${tiles.length} tiles`);
+
 await page.goto(`${at}#/checks`);
 await page.waitForFunction(
   () => !(document.querySelector(".lede")?.textContent ?? "").includes("Running"),
@@ -211,7 +245,8 @@ await page.waitForSelector(".check", {timeout: 60000});
 check("validation reads the report", await page.locator(".check").count() > 10);
 check("accepted errors carry their reason", await page.locator(".accepted").count() > 0);
 
-check("nothing was requested from anywhere else", offsite.length === 0, offsite.slice(0, 3).join(" "));
+check("nothing but the tiles was requested from anywhere else", offsite.length === 0,
+  offsite.slice(0, 3).join(" "));
 check("everything the page asked for was there", missing.length === 0, missing.join(" "));
 check("no script errors", errors.length === 0, errors.join("\n        "));
 

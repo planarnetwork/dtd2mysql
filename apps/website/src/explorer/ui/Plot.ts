@@ -81,18 +81,20 @@ export function plot(detail: StopDetail): string {
         : ""}
     </p>
     <p class="plot__alt">${escape(described(detail, points))}</p>
-    ${mapButton(detail)}
+    ${mapPanel(detail)}
   </div>`;
 }
 
 /**
- * The map, behind a button that says what it will do.
+ * Where the map goes.
  *
- * Nothing else on this site makes a third-party request - the fonts are fetched at build time for
- * exactly that reason - so the tiles are a decision the reader makes, in the words of the thing they
- * are deciding, and never on load.
+ * An empty box carrying the coordinate; boot fills it once the view is in the document, because the
+ * tiles are sized to the box and it has no width until then.
+ *
+ * This is the one thing on the site that asks anything of anyone else - the fonts are fetched at
+ * build time precisely so that nothing else does - so the panel says where the tiles come from.
  */
-function mapButton(detail: StopDetail): string {
+function mapPanel(detail: StopDetail): string {
   const lat = Number(detail.row?.stop_lat);
   const lon = Number(detail.row?.stop_lon);
 
@@ -100,13 +102,11 @@ function mapButton(detail: StopDetail): string {
     return "";
   }
 
-  return `<p class="plot__map">
-    <button class="btn2" data-map="${lat},${lon}">
-      Show a map &mdash; loads tiles from openstreetmap.org
-    </button>
-    <a class="note" href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}"
-      rel="noreferrer">or open it there &nearr;</a>
-  </p>`;
+  return `<div class="plot__map" data-map="${lat},${lon}"></div>
+    <p class="note plot__there">
+      <a href="https://www.openstreetmap.org/?mlat=${lat}&amp;mlon=${lon}#map=17/${lat}/${lon}"
+         rel="noreferrer">Open this in OpenStreetMap &nearr;</a>
+    </p>`;
 }
 
 /**

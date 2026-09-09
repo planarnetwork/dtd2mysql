@@ -280,6 +280,7 @@ async function render(): Promise<void> {
       focusHeading(view);
     }
 
+    drawMap(view);
     scrollToRow();
   }
   catch (error) {
@@ -393,16 +394,6 @@ function wire(): void {
 
   view.addEventListener("click", event => {
     const target = event.target as HTMLElement;
-    const map = target.closest<HTMLElement>("[data-map]");
-
-    if (map !== null) {
-      const [lat, lon] = (map.dataset.map ?? "").split(",").map(Number);
-
-      // The one third-party request the site makes, and only ever from here, after a button that
-      // said what it would do.
-      return showMap(map.parentElement as HTMLElement, lat, lon);
-    }
-
     const exporter = target.closest<HTMLElement>("[data-export]");
 
     if (exporter !== null) {
@@ -526,6 +517,26 @@ function progress(what: string, percent: number | undefined, detail = ""): void 
 
   bar.style.width = percent === undefined ? "0%" : `${percent}%`;
   bar.parentElement?.setAttribute("aria-valuenow", String(percent ?? 0));
+}
+
+/**
+ * Draw the map on a view that has somewhere to put one.
+ *
+ * After the view is in the document, because the tiles are built to cover the box and the box has no
+ * width until it is laid out.
+ */
+function drawMap(view: HTMLElement): void {
+  const panel = view.querySelector<HTMLElement>("[data-map]");
+
+  if (panel === null) {
+    return;
+  }
+
+  const [lat, lon] = (panel.dataset.map ?? "").split(",").map(Number);
+
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    showMap(panel, lat, lon);
+  }
 }
 
 /**
