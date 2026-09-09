@@ -18,6 +18,10 @@ Options:
                               rather than before today. For a reproducible
                               merge, which is what the tests want.
   --remove-route-types <list> Comma separated GTFS route types to drop, e.g. 3,4.
+  --no-shapes                 Leave out shapes.txt and the shape_id naming it. A
+                              shape is the line drawn on a map and nothing a
+                              journey planner reads, and it is half of a national
+                              bus feed.
   --ruler-latitude <degrees>  The latitude the distance approximation is
                               calibrated at. Default 54, the middle of GB.
   --tmp <directory>           Where the files are assembled. Default a temporary

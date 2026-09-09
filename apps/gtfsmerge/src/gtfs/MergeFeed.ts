@@ -63,7 +63,13 @@ export const TRANSFERS = fileSchema<TransferRow>("transfers.txt", [
 // one vehicle working through a day and a shape is one line on the ground, both
 // named by the feed that published them - so two feeds numbering a block `1` do
 // not mean the same vehicle, and TripsMerger gives each feed's its own ids.
-export const TRIPS = fileSchema<TripRow>("trips.txt", [
+//
+// A merge carrying no shapes writes no shape_id either. The column would name a
+// shape that is not in the feed, which is a dangling reference rather than a
+// missing extra.
+export const trips = (shapes: boolean) => fileSchema<TripRow>("trips.txt", [
   "route_id", "service_id", "trip_id", "trip_headsign", "trip_short_name", "direction_id",
-  "block_id", "shape_id", "wheelchair_accessible", "bikes_allowed"
+  "block_id", ...(shapes ? ["shape_id" as const] : []), "wheelchair_accessible", "bikes_allowed"
 ]);
+
+export const TRIPS = trips(true);
