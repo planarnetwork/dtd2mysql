@@ -1,9 +1,12 @@
+import {AgencyRow, AttributionRow} from "@gb-transit/gtfs-schema";
 import {GTFSZip} from "./FeedIndex";
 import {CalendarMerger} from "./merger/CalendarMerger";
 import {StopsAndTransfersMerger} from "./merger/StopsAndTransfersMerger";
 import {StopTimeReader, StopTimesMerger} from "./merger/StopTimesMerger";
 import {TripsMerger} from "./merger/TripsMerger";
 import {GenericMerger} from "./merger/GenericMerger";
+import {AreasMerger} from "./merger/AreasMerger";
+import {FeedInfoMerger} from "./merger/FeedInfoMerger";
 import {RouteMerger} from "./merger/RouteMerger";
 
 /**
@@ -16,8 +19,11 @@ export class GTFSOutput {
     private readonly stopsAndTransfers: StopsAndTransfersMerger,
     private readonly stopTimes: StopTimesMerger,
     private readonly trips: TripsMerger,
-    private readonly agencies: GenericMerger,
-    private readonly routes: RouteMerger
+    private readonly agencies: GenericMerger<AgencyRow>,
+    private readonly routes: RouteMerger,
+    private readonly attributions: GenericMerger<AttributionRow>,
+    private readonly areas: AreasMerger,
+    private readonly feedInfo: FeedInfoMerger
   ) {}
 
   /**
@@ -41,11 +47,15 @@ export class GTFSOutput {
     const tripIdMap = await this.trips.write(gtfs.trips, serviceIdMap, routeIdMap);
     const usedStops = await this.stopTimes.write(stopTimes, tripIdMap, gtfs.parentStops);
 
+    this.feedInfo.write(gtfs.feedInfo);
+
     await Promise.all([
       this.stopsAndTransfers.write(
         gtfs.stops, gtfs.transfers, gtfs.parentStops, usedStops, tripIdMap
       ),
-      this.agencies.write(gtfs.agencies)
+      this.agencies.write(gtfs.agencies),
+      this.attributions.write(gtfs.attributions),
+      this.areas.write(gtfs.areas, gtfs.stopAreas, gtfs.parentStops, usedStops)
     ]);
   }
 
@@ -56,7 +66,10 @@ export class GTFSOutput {
       this.stopTimes.end(),
       this.trips.end(),
       this.agencies.end(),
-      this.routes.end()
+      this.routes.end(),
+      this.attributions.end(),
+      this.areas.end(),
+      this.feedInfo.end()
     ]);
   }
 }

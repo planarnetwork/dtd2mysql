@@ -1,6 +1,6 @@
 import {
-  AgencyRow, CalendarDateRow, CalendarRow, FixedLinkRow, RouteRow, StopID, StopRow,
-  TransferRow, TransferType, TripRow
+  AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, FixedLinkRow,
+  RouteRow, StopAreaRow, StopID, StopRow, TransferRow, TransferType, TripRow
 } from "@gb-transit/gtfs-schema";
 import {readFeed} from "@gb-transit/gtfs-loader";
 import * as fs from "fs";
@@ -18,6 +18,10 @@ export interface GTFSZip {
   agencies: AgencyRow[];
   stops: StopRow[];
   parentStops: Record<StopID, StopID>;
+  areas: AreaRow[];
+  stopAreas: StopAreaRow[];
+  attributions: AttributionRow[];
+  feedInfo: FeedInfoRow[];
 }
 
 /**
@@ -33,7 +37,8 @@ export class FeedIndex {
   private readonly transfers: Record<string, TransferRow> = {};
   private readonly result: GTFSZip = {
     trips: [], transfers: [], calendars: [], calendarDates: {}, routes: [],
-    agencies: [], stops: [], parentStops: {}
+    agencies: [], stops: [], parentStops: {}, areas: [], stopAreas: [], attributions: [],
+    feedInfo: []
   };
 
   constructor(
@@ -65,6 +70,27 @@ export class FeedIndex {
 
   public agency(row: AgencyRow): void {
     this.result.agencies.push(row);
+  }
+
+  public area(row: AreaRow): void {
+    this.result.areas.push(row);
+  }
+
+  /**
+   * A membership names a stop, so it moves with the stops: prefixed here, and
+   * pointed at the station rather than the platform when it is written.
+   */
+  public stopArea(row: StopAreaRow): void {
+    row.stop_id = this.stopPrefix + row.stop_id;
+    this.result.stopAreas.push(row);
+  }
+
+  public attribution(row: AttributionRow): void {
+    this.result.attributions.push(row);
+  }
+
+  public feedInfo(row: FeedInfoRow): void {
+    this.result.feedInfo.push(row);
   }
 
   /**
@@ -156,6 +182,10 @@ export async function readMergeInput(
   await readFeed(fs.createReadStream(file), {
     "trips.txt": row => index.trip({...row}),
     "routes.txt": row => index.route({...row}),
+    "areas.txt": row => index.area({...row}),
+    "stop_areas.txt": row => index.stopArea({...row}),
+    "attributions.txt": row => index.attribution({...row}),
+    "feed_info.txt": row => index.feedInfo({...row}),
     "stops.txt": row => index.stop({...row}),
     "agency.txt": row => index.agency({...row}),
     "calendar.txt": row => index.calendar({...row}),

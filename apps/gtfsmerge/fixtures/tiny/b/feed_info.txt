@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
+Bus Publisher,https://example.org,en,20260501,20261001,BUS001

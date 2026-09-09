@@ -78,10 +78,15 @@ beforeAll(async () => {
 
 describe("the tiny fixtures", () => {
 
-  const files = [
-    "agency.txt", "calendar.txt", "calendar_dates.txt", "routes.txt", "stops.txt",
-    "stop_times.txt", "transfers.txt", "trips.txt"
-  ];
+  const files = fs.readdirSync(golden).sort();
+
+  /**
+   * Listed from the golden rather than spelled out here, so a file the merge
+   * starts or stops writing is a diff rather than a test nobody updated.
+   */
+  it("produces exactly the golden files", () => {
+    expect(fs.readdirSync(built).sort()).to.deep.equal(files);
+  });
 
   it.each(files)("produces the golden %s", file => {
     expect(fs.readFileSync(path.join(built, file), "utf8"))

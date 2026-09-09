@@ -1,6 +1,6 @@
 import {
-  AgencyRow, CalendarDateRow, CalendarRow, GTFS_COLUMNS, RouteRow, StopRow, StopTimeRow,
-  TransferRow, TripRow, fileSchema
+  AgencyRow, AreaRow, AttributionRow, CalendarDateRow, CalendarRow, FeedInfoRow, GTFS_COLUMNS,
+  RouteRow, StopAreaRow, StopRow, StopTimeRow, TransferRow, TripRow, fileSchema
 } from "@gb-transit/gtfs-schema";
 
 /**
@@ -20,6 +20,15 @@ import {
  * are remapped along with everything else - see StopsAndTransfersMerger.
  */
 export const AGENCY = fileSchema<AgencyRow>("agency.txt", GTFS_COLUMNS["agency.txt"]);
+
+export const AREAS = fileSchema<AreaRow>("areas.txt", GTFS_COLUMNS["areas.txt"]);
+
+export const ATTRIBUTIONS =
+  fileSchema<AttributionRow>("attributions.txt", GTFS_COLUMNS["attributions.txt"]);
+
+export const FEED_INFO = fileSchema<FeedInfoRow>("feed_info.txt", GTFS_COLUMNS["feed_info.txt"]);
+
+export const STOP_AREAS = fileSchema<StopAreaRow>("stop_areas.txt", GTFS_COLUMNS["stop_areas.txt"]);
 
 export const CALENDAR = fileSchema<CalendarRow>("calendar.txt", GTFS_COLUMNS["calendar.txt"]);
 

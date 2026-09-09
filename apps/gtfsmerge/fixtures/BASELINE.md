@@ -65,3 +65,43 @@ calls at are published, so such a transfer was a reference to a row that is not
 in the feed. A rail feed publishes a station because a fixed link reaches it,
 and this does not, so the two disagree about exactly those stations — 97 of the
 337 transfers in a merged rail feed were dangling.
+
+## Calendars say what the feed said
+
+**A removed date is no longer a running one.** `CalendarFactory` read every
+`calendar_dates` row as a date the service runs on, so a service described only
+by its dates gained every date the feed had written down as a removal. Nothing in
+the fixtures reached it before; `CalendarFactory.spec.ts` covers it now.
+
+**A service that runs on no day is dropped, with its trips and their calls.** A
+calendar naming no day, a range whose every running day is excluded, and a set of
+dates that are all removals all describe a service nothing can be planned onto.
+
+## The files a merge was dropping
+
+The merge wrote eight files and dropped everything else, so `attributions.txt`,
+`areas.txt`, `stop_areas.txt` and `feed_info.txt` did not survive being merged.
+The golden gains all four, and the fixtures gain the rows to build them from.
+
+**`attributions.txt`** is the union of the inputs', deduplicated on the whole
+statement rather than on the organisation: the same body can be the authority for
+two things under two licences, and both rows are true. Both fixtures name the DfT
+for NaPTAN, so it appears once.
+
+**`areas.txt` and `stop_areas.txt`** carry the Fares v2 station groups. A
+membership follows the same two rules a transfer does — a call at a platform is a
+call at the station above it, so `9100ALPHA1` is written as `910GALPHA`, and a
+membership naming a stop nothing calls at is dropped, which is what happens to
+`910GNOTCALLED`. The area it belonged to stays: an area with no members is a
+group that nothing in this feed is in, which is true and harmless, and dropping
+it would be the merge deciding the group no longer exists.
+
+**`feed_info.txt`** is one row for a feed made of several, and there is no answer
+here that is simply correct. The publisher is the first input's, the window is the
+widest of the inputs', and the version names both, joined: `RAIL001+BUS001`.
+Anything publishing a merged feed as its own should write this file itself rather
+than take what falls out here.
+
+**The golden's file list is now the test.** It read from a list spelled out in
+the spec, so the four files above could have gone missing again without any test
+noticing. It reads the golden directory instead.
