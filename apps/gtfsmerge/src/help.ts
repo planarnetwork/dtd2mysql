@@ -9,9 +9,6 @@ Usage:
   feed goes: a .zip, or a directory.
 
 Options:
-  --stop-prefix <text>        Prepended to every stop id. For feeds that do not
-                              share an id space - GB feeds built from this
-                              repository already agree on ATCO codes and need none.
   --transfer-distance <km>    How far apart two stops may be for a walk transfer
                               to be generated between them. Default 1.6.
   --no-extra-transfers        Generate no walk transfers at all.

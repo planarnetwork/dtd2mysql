@@ -140,7 +140,7 @@ describe("the merged feed", () => {
     const alpha = columns("stops.txt").filter(s => s.stop_id === "910GALPHA");
 
     // Both feeds serve Alpha. This is why a GB rail feed and a GB bus feed can
-    // be merged without a --stop-prefix: they already agree on ATCO codes.
+    // be merged without reconciling anything: they already agree on ATCO codes.
     expect(alpha.length).to.equal(1);
   });
 

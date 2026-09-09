@@ -67,7 +67,6 @@ export class FeedIndex {
   };
 
   constructor(
-    private readonly stopPrefix: string = "",
     private readonly filterBefore?: string
   ) {}
 
@@ -85,7 +84,6 @@ export class FeedIndex {
    */
   public stop(row: StopRow): void {
     if (!row.parent_station) {
-      row.stop_id = this.stopPrefix + row.stop_id;
       this.result.stops.push(row);
     }
     else {
@@ -102,11 +100,10 @@ export class FeedIndex {
   }
 
   /**
-   * A membership names a stop, so it moves with the stops: prefixed here, and
-   * pointed at the station rather than the platform when it is written.
+   * A membership names a stop, so it moves with the stops: pointed at the station
+   * rather than the platform when it is written.
    */
   public stopArea(row: StopAreaRow): void {
-    row.stop_id = this.stopPrefix + row.stop_id;
     this.result.stopAreas.push(row);
   }
 
@@ -172,9 +169,6 @@ export class FeedIndex {
    * One transfer per pair, the shortest of them.
    */
   public transfer(row: TransferRow): void {
-    row.from_stop_id = this.stopPrefix + row.from_stop_id;
-    row.to_stop_id = this.stopPrefix + row.to_stop_id;
-
     // A coupling is between two named trips, so it is not the same row as an
     // interchange at the same pair of stops and does not replace it.
     const key = row.transfer_type === TransferType.InSeat
@@ -207,10 +201,9 @@ export class FeedIndex {
  */
 export async function readMergeInput(
   file: string,
-  stopPrefix = "",
   filterBefore?: string
 ): Promise<GTFSZip> {
-  const index = new FeedIndex(stopPrefix, filterBefore);
+  const index = new FeedIndex(filterBefore);
 
   await readFeed(fs.createReadStream(file), {
     "trips.txt": row => index.trip({...row}),
@@ -241,13 +234,11 @@ export async function readMergeInput(
  * A call with only one of its times is not a call anything can plan through, so
  * it never leaves here.
  */
-export function streamOf(file: string, stopPrefix = ""): FeedStream {
+export function streamOf(file: string): FeedStream {
   return async (rows, betweenChunks) => {
     await readFeed(pausing(file, betweenChunks), {
       "stop_times.txt": row => {
         if (row.departure_time && row.arrival_time) {
-          row.stop_id = stopPrefix + row.stop_id;
-
           rows.stopTime(row);
         }
       },

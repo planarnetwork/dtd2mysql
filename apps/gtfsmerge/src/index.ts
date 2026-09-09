@@ -17,7 +17,6 @@ async function main(argv: string[]): Promise<void> {
   await merge({
     inputs: positional.slice(0, -1),
     output: positional[positional.length - 1],
-    stopPrefix: option(argv, "stop-prefix"),
     transferDistance: argv.includes("--no-extra-transfers")
       ? 0
       : Number(option(argv, "transfer-distance") ?? 1.6),
@@ -37,8 +36,7 @@ async function main(argv: string[]): Promise<void> {
  */
 function positionalArgs(argv: string[]): string[] {
   const takesValue = new Set([
-    "--stop-prefix", "--transfer-distance", "--remove-route-types", "--ruler-latitude", "--tmp",
-    "--date-filter"
+    "--transfer-distance", "--remove-route-types", "--ruler-latitude", "--tmp", "--date-filter"
   ]);
   const found: string[] = [];
 

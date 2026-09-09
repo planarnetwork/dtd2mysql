@@ -40,15 +40,11 @@ The distance in kilometres within which transfers are generated for nearby stops
 gtfsmerge --transfer-distance 2 input1.zip input2.zip output.zip
 ```
 
-Stops with the same id in different feeds are assumed to be the same stop, which is usually what you
-want — a GB rail feed from [`cif2gtfs`](../cif2gtfs) and a GB bus feed from
+Stops with the same id in different feeds are assumed to be the same stop, and there is no way to
+say otherwise. A GB rail feed from [`cif2gtfs`](../cif2gtfs) and a GB bus feed from
 [`transxchange2gtfs`](../transxchange2gtfs) both name a stop by its ATCO code, so they merge without
-any reconciliation. Where two feeds genuinely disagree, prefix one of them:
-
-```
-gtfsmerge --stop-prefix input1_ input1.zip modified-input1.zip
-gtfsmerge modified-input1.zip input2.zip output.zip
-```
+any reconciliation. Feeds that disagree about what an id means have to be reconciled before they get
+here.
 
 Routes can be removed based on their type:
 
