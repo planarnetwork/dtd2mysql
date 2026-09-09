@@ -23,6 +23,19 @@ export class StopsAndTransfersMerger {
   private scale?: [number, number];
 
   /**
+   * The stops to write, held until every feed has been read.
+   *
+   * A stop_code is only worth writing if it names one station, and whether it
+   * does is a question about the merged feed rather than about the feed in hand:
+   * a code can be shared by two feeds. So the rows wait, and the answer is
+   * worked out in `end`.
+   */
+  private readonly published: StopRow[] = [];
+
+  /** Which stops carry each code, by the station they belong to. */
+  private readonly codes = new Map<string, Set<StopID>>();
+
+  /**
    * Every feed's parents, not just the one being written.
    *
    * Which station a stop is under is asked across the merged feed - the rail
@@ -114,7 +127,24 @@ export class StopsAndTransfersMerger {
       // platforms and a platform keeps its station, which is what says that two
       // stops on either side of a road, or two platforms of one interchange, are
       // one place to a rider.
-      await push(this.stops, stop);
+      this.published.push(stop);
+
+      const code = stop.stop_code;
+
+      if (code) {
+        // The station it belongs to, which is itself when it has none. Two
+        // platforms of one station collapse to the station and keep their
+        // shared code; two unrelated stops stay two and lose it.
+        const place = this.parents[stop.stop_id] ?? stop.stop_id;
+        const carrying = this.codes.get(String(code));
+
+        if (carrying === undefined) {
+          this.codes.set(String(code), new Set([place]));
+        }
+        else {
+          carrying.add(place);
+        }
+      }
 
       const lat = Number(stop.stop_lat);
       const lon = Number(stop.stop_lon);
@@ -216,6 +246,29 @@ export class StopsAndTransfersMerger {
   }
 
   public async end(): Promise<void> {
+    let cleared = 0;
+
+    for (const stop of this.published) {
+      const code = stop.stop_code;
+
+      // A code on stops from more than one station names none of them: an app
+      // given it cannot say which stop a rider meant, and the codes really are
+      // shared - by two sides of one road, and by two places miles apart.
+      if (code && (this.codes.get(String(code))?.size ?? 0) > 1) {
+        stop.stop_code = null;
+        cleared++;
+      }
+
+      await push(this.stops, stop);
+    }
+
+    if (cleared > 0) {
+      console.warn(
+        `${cleared} stops carried a stop_code that more than one station uses. `
+        + "The code is left out of those rows, because it cannot say which stop it means."
+      );
+    }
+
     await Promise.all([close(this.stops), close(this.transfers)]);
   }
 

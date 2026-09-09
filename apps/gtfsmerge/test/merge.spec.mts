@@ -192,6 +192,29 @@ describe("the merged feed", () => {
     expect(members.map(a => a.stop_id)).to.include("9100BUSSTOP");
   });
 
+  /**
+   * A code on stops from more than one station names none of them. Feed b's bus
+   * station carries `ALP`, which feed a's Alpha already uses, and neither is
+   * under the other.
+   */
+  it("clears a stop code that more than one station uses", () => {
+    const stops = new Map(columns("stops.txt").map(s => [s.stop_id, s]));
+
+    expect(stops.get("9100BUSSTOP")?.stop_code ?? null).to.equal(null);
+    expect(stops.get("910GALPHA")?.stop_code ?? null).to.equal(null);
+  });
+
+  /**
+   * A station and its platforms are one station, so the code they share still
+   * says which stop a rider means.
+   */
+  it("keeps a stop code a station shares with its own platform", () => {
+    const stops = new Map(columns("stops.txt").map(s => [s.stop_id, s]));
+
+    expect(stops.get("910GBETA")?.stop_code).to.equal("BET");
+    expect(stops.get("9100BETA1")?.stop_code).to.equal("BET");
+  });
+
   it("keeps both agencies", () => {
     expect(columns("agency.txt").map(a => a.agency_id).sort()).to.deep.equal(["BUS", "RAIL"]);
   });

@@ -203,3 +203,27 @@ longer in `usedStops`, so every membership in a rail-and-bus merge was dropped
 and `stop_areas.txt` came out as a header. The published set - what something
 calls at, plus the stations above those - is worked out once and used by the
 areas and the transfers alike.
+
+## A stop code that names more than one station is left out
+
+`stops.txt` loses the `stop_code` on four rows, and `b/stops.txt` gains the clash
+that causes it: its bus station now carries `ALP`, which feed `a`'s Alpha already
+uses and which neither is under.
+
+A code is kept only where every stop carrying it is part of one station — swap a
+stop for its `parent_station` where it has one, and see whether more than one id
+is left. A station and its platforms collapse to the station and keep the code
+they share; two unrelated stops stay two and lose it.
+
+Merging the rail feed with the national bus feed, 2,777 codes are used by more
+than one stop and 2,740 of those are a rail station and its own platforms sharing
+a CRS code, which is right. The 37 that are left are the rule's business: 27 name
+places miles apart — `74020` is both Northlands Avenue and Borkwood Way — and 10
+name two stops of one place that the source gives no station to group them under,
+like the two sides of Laurel Way or the two Millburngate stands. Neither kind can
+tell a rider which stop is meant.
+
+The rows are written by `end` rather than by `write`, because a code can be
+shared across feeds and the answer is not known until the last of them has been
+read. That holds every published stop until then: 321,275 of them, on the order
+of 100MB against a merge that peaks at 3GB.

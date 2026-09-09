@@ -32,4 +32,15 @@ Two things follow:
   reason a national merge has been run with `--no-extra-transfers` until now. Cells one transfer
   distance wide reduce it to nine lookups per stop.
 
+**A stop code that names more than one station is left out.** A code is kept only where every stop
+carrying it is part of one station: swap a stop for its `parent_station` where it has one, and see
+whether more than one id is left. Merging the rail feed with the national bus feed, 2,777 codes are
+used by more than one stop — 2,740 of them a rail station and its own platforms sharing a CRS code,
+which is right, and 37 that are not. Of those, 27 name places miles apart (`74020` is Northlands
+Avenue and Borkwood Way) and 10 name two stops of one place the source gives no station to group
+them under. Neither kind can tell a rider which stop is meant, so the code goes.
+
+The stops are written by `end` rather than by `write` for that reason: a code can be shared across
+feeds, so the answer is not known until the last has been read.
+
 `StopTimesMerger.begin` no longer takes the parent map, since it no longer moves a call.

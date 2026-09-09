@@ -17,12 +17,47 @@ describe("StopsAndTransfersMerger", () => {
     };
   };
 
+  /**
+   * The stops are written by `end`, not by `write`: whether a stop_code names one
+   * station is a question about the merged feed, so the rows wait for the last
+   * of it.
+   */
   it("publishes only the stops something calls at", async () => {
     const {stops, merger: m} = merger(0);
 
     await m.write([stop("used", 51.5, -0.1), stop("unused", 52, -1)], [], {}, {used: true}, {});
+    await m.end();
 
     expect(stops.rows.map(s => s.stop_id)).to.deep.equal(["used"]);
+  });
+
+  // The rows are the merger's own copies and it writes to them, as the other
+  // mergers do, so each case builds its own.
+  const coded = (): StopRow[] => [
+    {...stop("platform", 51.5, -0.1), stop_code: "ABA", parent_station: "station"},
+    {...stop("station", 51.5, -0.1), stop_code: "ABA", location_type: 1}
+  ];
+
+  it("clears a stop code that two stations share", async () => {
+    const {stops, merger: m} = merger(0);
+    const elsewhere: StopRow = {...stop("elsewhere", 52, -1), stop_code: "ABA"};
+
+    await m.write(
+      [...coded(), elsewhere], [], {platform: "station"},
+      {platform: true, station: true, elsewhere: true}, {}
+    );
+    await m.end();
+
+    expect(stops.rows.map(s => s.stop_code)).to.deep.equal([null, null, null]);
+  });
+
+  it("keeps a stop code a station shares with its own platform", async () => {
+    const {stops, merger: m} = merger(0);
+
+    await m.write(coded(), [], {platform: "station"}, {platform: true, station: true}, {});
+    await m.end();
+
+    expect(stops.rows.map(s => s.stop_code)).to.deep.equal(["ABA", "ABA"]);
   });
 
   it("generates a walk transfer between two nearby stops, both ways", async () => {
