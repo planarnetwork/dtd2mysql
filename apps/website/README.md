@@ -43,10 +43,16 @@ feed contains should not make its readers announce themselves to a third party t
 rule exists so that reading about the feed costs nothing and depends on nothing; the explorer is not
 reading about the feed, it is the feed. The alternative is a server that holds a 21 MB zip and
 answers questions about it — something to run, to pay for, and to trust with what its users are
-looking at. Doing it in the reader's own browser keeps the promise the rest of the site makes:
-nothing about you leaves this origin unless you ask it to, which is why a station draws its own plot
-and the map is a button that says what pressing it does. It is about 30 KB gzipped over two chunks,
-on one page, and no other page loads a byte of it.
+looking at. Doing it in the reader's own browser keeps most of the promise the rest of the site
+makes: the feed you open, and every question you ask of it, stay on your machine. It is about 30 KB
+gzipped over two chunks, on one page, and no other page loads a byte of it.
+
+The one exception is the map on a station, whose tiles come from openstreetmap.org. Everywhere else
+on this site a third-party request is a thing to design away — the fonts are fetched at build time
+for exactly that reason — and this is the one place the answer is worth the request: whether a
+station is on the right side of the road is not a question the feed's own numbers can settle. The
+panel says where the tiles come from. Nothing else in the explorer asks anything of anyone else, and
+the browser check asserts it.
 
 [`src/explorer/`](src/explorer) is laid out so that almost none of it is about the DOM.
 `model/` reads a zip into memory, `query/` filters it, `checks/` asks questions of it and `worker/`
