@@ -1,6 +1,6 @@
 # transfer-patterns
 
-Builds the transfer pattern file the nightly feed publishes as `transfer-patterns.gz`.
+Builds the transfer pattern file the nightly feed publishes as `transfer-patterns.br`.
 
 A transfer pattern is the sequence of stations a journey calls at — where it starts, where it
 changes, where it ends. Hannah Bast's
@@ -20,9 +20,9 @@ Not published to npm; the nightly is the only caller.
 ## Usage
 
 ```
-transfer-patterns plan <gtfs.zip> --out <shard.gz> [options]
-transfer-patterns merge <shard.gz>... --out <transfer-patterns.gz>
-transfer-patterns split <transfer-patterns.gz> --out <dir>
+transfer-patterns plan <gtfs.zip> --out <shard.br> [options]
+transfer-patterns merge <shard.br>... --out <transfer-patterns.br>
+transfer-patterns split <transfer-patterns.br> --out <dir>
 ```
 
 `plan` scans the feed and writes the patterns it found, sorted and free of duplicates. `merge`
@@ -31,11 +31,11 @@ so is planning the whole feed in one go and never merging at all.
 
 ```
 # the whole feed, on this machine
-transfer-patterns plan gtfs.zip --out transfer-patterns.gz
+transfer-patterns plan gtfs.zip --out transfer-patterns.br
 
 # a sixth of it, as the nightly does
-transfer-patterns plan gtfs.zip --shard 2/6 --workers 4 --out shard-2.gz
-transfer-patterns merge shard-*.gz --out transfer-patterns.gz --meta meta.json
+transfer-patterns plan gtfs.zip --shard 2/6 --workers 4 --out shard-2.br
+transfer-patterns merge shard-*.br --out transfer-patterns.br --meta meta.json
 ```
 
 ### plan
@@ -85,8 +85,12 @@ That doubles what is stored, which costs nothing when a reader only ever takes o
 
 A file is named for what it holds: `.gz` is gzip and anything else is brotli. Brotli is much the
 smaller — 54MB against 95MB for a week of a national feed, and 163MB against 202MB once split — but
-no browser has `DecompressionStream("brotli")`, so a page can only read the gzip. That is what gets
-published, and the difference is the price of the file being readable where it is read.
+no browser has `DecompressionStream("brotli")`, so a page can only read the gzip.
+
+The release carries the brotli, since nothing downloading one is a browser and it is the smaller.
+The site carries both, of the whole file and of every station: it makes the gzip from the brotli it
+downloaded, and splits that into a file per station in each. Which one somebody wants depends on
+what is reading it, and neither the release nor the site is the place to decide that for them.
 
 The site publishes them under `/transfer-patterns/`, rebuilt from the release each time the Pages
 workflow runs, and `UrlPatternProvider` reads them straight from there. It is a plain `GET` per

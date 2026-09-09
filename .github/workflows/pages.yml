@@ -87,31 +87,45 @@ jobs:
         run: |
           site=apps/website/public
           patterns=apps/transfer-patterns/src/index.ts
+          release=https://github.com/planarnetwork/gb-transit/releases/latest/download
 
-          if curl -fsSL --retry 3 --retry-delay 5 \
-            https://github.com/planarnetwork/gb-transit/releases/latest/download/transfer-patterns.gz \
-            -o $site/transfer-patterns.gz
-          then
-            # Both compressions, of the whole file and of every station. Gzip is
-            # what a browser can decompress and brotli is a third smaller, so
-            # which is wanted depends on who is reading, and the site is not the
-            # place to decide that for them.
-            #
-            # The brotli is made here rather than carried by the release,
-            # because compressing it is minutes the merge job would have to find
-            # inside its timeout and this job has no such pressure.
-            yarn tsx $patterns merge $site/transfer-patterns.gz --out $site/transfer-patterns.br
+          # Brotli is what the release carries: it is a third smaller than gzip
+          # and nothing downloading a release is a browser. A release from before
+          # that was decided carries the gzip instead, so either will do.
+          # --remove-on-error, because -o writes the file before it knows the
+          # status: a 404 would otherwise leave an empty one behind for the site
+          # to serve as though it were the patterns.
+          get() {
+            curl -fsSL --retry 3 --retry-delay 5 --remove-on-error "$release/$1" -o "$site/$1"
+          }
 
-            for extension in .gz .br; do
-              yarn tsx $patterns split $site/transfer-patterns.gz \
-                --out $site/transfer-patterns --extension $extension
-            done
-
-            du -sh $site/transfer-patterns.gz $site/transfer-patterns.br $site/transfer-patterns
+          if get transfer-patterns.br; then
+            from=$site/transfer-patterns.br
+            other=$site/transfer-patterns.gz
+          elif get transfer-patterns.gz; then
+            from=$site/transfer-patterns.gz
+            other=$site/transfer-patterns.br
           else
-            rm -f $site/transfer-patterns.gz
-            echo "The latest release has no transfer-patterns.gz, so the site goes up without them."
+            echo "The latest release has no transfer patterns, so the site goes up without them."
+            exit 0
           fi
+
+          # Both compressions, of the whole file and of every station: a browser
+          # has no DecompressionStream("brotli") and can only read the gzip, and
+          # everything else would rather have the brotli. Which is wanted depends
+          # on who is reading, and the site is not the place to decide that.
+          #
+          # The second one is made here rather than carried by the release,
+          # because compressing it is minutes the merge job would have to find
+          # inside a timeout it already spends thirty of, and this job has
+          # nothing pressing it.
+          yarn tsx $patterns merge $from --out $other
+
+          for extension in .gz .br; do
+            yarn tsx $patterns split $from --out $site/transfer-patterns --extension $extension
+          done
+
+          du -sh $site/transfer-patterns.br $site/transfer-patterns.gz $site/transfer-patterns
 
       # The site is its own build now rather than part of the repository's
       # `tsc -b`, and it reads the latest release over the network to report what
