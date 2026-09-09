@@ -1,5 +1,185 @@
 # gtfsmerge
 
+## 4.0.0
+
+### Major Changes
+
+- 315fec8: Remove `--stop-prefix`.
+
+  The flag prepended a prefix to every stop id, for merging feeds that do not share an id space. It
+  did not work, and had not for as long as it has existed: merging the published rail feed with it
+  produces a feed with **no stops at all**.
+
+  ```
+  gtfsmerge --stop-prefix x_ gtfs.zip out.zip
+    stops.txt         0 rows
+    stop_times.txt    2,991,962 rows, every one of them pointing at a stop that is not in the feed
+  ```
+
+  `FeedIndex.stop` prefixed a stop it published, and recorded a platform's parent station under the
+  unprefixed id:
+
+  ```ts
+  else {
+    this.result.parentStops[row.stop_id] = row.parent_station;   // neither prefixed
+  }
+  ```
+
+  Everything that reads that map has been prefixed by then, so a call at a platform never found its
+  station and kept the platform's id — an id that is never published, because a platform is not a stop
+  the merged feed writes. `usedStops` then held platform ids while the stops to publish were stations,
+  the two sets did not intersect, and the test that decides which stops to write matched none of them.
+  The rail feed has 9,257 platforms.
+
+  It could have been fixed with two more prefixes. It is removed instead, because nothing needs it: GB
+  feeds all name a stop by its ATCO code, which is the whole reason a rail feed and a bus feed from
+  this repository merge without reconciliation, and no test has ever exercised the flag.
+
+  **Breaking:** `MergeOptions.stopPrefix` is gone, and `MergeCommand.run` no longer takes it. Feeds
+  that disagree about what a stop id means have to be reconciled before they reach a merge.
+
+### Minor Changes
+
+- 315fec8: Keep the blocks, the shapes and the frequencies a bus feed has.
+
+  `trips.txt` dropped `block_id` and `shape_id` as something "a merge has nothing to put in". That was
+  true of two rail feeds and is not true of a bus feed, where both are populated — and dropping
+  `shape_id` is what made `shapes.txt` impossible to carry, since nothing would have referenced it.
+
+  Both are now kept, and both are renumbered rather than carried across. A block is one vehicle
+  working through a day and a shape is one line on the ground, each named by the feed that published
+  it and by nobody else, so two feeds numbering a block `1` do not mean the same vehicle. Carried
+  across unchanged they would say a bus continues as a train.
+
+  `shapes.txt` is read in the same pass as the calls, because it needs the same thing to have happened
+  first — the trips renumbered — and it is streamed for the same reason they are: a national bus feed's
+  shapes.txt is 2.5GB, more than the calls. A shape no surviving trip is drawn along is dropped.
+
+  `frequencies.txt` is held rather than streamed, because the whole national bus feed has 81 of these
+  rows, and each is renumbered onto its trip's new id or dropped with a trip that did not survive.
+
+  `frequencies.txt` was not a file `@gb-transit/gtfs-schema` or `@gb-transit/gtfs-loader` knew about.
+  Both now do: the schema gains `Frequency`, `FrequencyRow` and the file's columns, and the loader
+  reads it.
+
+  Merging the published rail feed with the Bus Open Data Service's Wales feed now produces fourteen
+  files rather than eight, and every reference in it — 334,972 trips, 4,561,198 calls, 2,859,358 shape
+  points, 1,204 area memberships — points at a row that is in the feed.
+
+- 315fec8: Carry attributions, fare areas and feed info through a merge.
+
+  The merge opened eight writers and dropped everything else, so merging the published rail feed with
+  a bus feed lost four files:
+
+  - `attributions.txt`, which is where the Open Government Licence and the Rail Settlement Plan
+    licence are stated. NaPTAN's licence makes acknowledgement a condition of use, so a merged feed
+    was being published without the one file that keeps it inside its terms — and adding a second
+    source is when that file needs another row, not deleting.
+  - `areas.txt` and `stop_areas.txt`, the GTFS Fares v2 station groups. "London Terminals is these
+    eighteen stations" is what they say, and a merged feed could no longer answer it.
+  - `feed_info.txt`, where a feed says who made it, what it covers and which version it is. The
+    validator warns without it.
+
+  All four now survive. Attributions are the union of the inputs', deduplicated on the whole statement
+  rather than on the organisation, because the same body can be the authority for two things under two
+  licences. A stop area follows the same rules a transfer does: a membership naming a platform is
+  written as the station above it, and one naming a stop nothing calls at is dropped.
+
+  `feed_info.txt` has no answer that is simply correct, since two feeds have two publishers and the
+  merged one is neither. It takes the publisher of the first input, the widest window across the
+  inputs, and every input's version joined — `RAIL001+BUS001`. Anything publishing a merged feed as
+  its own should write this file itself rather than take what falls out here.
+
+  The end-to-end test listed the files it checked, so the four could have gone missing again without
+  anything noticing. It now reads the golden directory and asserts the merge produced exactly those
+  files.
+
+- 680677d: Read a feed's stop times in a pass of their own, rather than holding them.
+
+  A merge held every input feed whole, and `stop_times.txt` is almost all of a feed. Held the way the
+  merge held them, one national bus feed's 59,129,908 calls cost 18.0GB against 0.7GB for the
+  1,854,991 rows of everything else — 96% of the memory for one file. Merging that feed with the
+  published rail one peaked at 22.1GB and ended, at the 8GB `bin/gtfsmerge.sh` allows:
+
+  ```
+  Loading rail.zip / Processing rail.zip / Loading bus.zip
+  FATAL ERROR: Ineffective mark-compacts near heap limit - JavaScript heap out of memory
+  ```
+
+  The order the merge already worked in is why they need not be held at all. Nothing can be done with
+  a call until its trip has been numbered, and the trips are numbered from the routes and calendars;
+  nothing needs the call afterwards. So `readMergeInput` now reads everything but the stop times, and
+  `stopTimesOf` reads the file again for those alone, handing each call to `StopTimesMerger` to remap
+  and write as it arrives.
+
+  The second read is what this costs, and it is a read of a file rather than a copy of it in memory.
+
+  `GTFSOutput.write` takes a `StopTimeReader` alongside the feed, and `GTFSZip` no longer has a
+  `stopTimes` field. Anything embedding gtfsmerge rather than running it will notice; the CLI is
+  unchanged.
+
+  Backpressure moved with it. The rows of a chunk arrive from a synchronous parser that cannot be made
+  to wait for a writer partway through, so a chunk's calls are collected and written between one chunk
+  of the zip and the next, which is where the reader can be paused. A feed's last calls arrive after
+  its last chunk, as the inflater and the parser give up what they were holding, and are written after
+  the read rather than lost.
+
+### Patch Changes
+
+- 315fec8: Make a merged calendar say what the feed it came from said.
+
+  A service the feed describes only by its exception dates has no calendar row to carry across, so
+  `CalendarFactory` works one out from the dates. It read every date as a date the service runs on:
+
+  ```js
+  if (calendarDateIndex[i]) {          // presence, not exception_type
+    daysRunning[dow].push(...)
+  ```
+
+  A feed lists both the dates a service runs and the dates it does not, and the second kind was being
+  read as the first. Merging the published rail feed with the Bus Open Data Service's Wales feed, 1,613
+  trips came out running on days they do not run, and the days they gained were 24, 25, 26 and 28
+  December, New Year's Day and Easter — the bank holidays an operator writes down as removals. Across
+  the national bus feed it is 959 services and 26,908 days.
+
+  None of it showed on a rail feed, because every service in the CIF has a calendar of its own and the
+  synthesised path is never reached. It is reached 1,489 times by the national bus feed.
+
+  Four fixes, all in the calendar:
+
+  - Only an addition is a date the service runs on. A removal now falls where it belongs, among the
+    days the service does not run, and comes back out as an exclusion wherever the calendar's own days
+    would otherwise include it. The range is taken from the dates it runs rather than from every date
+    mentioned.
+  - A service whose dates are all removals never runs, and used to build a calendar out of whatever
+    those dates happened to be. It gets a calendar of no days.
+  - A service that runs on no day at all is dropped, along with its trips and their calls. A feed says
+    this in more than one way — a calendar naming no day, a range whose every running day is excluded,
+    nothing but removals — and none of them can be planned onto. The Wales merge carried 78 such trips.
+  - `getCalendarHash` compared the exception dates in the order the feed listed them, so two identical
+    services written down in a different order stayed two services. They are sorted first. The fields
+    around them were taken from the row with `Object.values`, which follows the order the object was
+    built in — a parsed calendar in the order of its columns, a synthesised one in the order
+    `CalendarFactory` writes it — so a service published as a row by one feed and described only by
+    its dates in another hashed two ways. They are named instead. Merging the rail feed with BODS
+    Wales, 15 services were being written twice.
+
+  `CalendarFactory` now steps between dates with `addDays` from `@gb-transit/gtfs-loader`, which works
+  in UTC so that a clock change cannot move a date onto the day either side of it, rather than with a
+  local-time `Date`. `toGTFSDate` stays where it is and stays local: it answers "what is today" for the
+  default `--date-filter`, which is a question about the caller's day.
+
+  Checked by merging the rail feed with BODS Wales and comparing the exact set of dates every one of
+  the 334,972 trips runs on, before and after: every trip runs on exactly the days it ran on.
+
+- Updated dependencies [315fec8]
+- Updated dependencies [5be51bc]
+- Updated dependencies [28cac53]
+  - @gb-transit/gtfs-schema@2.2.0
+  - @gb-transit/gtfs-loader@1.3.0
+  - @gb-transit/gtfs-output@2.1.0
+  - @gb-transit/gtfs@3.3.0
+
 ## 3.0.1
 
 ### Patch Changes
