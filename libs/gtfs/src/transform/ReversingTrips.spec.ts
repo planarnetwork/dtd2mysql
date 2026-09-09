@@ -148,6 +148,48 @@ describe("reversingTrips", () => {
     expect(row.mode).to.equal(null);
   });
 
+  it("couples a train to every alternative it turns back as, where only one runs on a day", () => {
+    // what an overlay leaves behind: one departure for most of the range, another for the days
+    // taken out of it
+    const arrives = schedule(1, "A", ["WIM", {at: "SUO", time: "10:00:00", platform: "4"}]);
+    const january = schedule(2, "B", [{at: "SUO", time: "10:02:00", platform: "4"}, "HCB"], {
+      calendar: calendar("2024-01-01", "2024-01-15", MONDAYS)
+    });
+    const rest = schedule(3, "B", [{at: "SUO", time: "10:02:00", platform: "4"}, "HCB"], {
+      calendar: calendar("2024-01-16", "2024-02-01", MONDAYS)
+    });
+
+    expect(reversingTrips([arrives, january, rest], [], tiplocs).map(row => row.to_trip_id))
+      .to.deep.equal(["B_20240101_20240115", "B_20240116_20240201"]);
+  });
+
+  it("couples a train to neither of two trains it could be turning back as on one day", () => {
+    const arrives = schedule(1, "A", ["WIM", {at: "SUO", time: "10:00:00", platform: "4"}]);
+    const soon = schedule(2, "B", [{at: "SUO", time: "10:02:00", platform: "4"}, "HCB"]);
+    const later = schedule(3, "C", [{at: "SUO", time: "10:05:00", platform: "4"}, "HCB"]);
+
+    expect(reversingTrips([arrives, soon, later], [], tiplocs)).to.deep.equal([]);
+  });
+
+  it("couples a departing train to neither of two trains it could be turning back from", () => {
+    const early = schedule(1, "A", ["WIM", {at: "SUO", time: "09:58:00", platform: "4"}]);
+    const late = schedule(2, "B", ["WIM", {at: "SUO", time: "10:00:00", platform: "4"}]);
+    const departs = schedule(3, "C", [{at: "SUO", time: "10:02:00", platform: "4"}, "HCB"]);
+
+    expect(reversingTrips([early, late, departs], [], tiplocs)).to.deep.equal([]);
+  });
+
+  it("reads the rules it is given rather than the ones the loop needs", () => {
+    const arrives = schedule(1, "A", ["SUO", {at: "EPS", time: "10:00:00", platform: "2"}], {operator: "SN"});
+    const departs = schedule(2, "B", [{at: "EPS", time: "10:02:00", platform: "2"}, "WIM"], {operator: "SN"});
+    const atEpsom = [
+      {operator: "SN", at: "EPS", arrivesVia: "SUO", departsVia: "WIM", minTurnaround: 60, maxTurnaround: 600}
+    ];
+
+    expect(reversingTrips([arrives, departs], [], tiplocs, atEpsom).length).to.equal(1);
+    expect(reversingTrips([arrives, departs], [], tiplocs)).to.deep.equal([]);
+  });
+
   it("reads the call a train ends on where it calls at the terminus twice", () => {
     const arrives = schedule(1, "A", [
       "WIM",

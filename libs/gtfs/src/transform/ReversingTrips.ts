@@ -19,6 +19,9 @@ import {platformOf} from "./Platforms";
  * cuts - so the calendars are checked to avoid writing a transfer that never applies, and the days
  * it does apply on are the days both trips run.
  *
+ * A pair that satisfies all of it is still only written where it is the only answer. `unambiguous`
+ * says what that means and why the usual several candidates are not a contradiction.
+ *
  * The two times are subtracted as they are told. A train leaving Sutton at one minute past midnight
  * has already been moved onto the previous service day by `shiftLateNightServices`, so it leaves at
  * `24:01` on the day the train it turns back from arrived at `23:58`, and a turnback across midnight
@@ -31,10 +34,6 @@ export function reversingTrips(
   tiplocs: ReadonlyMap<CRS, TIPLOC>,
   rules: readonly ReversalRule[] = reversalRules
 ): Transfer[] {
-  if (rules.length === 0) {
-    return [];
-  }
-
   const buckets: Bucket[] = rules.map(rule => ({rule, arriving: [], departing: []}));
   const termini = new Set(rules.map(rule => rule.at));
 
@@ -73,9 +72,9 @@ export function reversingTrips(
   }
 
   // A pair the source already couples is left alone whatever stop the association named, and a pair
-  // two rules both match is written once
-  const written = new Set(coupled.map(link => pair(link.from, link.to)));
-  const rows: Transfer[] = [];
+  // two rules both match is taken once
+  const taken = new Set(coupled.map(link => pair(link.from, link.to)));
+  const couplings: Coupling[] = [];
   let unnamed = 0;
 
   for (const {rule, arriving, departing} of buckets) {
@@ -84,23 +83,12 @@ export function reversingTrips(
     for (const arrival of arriving) {
       const from = rule.minTurnaround + arrival.time;
       const to = rule.maxTurnaround + arrival.time;
+      let unnamedPlatform = false;
 
       for (let i = lowerBound(departing, from); i < departing.length && departing[i].time <= to; i++) {
         const departure = departing[i];
 
-        if (arrival.tripId === departure.tripId || written.has(pair(arrival.tripId, departure.tripId))) {
-          continue;
-        }
-
-        // Two calls naming no platform are two calls the source says nothing about, which is not
-        // the same as two calls it puts in one place, and a running line is not somewhere a
-        // passenger can be sitting either. `platformOf` answers null to both.
-        if (arrival.platform === null || departure.platform === null) {
-          unnamed++;
-          continue;
-        }
-
-        if (arrival.platform !== departure.platform) {
+        if (arrival.tripId === departure.tripId || taken.has(pair(arrival.tripId, departure.tripId))) {
           continue;
         }
 
@@ -108,20 +96,98 @@ export function reversingTrips(
           continue;
         }
 
-        written.add(pair(arrival.tripId, departure.tripId));
-        rows.push(inSeatTransfer(arrival.stopTime, departure.stopTime, tiplocs));
+        // A call the source gave no platform and a call that named a running line are both places
+        // it has not said the passenger is standing, and `platformOf` answers null to both. So a
+        // pair is coupled only where the source named a platform on each side and named the same
+        // one: two nulls are the source saying nothing rather than the source agreeing.
+        if (arrival.platform === null || departure.platform === null) {
+          unnamedPlatform = true;
+          continue;
+        }
+
+        if (arrival.platform !== departure.platform) {
+          continue;
+        }
+
+        taken.add(pair(arrival.tripId, departure.tripId));
+        couplings.push({arrival, departure});
+      }
+
+      // Counted per train rather than per candidate, and only for a train that would otherwise have
+      // been coupled, so the number is the couplings the missing platforms cost
+      if (unnamedPlatform) {
+        unnamed++;
       }
     }
   }
 
-  if (rows.length > 0 || unnamed > 0) {
+  const rows = unambiguous(couplings).map(
+    ({arrival, departure}) => inSeatTransfer(arrival.stopTime, departure.stopTime, tiplocs)
+  );
+
+  if (couplings.length > 0 || unnamed > 0) {
     console.log(
       `Coupled ${rows.length} pair(s) of trips turning back where they arrived` +
-      (unnamed > 0 ? `, ${unnamed} left alone for a platform the source does not name on both sides` : "")
+      (unnamed > 0 ? `, ${unnamed} left alone for a platform the source does not name on both sides` : "") +
+      (rows.length < couplings.length ? `, ${couplings.length - rows.length} for naming no one train` : "")
     );
   }
 
   return rows;
+}
+
+/**
+ * The couplings that name one train each way.
+ *
+ * A train can turn back into more than one, and usually does: an overlay is a schedule of its own,
+ * so the Sutton departure a train becomes is one record for most of the year and a dozen short
+ * dated ones for the days that were retimed. Those are alternatives rather than a contradiction,
+ * because `applyOverlays` has already cut the overlaid days out of the wide record and only one of
+ * them runs on any given day.
+ *
+ * Two candidates that do run on the same day are a contradiction: the timetable does not say which
+ * of them the unit becomes, and writing both tells a reader that one train continues as two, which
+ * it will believe and build two through journeys from. So a candidate that shares a day with
+ * another candidate of the same train is dropped, in both directions, and the ones that are still
+ * the only answer on every day they run are kept.
+ */
+function unambiguous(couplings: readonly Coupling[]): Coupling[] {
+  const contradicted = new Set<Coupling>();
+
+  contradict(couplings, coupling => coupling.arrival.tripId, coupling => coupling.departure, contradicted);
+  contradict(couplings, coupling => coupling.departure.tripId, coupling => coupling.arrival, contradicted);
+
+  return couplings.filter(coupling => !contradicted.has(coupling));
+}
+
+function contradict(
+  couplings: readonly Coupling[],
+  tripId: (coupling: Coupling) => string,
+  partner: (coupling: Coupling) => Turnback,
+  contradicted: Set<Coupling>
+): void {
+  const byTrip = new Map<string, Coupling[]>();
+
+  for (const coupling of couplings) {
+    byTrip.set(tripId(coupling), [...byTrip.get(tripId(coupling)) ?? [], coupling]);
+  }
+
+  for (const group of byTrip.values()) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        if (partner(group[i]).calendar.getOverlap(partner(group[j]).calendar) !== OverlapType.None) {
+          contradicted.add(group[i]);
+          contradicted.add(group[j]);
+        }
+      }
+    }
+  }
+}
+
+/** A train and the train it turns back as, before it is known to be the only answer. */
+interface Coupling {
+  readonly arrival: Turnback;
+  readonly departure: Turnback;
 }
 
 /** The two ends of one rule's turnback: what arrives to make it, and what could leave on it. */
