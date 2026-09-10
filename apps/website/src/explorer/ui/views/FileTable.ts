@@ -21,8 +21,6 @@ export const PAGE_SIZE = 200;
  */
 export function fileTable(page: Page, route: Extract<Route, {view: "file"}>): string {
   const columns = [...page.header];
-  const linkable = new Set(["stop_id", "parent_station", "from_stop_id", "to_stop_id",
-    "trip_id", "from_trip_id", "to_trip_id", "route_id", "service_id", "shape_id"]);
 
   const head = columns.map(column => {
     const descending = route.sort === column && !route.descending;
@@ -41,7 +39,7 @@ export function fileTable(page: Page, route: Extract<Route, {view: "file"}>): st
   const body = page.rows.map(({index, values}) => `<tr>
       <td class="grid__row"><a href="${format(route)}#row-${csvRowNumberOf(index)}"
         title="row ${csvRowNumberOf(index)} of the file">${csvRowNumberOf(index)}</a></td>
-      ${columns.map(column => `<td>${link(column, values[column], linkable)}</td>`).join("")}
+      ${columns.map(column => `<td>${link(column, values[column])}</td>`).join("")}
     </tr>`).join("");
 
   const pages = Math.max(1, Math.ceil(page.matched / PAGE_SIZE));
@@ -101,22 +99,44 @@ function pager(route: Extract<Route, {view: "file"}>, page: Page, pages: number)
 }
 
 /**
+ * A view an identifier alone is enough to open. Not the board, which also needs a date.
+ */
+type IdView = Exclude<Extract<Route, {id: string}>, {view: "board"}>["view"];
+
+/**
+ * The view each identifier column leads to.
+ *
+ * A map rather than a chain of tests ending in a default. The chain ended `: "service"`, so a column
+ * added to it that nobody wrote a branch for did not fail - it linked to the service view and said
+ * a shape id was a service nothing runs on. One list means a column is either in it and right, or
+ * not in it and not a link.
+ */
+export const LINKS: Record<string, IdView> = {
+  stop_id: "stop",
+  parent_station: "stop",
+  from_stop_id: "stop",
+  to_stop_id: "stop",
+  trip_id: "trip",
+  from_trip_id: "trip",
+  to_trip_id: "trip",
+  route_id: "route",
+  service_id: "service",
+  shape_id: "shape"
+};
+
+/**
  * An identifier as a link to the thing it names.
  *
  * This is most of what makes the table an explorer rather than a spreadsheet: every id is a way into
  * the view that explains it, and following a validator's notice to a row and then to the trip it is
  * about takes two clicks.
  */
-function link(column: string, value: string | undefined, linkable: Set<string>): string {
-  if (value === undefined || value === "" || !linkable.has(column)) {
+function link(column: string, value: string | undefined): string {
+  const view = LINKS[column];
+
+  if (value === undefined || value === "" || view === undefined) {
     return cell(value);
   }
 
-  const view = column.includes("trip")
-    ? "trip"
-    : column.includes("stop") || column === "parent_station"
-      ? "stop"
-      : column === "route_id" ? "route" : "service";
-
-  return `<a href="${format({view, id: value} as Route)}">${escape(value)}</a>`;
+  return `<a href="${format({view, id: value})}">${escape(value)}</a>`;
 }

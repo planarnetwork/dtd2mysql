@@ -311,7 +311,32 @@ check("its ends are marked", drawn?.ends === 2, `${drawn?.ends} ends`);
 check("it is drawn in something other than black",
   drawn !== null && drawn.stroke !== "" && drawn.stroke !== "rgb(0, 0, 0)", drawn?.stroke);
 
+// Following a shape_id out of the table, which is how a reader meets one. It went to the service
+// view for a day and reported every shape as a service that runs on no days - a broken link reads
+// as a data problem, so it is worth clicking rather than only constructing.
+await page.goto(`${at}#/file/trips.txt`);
+await page.waitForSelector(".table__scroll td", {timeout: 60000});
+
+const shapeLink = await page.evaluate(() => {
+  const headers = [...document.querySelectorAll(".table__scroll thead th")]
+    .map(cell => cell.textContent?.trim());
+  const column = headers.indexOf("shape_id");
+  const first = document.querySelector(".table__scroll tbody tr");
+  const anchor = column < 0 || first === null
+    ? null
+    : first.querySelectorAll("td")[column]?.querySelector("a");
+
+  return anchor === null || anchor === undefined
+    ? null
+    : {href: anchor.getAttribute("href"), text: anchor.textContent?.trim() ?? ""};
+});
+
+check("a shape_id in the table is a link", shapeLink !== null, shapeLink?.href ?? "none");
+check("and it points at the shape view, not the service view",
+  shapeLink?.href === `#/shape/${shapeLink?.text}`, shapeLink?.href ?? "none");
+
 // A shape is reachable from the trip's rows link, and from there says what else runs over it.
+await show(`${at}#/trip/${tripId}`);
 const shapeId = await page.evaluate(() =>
   document.querySelector<HTMLAnchorElement>("a[href*='shape_id=']")?.href.split("shape_id=")[1] ?? null);
 
