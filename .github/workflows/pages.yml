@@ -104,7 +104,13 @@ jobs:
             exit 0
           fi
 
-          get transfer-patterns.gz $site/transfer-patterns.gz
+          # Everything after the brotli is taken if it is there and shrugged at
+          # if it is not. A release from before one of these was published is
+          # still a release, and the site missing a file is not a reason to
+          # publish no site at all: the page asks what is beside it rather than
+          # assuming, so it offers what arrived.
+          get transfer-patterns.gz $site/transfer-patterns.gz \
+            || echo "No gzip of the whole file on this release."
 
           mkdir -p $site/transfer-patterns
 
@@ -112,10 +118,12 @@ jobs:
             if get "station-patterns-$extension.tar" "$extension.tar"; then
               tar -xf "$extension.tar" -C $site/transfer-patterns
               rm -f "$extension.tar"
+            else
+              echo "No $extension archive of the stations on this release."
             fi
           done
 
-          du -sh $site/transfer-patterns.br $site/transfer-patterns.gz $site/transfer-patterns
+          du -sh $site/transfer-patterns* || true
           ls $site/transfer-patterns | wc -l
 
       # The site is its own build now rather than part of the repository's
