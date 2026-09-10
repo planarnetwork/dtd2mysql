@@ -70,9 +70,9 @@ jobs:
           done
           ls -lh apps/website/public/
 
-      # The site is built by astro rather than by the repository's `tsc -b`, so
-      # nothing here has needed the workspaces compiled until now. Splitting the
-      # patterns runs one of them.
+      # The site is built by astro rather than by the repository's `tsc -b`, but
+      # the page that lists the stations reads their names out of the feed, which
+      # is `@gb-transit/gtfs-loader`'s job and wants it compiled.
       - run: yarn build
 
       # A release carries the patterns as one file because a release takes 1000
@@ -86,46 +86,37 @@ jobs:
       - name: Publish the transfer patterns, whole and a station at a time
         run: |
           site=apps/website/public
-          patterns=apps/transfer-patterns/src/index.ts
           release=https://github.com/planarnetwork/gb-transit/releases/latest/download
 
-          # Brotli is what the release carries: it is a third smaller than gzip
-          # and nothing downloading a release is a browser. A release from before
-          # that was decided carries the gzip instead, so either will do.
           # --remove-on-error, because -o writes the file before it knows the
           # status: a 404 would otherwise leave an empty one behind for the site
           # to serve as though it were the patterns.
           get() {
-            curl -fsSL --retry 3 --retry-delay 5 --remove-on-error "$release/$1" -o "$site/$1"
+            curl -fsSL --retry 3 --retry-delay 5 --remove-on-error "$release/$1" -o "$2"
           }
 
-          if get transfer-patterns.br; then
-            from=$site/transfer-patterns.br
-            other=$site/transfer-patterns.gz
-          elif get transfer-patterns.gz; then
-            from=$site/transfer-patterns.gz
-            other=$site/transfer-patterns.br
-          else
+          # Nothing is derived here any more. The nightly writes both
+          # compressions of the whole file and of every station, and archives the
+          # stations, so this copies and unpacks: a change to a page used to cost
+          # 34 minutes of recompressing patterns nobody had touched.
+          if ! get transfer-patterns.br $site/transfer-patterns.br; then
             echo "The latest release has no transfer patterns, so the site goes up without them."
             exit 0
           fi
 
-          # Both compressions, of the whole file and of every station: a browser
-          # has no DecompressionStream("brotli") and can only read the gzip, and
-          # everything else would rather have the brotli. Which is wanted depends
-          # on who is reading, and the site is not the place to decide that.
-          #
-          # The second one is made here rather than carried by the release,
-          # because compressing it is minutes the merge job would have to find
-          # inside a timeout it already spends thirty of, and this job has
-          # nothing pressing it.
-          yarn tsx $patterns merge $from --out $other
+          get transfer-patterns.gz $site/transfer-patterns.gz
 
-          for extension in .gz .br; do
-            yarn tsx $patterns split $from --out $site/transfer-patterns --extension $extension
+          mkdir -p $site/transfer-patterns
+
+          for extension in gz br; do
+            if get "station-patterns-$extension.tar" "$extension.tar"; then
+              tar -xf "$extension.tar" -C $site/transfer-patterns
+              rm -f "$extension.tar"
+            fi
           done
 
           du -sh $site/transfer-patterns.br $site/transfer-patterns.gz $site/transfer-patterns
+          ls $site/transfer-patterns | wc -l
 
       # The site is its own build now rather than part of the repository's
       # `tsc -b`, and it reads the latest release over the network to report what

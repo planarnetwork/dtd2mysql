@@ -87,10 +87,22 @@ A file is named for what it holds: `.gz` is gzip and anything else is brotli. Br
 smaller — 54MB against 95MB for a week of a national feed, and 163MB against 202MB once split — but
 no browser has `DecompressionStream("brotli")`, so a page can only read the gzip.
 
-The release carries the brotli, since nothing downloading one is a browser and it is the smaller.
-The site carries both, of the whole file and of every station: it makes the gzip from the brotli it
-downloaded, and splits that into a file per station in each. Which one somebody wants depends on
-what is reading it, and neither the release nor the site is the place to decide that for them.
+Which one somebody wants depends on what is reading it, so the release carries both, of the whole
+file and of every station:
+
+| asset | |
+|---|---|
+| `transfer-patterns.br` | every pattern, 54MB |
+| `transfer-patterns.gz` | the same, 95MB, readable in a browser |
+| `station-patterns-br.tar` | a file per station, 157MB |
+| `station-patterns-gz.tar` | the same, 205MB |
+
+The per station files are archived because a release takes 1000 assets and the network has more
+stations than that. `tar` and not `tar.gz`: everything inside is already compressed, so squeezing
+the archive would cost minutes and save nothing — it takes a fifth of a second as it is.
+
+The site unpacks them and serves the directory. It used to derive all of this itself, which cost it
+34 minutes every time anything on the site changed; now it copies and extracts, and takes seconds.
 
 The site publishes them under `/transfer-patterns/`, rebuilt from the release each time the Pages
 workflow runs, and `UrlPatternProvider` reads them straight from there. It is a plain `GET` per

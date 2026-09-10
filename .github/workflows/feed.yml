@@ -543,3 +543,89 @@ jobs:
             transfer-patterns.br transfer-patterns-meta.json --clobber
         env:
           GH_TOKEN: ${{ github.token }}
+
+  # Everything the site would otherwise derive for itself, done once here.
+  #
+  # The site rebuilds whenever anything under apps/website changes, and deriving
+  # the gzip and splitting twice took it 34 minutes - so a typo on a page cost
+  # half an hour of recompressing patterns nobody had touched. Done here it is
+  # paid once a night, and the site copies and unpacks.
+  #
+  # A job of its own rather than more of the merge: that one already spends 30
+  # of its 45 minutes, and packaging failing should not cost the merge that
+  # produced what is being packaged.
+  patterns-package:
+    needs: [build, patterns-merge]
+    runs-on: ubuntu-latest
+    # Twelve minutes of this on a fast machine, and the one measurement there is
+    # of the same shape of work - the merge - ran 5.7 times slower on a runner
+    # than it did here. So an hour or so, and this is the room that leaves.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '26'
+      - uses: actions/cache@v4
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-${{ runner.os }}-
+      - run: yarn install --immutable
+      - run: yarn build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: transfer-patterns
+
+      # Brotli is a third smaller and gzip is what a browser can decompress, so
+      # which is wanted depends on who is reading. Both, of the whole file and of
+      # every station.
+      - name: Compress the other way, and split both
+        run: |
+          patterns=apps/transfer-patterns/src/index.ts
+
+          yarn tsx $patterns merge transfer-patterns.br --out transfer-patterns.gz
+
+          for extension in .gz .br; do
+            yarn tsx $patterns split transfer-patterns.br \
+              --out stations --extension $extension
+          done
+
+          ls stations | wc -l
+
+      # tar rather than a zip, and no compression: every file in here is already
+      # compressed, so squeezing the archive costs minutes and saves nothing. A
+      # release takes 1000 assets and the network has more stations than that,
+      # which is what these are for.
+      - name: Archive the stations
+        run: |
+          # Named from a list rather than a glob: 2,812 of each would be 2,812
+          # arguments, and flat inside the archive so unpacking it gives the
+          # directory the site serves rather than a path to walk into.
+          for extension in gz br; do
+            (cd stations && find . -name "*.$extension" -printf '%P\0' | sort -z \
+              | tar --null -cf "../station-patterns-$extension.tar" -T -)
+          done
+
+          ls -la station-patterns-gz.tar station-patterns-br.tar
+          tar -tf station-patterns-gz.tar | wc -l
+          tar -tf station-patterns-br.tar | wc -l
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: transfer-patterns-packaged
+          path: |
+            transfer-patterns.gz
+            station-patterns-gz.tar
+            station-patterns-br.tar
+          retention-days: 14
+
+      - name: Attach to the release
+        if: needs.build.outputs.tag != ''
+        run: |
+          gh release upload "${{ needs.build.outputs.tag }}" \
+            transfer-patterns.gz station-patterns-gz.tar station-patterns-br.tar --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
