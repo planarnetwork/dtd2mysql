@@ -73,7 +73,7 @@ function line(detail: TripDetail): string {
 
   return `
     <h3 class="h h2">The line it runs over</h3>
-    <div class="plot__map" data-line="${escape(JSON.stringify(shape.points))}"></div>
+    <div class="plot__map" data-line="${escape(JSON.stringify([shape.points]))}"></div>
     ${described(shape)}
     <p class="note">
       <a href="${format({view: "file", file: "shapes.txt", page: 0,

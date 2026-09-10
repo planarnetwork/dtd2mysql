@@ -26,6 +26,7 @@ export type Request =
   | {type: "stop", slot: Slot, id: number, stopId: string}
   | {type: "trip", slot: Slot, id: number, tripId: string}
   | {type: "route", slot: Slot, id: number, routeId: string}
+  | {type: "shape", slot: Slot, id: number, shapeId: string}
   | {type: "service", slot: Slot, id: number, serviceId: string}
   | {type: "board", slot: Slot, id: number, stopId: string, date: number}
   | {type: "checks", slot: Slot, id: number, only?: string}

@@ -40,6 +40,26 @@ function check(what: string, ok: boolean, detail = ""): void {
   }
 }
 
+/**
+ * Go somewhere and wait for it to actually be on screen.
+ *
+ * Changing only the hash does not reload the page, so every "wait for an element" is satisfied
+ * instantly by the view that is still up - and the checks below it then run against the previous
+ * page and pass. That cost three separate rounds of false green here: a trip asserted against
+ * trips.txt, and a shape and a route asserted against the trip. Waiting for the heading to *change*
+ * is the one condition that does not depend on knowing what the next view contains.
+ */
+async function show(url: string): Promise<void> {
+  const before = (await page.locator("[data-heading]").textContent()) ?? "";
+
+  await page.goto(url);
+  await page.waitForFunction(
+    previous => (document.querySelector("[data-heading]")?.textContent ?? "") !== previous,
+    before,
+    {timeout: 60000}
+  );
+}
+
 /** The site, served under its base path, because every link the build wrote carries one. */
 const server = http.createServer((request, response) => {
   const asked = decodeURIComponent((request.url ?? "/").split("?")[0]);
@@ -244,8 +264,7 @@ const tripId = await page.evaluate(() => {
 
 check("a trip id can be read out of the table", tripId !== null && tripId !== "", tripId ?? "none");
 
-await page.goto(`${at}#/trip/${tripId}`);
-await page.waitForSelector("[data-heading]", {timeout: 60000});
+await show(`${at}#/trip/${tripId}`);
 // Not the count of headings: the "no such trip" view renders one of those too, which is how the
 // wrong id passed this check for a whole run.
 check("a trip opens",
@@ -279,6 +298,11 @@ const drawn = await page.evaluate(() => {
   };
 });
 
+// The rail is where a reader goes looking for a file, and shapes.txt only appears in it if the feed
+// has one - which is why it was missing from the published site until the nightly caught up.
+check("the rail lists the shapes",
+  await page.locator("#explorer-rail a", {hasText: "shapes"}).count() === 1);
+
 check("the line has the points the shape has", (drawn?.count ?? 0) > 1, `${drawn?.count} points`);
 // The whole of it, not the middle of it. This is the zoom being right.
 check("every point of it is inside the box", drawn !== null && drawn.inside === drawn.count,
@@ -286,6 +310,42 @@ check("every point of it is inside the box", drawn !== null && drawn.inside === 
 check("its ends are marked", drawn?.ends === 2, `${drawn?.ends} ends`);
 check("it is drawn in something other than black",
   drawn !== null && drawn.stroke !== "" && drawn.stroke !== "rgb(0, 0, 0)", drawn?.stroke);
+
+// A shape is reachable from the trip's rows link, and from there says what else runs over it.
+const shapeId = await page.evaluate(() =>
+  document.querySelector<HTMLAnchorElement>("a[href*='shape_id=']")?.href.split("shape_id=")[1] ?? null);
+
+check("a trip names the shape it runs over", shapeId !== null, shapeId ?? "none");
+
+await show(`${at}#/shape/${shapeId}`);
+await page.waitForSelector(".map__line polyline", {timeout: 60000});
+check("a shape opens on its own",
+  (await page.locator("[data-heading]").textContent())?.trim() === shapeId, shapeId ?? "");
+check("it says what runs over it",
+  await page.getByRole("heading", {name: "What runs over it"}).count() === 1);
+check("it lists at least one trip", await page.locator(".links li").count() > 0);
+
+// A route draws every distinct line its trips use, which for most routes is more than one.
+const routeId = await page.evaluate(() =>
+  document.querySelector<HTMLAnchorElement>(".links a[href*='#/route/']")?.href.split("#/route/")[1] ?? null);
+
+if (routeId !== null) {
+  await show(`${at}#/route/${routeId}`);
+  await page.waitForSelector(".map__line polyline", {timeout: 60000});
+  check("a route draws where it goes",
+    await page.getByRole("heading", {name: "Where it goes"}).count() === 1, routeId);
+
+  const routeLines = await page.evaluate(() => ({
+    lines: document.querySelectorAll(".map__line polyline").length,
+    said: document.querySelector(".plot__there")?.textContent?.replace(/\s+/g, " ").trim() ?? ""
+  }));
+
+  check("it draws the route's lines", routeLines.lines > 0, `${routeLines.lines} lines`);
+  check("and says how many there are", /line/.test(routeLines.said), routeLines.said.slice(0, 80));
+  // Confetti otherwise: a dozen start and end dots over overlapping lines say nothing.
+  check("it marks no ends when there is more than one line",
+    routeLines.lines === 1 || await page.locator(".map__end").count() === 0);
+}
 
 await page.goto(`${at}#/checks`);
 await page.waitForFunction(

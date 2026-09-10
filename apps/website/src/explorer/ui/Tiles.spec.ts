@@ -1,5 +1,5 @@
 import {describe, it, expect} from "vitest";
-import {unit, zoomFor} from "./Tiles.js";
+import {parseLines, unit, zoomFor} from "./Tiles.js";
 
 /**
  * The arithmetic behind the maps.
@@ -73,6 +73,40 @@ describe("zoomFor", () => {
     const zoom = zoomFor(0, 0.01, BOX);
 
     expect(0.01 * 256 * 2 ** zoom).to.be.at.most(BOX.height);
+  });
+
+});
+
+describe("parseLines", () => {
+
+  it("reads a list of lines", () => {
+    expect(parseLines("[[[1,2],[3,4]],[[5,6],[7,8]]]"))
+      .to.deep.equal([[[1, 2], [3, 4]], [[5, 6], [7, 8]]]);
+  });
+
+  it("reads an empty list", () => {
+    expect(parseLines("[]")).to.deep.equal([]);
+  });
+
+  /**
+   * The bug this exists for. One line passed the way a single line used to be is a flat list of
+   * pairs, which by shape alone is a list of two-point lines - so it drew a scatter of stubs and
+   * said nothing. Nothing but a browser caught it.
+   */
+  it("refuses a flat list of pairs, which is one line in the wrong wrapper", () => {
+    expect(() => parseLines("[[1,2],[3,4]]")).to.throw(/wrap it in an array/);
+  });
+
+  it("refuses a point that is not a pair", () => {
+    expect(() => parseLines("[[[1,2,3]]]")).to.throw(/latitude, longitude/);
+  });
+
+  it("refuses a coordinate that is not a number", () => {
+    expect(() => parseLines("[[[1,\"two\"]]]")).to.throw(/latitude, longitude/);
+  });
+
+  it("refuses something that is not a list at all", () => {
+    expect(() => parseLines("{}")).to.throw(/array of lines/);
   });
 
 });

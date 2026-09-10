@@ -10,8 +10,8 @@ import type {Links} from "../model/Links.js";
 import type {Provenance} from "../provenance.js";
 import {formatClock, formatTime, metresBetween} from "../format.js";
 import type {
-  BoardDetail, CallDetail, Departure, LinkDetail, RouteDetail, ServiceDetail, ShapeDetail, StopDetail,
-  TripDetail
+  BoardDetail, CallDetail, Departure, LinkDetail, RouteDetail, RouteLines, ServiceDetail, ShapeDetail,
+  ShapeViewDetail, StopDetail, TripDetail
 } from "./Detail.js";
 
 /**
@@ -24,6 +24,14 @@ import type {
  * anybody reads; the count is reported and the file table is where the rest of them live.
  */
 const LIST_LIMIT = 200;
+
+/**
+ * How many of a route's lines are drawn at once.
+ *
+ * A dozen is already a thicket. Past that the map stops saying "the route goes here" and starts
+ * saying nothing, so the busiest are drawn and the count of the rest is written underneath.
+ */
+const ROUTE_LINE_LIMIT = 12;
 
 export interface Loaded {
   feed: FeedIndex;
@@ -120,27 +128,15 @@ export function tripDetail(loaded: Loaded, tripId: string): TripDetail {
  * in a feed somebody else built should cost that point and not the picture.
  */
 function shapeDetail(feed: FeedIndex, shapeId: string | undefined): ShapeDetail | undefined {
-  const shapes = feed.files.get("shapes.txt");
-
-  if (shapeId === undefined || shapeId === "" || shapes === undefined) {
+  if (shapeId === undefined || shapeId === "" || feed.files.get("shapes.txt") === undefined) {
     return undefined;
   }
 
-  const rows = shapes.index("shape_id").get(shapeId);
+  const points = pointsOf(feed, shapeId);
 
-  if (rows === undefined || rows.length === 0) {
+  if (points === undefined) {
     return undefined;
   }
-
-  const points = rows
-    .map(row => ({
-      sequence: Number(shapes.value("shape_pt_sequence", row)),
-      lat: Number(shapes.value("shape_pt_lat", row)),
-      lon: Number(shapes.value("shape_pt_lon", row))
-    }))
-    .filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lon))
-    .sort((a, b) => a.sequence - b.sequence)
-    .map(point => [point.lat, point.lon] as const);
 
   const trips = feed.files.get("trips.txt")?.index("shape_id").get(shapeId)?.length ?? 0;
 
@@ -151,6 +147,94 @@ function shapeDetail(feed: FeedIndex, shapeId: string | undefined): ShapeDetail 
     length: lengthOf(points),
     undrawable: points.length < 2 ? true : undefined
   };
+}
+
+/**
+ * One line's points, in sequence order, or nothing where the feed does not have that shape.
+ *
+ * Sorted rather than taken in file order: GTFS does not require shapes.txt to be sorted, and a
+ * caller drawing an unsorted one gets a scribble. A point whose coordinate does not parse is
+ * dropped rather than the shape abandoned - one bad row in a feed somebody else built should cost
+ * that point and not the picture.
+ */
+function pointsOf(feed: FeedIndex, shapeId: string): (readonly [number, number])[] | undefined {
+  const shapes = feed.files.get("shapes.txt");
+  const rows = shapes?.index("shape_id").get(shapeId);
+
+  if (shapes === undefined || rows === undefined || rows.length === 0) {
+    return undefined;
+  }
+
+  return rows
+    .map(row => ({
+      sequence: Number(shapes.value("shape_pt_sequence", row)),
+      lat: Number(shapes.value("shape_pt_lat", row)),
+      lon: Number(shapes.value("shape_pt_lon", row))
+    }))
+    .filter(point => Number.isFinite(point.lat) && Number.isFinite(point.lon))
+    .sort((a, b) => a.sequence - b.sequence)
+    .map(point => [point.lat, point.lon] as const);
+}
+
+/**
+ * One line, with the trips that run over it.
+ */
+export function shapeViewDetail(loaded: Loaded, shapeId: string): ShapeViewDetail {
+  const {feed} = loaded;
+  const points = pointsOf(feed, shapeId) ?? [];
+  const trips = feed.files.get("trips.txt");
+  const rows = trips?.index("shape_id").get(shapeId) ?? [];
+
+  return {
+    id: shapeId,
+    points,
+    length: lengthOf(points),
+    trips: rows.slice(0, LIST_LIMIT).map(row => ({
+      id: trips!.value("trip_id", row) as string,
+      headsign: trips!.value("trip_headsign", row),
+      routeId: trips!.value("route_id", row)
+    })),
+    totalTrips: rows.length
+  };
+}
+
+/**
+ * Every distinct line a route's trips run over.
+ *
+ * Ordered by how many trips run over each, so a route with more lines than a map can tell apart
+ * draws the ones that carry the service and says how many it left out. That order also makes the
+ * picture stable between builds, which taking them in trip order would not.
+ */
+function routeLines(feed: FeedIndex, tripRows: readonly number[]): RouteLines | undefined {
+  const trips = feed.files.get("trips.txt");
+
+  if (trips === undefined || feed.files.get("shapes.txt") === undefined) {
+    return undefined;
+  }
+
+  const counts = new Map<string, number>();
+
+  for (const row of tripRows) {
+    const shapeId = trips.value("shape_id", row);
+
+    if (shapeId !== undefined && shapeId !== "") {
+      counts.set(shapeId, (counts.get(shapeId) ?? 0) + 1);
+    }
+  }
+
+  if (counts.size === 0) {
+    return undefined;
+  }
+
+  const busiest = [...counts]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .slice(0, ROUTE_LINE_LIMIT);
+  const lines = busiest
+    .map(([shapeId]) => pointsOf(feed, shapeId))
+    .filter((points): points is (readonly [number, number])[] =>
+      points !== undefined && points.length > 1);
+
+  return lines.length === 0 ? undefined : {lines, shapes: counts.size, drawn: lines.length};
 }
 
 /**
@@ -197,7 +281,8 @@ export function routeDetail(loaded: Loaded, routeId: string): RouteDetail {
       shortName: trips!.value("trip_short_name", trip),
       serviceId: trips!.value("service_id", trip)
     })),
-    totalTrips: rows.length
+    totalTrips: rows.length,
+    lines: routeLines(feed, rows)
   };
 }
 

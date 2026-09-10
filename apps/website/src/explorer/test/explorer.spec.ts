@@ -5,7 +5,8 @@ import {Links} from "../model/Links.js";
 import {CHECKS, checkOf} from "../checks/checks.js";
 import {runCheck} from "../checks/Check.js";
 import type {CheckContext, Finding} from "../checks/Check.js";
-import {boardAt, routeDetail, serviceDetail, stopDetail, tripDetail} from "../worker/Details.js";
+import {boardAt, routeDetail, serviceDetail, shapeViewDetail, stopDetail, tripDetail}
+  from "../worker/Details.js";
 import {tableOf} from "../query/Table.js";
 import {run} from "../query/Filter.js";
 import {brokenFeed, goldenFeed} from "./golden.js";
@@ -299,6 +300,63 @@ describe("the entity views", () => {
       .map(id => loaded.feed.files.get("trips.txt")!.index("shape_id").get(id)!.length);
 
     expect(Math.max(...counts)).to.be.greaterThan(1);
+  });
+
+  /**
+   * A shape is shared, so "what else runs over this line" is a question only the shape can answer -
+   * a trip knows its own line and nothing about its neighbours.
+   */
+  it("gives a shape the trips that run over it", () => {
+    const shapeId = tripDetail(loaded, "C00049_20260517_20261206").shape!.id;
+    const detail = shapeViewDetail(loaded, shapeId);
+
+    expect(detail.points.length).to.be.greaterThan(1);
+    expect(detail.totalTrips).to.be.greaterThan(0);
+    expect(detail.trips.map(trip => trip.id)).to.contain("C00049_20260517_20261206");
+  });
+
+  it("measures a line in kilometres along it, not between its ends", () => {
+    const shapeId = tripDetail(loaded, "C04566_20260518_20261207").shape!.id;
+    const detail = shapeViewDetail(loaded, shapeId);
+    const [first] = detail.points;
+    const last = detail.points[detail.points.length - 1];
+    const straight = Math.hypot(
+      (last[0] - first[0]) * 111.32,
+      (last[1] - first[1]) * 111.32 * Math.cos(first[0] * Math.PI / 180)
+    );
+
+    // A line that bends is longer than the crow's flight between its ends
+    expect(detail.length).to.be.greaterThan(straight);
+  });
+
+  it("says a shape it does not have is not there, rather than drawing nothing", () => {
+    const detail = shapeViewDetail(loaded, "NO_SUCH_SHAPE");
+
+    expect(detail.points).to.deep.equal([]);
+    expect(detail.totalTrips).to.equal(0);
+  });
+
+  /**
+   * A route is not one line. A stopping pattern that diverts and a portion that splits are the same
+   * route over different ground, and the route view draws all of it.
+   */
+  it("gives a route every distinct line its trips run over", () => {
+    const routeId = tripDetail(loaded, "C00049_20260517_20261206").route!.route_id as string;
+    const detail = routeDetail(loaded, routeId);
+
+    expect(detail.lines).to.not.equal(undefined);
+    expect(detail.lines!.shapes).to.be.greaterThan(0);
+    expect(detail.lines!.lines.length).to.equal(detail.lines!.drawn);
+    expect(detail.lines!.lines.every(line => line.length > 1)).to.equal(true);
+  });
+
+  it("draws no more of a route's lines than a map can tell apart", () => {
+    for (const routeId of new Set(loaded.feed.files.get("trips.txt")!.index("route_id").keys())) {
+      const drawn = routeDetail(loaded, routeId).lines;
+
+      expect(drawn === undefined || drawn.drawn <= 12, routeId).to.equal(true);
+      expect(drawn === undefined || drawn.drawn <= drawn.shapes, routeId).to.equal(true);
+    }
   });
 
   it("expands a trip's calendar to real dates with the exclusions marked", () => {

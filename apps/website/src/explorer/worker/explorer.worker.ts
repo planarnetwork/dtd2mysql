@@ -7,7 +7,7 @@ import {tableOf} from "../query/Table.js";
 import {toCSV, toJSON} from "../query/Export.js";
 import {CHECKS} from "../checks/checks.js";
 import {runCheck} from "../checks/Check.js";
-import {boardAt, routeDetail, serviceDetail, stopDetail, tripDetail} from "./Details.js";
+import {boardAt, routeDetail, serviceDetail, shapeViewDetail, stopDetail, tripDetail} from "./Details.js";
 import {Provenance, readProvenance} from "../provenance.js";
 import type {Request, Response, Slot} from "./protocol.js";
 
@@ -76,6 +76,9 @@ async function handle(request: Request): Promise<void> {
 
     case "route":
       return result(request.id, routeDetail(loaded, request.routeId));
+
+    case "shape":
+      return result(request.id, shapeViewDetail(loaded, request.shapeId));
 
     case "service":
       return result(request.id, serviceDetail(loaded, request.serviceId));

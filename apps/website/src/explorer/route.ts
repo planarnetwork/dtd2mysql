@@ -14,6 +14,7 @@ export type Route =
   | {view: "stop", id: string}
   | {view: "trip", id: string}
   | {view: "route", id: string}
+  | {view: "shape", id: string}
   | {view: "service", id: string}
   | {view: "board", id: string, date: number}
   | {view: "checks", id?: string}
@@ -63,6 +64,7 @@ export function parse(hash: string): Route {
     case "trip":
     case "route":
     case "service":
+    case "shape":
       return parts[1] === undefined
         ? {view: "overview"}
         : {view: parts[0], id: parts[1]} as Route;
@@ -127,6 +129,7 @@ export function format(route: Route): string {
     case "trip":
     case "route":
     case "service":
+    case "shape":
       return `#/${route.view}/${encodeURIComponent(route.id)}`;
 
     case "board":

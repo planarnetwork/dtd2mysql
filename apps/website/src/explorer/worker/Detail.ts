@@ -95,12 +95,42 @@ export interface LinkDetail {
   readonly row: number;
 }
 
+/**
+ * One line, and the trips that run over it.
+ *
+ * A shape is a first class thing to look at rather than only a column on a trip: it is shared, so
+ * "what else runs over this" is a question it can answer and a trip cannot.
+ */
+export interface ShapeViewDetail {
+  readonly id: string;
+  readonly points: readonly (readonly [number, number])[];
+  readonly length: number;
+  /** Capped like every other list here; `totalTrips` is the real count. */
+  readonly trips: readonly {id: string, headsign?: string, routeId?: string}[];
+  readonly totalTrips: number;
+}
+
+/**
+ * The lines a route's trips run over, for drawing all of them at once.
+ *
+ * Points rather than shapes, because a route view wants a picture of where the route goes and not a
+ * list of ids. A route with more distinct lines than can be told apart on one map draws the
+ * busiest and says how many it left out.
+ */
+export interface RouteLines {
+  readonly lines: readonly (readonly (readonly [number, number])[])[];
+  readonly shapes: number;
+  readonly drawn: number;
+}
+
 export interface RouteDetail {
   readonly id: string;
   readonly row?: Row;
   readonly agency?: Row;
   readonly trips: readonly {id: string, headsign?: string, shortName?: string, serviceId?: string}[];
   readonly totalTrips: number;
+  /** Where the route's trips go, drawn. Absent where the feed has no shapes. */
+  readonly lines?: RouteLines;
 }
 
 export interface ServiceDetail {
