@@ -6,14 +6,13 @@ import {format, parse} from "../route.js";
 import type {Route} from "../route.js";
 import {bytes, number} from "../format.js";
 import type {
-  BoardDetail, RouteDetail, ServiceDetail, StopDetail, TripDetail
+  BoardDetail, RouteDetail, ServiceDetail, ShapeViewDetail, StopDetail, TripDetail
 } from "../worker/Detail.js";
 import {Explorer, startWorker, workersSupported} from "../worker/client.js";
 import type {Opened} from "../worker/client.js";
 import type {OpenSource} from "../worker/protocol.js";
 import {element, escape, focusHeading} from "./dom.js";
-import {showLine, showMap} from "./Tiles.js";
-import type {LinePoint} from "./Tiles.js";
+import {parseLines, showLines, showMap} from "./Tiles.js";
 import {PAGE_SIZE, fileTable} from "./views/FileTable.js";
 import {overview} from "./views/Overview.js";
 import {stopView} from "./views/Stop.js";
@@ -21,6 +20,7 @@ import {tripView} from "./views/Trip.js";
 import {boardView} from "./views/Board.js";
 import {checksView} from "./views/Checks.js";
 import {routeView, serviceView} from "./views/Simple.js";
+import {shapeView} from "./views/Shape.js";
 import {validationView} from "./views/Validation.js";
 import {provenanceView} from "./views/Provenance.js";
 import {groups, readReport} from "../validation.js";
@@ -334,6 +334,12 @@ async function html_(route: Route, id: number): Promise<string> {
       return routeView(value);
     }
 
+    case "shape": {
+      const {value} = await ask.ask<ShapeViewDetail>({type: "shape", slot: "a", shapeId: route.id});
+
+      return shapeView(value);
+    }
+
     case "service": {
       const {value} = await ask.ask<ServiceDetail>({type: "service", slot: "a", serviceId: route.id});
 
@@ -556,9 +562,7 @@ function drawMap(view: HTMLElement): void {
  */
 function drawLine(panel: HTMLElement): void {
   try {
-    const points = JSON.parse(panel.dataset.line ?? "[]") as LinePoint[];
-
-    showLine(panel, points);
+    showLines(panel, parseLines(panel.dataset.line ?? "[]"));
   }
   catch {
     panel.remove();

@@ -1,4 +1,4 @@
-import type {RouteDetail, ServiceDetail} from "../../worker/Detail.js";
+import type {RouteDetail, RouteLines, ServiceDetail} from "../../worker/Detail.js";
 import type {ServiceDate} from "../../model/Calendar.js";
 import {format} from "../../route.js";
 import {formatDate, number, routeTypeOf, weekdayOf} from "../../format.js";
@@ -33,6 +33,7 @@ export function routeView(detail: RouteDetail): string {
       ${Object.entries(row).map(([column, value]) =>
         `<div class="field"><dt>${escape(column)}</dt><dd>${cell(value)}</dd></div>`).join("")}
     </dl>
+    ${lines(detail)}
     <h3 class="h h2">Trips on this route</h3>
     ${list(detail.trips.map(trip => `
       <li><a href="${format({view: "trip", id: trip.id})}">${escape(trip.shortName ?? trip.id)}</a>
@@ -40,6 +41,42 @@ export function routeView(detail: RouteDetail): string {
         ${trip.serviceId === undefined ? "" : `<a class="note" href="${format({view: "service",
           id: trip.serviceId})}">service ${escape(trip.serviceId)}</a>`}</li>`),
       detail.totalTrips, detail.trips.length, "route_id", detail.id)}`;
+}
+
+/**
+ * Where the route goes, as opposed to which trips are on it.
+ *
+ * Every distinct line its trips run over, drawn together. A route is not one line: a stopping
+ * pattern that diverts, a portion that splits and a weekend variation are all the same route and
+ * different ground, and the picture is the only place that shows.
+ */
+function lines(detail: RouteDetail): string {
+  const drawn = detail.lines;
+
+  if (drawn === undefined) {
+    return "";
+  }
+
+  return `
+    <h3 class="h h2">Where it goes</h3>
+    <div class="plot__map" data-line="${escape(JSON.stringify(drawn.lines))}"></div>
+    <p class="note plot__there">
+      ${describe(drawn)}
+      Each line runs through every station a train touches, calling or passing; between two of them
+      it is straight, because the feed has no coordinate for the junctions in between.
+    </p>`;
+}
+
+function describe(drawn: RouteLines): string {
+  if (drawn.shapes === 1) {
+    return "Every trip on this route runs over one line.";
+  }
+
+  return `${number(drawn.shapes)} distinct lines carry this route`
+    + (drawn.drawn < drawn.shapes
+      ? `, of which the ${number(drawn.drawn)} busiest are drawn.`
+      : ", all drawn.")
+    + " Where they overlap they are running over the same ground.";
 }
 
 export function serviceView(detail: ServiceDetail): string {

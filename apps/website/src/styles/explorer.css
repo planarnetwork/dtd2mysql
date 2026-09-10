@@ -533,6 +533,9 @@ body.is-app main {
   paint-order: stroke;
   vector-effect: non-scaling-stroke;
 }
+/* A route's lines overlap almost everywhere they run, so they are drawn thinner and let each other
+   through - the width of the bundle is then what says how much of the route uses that track. */
+.map__line polyline.map__many { stroke-width: 2.5; stroke-opacity: 0.55; }
 .map__end { fill: var(--on-dark); stroke: var(--signal); stroke-width: 3; }
 .map__end--end { fill: var(--signal); }
 

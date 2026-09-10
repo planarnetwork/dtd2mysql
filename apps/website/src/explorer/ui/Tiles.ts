@@ -69,13 +69,61 @@ export function showMap(container: HTMLElement, lat: number, lon: number): void 
  * one of those.
  */
 export function showLine(container: HTMLElement, points: readonly LinePoint[]): void {
-  if (points.length < 2) {
+  showLines(container, [points]);
+}
+
+/**
+ * Read the lines a view carried in its markup.
+ *
+ * A list of lines, each a list of latitude and longitude pairs. Anything else throws rather than
+ * drawing what it can: a flat list of pairs - one line, passed the way a single line used to be -
+ * is indistinguishable from a list of two-point lines by shape alone, and quietly draws a scatter
+ * of two-point stubs. That was a real bug and nothing but the browser caught it.
+ */
+export function parseLines(json: string): LinePoint[][] {
+  const parsed: unknown = JSON.parse(json);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("A map's lines have to be an array of lines.");
+  }
+
+  return parsed.map(line => {
+    if (!Array.isArray(line)) {
+      throw new Error("Each line has to be an array of points.");
+    }
+
+    return line.map(point => {
+      if (!Array.isArray(point) || point.length !== 2
+        || !Number.isFinite(point[0]) || !Number.isFinite(point[1])) {
+        throw new Error(
+          "Each point has to be a [latitude, longitude] pair. A flat list of pairs is one line "
+          + "passed where a list of lines belongs - wrap it in an array."
+        );
+      }
+
+      return [point[0], point[1]] as LinePoint;
+    });
+  });
+}
+
+/**
+ * Draw several lines at once, zoomed to hold all of them.
+ *
+ * What a route view wants: every distinct line its trips run over, on one map. The ends are only
+ * marked when there is one line - a dozen start and end dots over a route's worth of overlapping
+ * lines is confetti, and none of them says which line it belongs to.
+ */
+export function showLines(container: HTMLElement, lines: readonly (readonly LinePoint[])[]): void {
+  const drawable = lines.filter(points => points.length > 1);
+
+  if (drawable.length === 0) {
     return;
   }
 
   const width = Math.max(container.clientWidth, 160);
   const box = {width: width - PADDING * 2, height: LINE_HEIGHT - PADDING * 2};
-  const corners = points.map(([lat, lon]) => unit(lat, lon));
+  const projected = drawable.map(points => points.map(([lat, lon]) => unit(lat, lon)));
+  const corners = projected.flat();
   const min = {x: Math.min(...corners.map(p => p.x)), y: Math.min(...corners.map(p => p.y))};
   const max = {x: Math.max(...corners.map(p => p.x)), y: Math.max(...corners.map(p => p.y))};
   const zoom = zoomFor(max.x - min.x, max.y - min.y, box);
@@ -91,8 +139,10 @@ export function showLine(container: HTMLElement, points: readonly LinePoint[]): 
   map.className = "map";
   map.style.height = `${LINE_HEIGHT}px`;
   map.setAttribute("role", "img");
-  map.setAttribute("aria-label",
-    `A map of the line this trip runs over, from OpenStreetMap. It is described below.`);
+  map.setAttribute("aria-label", drawable.length === 1
+    ? "A map of the line this runs over, from OpenStreetMap. It is described below."
+    : `A map of the ${drawable.length} lines this runs over, from OpenStreetMap. They are `
+      + `described below.`);
 
   tileGrid(map, left, top, width, LINE_HEIGHT, zoom);
 
@@ -104,22 +154,29 @@ export function showLine(container: HTMLElement, points: readonly LinePoint[]): 
   svg.setAttribute("height", String(LINE_HEIGHT));
   svg.setAttribute("aria-hidden", "true");
 
-  const plotted = corners.map(p => [p.x * scale - left, p.y * scale - top] as const);
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  const plotted = projected.map(points =>
+    points.map(p => [p.x * scale - left, p.y * scale - top] as const));
 
-  line.setAttribute("points", plotted.map(([x, y]) => `${round(x)},${round(y)}`).join(" "));
-  svg.appendChild(line);
+  for (const points of plotted) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
 
-  // The ends, so the direction of travel is readable off the picture. Drawn after the line so they
-  // sit over it rather than under.
-  for (const [index, name] of [[0, "start"], [plotted.length - 1, "end"]] as const) {
-    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    line.setAttribute("class", plotted.length === 1 ? "map__one" : "map__many");
+    line.setAttribute("points", points.map(([x, y]) => `${round(x)},${round(y)}`).join(" "));
+    svg.appendChild(line);
+  }
 
-    dot.setAttribute("class", `map__end map__end--${name}`);
-    dot.setAttribute("cx", round(plotted[index][0]));
-    dot.setAttribute("cy", round(plotted[index][1]));
-    dot.setAttribute("r", "5");
-    svg.appendChild(dot);
+  // The ends, so the direction of travel is readable off the picture. Drawn after the lines so they
+  // sit over them rather than under, and only for a single line - see above.
+  if (plotted.length === 1) {
+    for (const [index, name] of [[0, "start"], [plotted[0].length - 1, "end"]] as const) {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+
+      dot.setAttribute("class", `map__end map__end--${name}`);
+      dot.setAttribute("cx", round(plotted[0][index][0]));
+      dot.setAttribute("cy", round(plotted[0][index][1]));
+      dot.setAttribute("r", "5");
+      svg.appendChild(dot);
+    }
   }
 
   map.appendChild(svg);

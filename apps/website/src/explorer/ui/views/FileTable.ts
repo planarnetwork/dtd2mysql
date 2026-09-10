@@ -22,7 +22,7 @@ export const PAGE_SIZE = 200;
 export function fileTable(page: Page, route: Extract<Route, {view: "file"}>): string {
   const columns = [...page.header];
   const linkable = new Set(["stop_id", "parent_station", "from_stop_id", "to_stop_id",
-    "trip_id", "from_trip_id", "to_trip_id", "route_id", "service_id"]);
+    "trip_id", "from_trip_id", "to_trip_id", "route_id", "service_id", "shape_id"]);
 
   const head = columns.map(column => {
     const descending = route.sort === column && !route.descending;
