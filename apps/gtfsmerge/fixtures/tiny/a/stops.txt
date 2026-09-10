@@ -2,3 +2,4 @@ stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,locatio
 910GALPHA,ALP,Alpha,,54.00000,-1.00000,,,1,,,,0
 9100ALPHA1,ALP,Alpha,,54.00000,-1.00000,,,0,910GALPHA,1,,0
 910GBETA,BET,"The ""Bull"" Inn",,54.00000,-1.00500,,,1,,,,0
+9100BETA1,BET,"The ""Bull"" Inn",,54.00000,-1.00500,,,0,910GBETA,1,,0

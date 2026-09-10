@@ -46,7 +46,7 @@ export class AreasMerger {
    * quietly missing a member rather than a dangling reference.
    */
   private readonly memberships: StopAreaRow[] = [];
-  private readonly called: UsedStops = {};
+  private readonly published: UsedStops = {};
 
   constructor(
     private readonly areas: RowWriter<AreaRow>,
@@ -57,7 +57,7 @@ export class AreasMerger {
     areas: AreaRow[],
     stopAreas: StopAreaRow[],
     parentStops: ParentStops,
-    usedStops: UsedStops
+    published: UsedStops
   ): Promise<void> {
     for (const area of areas) {
       const id = String(area.area_id);
@@ -74,7 +74,7 @@ export class AreasMerger {
       await push(this.areas, area);
     }
 
-    Object.assign(this.called, usedStops);
+    Object.assign(this.published, published);
 
     for (const stopArea of stopAreas) {
       // A call at a platform is a call at the station above it, so a membership
@@ -88,10 +88,11 @@ export class AreasMerger {
   }
 
   public async end(): Promise<void> {
-    // A stop nothing calls at is not published, so a membership naming one would
-    // point at a row that is not in the feed.
+    // A membership naming a stop the feed does not contain would point at a row
+    // that is not there. A station counts: it is published because its platforms
+    // are, and a fare area names the station rather than the platform.
     for (const membership of this.memberships) {
-      if (this.called[membership.stop_id]) {
+      if (this.published[membership.stop_id]) {
         await push(this.stopAreas, membership);
       }
     }

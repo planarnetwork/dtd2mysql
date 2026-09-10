@@ -158,3 +158,72 @@ every feed has been read and filtered once, against every feed's calls.
 
 `transfers.txt` decides the same question the same way and is left alone. It is
 older than this and its behaviour is the one the golden already records.
+
+## The stop hierarchy survives a merge
+
+`stops.txt`, `stop_times.txt` and `transfers.txt` all move, and the fixtures move with
+them, because the merge no longer flattens every stop onto the station above it.
+
+It used to publish only the parents, move every call onto them, and then clear
+`location_type` and `parent_station` — which it had to, because a station with
+calls at it and no children beneath it is rejected three ways by the validator.
+The result answered "which station" and could not answer "which platform", and it
+discarded the grouping a bus feed publishes for its own stops as well as the rail
+feed's. That grouping is the thing that says a stand outside a station and a
+platform inside it are one place to change at.
+
+Now a call stays where its feed put it, a platform keeps its `parent_station`, a
+station keeps `location_type` 1, and a stop is published if something calls at it
+**or** it is the station above one that does. The validator is happy: no errors,
+and the same twelve accepted notices as before.
+
+The fixtures were written for the old behaviour and had both feeds calling at
+`location_type` 1 stations, which no real feed does — checked against BODS London,
+Scotland and Wales, where not one of 28 million calls is at a station. They now
+model what those feeds actually contain: `910GBETA` gains the platform `9100BETA1`
+its trains call at, and feed `b`'s bus calls at `9100ALPHABUS`, a stand outside
+`910GALPHA` and grouped under it. So the merged feed has a rail platform and a bus
+stand under one station, which is the multi-modal case in miniature.
+
+**A walk is generated between stations, not between platforms.** A platform's
+interchange is its station's - `parent_station` already says that reaching the
+station reaches every platform under it - so a stop with a station above it takes
+no part in generation. Otherwise one walk is written once per platform and
+offered as several journeys. In the fixtures that is the difference between six
+generated rows and twelve, and the walk from `9100BUSSTOP` is to `910GALPHA`.
+
+**Transfers are generated through a grid rather than against every stop.** The
+comparison was the whole cost of a merge at any real size: 321,570 stops is 51.7
+billion pairs, about four hours. Cells one transfer distance wide make it nine
+cell lookups per stop and seconds for the same answer.
+
+**A membership is checked against what the feed contains, not what it calls at.**
+With the calls at platforms, a fare area naming a station named something no
+longer in `usedStops`, so every membership in a rail-and-bus merge was dropped
+and `stop_areas.txt` came out as a header. The published set - what something
+calls at, plus the stations above those - is worked out once and used by the
+areas and the transfers alike.
+
+## A stop code that names more than one station is left out
+
+`stops.txt` loses the `stop_code` on four rows, and `b/stops.txt` gains the clash
+that causes it: its bus station now carries `ALP`, which feed `a`'s Alpha already
+uses and which neither is under.
+
+A code is kept only where every stop carrying it is part of one station — swap a
+stop for its `parent_station` where it has one, and see whether more than one id
+is left. A station and its platforms collapse to the station and keep the code
+they share; two unrelated stops stay two and lose it.
+
+Merging the rail feed with the national bus feed, 2,777 codes are used by more
+than one stop and 2,740 of those are a rail station and its own platforms sharing
+a CRS code, which is right. The 37 that are left are the rule's business: 27 name
+places miles apart — `74020` is both Northlands Avenue and Borkwood Way — and 10
+name two stops of one place that the source gives no station to group them under,
+like the two sides of Laurel Way or the two Millburngate stands. Neither kind can
+tell a rider which stop is meant.
+
+The rows are written by `end` rather than by `write`, because a code can be
+shared across feeds and the answer is not known until the last of them has been
+read. That holds every published stop until then: 321,275 of them, on the order
+of 100MB against a merge that peaks at 3GB.

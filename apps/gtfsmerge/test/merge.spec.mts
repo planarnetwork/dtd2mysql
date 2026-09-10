@@ -192,6 +192,29 @@ describe("the merged feed", () => {
     expect(members.map(a => a.stop_id)).to.include("9100BUSSTOP");
   });
 
+  /**
+   * A code on stops from more than one station names none of them. Feed b's bus
+   * station carries `ALP`, which feed a's Alpha already uses, and neither is
+   * under the other.
+   */
+  it("clears a stop code that more than one station uses", () => {
+    const stops = new Map(columns("stops.txt").map(s => [s.stop_id, s]));
+
+    expect(stops.get("9100BUSSTOP")?.stop_code ?? null).to.equal(null);
+    expect(stops.get("910GALPHA")?.stop_code ?? null).to.equal(null);
+  });
+
+  /**
+   * A station and its platforms are one station, so the code they share still
+   * says which stop a rider means.
+   */
+  it("keeps a stop code a station shares with its own platform", () => {
+    const stops = new Map(columns("stops.txt").map(s => [s.stop_id, s]));
+
+    expect(stops.get("910GBETA")?.stop_code).to.equal("BET");
+    expect(stops.get("9100BETA1")?.stop_code).to.equal("BET");
+  });
+
   it("keeps both agencies", () => {
     expect(columns("agency.txt").map(a => a.agency_id).sort()).to.deep.equal(["BUS", "RAIL"]);
   });
@@ -246,19 +269,49 @@ describe("the merged feed", () => {
     }
   });
 
-  it("does not publish a stop nothing calls at", () => {
+  /**
+   * A stop is published if something calls at it, or if it is the station above
+   * one that does - a station nothing stops at is still where its platforms are.
+   */
+  it("publishes a stop something calls at, or the station above one", () => {
     const called = new Set(columns("stop_times.txt").map(s => s.stop_id));
+    const parents = new Set(columns("stops.txt").map(s => s.parent_station).filter(Boolean));
 
     for (const stop of columns("stops.txt")) {
-      expect(called.has(stop.stop_id)).to.equal(true);
+      expect(called.has(stop.stop_id) || parents.has(stop.stop_id)).to.equal(true);
     }
   });
 
-  it("calls at the station rather than the platform", () => {
-    const stops = new Set(columns("stops.txt").map(s => s.stop_id));
+  /**
+   * Which platform the train leaves from and which stand the bus goes from are
+   * what the feeds said, and the station is how a rider knows they are one place.
+   */
+  it("keeps the platform, the stand and the station above them both", () => {
+    const stops = new Map(columns("stops.txt").map(s => [s.stop_id, s]));
 
-    expect(stops.has("9100ALPHA1")).to.equal(false);
-    expect(stops.has("910GALPHA")).to.equal(true);
+    expect(stops.get("9100ALPHA1")?.parent_station).to.equal("910GALPHA");
+    expect(stops.get("9100ALPHABUS")?.parent_station).to.equal("910GALPHA");
+    expect(Number(stops.get("910GALPHA")?.location_type)).to.equal(1);
+    expect(new Set(columns("stop_times.txt").map(s => s.stop_id)).has("910GALPHA"))
+      .to.equal(false);
+  });
+
+  /**
+   * A platform's interchange is its station's. Generating from the platforms too
+   * would write one walk once per platform and offer it as several journeys.
+   */
+  it("generates no walk to or from a platform", () => {
+    const platforms = new Set(
+      columns("stops.txt").filter(s => s.parent_station).map(s => s.stop_id)
+    );
+    const generated = columns("transfers.txt").filter(t => t.min_transfer_time !== null);
+
+    for (const transfer of generated) {
+      expect(platforms.has(transfer.from_stop_id)).to.equal(false);
+      expect(platforms.has(transfer.to_stop_id)).to.equal(false);
+    }
+
+    expect(platforms.size).to.be.greaterThan(0);
   });
 
   it("collapses the three identical calendars onto one service", () => {
@@ -295,7 +348,8 @@ describe("the merged feed", () => {
   });
 
   it("generates a walk transfer between the bus station and the rail station", () => {
-    // About 200m apart. This is the reason to merge the two feeds at all.
+    // About 200m apart. This is the reason to merge the two feeds at all, and it
+    // is between the stations: a walk to Alpha reaches every platform under it.
     const walk = columns("transfers.txt").find(
       t => t.from_stop_id === "9100BUSSTOP" && t.to_stop_id === "910GALPHA"
     );

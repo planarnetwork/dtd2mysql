@@ -53,7 +53,7 @@ export class GTFSOutput {
 
     this.feedInfo.write(gtfs.feedInfo);
 
-    const stopTimes = this.stopTimes.begin(tripIdMap, gtfs.parentStops);
+    const stopTimes = this.stopTimes.begin(tripIdMap);
     const shapes = this.shapes.begin(shapeIdMap);
     const flush = async () => {
       await stopTimes.flush();
@@ -66,17 +66,28 @@ export class GTFSOutput {
     // the parser give up what they were holding.
     await flush();
 
-    const usedStops = stopTimes.usedStops;
+    // A stop is published if something calls at it, or if it is the station
+    // above one that does: a station nothing stops at is still where its
+    // platforms are, and both the areas and the transfers name stations.
+    const published = {...stopTimes.usedStops};
+
+    for (const stop of Object.keys(stopTimes.usedStops)) {
+      const parent = gtfs.parentStops[stop];
+
+      if (parent !== undefined) {
+        published[parent] = true;
+      }
+    }
 
     await this.frequencies.write(gtfs.frequencies, tripIdMap);
 
     await Promise.all([
       this.stopsAndTransfers.write(
-        gtfs.stops, gtfs.transfers, gtfs.parentStops, usedStops, tripIdMap
+        gtfs.stops, gtfs.transfers, gtfs.parentStops, published, tripIdMap
       ),
       this.agencies.write(gtfs.agencies),
       this.attributions.write(gtfs.attributions),
-      this.areas.write(gtfs.areas, gtfs.stopAreas, gtfs.parentStops, usedStops)
+      this.areas.write(gtfs.areas, gtfs.stopAreas, gtfs.parentStops, published)
     ]);
   }
 

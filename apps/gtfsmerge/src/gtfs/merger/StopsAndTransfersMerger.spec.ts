@@ -17,12 +17,47 @@ describe("StopsAndTransfersMerger", () => {
     };
   };
 
+  /**
+   * The stops are written by `end`, not by `write`: whether a stop_code names one
+   * station is a question about the merged feed, so the rows wait for the last
+   * of it.
+   */
   it("publishes only the stops something calls at", async () => {
     const {stops, merger: m} = merger(0);
 
     await m.write([stop("used", 51.5, -0.1), stop("unused", 52, -1)], [], {}, {used: true}, {});
+    await m.end();
 
     expect(stops.rows.map(s => s.stop_id)).to.deep.equal(["used"]);
+  });
+
+  // The rows are the merger's own copies and it writes to them, as the other
+  // mergers do, so each case builds its own.
+  const coded = (): StopRow[] => [
+    {...stop("platform", 51.5, -0.1), stop_code: "ABA", parent_station: "station"},
+    {...stop("station", 51.5, -0.1), stop_code: "ABA", location_type: 1}
+  ];
+
+  it("clears a stop code that two stations share", async () => {
+    const {stops, merger: m} = merger(0);
+    const elsewhere: StopRow = {...stop("elsewhere", 52, -1), stop_code: "ABA"};
+
+    await m.write(
+      [...coded(), elsewhere], [], {platform: "station"},
+      {platform: true, station: true, elsewhere: true}, {}
+    );
+    await m.end();
+
+    expect(stops.rows.map(s => s.stop_code)).to.deep.equal([null, null, null]);
+  });
+
+  it("keeps a stop code a station shares with its own platform", async () => {
+    const {stops, merger: m} = merger(0);
+
+    await m.write(coded(), [], {platform: "station"}, {platform: true, station: true}, {});
+    await m.end();
+
+    expect(stops.rows.map(s => s.stop_code)).to.deep.equal(["ABA", "ABA"]);
   });
 
   it("generates a walk transfer between two nearby stops, both ways", async () => {
@@ -120,16 +155,32 @@ describe("StopsAndTransfersMerger", () => {
     expect(transfers.rows).to.deep.equal([]);
   });
 
-  it("moves a transfer onto the station rather than the platform", async () => {
+  /**
+   * A transfer names whichever stop the feed named, and both the platform and
+   * the station above it are published, so neither has to be moved.
+   */
+  it("leaves a transfer naming the platform at the platform", async () => {
     const {transfers, merger: m} = merger(0);
     const transfer: TransferRow = {
       from_stop_id: "platform", to_stop_id: "other", transfer_type: TransferType.MinTime,
       min_transfer_time: 120
     };
 
-    await m.write([], [transfer], {platform: "station"}, {station: true, other: true}, {});
+    await m.write([], [transfer], {platform: "station"}, {platform: true, other: true}, {});
 
-    expect(transfers.rows[0].from_stop_id).to.equal("station");
+    expect(transfers.rows[0].from_stop_id).to.equal("platform");
+  });
+
+  it("drops a transfer naming a stop that is not published", async () => {
+    const {transfers, merger: m} = merger(0);
+    const transfer: TransferRow = {
+      from_stop_id: "nowhere", to_stop_id: "other", transfer_type: TransferType.MinTime,
+      min_transfer_time: 120
+    };
+
+    await m.write([], [transfer], {}, {other: true}, {});
+
+    expect(transfers.rows).to.deep.equal([]);
   });
 
 });

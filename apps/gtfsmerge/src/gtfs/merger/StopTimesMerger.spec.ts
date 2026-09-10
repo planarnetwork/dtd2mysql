@@ -2,7 +2,6 @@ import {describe, it, expect} from "vitest";
 import {StopTimeRow} from "@gb-transit/gtfs-schema";
 import {StopTimesMerger, StopTimesPass} from "./StopTimesMerger";
 import {TripIDMap} from "./TripsMerger";
-import {ParentStops} from "./StopsAndTransfersMerger";
 import {collect, stopTime} from "./Fixtures";
 
 /**
@@ -19,11 +18,11 @@ async function chunk(pass: StopTimesPass, rows: StopTimeRow[]): Promise<void> {
   await pass.flush();
 }
 
-function merging(tripIdMap: TripIDMap, parentStops: ParentStops = {}) {
+function merging(tripIdMap: TripIDMap) {
   const stopTimes = collect<StopTimeRow>();
   const merger = new StopTimesMerger(stopTimes);
 
-  return {stopTimes, pass: merger.begin(tripIdMap, parentStops)};
+  return {stopTimes, pass: merger.begin(tripIdMap)};
 }
 
 describe("StopTimesMerger", () => {
@@ -37,13 +36,17 @@ describe("StopTimesMerger", () => {
     expect(pass.usedStops).to.deep.equal({s1: true});
   });
 
-  it("calls at the station rather than the platform", async () => {
-    const {stopTimes, pass} = merging({t1: "1"}, {platform: "station"});
+  /**
+   * The platform, not the station above it: which platform is what the feed
+   * said, and the station is still reachable through parent_station.
+   */
+  it("calls where the feed said it calls", async () => {
+    const {stopTimes, pass} = merging({t1: "1"});
 
     await chunk(pass, [stopTime("t1", "platform", 1)]);
 
-    expect(stopTimes.rows[0].stop_id).to.equal("station");
-    expect(pass.usedStops).to.deep.equal({station: true});
+    expect(stopTimes.rows[0].stop_id).to.equal("platform");
+    expect(pass.usedStops).to.deep.equal({platform: true});
   });
 
   it("drops the stop times of a trip that was dropped", async () => {
